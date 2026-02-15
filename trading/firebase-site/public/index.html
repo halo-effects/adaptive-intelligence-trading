@@ -398,6 +398,39 @@ section { padding: 100px 0; }
   .layer:nth-child(even) { direction: ltr; }
   .hero-stats { gap: 24px; }
 }
+@media (max-width: 600px) {
+  body { overflow-x: hidden; }
+  .hero { padding: 72px 16px 40px; min-height: 70vh; }
+  .hero-content h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); }
+  .hero-content p { font-size: .95rem; }
+  .hero-stats { flex-wrap: wrap; gap: 16px; justify-content: center; }
+  .hero-stat-value { font-size: 1.8rem; }
+  .hero-stat-label { font-size: .7rem; }
+  .hero-cta { flex-direction: column; gap: 10px; align-items: stretch; }
+  .hero-cta a { text-align: center; }
+  .container { padding: 0 12px; }
+  section { padding: 48px 0; }
+  .section-title { font-size: clamp(1.4rem, 4vw, 1.8rem); }
+  .section-subtitle { font-size: .9rem; }
+  .layer { gap: 24px; }
+  .layer-visual { padding: 24px 16px; }
+  .regime-grid { grid-template-columns: 1fr; gap: 10px; }
+  .regime-item { padding: 12px; }
+  .alloc-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: .75rem; }
+  .alloc-table th, .alloc-table td { padding: 8px 6px; white-space: nowrap; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  th, td { padding: 8px 6px; font-size: .75rem; }
+  .risk-cards { grid-template-columns: 1fr; }
+  .evolution-grid { grid-template-columns: 1fr; }
+  .evolution-card { padding: 16px; }
+  .cta-section { padding: 48px 16px; }
+  .cta-section h2 { font-size: 1.4rem; }
+  .footer-links { flex-direction: column; gap: 16px; text-align: center; }
+}
+@media (max-width: 400px) {
+  .hero-stats { flex-direction: column; align-items: center; }
+  .hero { padding: 64px 12px 32px; }
+}
 
 /* Scroll animations */
 .fade-in {
@@ -411,8 +444,8 @@ section { padding: 100px 0; }
 <body>
 
 <!-- Top Header -->
-<header style="position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:14px;">
-  <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
+<header style="position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;">
+  <svg width="32" height="32" viewBox="0 0 48 48" fill="none" style="flex-shrink:0;"
     <rect x="4" y="4" width="40" height="40" rx="4" stroke="#30363d" stroke-width="1" fill="rgba(22,27,34,.8)"/>
     <line x1="4" y1="17.3" x2="44" y2="17.3" stroke="#30363d" stroke-width="0.7"/>
     <line x1="4" y1="24" x2="44" y2="24" stroke="#30363d" stroke-width="0.7"/>
@@ -442,8 +475,8 @@ section { padding: 100px 0; }
       <animate attributeName="opacity" values=".8;.3;.8" dur="3s" repeatCount="indefinite" begin="1.5s"/>
     </path>
   </svg>
-  <span style="font-size:1.15rem;font-weight:600;letter-spacing:-.02em;">Adaptive Intelligence Trading</span>
-  <a href="dashboard.html" style="margin-left:auto;padding:6px 16px;background:var(--gradient2);color:#fff;border-radius:6px;font-size:.85rem;font-weight:600;text-decoration:none;white-space:nowrap;">Live Dashboard</a>
+  <span style="font-size:clamp(.85rem,3vw,1.15rem);font-weight:600;letter-spacing:-.02em;white-space:nowrap;">Adaptive Intelligence Trading</span>
+  <a href="dashboard.html" style="margin-left:auto;padding:5px 12px;background:var(--gradient2);color:#fff;border-radius:6px;font-size:clamp(.7rem,2vw,.85rem);font-weight:600;text-decoration:none;white-space:nowrap;">Live Dashboard</a>
 </header>
 
 <!-- Hero -->
