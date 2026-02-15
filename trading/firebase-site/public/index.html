@@ -400,7 +400,11 @@ section { padding: 100px 0; }
 }
 @media (max-width: 600px) {
   body { overflow-x: hidden; }
-  .hero { padding: 72px 16px 40px; min-height: 70vh; }
+  .top-header { padding: 8px 12px !important; gap: 8px !important; }
+  .header-logo { width: 26px !important; height: 26px !important; }
+  .header-title { font-size: .9rem !important; }
+  .header-btn { padding: 4px 10px !important; font-size: .75rem !important; }
+  .hero { padding: 60px 16px 40px; min-height: 70vh; }
   .hero-content h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); }
   .hero-content p { font-size: .95rem; }
   .hero-stats { flex-wrap: wrap; gap: 16px; justify-content: center; }
@@ -444,8 +448,8 @@ section { padding: 100px 0; }
 <body>
 
 <!-- Top Header -->
-<header style="position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;">
-  <svg width="32" height="32" viewBox="0 0 48 48" fill="none" style="flex-shrink:0;"
+<header class="top-header" style="position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;">
+  <svg class="header-logo" width="32" height="32" viewBox="0 0 48 48" fill="none" style="flex-shrink:0;"
     <rect x="4" y="4" width="40" height="40" rx="4" stroke="#30363d" stroke-width="1" fill="rgba(22,27,34,.8)"/>
     <line x1="4" y1="17.3" x2="44" y2="17.3" stroke="#30363d" stroke-width="0.7"/>
     <line x1="4" y1="24" x2="44" y2="24" stroke="#30363d" stroke-width="0.7"/>
@@ -475,8 +479,8 @@ section { padding: 100px 0; }
       <animate attributeName="opacity" values=".8;.3;.8" dur="3s" repeatCount="indefinite" begin="1.5s"/>
     </path>
   </svg>
-  <span style="font-size:clamp(.85rem,3vw,1.15rem);font-weight:600;letter-spacing:-.02em;white-space:nowrap;">Adaptive Intelligence Trading</span>
-  <a href="dashboard.html" style="margin-left:auto;padding:5px 12px;background:var(--gradient2);color:#fff;border-radius:6px;font-size:clamp(.7rem,2vw,.85rem);font-weight:600;text-decoration:none;white-space:nowrap;">Live Dashboard</a>
+  <span class="header-title" style="font-size:1.15rem;font-weight:600;letter-spacing:-.02em;white-space:nowrap;">Adaptive Intelligence Trading</span>
+  <a class="header-btn" href="dashboard.html" style="margin-left:auto;padding:6px 16px;background:var(--gradient2);color:#fff;border-radius:6px;font-size:.85rem;font-weight:600;text-decoration:none;white-space:nowrap;">Live Dashboard</a>
 </header>
 
 <!-- Hero -->
