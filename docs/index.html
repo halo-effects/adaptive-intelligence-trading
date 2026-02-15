@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adaptive Grid Trading System — Product Overview</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0f;
+  --card: #12121a;
+  --border: #1e1e2e;
+  --accent: #6366f1;
+  --accent2: #818cf8;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --gradient1: linear-gradient(135deg, #6366f1, #8b5cf6);
+  --gradient2: linear-gradient(135deg, #22c55e, #06b6d4);
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Hero */
+.hero {
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 60px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 50%, rgba(99,102,241,0.08) 0%, transparent 50%),
+              radial-gradient(circle at 70% 50%, rgba(34,197,94,0.06) 0%, transparent 50%);
+  animation: heroGlow 8s ease-in-out infinite alternate;
+}
+@keyframes heroGlow {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-2%, 2%); }
+}
+.hero-content { position: relative; z-index: 1; max-width: 800px; }
+.hero-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 50px;
+  background: rgba(99,102,241,0.15);
+  color: var(--accent2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+.hero h1 {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #e2e8f0 0%, #6366f1 50%, #22c55e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero p {
+  font-size: 1.25rem;
+  color: var(--text2);
+  max-width: 600px;
+  margin: 0 auto 40px;
+}
+.hero-stats {
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.hero-stat { text-align: center; }
+.hero-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--green);
+}
+.hero-stat-label {
+  font-size: 0.8rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Sections */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+section { padding: 100px 0; }
+.section-label {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  background: rgba(99,102,241,0.1);
+  color: var(--accent2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+.section-subtitle {
+  font-size: 1.1rem;
+  color: var(--text2);
+  max-width: 650px;
+  margin-bottom: 48px;
+}
+
+/* Problem Section */
+.problem-section { background: linear-gradient(180deg, var(--bg) 0%, #0d0d15 100%); }
+.problem-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+.problem-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.problem-card:hover { transform: translateY(-4px); border-color: var(--accent); }
+.problem-icon { font-size: 2rem; margin-bottom: 16px; }
+.problem-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+.problem-card p { color: var(--text2); font-size: 0.95rem; }
+
+/* Layers */
+.layers-section { position: relative; }
+.layer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  margin-bottom: 80px;
+}
+.layer:nth-child(even) { direction: rtl; }
+.layer:nth-child(even) > * { direction: ltr; }
+.layer-number {
+  font-size: 6rem;
+  font-weight: 800;
+  color: rgba(99,102,241,0.1);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.layer-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+.layer-question {
+  font-size: 1rem;
+  color: var(--accent2);
+  font-style: italic;
+  margin-bottom: 16px;
+}
+.layer-text { color: var(--text2); font-size: 0.95rem; margin-bottom: 16px; }
+.layer-visual {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.regime-list { list-style: none; }
+.regime-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.regime-item:last-child { border: none; }
+.regime-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.regime-name { font-weight: 600; min-width: 120px; }
+.regime-desc { color: var(--text2); font-size: 0.85rem; }
+
+/* Breathing animation */
+.breathing-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.breathing-bar {
+  height: 8px;
+  border-radius: 4px;
+  animation: breathe 4s ease-in-out infinite;
+}
+.breathing-bar.tp { background: var(--gradient2); }
+.breathing-bar.dev { background: var(--gradient1); }
+@keyframes breathe {
+  0%, 100% { width: 40%; }
+  50% { width: 90%; }
+}
+.breathing-label {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.75rem;
+  color: var(--text3);
+}
+
+/* Comparison */
+.comparison-section { background: #0d0d15; }
+.comparison-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.comparison-table th, .comparison-table td {
+  padding: 16px 24px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.comparison-table th {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+}
+.comparison-table td:first-child { color: var(--text2); }
+.comparison-table td:last-child { color: var(--green); font-weight: 500; }
+.comparison-table tr:last-child td { border: none; }
+
+/* Checklist */
+.checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 32px;
+}
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.95rem;
+}
+.check-icon { font-size: 1.2rem; flex-shrink: 0; }
+
+/* Risk */
+.risk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+.risk-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.risk-card h4 { font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.risk-card p { color: var(--text2); font-size: 0.9rem; }
+
+/* Evolution */
+.evolution-timeline {
+  position: relative;
+  padding-left: 40px;
+}
+.evolution-timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--border), var(--accent), var(--green));
+}
+.evo-item {
+  position: relative;
+  margin-bottom: 48px;
+  padding-left: 24px;
+}
+.evo-item::before {
+  content: '';
+  position: absolute;
+  left: -29px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--bg);
+}
+.evo-item:last-child::before { background: var(--green); border-color: var(--green); }
+.evo-gen {
+  font-size: 0.75rem;
+  color: var(--accent2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+.evo-title { font-size: 1.2rem; font-weight: 700; margin: 4px 0 8px; }
+.evo-desc { color: var(--text2); font-size: 0.9rem; }
+.evo-features {
+  list-style: none;
+  margin-top: 12px;
+}
+.evo-features li {
+  color: var(--text2);
+  font-size: 0.85rem;
+  padding: 4px 0;
+  padding-left: 20px;
+  position: relative;
+}
+.evo-features li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--text3);
+}
+
+/* CTA */
+.cta-section {
+  text-align: center;
+  padding: 120px 24px;
+  position: relative;
+}
+.cta-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(99,102,241,0.08) 0%, transparent 60%);
+}
+.cta-quote {
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-weight: 300;
+  font-style: italic;
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  color: var(--text2);
+}
+.cta-quote em { color: var(--text); font-weight: 500; }
+
+/* Not list */
+.not-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+.not-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(239,68,68,0.05);
+  border: 1px solid rgba(239,68,68,0.1);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: var(--text2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .layer { grid-template-columns: 1fr; gap: 32px; }
+  .layer:nth-child(even) { direction: ltr; }
+  .hero-stats { gap: 24px; }
+}
+
+/* Scroll animations */
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-in.visible { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Next-Generation Automated Trading</div>
+    <h1>A Trading System That Breathes With the Market</h1>
+    <p>Adaptive grid trading that tightens in calm markets for faster gains and expands in volatile markets for bigger captures — fully automated, fully hands-off.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value">6</div>
+        <div class="hero-stat-label">Market Regimes</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">30s</div>
+        <div class="hero-stat-label">Adaptation Cycle</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">3</div>
+        <div class="hero-stat-label">Simultaneous Markets</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">0</div>
+        <div class="hero-stat-label">Daily Management</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Problem -->
+<section class="problem-section">
+  <div class="container">
+    <div class="section-label">The Problem</div>
+    <h2 class="section-title fade-in">Traditional Bots Are Stuck on One Temperature</h2>
+    <p class="section-subtitle fade-in">Most trading bots use fixed rules that can't adapt. When markets change — and they always do — they either miss opportunities or get crushed.</p>
+    <div class="problem-grid">
+      <div class="problem-card fade-in">
+        <div class="problem-icon">📉</div>
+        <h3>Calm Markets = Wasted Capital</h3>
+        <p>Take-profit targets are too wide. Deals sit open for hours or days, tying up capital that could be cycling and compounding.</p>
+      </div>
+      <div class="problem-card fade-in">
+        <div class="problem-icon">📈</div>
+        <h3>Volatile Markets = Capital Drain</h3>
+        <p>Grid spacing is too tight. Safety orders fill too fast, eating through capital before positions can recover.</p>
+      </div>
+      <div class="problem-card fade-in">
+        <div class="problem-icon">👀</div>
+        <h3>Constant Babysitting Required</h3>
+        <p>Traders either watch charts all day adjusting settings, or set conservative values and leave money on the table.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="layers-section">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <h2 class="section-title fade-in">Five Layers Working as One</h2>
+    <p class="section-subtitle fade-in">The system operates on interconnected layers that work together like a living organism.</p>
+
+    <!-- Layer 1 -->
+    <div class="layer fade-in">
+      <div>
+        <div class="layer-number">01</div>
+        <div class="layer-title">Market Regime Detection</div>
+        <div class="layer-question">"What kind of market are we in right now?"</div>
+        <div class="layer-text">Every 30 seconds, the system analyzes recent price action across multiple indicators to classify the current market. This isn't just a label — it's the brain of the system. Every other decision flows from this classification.</div>
+      </div>
+      <div class="layer-visual">
+        <ul class="regime-list">
+          <li class="regime-item"><span class="regime-dot" style="background:#22c55e"></span><span class="regime-name">Trending</span><span class="regime-desc">Strong directional movement</span></li>
+          <li class="regime-item"><span class="regime-dot" style="background:#06b6d4"></span><span class="regime-name">Mild Trend</span><span class="regime-desc">Moderate directional bias</span></li>
+          <li class="regime-item"><span class="regime-dot" style="background:#8b5cf6"></span><span class="regime-name">Accumulation</span><span class="regime-desc">Consolidation before a move</span></li>
+          <li class="regime-item"><span class="regime-dot" style="background:#f59e0b"></span><span class="regime-name">Ranging</span><span class="regime-desc">Bouncing between levels</span></li>
+          <li class="regime-item"><span class="regime-dot" style="background:#f97316"></span><span class="regime-name">Choppy</span><span class="regime-desc">Erratic, unpredictable</span></li>
+          <li class="regime-item"><span class="regime-dot" style="background:#ef4444"></span><span class="regime-name">Extreme</span><span class="regime-desc">Dangerous — trading halted</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Layer 2 -->
+    <div class="layer fade-in">
+      <div>
+        <div class="layer-number">02</div>
+        <div class="layer-title">Adaptive Parameters</div>
+        <div class="layer-question">"How should we trade in this environment?"</div>
+        <div class="layer-text">Based on the current regime and real-time volatility, the system dynamically adjusts take-profit targets and grid spacing. Think of it like breathing — the grid contracts in calm markets for quick, efficient cycles and expands in volatile markets for patient, larger captures.</div>
+        <div class="layer-text"><strong>Take Profit:</strong> 0.6% – 2.5% (adapts to conditions)<br><strong>Grid Spacing:</strong> 1.2% – 4.0% (always wider than TP)</div>
+      </div>
+      <div class="layer-visual">
+        <div class="breathing-demo">
+          <div class="breathing-label"><span>Calm Market</span><span>Volatile Market</span></div>
+          <div class="breathing-bar tp" style="animation-delay: 0s;"></div>
+          <div style="display:flex; justify-content:space-between; width:100%; font-size:0.8rem;">
+            <span style="color:var(--green)">Take Profit</span>
+          </div>
+          <div class="breathing-bar dev" style="animation-delay: 0.2s;"></div>
+          <div style="display:flex; justify-content:space-between; width:100%; font-size:0.8rem;">
+            <span style="color:var(--accent2)">Grid Spacing</span>
+          </div>
+          <div style="margin-top:16px; text-align:center; color:var(--text3); font-size:0.8rem;">
+            ← Tighter (faster cycles) &nbsp;|&nbsp; Wider (bigger captures) →
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layer 3 -->
+    <div class="layer fade-in">
+      <div>
+        <div class="layer-number">03</div>
+        <div class="layer-title">Bidirectional Dual-Tracking</div>
+        <div class="layer-question">"Profit whether the market goes up or down."</div>
+        <div class="layer-text">Two virtual trading engines run simultaneously — one profits when price rises, one when it falls. The regime detector controls capital allocation between them, and <strong>directional awareness</strong> via SMA50 dynamically flips the allocation to favor the prevailing trend.</div>
+        <div class="layer-text">In a bearish trend, the system shifts weight toward short positions. In a bullish trend, it favors longs. The system doesn't need to predict direction — it <strong>detects</strong> it and adapts in real-time.</div>
+      </div>
+      <div class="layer-visual">
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:50px;height:50px;border-radius:12px;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">📈</div>
+            <div><div style="font-weight:600;color:var(--green)">Long Engine</div><div style="color:var(--text2);font-size:0.85rem;">Profits when price rises</div></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:50px;height:50px;border-radius:12px;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">📉</div>
+            <div><div style="font-weight:600;color:var(--red)">Short Engine</div><div style="color:var(--text2);font-size:0.85rem;">Profits when price falls</div></div>
+          </div>
+          <div style="margin-top:8px;padding:16px;background:rgba(99,102,241,0.08);border-radius:10px;">
+            <div style="font-size:0.8rem;color:var(--text3);margin-bottom:8px;">ALLOCATION BY REGIME</div>
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;"><span>Trending ▲ Bullish</span><span style="color:var(--green)">75 L / 25 S</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;"><span>Trending ▼ Bearish</span><span style="color:var(--red)">25 L / 75 S</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;"><span>Ranging</span><span>50 / 50</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;"><span>Extreme</span><span style="color:var(--red)">Paused</span></div>
+          </div>
+          <div style="margin-top:12px;padding:12px 16px;background:rgba(34,197,94,0.08);border-radius:10px;border:1px solid rgba(34,197,94,0.15);">
+            <div style="font-size:0.8rem;color:var(--green);font-weight:600;margin-bottom:4px;">🧭 Directional Awareness</div>
+            <div style="font-size:0.8rem;color:var(--text2);">SMA50 on 5-minute data detects trend direction. In directional regimes, allocation automatically flips to favor the prevailing trend — heavier short in bearish markets, heavier long in bullish.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layer 4 -->
+    <div class="layer fade-in">
+      <div>
+        <div class="layer-number">04</div>
+        <div class="layer-title">Intelligent Capital Management</div>
+        <div class="layer-question">"Never risk what you can't afford."</div>
+        <div class="layer-text">The system continuously monitors available margin and adjusts behavior. It maintains a safety reserve, automatically skips orders it can't afford, and always prioritizes closing profitable positions over opening new ones.</div>
+        <div class="layer-text">No manual intervention needed. No margin calls to worry about. No surprises.</div>
+      </div>
+      <div class="layer-visual">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--green);font-size:1.2rem;">🛡️</span><span>10% capital safety reserve</span></div>
+          <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--green);font-size:1.2rem;">⚡</span><span>Auto-skips unaffordable orders</span></div>
+          <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--green);font-size:1.2rem;">🎯</span><span>Exit orders always take priority</span></div>
+          <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--green);font-size:1.2rem;">🔒</span><span>No leverage — 1x only</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- Layer 5 -->
+    <div class="layer fade-in">
+      <div>
+        <div class="layer-number">05</div>
+        <div class="layer-title">Intelligent Portfolio Management</div>
+        <div class="layer-question">"Why trade one coin when you can trade the best three?"</div>
+        <div class="layer-text">A two-tier scanner continuously evaluates the entire market to find optimal trading candidates. Capital is dynamically allocated across 2–3 simultaneous coins, each running independent dual-tracking DCA with full regime detection.</div>
+        <div class="layer-text"><strong>Tier 1:</strong> Fast filters — ADX, ATR%, Hurst exponent, volume, and maturity checks eliminate 90% of candidates in seconds.<br><strong>Tier 2:</strong> Full backtests on shortlisted coins rank them by expected performance.</div>
+        <div class="layer-text">When a significantly better opportunity emerges (20%+ improvement threshold), the system gracefully winds down the weakest position and rotates capital into the new candidate — no abrupt exits, no churn.</div>
+      </div>
+      <div class="layer-visual">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="font-size:0.8rem;color:var(--text3);margin-bottom:4px;">PORTFOLIO PIPELINE</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="background:rgba(99,102,241,0.15);color:var(--accent2);padding:6px 12px;border-radius:8px;font-size:0.8rem;font-weight:600;">🔍 Scan</span>
+            <span style="color:var(--text3)">→</span>
+            <span style="background:rgba(99,102,241,0.15);color:var(--accent2);padding:6px 12px;border-radius:8px;font-size:0.8rem;font-weight:600;">⚡ Filter</span>
+            <span style="color:var(--text3)">→</span>
+            <span style="background:rgba(99,102,241,0.15);color:var(--accent2);padding:6px 12px;border-radius:8px;font-size:0.8rem;font-weight:600;">📊 Rank</span>
+            <span style="color:var(--text3)">→</span>
+            <span style="background:rgba(34,197,94,0.15);color:var(--green);padding:6px 12px;border-radius:8px;font-size:0.8rem;font-weight:600;">💰 Allocate</span>
+            <span style="color:var(--text3)">→</span>
+            <span style="background:rgba(34,197,94,0.15);color:var(--green);padding:6px 12px;border-radius:8px;font-size:0.8rem;font-weight:600;">📈 Trade</span>
+            <span style="color:var(--text3)">→</span>
+            <span style="background:rgba(245,158,11,0.15);color:var(--amber);padding:6px 12px;border-radius:8px;font-size:0.8rem;font-weight:600;">🔄 Rotate</span>
+          </div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--green);font-size:1.1rem;">🪙</span><span style="font-size:0.85rem;">2–3 coins trading simultaneously</span></div>
+            <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--green);font-size:1.1rem;">⚖️</span><span style="font-size:0.85rem;">Score-proportional capital allocation</span></div>
+            <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--green);font-size:1.1rem;">🔄</span><span style="font-size:0.85rem;">Auto-rotation with 20% improvement threshold</span></div>
+            <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--green);font-size:1.1rem;">🛡️</span><span style="font-size:0.85rem;">Anti pump-and-dump maturity filters</span></div>
+            <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--green);font-size:1.1rem;">⏳</span><span style="font-size:0.85rem;">Graceful wind-down — no abrupt position closes</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Comparison -->
+<section class="comparison-section">
+  <div class="container">
+    <div class="section-label">The Difference</div>
+    <h2 class="section-title fade-in">Static Automation vs. Adaptive Intelligence</h2>
+    <p class="section-subtitle fade-in">See how the adaptive approach compares to traditional trading bots.</p>
+    <table class="comparison-table fade-in">
+      <thead>
+        <tr><th>Feature</th><th>Traditional Bot</th><th>Adaptive Grid System</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Parameters</td><td>Fixed — requires constant tweaking</td><td>Self-adjusting every 30 seconds</td></tr>
+        <tr><td>Market Awareness</td><td>None — same settings for all conditions</td><td>Six regime states with tailored strategies</td></tr>
+        <tr><td>When Markets Change</td><td>Manual adjustment needed</td><td>Automatic adaptation in real-time</td></tr>
+        <tr><td>Dangerous Conditions</td><td>Keeps trading (or hard stop-loss)</td><td>Pauses automatically, preserves capital</td></tr>
+        <tr><td>Direction</td><td>Usually one direction only</td><td>Dual-tracking — profits both ways</td></tr>
+        <tr><td>Risk Management</td><td>Static rules</td><td>Dynamic margin-aware allocation</td></tr>
+        <tr><td>Daily Management</td><td>Hours of monitoring</td><td>Zero</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Hands Off -->
+<section>
+  <div class="container">
+    <div class="section-label">Passive Income</div>
+    <h2 class="section-title fade-in">Set It Up. Let It Run.</h2>
+    <p class="section-subtitle fade-in">Once deployed, the system requires zero daily management.</p>
+    <div class="checklist">
+      <div class="check-item fade-in"><span class="check-icon">✅</span> No chart watching</div>
+      <div class="check-item fade-in"><span class="check-icon">✅</span> No parameter tweaking</div>
+      <div class="check-item fade-in"><span class="check-icon">✅</span> No panic during market drops</div>
+      <div class="check-item fade-in"><span class="check-icon">✅</span> No FOMO during market pumps</div>
+      <div class="check-item fade-in"><span class="check-icon">✅</span> No technical analysis required</div>
+      <div class="check-item fade-in"><span class="check-icon">✅</span> No staying up late watching candles</div>
+    </div>
+  </div>
+</section>
+
+<!-- How Returns Work -->
+<section style="background: #0d0d15;">
+  <div class="container">
+    <div class="section-label">The Cycle</div>
+    <h2 class="section-title fade-in">Small Gains, Compounded Constantly</h2>
+    <p class="section-subtitle fade-in">Returns come from high-frequency deal cycling — not from trying to catch the big move.</p>
+    <div style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center; margin-top:32px;">
+      <div class="fade-in" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;flex:1;min-width:180px;">
+        <div style="font-size:2rem;margin-bottom:8px;">1️⃣</div>
+        <div style="font-weight:600;margin-bottom:4px;">Open</div>
+        <div style="color:var(--text2);font-size:0.85rem;">Small position with calculated capital</div>
+      </div>
+      <div class="fade-in" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;flex:1;min-width:180px;">
+        <div style="font-size:2rem;margin-bottom:8px;">2️⃣</div>
+        <div style="font-weight:600;margin-bottom:4px;">Adapt</div>
+        <div style="color:var(--text2);font-size:0.85rem;">Dynamic TP and safety orders based on conditions</div>
+      </div>
+      <div class="fade-in" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;flex:1;min-width:180px;">
+        <div style="font-size:2rem;margin-bottom:8px;">3️⃣</div>
+        <div style="font-weight:600;margin-bottom:4px;">Average</div>
+        <div style="color:var(--text2);font-size:0.85rem;">If price moves against, DCA with safety orders</div>
+      </div>
+      <div class="fade-in" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;flex:1;min-width:180px;">
+        <div style="font-size:2rem;margin-bottom:8px;">4️⃣</div>
+        <div style="font-weight:600;margin-bottom:4px;">Profit</div>
+        <div style="color:var(--text2);font-size:0.85rem;">Close at adaptive take-profit target</div>
+      </div>
+      <div class="fade-in" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;flex:1;min-width:180px;">
+        <div style="font-size:2rem;margin-bottom:8px;">🔄</div>
+        <div style="font-weight:600;margin-bottom:4px;">Repeat</div>
+        <div style="color:var(--text2);font-size:0.85rem;">Immediately cycle into the next deal</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Risk -->
+<section>
+  <div class="container">
+    <div class="section-label">Risk Management</div>
+    <h2 class="section-title fade-in">Built-In Protections</h2>
+    <p class="section-subtitle fade-in">Multiple layers of safety ensure capital preservation comes first.</p>
+    <div class="risk-grid">
+      <div class="risk-card fade-in">
+        <h4>🚨 Regime Kill Switch</h4>
+        <p>Extreme market conditions automatically halt all trading. No manual panic button needed.</p>
+      </div>
+      <div class="risk-card fade-in">
+        <h4>📊 Max Drawdown Limit</h4>
+        <p>Configurable hard limit on total losses. The system stops before it crosses the line.</p>
+      </div>
+      <div class="risk-card fade-in">
+        <h4>🛡️ Margin Reserve</h4>
+        <p>10% of capital always held in reserve. Never fully exposed, always has room to maneuver.</p>
+      </div>
+      <div class="risk-card fade-in">
+        <h4>⚖️ No Leverage</h4>
+        <p>Operates at 1x — no borrowed funds, no liquidation risk, no margin calls.</p>
+      </div>
+      <div class="risk-card fade-in">
+        <h4>🎯 Smart Priorities</h4>
+        <p>Exit orders always take precedence. The system will free capital to ensure profits can be captured.</p>
+      </div>
+      <div class="risk-card fade-in">
+        <h4>📋 Full Transparency</h4>
+        <p>Every decision is logged and explainable. Not a black box — you can see exactly why each trade happened.</p>
+      </div>
+    </div>
+    <div style="margin-top:48px;">
+      <h3 style="font-size:1.2rem;font-weight:600;margin-bottom:16px;">What This Is NOT</h3>
+      <div class="not-grid">
+        <div class="not-item">❌ Not a "get rich quick" scheme</div>
+        <div class="not-item">❌ Not leverage gambling</div>
+        <div class="not-item">❌ Not prediction-based</div>
+        <div class="not-item">❌ Not a black box</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Evolution -->
+<section style="background: #0d0d15;">
+  <div class="container">
+    <div class="section-label">The Evolution</div>
+    <h2 class="section-title fade-in">From Static Automation to Adaptive Intelligence</h2>
+    <p class="section-subtitle fade-in">Four generations of evolution, each reducing human oversight while improving capital efficiency.</p>
+    <div class="evolution-timeline">
+      <div class="evo-item fade-in">
+        <div class="evo-gen">Generation 1</div>
+        <div class="evo-title">Fixed-Parameter Grid Bots</div>
+        <div class="evo-desc">The early days of automated trading. Hardcoded everything.</div>
+        <ul class="evo-features">
+          <li>Static lot sizes, grid steps, and take profits</li>
+          <li>Required manual adjustment for each instrument</li>
+          <li>No awareness of market conditions</li>
+          <li>Constant human monitoring required</li>
+        </ul>
+      </div>
+      <div class="evo-item fade-in">
+        <div class="evo-gen">Generation 2</div>
+        <div class="evo-title">Regime-Aware Allocation</div>
+        <div class="evo-desc">Added a brain — the system could detect what was happening.</div>
+        <ul class="evo-features">
+          <li>Market condition detection across six regimes</li>
+          <li>Dynamic capital allocation between long/short</li>
+          <li>Automatic pause in extreme conditions</li>
+          <li>Reduced but not eliminated monitoring</li>
+        </ul>
+      </div>
+      <div class="evo-item fade-in">
+        <div class="evo-gen">Generation 3</div>
+        <div class="evo-title">The Breathing Grid</div>
+        <div class="evo-desc">Full adaptation. The system breathes with the market.</div>
+        <ul class="evo-features">
+          <li>Dynamic TP, deviation, and allocation — all adaptive</li>
+          <li>Volatility-responsive grid spacing</li>
+          <li>SMA50 directional awareness — allocation flips with trend direction</li>
+          <li>Margin-aware intelligent order management</li>
+          <li>Self-optimizing for current conditions</li>
+          <li>Zero daily management required</li>
+        </ul>
+      </div>
+      <div class="evo-item fade-in">
+        <div class="evo-gen">Generation 4 — Current</div>
+        <div class="evo-title">Multi-Asset Portfolio</div>
+        <div class="evo-desc">From single-coin to intelligent portfolio. Dynamic coin selection, diversification, and auto-rotation.</div>
+        <ul class="evo-features">
+          <li>Two-tier scanner: fast filters + full backtests to find optimal coins</li>
+          <li>2–3 coins trading simultaneously with independent dual-tracking</li>
+          <li>Score-proportional capital allocation across the portfolio</li>
+          <li>Automatic rotation when better opportunities emerge</li>
+          <li>Graceful wind-down of departing positions</li>
+          <li>Anti-churn 20% improvement threshold</li>
+          <li>Anti pump-and-dump maturity filters (age, volume, price stability)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-quote fade-in">
+      "Set it up. Let it run. Check in when you want to — <em>not because you have to.</em>"
+      <div style="margin-top:32px; font-size:0.9rem; color:var(--text3); font-style:normal;">
+        The future of passive income through intelligent automation.
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer style="text-align:center; padding:32px; color:var(--text3); font-size:0.8rem; border-top:1px solid var(--border);">
+  Adaptive Grid Trading System &copy; 2026 &nbsp;|&nbsp; Built with AI-driven market intelligence
+</footer>
+
+<script>
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
