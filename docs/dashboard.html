@@ -89,7 +89,44 @@ tr:hover td{background:rgba(88,166,255,.04)}
 .feature-title{font-size:.8rem;font-weight:600;margin-bottom:4px}
 .feature-desc{font-size:.7rem;color:var(--text2);line-height:1.4}
 @media(max-width:900px){.charts-row{grid-template-columns:1fr}.trades-grid{grid-template-columns:1fr}.adaptive-viz{grid-template-columns:1fr}}
-@media(max-width:500px){body{padding:8px}.card{padding:10px}.card-value{font-size:1.15rem}.section{padding:12px}th,td{padding:5px 3px;font-size:.7rem}}
+@media(max-width:600px){
+body{padding:8px}
+.header{flex-direction:column;align-items:flex-start;gap:8px;padding:8px 0 12px}
+.header h1{font-size:1.1rem;gap:8px}
+.logo-wrap{width:36px;height:36px}
+.logo-wrap svg{width:36px;height:36px}
+.header-right{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:8px}
+.cards{grid-template-columns:repeat(2,1fr);gap:8px}
+.card{padding:10px}
+.card-value{font-size:1.15rem}
+.card-sub{font-size:.68rem}
+.section{padding:12px}
+.charts-row{grid-template-columns:1fr;gap:8px}
+.chart-wrap{height:200px}
+.trade-chart-wrap{height:140px}
+.trades-grid{grid-template-columns:1fr}
+.trade-panel{padding:12px}
+.deal-stats{grid-template-columns:repeat(2,1fr);gap:8px}
+.deal-stat-value{font-size:.85rem}
+.features-grid{grid-template-columns:1fr 1fr;gap:8px}
+.feature-card{padding:12px}
+.feature-card:hover{transform:none;box-shadow:none;border-color:var(--border)}
+.bottom-bar{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:10px;padding:10px 12px}
+.bottom-stat span:last-child{font-size:.78rem}
+th,td{padding:5px 3px;font-size:.68rem}
+.section h2{font-size:.9rem}
+.adaptive-viz{grid-template-columns:1fr}
+.coin-selector{grid-template-columns:1fr}
+.regime-strip{gap:6px}
+.regime-item{font-size:.68rem}
+.alloc-badge{font-size:.65rem}
+table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
+@media(max-width:380px){
+.cards{grid-template-columns:1fr}
+.features-grid{grid-template-columns:1fr}
+.card-value{font-size:1rem}
+}
 /* Portfolio mode styles */
 .coin-selector{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
 .coin-mini-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:default;transition:border-color .2s}
