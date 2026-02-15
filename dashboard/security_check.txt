@@ -1,0 +1,261 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Dashboard â€” LAPTOP-CLKA4E8J</title>
+<style>
+  :root {
+    --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #e6edf3;
+    --text-dim: #8b949e; --green: #3fb950; --amber: #d29922; --red: #f85149;
+    --blue: #58a6ff; --purple: #bc8cff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,-apple-system,sans-serif; padding:20px; min-height:100vh; }
+  .header { display:flex; justify-content:space-between; align-items:center; padding:16px 24px; background:var(--card); border:1px solid var(--border); border-radius:12px; margin-bottom:20px; }
+  .header h1 { font-size:1.4rem; font-weight:600; display:flex; align-items:center; gap:10px; }
+  .header h1::before { content:''; }
+  .header .meta { text-align:right; font-size:0.85rem; color:var(--text-dim); }
+  .status-banner { padding:12px 24px; border-radius:10px; margin-bottom:20px; font-weight:600; font-size:1.1rem; text-align:center; letter-spacing:0.5px; }
+  .status-banner.good { background:rgba(63,185,80,0.15); border:1px solid var(--green); color:var(--green); }
+  .status-banner.warn { background:rgba(210,153,34,0.15); border:1px solid var(--amber); color:var(--amber); }
+  .status-banner.alert { background:rgba(248,81,73,0.15); border:1px solid var(--red); color:var(--red); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:20px; overflow:hidden; }
+  .card h2 { font-size:0.95rem; font-weight:600; color:var(--blue); margin-bottom:14px; text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:8px; }
+  .card h2 .icon { font-size:1.1rem; }
+  .kv { display:grid; grid-template-columns:140px 1fr; gap:6px 12px; font-size:0.9rem; }
+  .kv .label { color:var(--text-dim); }
+  .kv .value { font-weight:500; }
+  table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  th { text-align:left; color:var(--text-dim); font-weight:500; padding:6px 8px; border-bottom:1px solid var(--border); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px; }
+  td { padding:5px 8px; border-bottom:1px solid rgba(48,54,61,0.5); }
+  tr:hover { background:rgba(88,166,255,0.04); }
+  .warn-row { background:rgba(210,153,34,0.08); }
+  .warn-row td { color:var(--amber); }
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.8rem; font-weight:600; }
+  .badge-good { background:rgba(63,185,80,0.15); color:var(--green); }
+  .badge-warn { background:rgba(210,153,34,0.15); color:var(--amber); }
+  .badge-alert { background:rgba(248,81,73,0.15); color:var(--red); }
+  .meter { height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:4px; }
+  .meter-fill { height:100%; border-radius:3px; transition:width 0.3s; }
+  .meter-fill.good { background:var(--green); }
+  .meter-fill.warn { background:var(--amber); }
+  .meter-fill.alert { background:var(--red); }
+  .mono { font-family:'Cascadia Code','Fira Code',monospace; }
+  .small { font-size:0.78rem; }
+  .card.full-width { grid-column: 1 / -1; }
+  .resource-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
+  .resource-item { text-align:center; }
+  .resource-item .big { font-size:2rem; font-weight:700; }
+  .resource-item .sub { font-size:0.8rem; color:var(--text-dim); margin-top:2px; }
+  .scrollable { max-height:320px; overflow-y:auto; }
+  .scrollable::-webkit-scrollbar { width:6px; }
+  .scrollable::-webkit-scrollbar-track { background:var(--bg); }
+  .scrollable::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  @media (max-width:900px) { .grid { grid-template-columns:1fr; } .resource-grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Security Dashboard</h1>
+  <div class="meta">
+    <div><strong>LAPTOP-CLKA4E8J</strong></div>
+    <div>Last refresh: 2026-02-12 07:59:41</div>
+  </div>
+</div>
+
+<div class="status-banner good">&#x2B24; SYSTEM STATUS: ALL CLEAR</div>
+
+<div class="grid">
+
+<!-- System Overview -->
+<div class="card">
+  <h2>ðŸ’» System Overview</h2>
+  <div class="kv">
+    <span class="label">Hostname</span><span class="value">LAPTOP-CLKA4E8J</span>
+    <span class="label">OS</span><span class="value">Microsoft Windows 11 Home (Build 26100)</span>
+    <span class="label">Last Boot</span><span class="value">2026-02-12 04:29:00</span>
+    <span class="label">Uptime</span><span class="value">0d 3h 30m</span>
+  </div>
+</div>
+
+<!-- Resources -->
+<div class="card">
+  <h2><span class="icon">ðŸ“Š</span> Resources</h2>
+  <div class="resource-grid">
+    <div class="resource-item">
+      <div class="big good" style="color:var(--good)">6%</div>
+      <div class="sub">CPU</div>
+      <div class="meter"><div class="meter-fill good" style="width:6%"></div></div>
+    </div>
+    <div class="resource-item">
+      <div class="big good" style="color:var(--good)">71.4%</div>
+      <div class="sub">RAM 5.5/7.7 GB</div>
+      <div class="meter"><div class="meter-fill good" style="width:71.4%"></div></div>
+    </div>
+    <div class="resource-item">
+      <div class="big good" style="color:var(--good)">40.8%</div>
+      <div class="sub">Disk 96.9/237.3 GB</div>
+      <div class="meter"><div class="meter-fill good" style="width:40.8%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Network -->
+<div class="card">
+  <h2><span class="icon">ðŸŒ</span> Network</h2>
+  <div class="kv">
+    <span class="label">Adapter</span><span class="value">Wi-Fi</span>
+    <span class="label">Description</span><span class="value">Realtek RTL8822CE 802.11ac PCIe Adapter</span>
+    <span class="label">IP Address</span><span class="value mono">192.168.1.157</span>
+    <span class="label">Gateway</span><span class="value mono">192.168.1.1</span>
+    <span class="label">DNS</span><span class="value mono">192.168.1.1</span>
+    <span class="label">WiFi Signal</span><span class="value">N/A</span>
+  </div>
+</div>
+
+<!-- Security Status -->
+<div class="card">
+  <h2><span class="icon">ðŸ”’</span> Security Status</h2>
+  <div class="kv">
+    <span class="label">Antivirus</span><span class="value"><span class="badge badge-good">Enabled</span></span>
+    <span class="label">Real-Time</span><span class="value"><span class="badge badge-good">Enabled</span></span>
+    <span class="label">Last Quick Scan</span><span class="value">2026-02-11 21:48</span>
+    <span class="label">Last Full Scan</span><span class="value">Never</span>
+    <span class="label">Firewall</span><span class="value"><span class='badge badge-good'>Domain: Enabled</span> <span class='badge badge-good'>Private: Enabled</span> <span class='badge badge-good'>Public: Enabled</span> </span>
+  </div>
+</div>
+
+<!-- Gateway Status -->
+<div class="card">
+  <h2><span class="icon">âš¡</span> OpenClaw Gateway</h2>
+  <div class="kv">
+    <span class="label">Status</span><span class="value"><span class="badge badge-good">Running</span></span>
+    <span class="label">RAM Usage</span><span class="value">462 MB</span>
+  </div>
+</div>
+
+<!-- Running Services -->
+<div class="card">
+  <h2><span class="icon">âš™ï¸</span> Services</h2>
+  <div class="kv" style="margin-bottom:12px">
+    <span class="label">Running</span><span class="value">112 services</span>
+    <span class="label">Flagged</span><span class="value"><span class="badge badge-good">0 suspicious</span></span>
+  </div>
+  
+</div>
+
+<!-- Open Ports -->
+<div class="card">
+  <h2><span class="icon">ðŸ”Œ</span> Open Ports (23 listening)</h2>
+  <div class="scrollable">
+    <table><tr><th>Port</th><th>Address</th><th>Process</th><th>PID</th></tr>
+    <tr><td>135</td><td>::</td><td>svchost</td><td>1328</td></tr>
+<tr><td>135</td><td>0.0.0.0</td><td>svchost</td><td>1328</td></tr>
+<tr><td>139</td><td>192.168.1.157</td><td>System</td><td>4</td></tr>
+<tr><td>445</td><td>::</td><td>System</td><td>4</td></tr>
+<tr><td>5040</td><td>0.0.0.0</td><td>svchost</td><td>2820</td></tr>
+<tr><td>7680</td><td>::</td><td>svchost</td><td>988</td></tr>
+<tr><td>18789</td><td>127.0.0.1</td><td>node</td><td>13500</td></tr>
+<tr><td>18789</td><td>::1</td><td>node</td><td>13500</td></tr>
+<tr><td>18792</td><td>127.0.0.1</td><td>node</td><td>13500</td></tr>
+<tr><td>18800</td><td>127.0.0.1</td><td>brave</td><td>14256</td></tr>
+<tr><td>49664</td><td>::</td><td>lsass</td><td>596</td></tr>
+<tr><td>49664</td><td>0.0.0.0</td><td>lsass</td><td>596</td></tr>
+<tr><td>49665</td><td>0.0.0.0</td><td>wininit</td><td>960</td></tr>
+<tr><td>49665</td><td>::</td><td>wininit</td><td>960</td></tr>
+<tr><td>49666</td><td>::</td><td>svchost</td><td>2592</td></tr>
+<tr><td>49666</td><td>0.0.0.0</td><td>svchost</td><td>2592</td></tr>
+<tr><td>49667</td><td>::</td><td>svchost</td><td>2320</td></tr>
+<tr><td>49667</td><td>0.0.0.0</td><td>svchost</td><td>2320</td></tr>
+<tr><td>49668</td><td>::</td><td>spoolsv</td><td>3884</td></tr>
+<tr><td>49668</td><td>0.0.0.0</td><td>spoolsv</td><td>3884</td></tr>
+<tr><td>49669</td><td>::1</td><td>jhi_service</td><td>4544</td></tr>
+<tr><td>49670</td><td>::</td><td>services</td><td>804</td></tr>
+<tr><td>49670</td><td>0.0.0.0</td><td>services</td><td>804</td></tr>
+
+    </table>
+  </div>
+</div>
+
+<!-- Active Connections -->
+<div class="card">
+  <h2><span class="icon">ðŸ”—</span> Active Connections (top 20)</h2>
+  <div class="scrollable">
+    <table><tr><th>Process</th><th>Count</th><th>Remote Endpoints</th></tr>
+    <tr><td>brave</td><td>5</td><td class='mono small'>2606:50c0:8000::154:443, 2606:4700:20::681a:451:443, 127.0.0.1:18789, 159.69.56.215:443</td></tr>
+<tr><td>node</td><td>3</td><td class='mono small'>2001:67c:4e8:f004::9:443, 127.0.0.1:56229</td></tr>
+<tr><td>svchost</td><td>2</td><td class='mono small'>72.153.5.131:443, 72.153.5.137:443</td></tr>
+<tr><td>msedgewebview2</td><td>2</td><td class='mono small'>2603:1036:307:486f::2:443, 2603:1036:302:4834::2:443</td></tr>
+<tr><td>svchost</td><td>1</td><td class='mono small'>2603:1030:40c:e:::443</td></tr>
+
+    </table>
+  </div>
+</div>
+
+<!-- Recent Logins -->
+<div class="card">
+  <h2><span class="icon">ðŸ‘¤</span> Recent Logins</h2>
+  <div class="scrollable">
+    <table><tr><th>Time</th><th>User</th><th>Type</th></tr>
+    <tr><td colspan='3'>No recent login events (may require elevation)</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Startup Programs -->
+<div class="card">
+  <h2><span class="icon">ðŸš€</span> Startup Programs</h2>
+  <div class="scrollable">
+    <table><tr><th>Name</th><th>Command</th><th>Hive</th></tr>
+    <tr><td>SecurityHealth</td><td class='mono small'>C:\WINDOWS\system32\SecurityHealthSystray.exe</td><td>HKLM</td></tr>
+<tr><td>RtkAudUService</td><td class='mono small'>&quot;C:\WINDOWS\System32\DriverStore\FileRepository\realtekservice.inf_amd64_9d3a92437ffb40b7\RtkAudUService64.exe&quot; -background</td><td>HKLM</td></tr>
+<tr><td>BraveVpnWireguardService</td><td class='mono small'>&quot;C:\Program Files\BraveSoftware\Brave-Browser\Application\144.1.86.148\BraveVpnWireguardService\brave_vpn_wireguard_service.exe&quot; --interactive</td><td>HKLM</td></tr>
+
+    </table>
+  </div>
+</div>
+
+<!-- Top Processes by RAM -->
+<div class="card">
+  <h2><span class="icon">ðŸ”</span> Top Processes by Memory</h2>
+  <div class="scrollable">
+    <table><tr><th>Process</th><th>PID</th><th>RAM</th></tr>
+    <tr ><td>node</td><td>13500</td><td>462 MB</td></tr>
+<tr ><td>Memory Compression</td><td>2888</td><td>363 MB</td></tr>
+<tr ><td>msedgewebview2</td><td>16380</td><td>316 MB</td></tr>
+<tr ><td>explorer</td><td>7604</td><td>271 MB</td></tr>
+<tr ><td>powershell</td><td>13960</td><td>236 MB</td></tr>
+<tr ><td>MsMpEng</td><td>4808</td><td>216 MB</td></tr>
+<tr ><td>brave</td><td>5300</td><td>206 MB</td></tr>
+<tr ><td>brave</td><td>15180</td><td>199 MB</td></tr>
+<tr ><td>brave</td><td>9112</td><td>176 MB</td></tr>
+<tr ><td>brave</td><td>14256</td><td>144 MB</td></tr>
+
+    </table>
+  </div>
+</div>
+
+<!-- Scheduled Tasks -->
+<div class="card">
+  <h2><span class="icon">ðŸ“‹</span> Scheduled Tasks (non-Microsoft)</h2>
+  <div class="scrollable">
+    <table><tr><th>Task</th><th>Author</th><th>Path</th></tr>
+    <tr><td>OpenClaw Gateway</td><td>LAPTOP-CLKA4E8J\Never</td><td>\</td></tr>
+<tr><td>HP Support Solutions Framework Report</td><td>HP Inc.</td><td>\Hewlett-Packard\HP Support Assistant\</td></tr>
+<tr><td>Consent Manager Launcher</td><td>WIN-DAH9E351D8O\Administrator</td><td>\HP\</td></tr>
+
+    </table>
+  </div>
+</div>
+
+</div>
+
+<div style="text-align:center; padding:24px; color:var(--text-dim); font-size:0.8rem;">
+  Security Dashboard &bull; Generated 2026-02-12 07:59:41 &bull; Run <code>refresh.ps1</code> to update
+</div>
+
+</body>
+</html>

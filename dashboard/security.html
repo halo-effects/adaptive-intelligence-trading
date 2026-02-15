@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Dashboard — LAPTOP-CLKA4E8J</title>
+<style>
+  :root {
+    --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #e6edf3;
+    --text-dim: #8b949e; --green: #3fb950; --amber: #d29922; --red: #f85149;
+    --blue: #58a6ff; --purple: #bc8cff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,-apple-system,sans-serif; padding:20px; min-height:100vh; }
+  .header { display:flex; justify-content:space-between; align-items:center; padding:16px 24px; background:var(--card); border:1px solid var(--border); border-radius:12px; margin-bottom:20px; }
+  .header h1 { font-size:1.4rem; font-weight:600; display:flex; align-items:center; gap:10px; }
+  .header h1::before { content:''; }
+  .header .meta { text-align:right; font-size:0.85rem; color:var(--text-dim); }
+  .status-banner { padding:12px 24px; border-radius:10px; margin-bottom:20px; font-weight:600; font-size:1.1rem; text-align:center; letter-spacing:0.5px; }
+  .status-banner.good { background:rgba(63,185,80,0.15); border:1px solid var(--green); color:var(--green); }
+  .status-banner.warn { background:rgba(210,153,34,0.15); border:1px solid var(--amber); color:var(--amber); }
+  .status-banner.alert { background:rgba(248,81,73,0.15); border:1px solid var(--red); color:var(--red); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:20px; overflow:hidden; }
+  .card h2 { font-size:0.95rem; font-weight:600; color:var(--blue); margin-bottom:14px; text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:8px; }
+  .card h2 .icon { font-size:1.1rem; }
+  .kv { display:grid; grid-template-columns:140px 1fr; gap:6px 12px; font-size:0.9rem; }
+  .kv .label { color:var(--text-dim); }
+  .kv .value { font-weight:500; }
+  table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  th { text-align:left; color:var(--text-dim); font-weight:500; padding:6px 8px; border-bottom:1px solid var(--border); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px; }
+  td { padding:5px 8px; border-bottom:1px solid rgba(48,54,61,0.5); }
+  tr:hover { background:rgba(88,166,255,0.04); }
+  .warn-row { background:rgba(210,153,34,0.08); }
+  .warn-row td { color:var(--amber); }
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.8rem; font-weight:600; }
+  .badge-good { background:rgba(63,185,80,0.15); color:var(--green); }
+  .badge-warn { background:rgba(210,153,34,0.15); color:var(--amber); }
+  .badge-alert { background:rgba(248,81,73,0.15); color:var(--red); }
+  .meter { height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:4px; }
+  .meter-fill { height:100%; border-radius:3px; transition:width 0.3s; }
+  .meter-fill.good { background:var(--green); }
+  .meter-fill.warn { background:var(--amber); }
+  .meter-fill.alert { background:var(--red); }
+  .mono { font-family:'Cascadia Code','Fira Code',monospace; }
+  .small { font-size:0.78rem; }
+  .card.full-width { grid-column: 1 / -1; }
+  .resource-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
+  .resource-item { text-align:center; }
+  .resource-item .big { font-size:2rem; font-weight:700; }
+  .resource-item .sub { font-size:0.8rem; color:var(--text-dim); margin-top:2px; }
+  .scrollable { max-height:320px; overflow-y:auto; overflow-x:auto; }
+  .scrollable::-webkit-scrollbar { width:6px; }
+  .scrollable::-webkit-scrollbar-track { background:var(--bg); }
+  .scrollable::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  @media (max-width:900px) { .grid { grid-template-columns:1fr; } .resource-grid { grid-template-columns:repeat(3, 1fr); } }
+  @media (max-width:500px) { .resource-grid { grid-template-columns:1fr; } .header { flex-direction:column; text-align:center; gap:8px; } .header .meta { text-align:center; } table { font-size:0.75rem; } .kv { grid-template-columns:110px 1fr; } body { padding:10px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Security Dashboard</h1>
+  <div class="meta">
+    <div><strong>LAPTOP-CLKA4E8J</strong></div>
+    <div>Last refresh: 2026-02-12 07:59:41</div>
+  </div>
+</div>
+
+<div class="status-banner good">&#x2B24; SYSTEM STATUS: ALL CLEAR</div>
+
+<div class="grid">
+
+<!-- System Overview -->
+<div class="card">
+  <h2>&#x1F4BB; System Overview</h2>
+  <div class="kv">
+    <span class="label">Hostname</span><span class="value">LAPTOP-CLKA4E8J</span>
+    <span class="label">OS</span><span class="value">Microsoft Windows 11 Home (Build 26100)</span>
+    <span class="label">Last Boot</span><span class="value">2026-02-12 04:29:00</span>
+    <span class="label">Uptime</span><span class="value">0d 3h 30m</span>
+  </div>
+</div>
+
+<!-- Resources -->
+<div class="card">
+  <h2><span class="icon"></span> &#x1F4CA; Resources</h2>
+  <div class="resource-grid">
+    <div class="resource-item">
+      <div class="big good" style="color:var(--good)">6%</div>
+      <div class="sub">CPU</div>
+      <div class="meter"><div class="meter-fill good" style="width:6%"></div></div>
+    </div>
+    <div class="resource-item">
+      <div class="big good" style="color:var(--good)">71.4%</div>
+      <div class="sub">RAM 5.5/7.7 GB</div>
+      <div class="meter"><div class="meter-fill good" style="width:71.4%"></div></div>
+    </div>
+    <div class="resource-item">
+      <div class="big good" style="color:var(--good)">40.8%</div>
+      <div class="sub">Disk 96.9/237.3 GB</div>
+      <div class="meter"><div class="meter-fill good" style="width:40.8%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Network -->
+<div class="card">
+  <h2><span class="icon"></span> &#x1F310; Network</h2>
+  <div class="kv">
+    <span class="label">Adapter</span><span class="value">Wi-Fi</span>
+    <span class="label">Description</span><span class="value">Realtek RTL8822CE 802.11ac PCIe Adapter</span>
+    <span class="label">IP Address</span><span class="value mono">192.168.1.157</span>
+    <span class="label">Gateway</span><span class="value mono">192.168.1.1</span>
+    <span class="label">DNS</span><span class="value mono">192.168.1.1</span>
+    <span class="label">WiFi Signal</span><span class="value">N/A</span>
+  </div>
+</div>
+
+<!-- Security Status -->
+<div class="card">
+  <h2><span class="icon"></span> &#x1F512; Security Status</h2>
+  <div class="kv">
+    <span class="label">Antivirus</span><span class="value"><span class="badge badge-good">Enabled</span></span>
+    <span class="label">Real-Time</span><span class="value"><span class="badge badge-good">Enabled</span></span>
+    <span class="label">Last Quick Scan</span><span class="value">2026-02-11 21:48</span>
+    <span class="label">Last Full Scan</span><span class="value">Never</span>
+    <span class="label">Firewall</span><span class="value"><span class='badge badge-good'>Domain: Enabled</span> <span class='badge badge-good'>Private: Enabled</span> <span class='badge badge-good'>Public: Enabled</span> </span>
+  </div>
+</div>
+
+<!-- Gateway Status -->
+<div class="card">
+  <h2><span class="icon"></span> &#x26A1; OpenClaw Gateway</h2>
+  <div class="kv">
+    <span class="label">Status</span><span class="value"><span class="badge badge-good">Running</span></span>
+    <span class="label">RAM Usage</span><span class="value">462 MB</span>
+  </div>
+</div>
+
+<!-- Running Services -->
+<div class="card">
+  <h2><span class="icon"></span> &#x2699; Services</h2>
+  <div class="kv" style="margin-bottom:12px">
+    <span class="label">Running</span><span class="value">112 services</span>
+    <span class="label">Flagged</span><span class="value"><span class="badge badge-good">0 suspicious</span></span>
+  </div>
+
+</div>
+
+<!-- Open Ports -->
+<div class="card">
+  <h2><span class="icon"></span> &#x1F50C; Open Ports (23 listening)</h2>
+  <div class="scrollable">
+    <table><tr><th>Port</th><th>Address</th><th>Process</th><th>PID</th></tr>
+    <tr><td>135</td><td>::</td><td>svchost</td><td>1328</td></tr>
+<tr><td>135</td><td>0.0.0.0</td><td>svchost</td><td>1328</td></tr>
+<tr><td>139</td><td>192.168.1.157</td><td>System</td><td>4</td></tr>
+<tr><td>445</td><td>::</td><td>System</td><td>4</td></tr>
+<tr><td>5040</td><td>0.0.0.0</td><td>svchost</td><td>2820</td></tr>
+<tr><td>7680</td><td>::</td><td>svchost</td><td>988</td></tr>
+<tr><td>18789</td><td>127.0.0.1</td><td>node</td><td>13500</td></tr>
+<tr><td>18789</td><td>::1</td><td>node</td><td>13500</td></tr>
+<tr><td>18792</td><td>127.0.0.1</td><td>node</td><td>13500</td></tr>
+<tr><td>18800</td><td>127.0.0.1</td><td>brave</td><td>14256</td></tr>
+<tr><td>49664</td><td>::</td><td>lsass</td><td>596</td></tr>
+<tr><td>49664</td><td>0.0.0.0</td><td>lsass</td><td>596</td></tr>
+<tr><td>49665</td><td>0.0.0.0</td><td>wininit</td><td>960</td></tr>
+<tr><td>49665</td><td>::</td><td>wininit</td><td>960</td></tr>
+<tr><td>49666</td><td>::</td><td>svchost</td><td>2592</td></tr>
+<tr><td>49666</td><td>0.0.0.0</td><td>svchost</td><td>2592</td></tr>
+<tr><td>49667</td><td>::</td><td>svchost</td><td>2320</td></tr>
+<tr><td>49667</td><td>0.0.0.0</td><td>svchost</td><td>2320</td></tr>
+<tr><td>49668</td><td>::</td><td>spoolsv</td><td>3884</td></tr>
+<tr><td>49668</td><td>0.0.0.0</td><td>spoolsv</td><td>3884</td></tr>
+<tr><td>49669</td><td>::1</td><td>jhi_service</td><td>4544</td></tr>
+<tr><td>49670</td><td>::</td><td>services</td><td>804</td></tr>
+<tr><td>49670</td><td>0.0.0.0</td><td>services</td><td>804</td></tr>
+
+    </table>
+  </div>
+</div>
+
+<!-- Active Connections -->
+<div class="card">
+  <h2><span class="icon"></span> &#x1F517; Active Connections (top 20)</h2>
+  <div class="scrollable">
+    <table><tr><th>Process</th><th>Count</th><th>Remote Endpoints</th></tr>
+    <tr><td>brave</td><td>5</td><td class='mono small'>2606:50c0:8000::154:443, 2606:4700:20::681a:451:443, 127.0.0.1:18789, 159.69.56.215:443</td></tr>
+<tr><td>node</td><td>3</td><td class='mono small'>2001:67c:4e8:f004::9:443, 127.0.0.1:56229</td></tr>
+<tr><td>svchost</td><td>2</td><td class='mono small'>72.153.5.131:443, 72.153.5.137:443</td></tr>
+<tr><td>msedgewebview2</td><td>2</td><td class='mono small'>2603:1036:307:486f::2:443, 2603:1036:302:4834::2:443</td></tr>
+<tr><td>svchost</td><td>1</td><td class='mono small'>2603:1030:40c:e:::443</td></tr>
+
+    </table>
+  </div>
+</div>
+
+<!-- Recent Logins -->
+<div class="card">
+  <h2><span class="icon"></span> &#x1F464; Recent Logins</h2>
+  <div class="scrollable">
+    <table><tr><th>Time</th><th>User</th><th>Type</th></tr>
+    <tr><td colspan='3'>No recent login events (may require elevation)</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Startup Programs -->
+<div class="card">
+  <h2><span class="icon"></span> &#x1F680; Startup Programs</h2>
+  <div class="scrollable">
+    <table><tr><th>Name</th><th>Command</th><th>Hive</th></tr>
+    <tr><td>SecurityHealth</td><td class='mono small'>C:\WINDOWS\system32\SecurityHealthSystray.exe</td><td>HKLM</td></tr>
+<tr><td>RtkAudUService</td><td class='mono small'>&quot;C:\WINDOWS\System32\DriverStore\FileRepository\realtekservice.inf_amd64_9d3a92437ffb40b7\RtkAudUService64.exe&quot; -background</td><td>HKLM</td></tr>
+<tr><td>BraveVpnWireguardService</td><td class='mono small'>&quot;C:\Program Files\BraveSoftware\Brave-Browser\Application\144.1.86.148\BraveVpnWireguardService\brave_vpn_wireguard_service.exe&quot; --interactive</td><td>HKLM</td></tr>
+
+    </table>
+  </div>
+</div>
+
+<!-- Top Processes by RAM -->
+<div class="card">
+  <h2><span class="icon"></span> &#x1F50D; Top Processes by Memory</h2>
+  <div class="scrollable">
+    <table><tr><th>Process</th><th>PID</th><th>RAM</th></tr>
+    <tr ><td>node</td><td>13500</td><td>462 MB</td></tr>
+<tr ><td>Memory Compression</td><td>2888</td><td>363 MB</td></tr>
+<tr ><td>msedgewebview2</td><td>16380</td><td>316 MB</td></tr>
+<tr ><td>explorer</td><td>7604</td><td>271 MB</td></tr>
+<tr ><td>powershell</td><td>13960</td><td>236 MB</td></tr>
+<tr ><td>MsMpEng</td><td>4808</td><td>216 MB</td></tr>
+<tr ><td>brave</td><td>5300</td><td>206 MB</td></tr>
+<tr ><td>brave</td><td>15180</td><td>199 MB</td></tr>
+<tr ><td>brave</td><td>9112</td><td>176 MB</td></tr>
+<tr ><td>brave</td><td>14256</td><td>144 MB</td></tr>
+
+    </table>
+  </div>
+</div>
+
+<!-- Scheduled Tasks -->
+<div class="card">
+  <h2><span class="icon"></span> &#x1F4CB; Scheduled Tasks (non-Microsoft)</h2>
+  <div class="scrollable">
+    <table><tr><th>Task</th><th>Author</th><th>Path</th></tr>
+    <tr><td>OpenClaw Gateway</td><td>LAPTOP-CLKA4E8J\Never</td><td>\</td></tr>
+<tr><td>HP Support Solutions Framework Report</td><td>HP Inc.</td><td>\Hewlett-Packard\HP Support Assistant\</td></tr>
+<tr><td>Consent Manager Launcher</td><td>WIN-DAH9E351D8O\Administrator</td><td>\HP\</td></tr>
+
+    </table>
+  </div>
+</div>
+
+</div>
+
+<div style="text-align:center; padding:24px; color:var(--text-dim); font-size:0.8rem;">
+  Security Dashboard &bull; Generated 2026-02-12 07:59:41 &bull; Run <code>refresh.ps1</code> to update
+</div>
+
+<!-- Floating Voice Button + Panel -->
+<style>
+.voice-fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.4);z-index:1000;transition:all .2s}
+.voice-fab:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(88,166,255,.4)}
+.voice-fab svg{width:28px;height:28px;fill:#fff}
+.voice-fab.active{background:var(--red)}
+.voice-fab.thinking{background:var(--blue);animation:vfab-pulse 1s infinite}
+.voice-fab.speaking{background:var(--green)}
+@keyframes vfab-pulse{0%,100%{box-shadow:0 4px 16px rgba(88,166,255,.3)}50%{box-shadow:0 4px 24px rgba(88,166,255,.7)}}
+
+.voice-panel{position:fixed;bottom:92px;right:24px;width:360px;max-height:500px;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:999;display:none;flex-direction:column;overflow:hidden}
+.voice-panel.open{display:flex}
+.voice-panel-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-weight:600;font-size:.9rem}
+.voice-panel-header .vp-dot{width:8px;height:8px;border-radius:50%;background:var(--text-dim);transition:background .3s}
+.voice-panel-header .vp-dot.recording{background:var(--red);animation:vp-blink 1s infinite}
+.voice-panel-header .vp-dot.thinking{background:var(--blue);animation:vp-blink .6s infinite}
+.voice-panel-header .vp-dot.speaking{background:var(--green)}
+.voice-panel-header .vp-dot.ready{background:var(--green)}
+@keyframes vp-blink{0%,100%{opacity:1}50%{opacity:.3}}
+.vp-status{font-size:.75rem;color:var(--text-dim);margin-left:auto}
+.vp-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.2rem;padding:0 4px;margin-left:8px}
+.vp-close:hover{color:var(--text)}
+.vp-transcript{padding:10px 16px;font-size:.85rem;color:var(--text-dim);min-height:36px;border-bottom:1px solid var(--border)}
+.vp-transcript:empty::before{content:'Tap mic to speak...';color:var(--text-dim);font-size:.8rem}
+.vp-transcript.final{color:var(--text)}
+.vp-history{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px;max-height:320px}
+.vp-msg{padding:8px 12px;border-radius:10px;font-size:.82rem;line-height:1.45;max-width:88%;word-wrap:break-word;white-space:pre-wrap}
+.vp-msg.user{background:rgba(88,166,255,.12);color:var(--blue);align-self:flex-end;border-bottom-right-radius:3px}
+.vp-msg.bot{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.15);align-self:flex-start;border-bottom-left-radius:3px}
+</style>
+
+<button class="voice-fab" id="voiceFab" onclick="toggleVoicePanel()" title="Talk to Gee Gee">
+  <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+</button>
+
+<div class="voice-panel" id="voicePanel">
+  <div class="voice-panel-header">
+    <div class="vp-dot ready" id="vpDot"></div>
+    🎙️ Gee Gee Voice
+    <span class="vp-status" id="vpStatus">Ready</span>
+    <button class="vp-close" onclick="toggleVoicePanel()">✕</button>
+  </div>
+  <div class="vp-transcript" id="vpTranscript"></div>
+  <div class="vp-history" id="vpHistory"></div>
+</div>
+
+<script>
+(function(){
+const BOT_TOKEN='8528958079:AAF90HSJ5Ck1urUydzS5CUvyf2EEeB7LUwc';
+const CHAT_ID='5221941584';
+const API=`https://api.telegram.org/bot${BOT_TOKEN}`;
+
+const fab=document.getElementById('voiceFab');
+const panel=document.getElementById('voicePanel');
+const vpDot=document.getElementById('vpDot');
+const vpStatus=document.getElementById('vpStatus');
+const vpTranscript=document.getElementById('vpTranscript');
+const vpHistory=document.getElementById('vpHistory');
+
+let panelOpen=false, isListening=false, recognition=null, lastUpdateId=0, currentText='';
+
+// Init: skip old updates
+fetch(`${API}/getUpdates?offset=-1`).then(r=>r.json()).then(d=>{
+  if(d.ok&&d.result.length) lastUpdateId=d.result[d.result.length-1].update_id;
+}).catch(()=>{});
+
+function toggleVoicePanel(){
+  panelOpen=!panelOpen;
+  panel.classList.toggle('open',panelOpen);
+  if(panelOpen&&!isListening) startListening();
+  else if(!panelOpen&&isListening) stopListening();
+}
+
+function setState(s,txt){
+  vpDot.className='vp-dot '+s;
+  vpStatus.textContent=txt;
+  fab.className='voice-fab'+(s==='recording'?' active':s==='thinking'?' thinking':s==='speaking'?' speaking':'');
+}
+
+function addMsg(text,type){
+  const d=document.createElement('div');
+  d.className='vp-msg '+type;
+  d.textContent=text;
+  vpHistory.appendChild(d);
+  vpHistory.scrollTop=vpHistory.scrollHeight;
+}
+
+function startListening(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('Use Chrome for voice.');return;}
+  recognition=new SR();
+  recognition.continuous=false;
+  recognition.interimResults=true;
+  recognition.lang='en-US';
+  currentText='';
+  recognition.onstart=()=>{isListening=true;setState('recording','Listening...');vpTranscript.textContent='';vpTranscript.className='vp-transcript';};
+  recognition.onresult=(e)=>{
+    let interim='',final='';
+    for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)final+=e.results[i][0].transcript;else interim+=e.results[i][0].transcript;}
+    if(final)currentText+=final;
+    vpTranscript.textContent=currentText+interim;
+    vpTranscript.className='vp-transcript'+(final?' final':'');
+  };
+  recognition.onend=()=>{
+    isListening=false;
+    if(currentText.trim()){vpTranscript.className='vp-transcript final';vpTranscript.textContent=currentText.trim();sendMsg(currentText.trim());}
+    else setState('ready','Ready — tap mic');
+  };
+  recognition.onerror=(e)=>{isListening=false;setState('ready',e.error==='no-speech'?'No speech heard':'Error: '+e.error);};
+  recognition.start();
+}
+
+function stopListening(){if(recognition)recognition.stop();}
+
+async function sendMsg(text){
+  addMsg(text,'user');
+  setState('thinking','Thinking...');
+  try{
+    await fetch(`${API}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:CHAT_ID,text})});
+    pollResponse();
+  }catch(e){setState('ready','Send failed');}
+}
+
+function pollResponse(){
+  const start=Date.now();
+  const poll=async()=>{
+    if(Date.now()-start>60000){setState('ready','Timeout');return;}
+    try{
+      const r=await fetch(`${API}/getUpdates?offset=${lastUpdateId+1}&timeout=2`);
+      const d=await r.json();
+      if(d.ok&&d.result.length){
+        for(const u of d.result){
+          lastUpdateId=u.update_id;
+          const m=u.message;
+          if(m&&m.from&&m.from.is_bot&&String(m.chat.id)===CHAT_ID&&m.text){
+            addMsg(m.text,'bot');
+            vpTranscript.textContent='';
+            speakText(m.text);
+            return;
+          }
+        }
+      }
+    }catch(e){}
+    setTimeout(poll,1000);
+  };
+  poll();
+}
+
+function speakText(text){
+  setState('speaking','Speaking...');
+  const clean=text.replace(/[*_`#\[\]()]/g,'').replace(/https?:\/\/\S+/g,'link');
+  const u=new SpeechSynthesisUtterance(clean);
+  u.rate=1.05;
+  const voices=speechSynthesis.getVoices();
+  const v=voices.find(v=>/zira|samantha|google us english/i.test(v.name))||voices.find(v=>v.lang.startsWith('en'));
+  if(v)u.voice=v;
+  u.onend=()=>{setState('ready','Ready — tap mic');if(panelOpen)startListening();};
+  u.onerror=u.onend;
+  speechSynthesis.speak(u);
+}
+
+speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();
+
+// Click fab when panel is open = toggle mic
+fab.addEventListener('click',(e)=>{
+  if(panelOpen){e.stopPropagation();if(isListening)stopListening();else startListening();}
+});
+})();
+</script>
+
+</body>
+</html>

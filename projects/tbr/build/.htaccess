@@ -1,0 +1,44 @@
+# Force HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Trailing slash normalization
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} !(.*)/$
+RewriteRule ^(.*)$ %{REQUEST_URI}/ [L,R=301]
+
+# Block direct access to data directory
+<IfModule mod_rewrite.c>
+  RewriteRule ^data/ - [F,L]
+</IfModule>
+
+# Block direct access to admin sessions data
+<IfModule mod_rewrite.c>
+  RewriteRule ^data/sessions/ - [F,L]
+</IfModule>
+
+# WordPress URL redirects
+RewriteRule ^wp-admin/?$ / [R=301,L]
+RewriteRule ^wp-login\.php$ / [R=301,L]
+RewriteRule ^wp-content/ - [R=404,L]
+
+# Cache headers
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
+
+# Custom 404
+ErrorDocument 404 /404.html
+
+# Security headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+</IfModule>

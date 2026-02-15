@@ -1,0 +1,117 @@
+/* TBR Admin Dashboard */
+:root {
+  --primary: #1F4E79;
+  --primary-dark: #163a5c;
+  --secondary: #2E75B6;
+  --accent: #FFB800;
+  --success: #28A745;
+  --danger: #DC3545;
+  --warning: #FFC107;
+  --bg: #F0F2F5;
+  --card-bg: #FFFFFF;
+  --text: #212529;
+  --text-secondary: #6C757D;
+  --border: #DEE2E6;
+  --radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, sans-serif; font-size: 15px; line-height: 1.5; color: var(--text); background: var(--bg); }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* Login Page */
+.login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.login-box { background: var(--card-bg); padding: 2.5rem; border-radius: var(--radius); box-shadow: var(--shadow); width: 100%; max-width: 400px; }
+.login-box h1 { text-align: center; color: var(--primary); margin-bottom: 0.25rem; font-size: 1.5rem; }
+.login-subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem; }
+.back-link { text-align: center; margin-top: 1rem; font-size: 0.85rem; }
+.back-link a { color: var(--text-secondary); }
+
+/* Forms */
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-weight: 500; margin-bottom: 0.25rem; font-size: 0.9rem; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 6px;
+  font-size: 0.95rem; font-family: inherit; transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus { border-color: var(--secondary); outline: none; box-shadow: 0 0 0 3px rgba(46,117,182,0.15); }
+.error-msg { background: #fce4e4; color: var(--danger); padding: 0.6rem 0.75rem; border-radius: 6px; font-size: 0.9rem; margin-bottom: 1rem; }
+
+/* Buttons */
+.btn { display: inline-block; padding: 0.6rem 1.25rem; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-full { width: 100%; }
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+.btn-approve { background: var(--success); color: #fff; }
+.btn-approve:hover { background: #219a38; }
+.btn-reject { background: var(--danger); color: #fff; }
+.btn-reject:hover { background: #c82333; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+.btn-outline:hover { border-color: var(--text-secondary); }
+
+/* Admin Header */
+.admin-header { background: var(--primary); color: #fff; padding: 0.75rem 0; }
+.admin-header .container { display: flex; align-items: center; justify-content: space-between; }
+.admin-logo { color: #fff; font-weight: 700; font-size: 1.1rem; text-decoration: none; }
+.admin-nav { display: flex; align-items: center; gap: 1rem; }
+.admin-nav a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem; }
+.admin-nav a:hover { color: #fff; }
+.admin-nav .btn { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+
+/* Stats Grid */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--card-bg); padding: 1.25rem; border-radius: var(--radius); box-shadow: var(--shadow); text-align: center; border-top: 3px solid var(--secondary); }
+.stat-card.stat-pending { border-top-color: var(--warning); }
+.stat-card.stat-approved { border-top-color: var(--success); }
+.stat-card.stat-rejected { border-top-color: var(--danger); }
+.stat-number { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Tabs */
+.admin-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; }
+.tab { padding: 0.75rem 1.5rem; background: none; border: none; font-size: 0.95rem; font-weight: 500; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: inherit; }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab:hover { color: var(--primary); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Filters */
+.filters { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.filters select, .filters input { padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+.filters input { flex: 1; min-width: 200px; }
+
+/* Review List */
+.review-list { display: flex; flex-direction: column; gap: 1rem; }
+.loading { text-align: center; color: var(--text-secondary); padding: 2rem; }
+
+.admin-review-card {
+  background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.25rem;
+  border-left: 4px solid var(--border);
+}
+.admin-review-card.status-pending { border-left-color: var(--warning); }
+.admin-review-card.status-approved { border-left-color: var(--success); }
+.admin-review-card.status-rejected { border-left-color: var(--danger); }
+
+.review-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-bottom: 0.5rem; align-items: center; }
+.review-meta .name { font-weight: 600; }
+.review-meta .stars { color: var(--accent); letter-spacing: 1px; }
+.review-meta .business { color: var(--secondary); font-size: 0.9rem; }
+.review-meta .date { color: var(--text-secondary); font-size: 0.85rem; }
+.review-meta .email { color: var(--text-secondary); font-size: 0.85rem; }
+.status-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+.status-badge.pending { background: #fff3cd; color: #856404; }
+.status-badge.approved { background: #d4edda; color: #155724; }
+.status-badge.rejected { background: #f8d7da; color: #721c24; }
+.review-body { margin: 0.75rem 0; color: var(--text); line-height: 1.6; }
+.review-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+
+.empty-state { text-align: center; padding: 3rem; color: var(--text-secondary); }
+.empty-state .emoji { font-size: 3rem; margin-bottom: 0.5rem; }
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .filters { flex-direction: column; }
+  .review-meta { flex-direction: column; gap: 0.25rem; }
+}

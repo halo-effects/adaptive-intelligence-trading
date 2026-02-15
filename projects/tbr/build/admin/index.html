@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Trusted Business Reviews</title>
+  <link rel="stylesheet" href="/assets/css/admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="admin-header">
+    <div class="container">
+      <a href="/admin/" class="admin-logo">TBR Admin</a>
+      <nav class="admin-nav">
+        <a href="/" target="_blank">View Site ↗</a>
+        <button id="logoutBtn" class="btn btn-sm">Logout</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="container">
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-number" id="statTotal">–</div><div class="stat-label">Total Reviews</div></div>
+        <div class="stat-card stat-pending"><div class="stat-number" id="statPending">–</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card stat-approved"><div class="stat-number" id="statApproved">–</div><div class="stat-label">Approved</div></div>
+        <div class="stat-card stat-rejected"><div class="stat-number" id="statRejected">–</div><div class="stat-label">Rejected</div></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="admin-tabs">
+        <button class="tab active" data-tab="pending">Pending Queue</button>
+        <button class="tab" data-tab="all">All Reviews</button>
+      </div>
+
+      <!-- Pending Tab -->
+      <div id="tab-pending" class="tab-content active">
+        <div id="pendingList" class="review-list">
+          <p class="loading">Loading pending reviews...</p>
+        </div>
+      </div>
+
+      <!-- All Reviews Tab -->
+      <div id="tab-all" class="tab-content">
+        <div class="filters">
+          <select id="filterStatus"><option value="">All Statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+          <input type="text" id="filterSearch" placeholder="Search reviews...">
+        </div>
+        <div id="allList" class="review-list">
+          <p class="loading">Loading reviews...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/assets/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "scrape_date": "2026-02-14",
+  "finding": "NO STAR RATINGS EXIST on live site or in database",
+  "details": {
+    "live_html": "Reviews render with <!-- Ratings Table --> comment but NO actual rating values/stars in markup",
+    "wp_rest_api": "Comments endpoint returns no rating metadata",
+    "comment_meta_db": "Only contains akismet_history, akismet_result, _wp_trash_meta_status, _wp_trash_meta_time - NO rating keys",
+    "post_meta_db": "Has _rs_categories, _rs_header, _rs_icon, _rs_link from review-site plugin but NO rating fields",
+    "conclusion": "The review-site plugin either never implemented per-review star ratings, or stored them in a custom DB table that was not included in the export. Defaulting all 211 reviews to 5 stars."
+  },
+  "pages_checked": [
+    "https://trustedbusinessreviews.com/auto-glass/safepro-auto-glass-phoenix-arizona/",
+    "WP REST API: /wp-json/wp/v2/comments?post=57",
+    "Comment RSS feed"
+  ]
+}

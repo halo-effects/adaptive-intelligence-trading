@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | Trusted Business Reviews</title>
+  <link rel="stylesheet" href="/assets/css/admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-page">
+  <div class="login-container">
+    <div class="login-box">
+      <h1>🔒 Admin Login</h1>
+      <p class="login-subtitle">Trusted Business Reviews Dashboard</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <div id="loginError" class="error-msg" style="display:none;"></div>
+        <button type="submit" class="btn btn-primary btn-full">Log In</button>
+      </form>
+      <p class="back-link"><a href="/">← Back to site</a></p>
+    </div>
+  </div>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = this.querySelector('button');
+      const err = document.getElementById('loginError');
+      btn.disabled = true; btn.textContent = 'Logging in...';
+      err.style.display = 'none';
+      try {
+        const res = await fetch('/api/reviews.php?action=login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('tbr_session', data.session);
+          window.location.href = '/admin/';
+        } else {
+          err.textContent = data.error || 'Login failed';
+          err.style.display = 'block';
+        }
+      } catch(e) {
+        err.textContent = 'Connection error. Please try again.';
+        err.style.display = 'block';
+      }
+      btn.disabled = false; btn.textContent = 'Log In';
+    });
+  </script>
+</body>
+</html>
