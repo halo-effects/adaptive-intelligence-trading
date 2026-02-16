@@ -1230,9 +1230,11 @@ async function fetchScanner() {
       fetch(DATA_PREFIX+'scanner_t1.json?t='+Date.now()),
       fetch(DATA_PREFIX+'scanner_t2.json?t='+Date.now())
     ]);
-    const rec = recRes.ok ? await recRes.json() : null;
-    const t1 = t1Res.ok ? await t1Res.json() : null;
-    const t2 = t2Res.ok ? await t2Res.json() : null;
+    // Parse with Infinity handling (Python may emit Infinity which isn't valid JSON)
+    const safeParse = async (r) => { if(!r.ok) return null; const t = await r.text(); return JSON.parse(t.replace(/\bInfinity\b/g, '9999')); };
+    const rec = await safeParse(recRes);
+    const t1 = await safeParse(t1Res);
+    const t2 = await safeParse(t2Res);
     renderScanner(rec, t1, t2);
   } catch(e) { console.warn('scanner fetch failed', e); }
 }
