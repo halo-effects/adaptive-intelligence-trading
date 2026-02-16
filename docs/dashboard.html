@@ -297,7 +297,10 @@ table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
       <span id="scanActionText" style="font-size:.85rem;color:var(--text2)">Loading scanner data...</span>
     </div>
     <!-- Maturity Filter Breakdown -->
-    <div id="scanFilterBreakdown" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px"></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:.75rem;color:var(--text2);margin-bottom:8px"><span style="font-weight:600;color:var(--text)">Filtered Out</span> — coins rejected by maturity checks</div>
+      <div id="scanFilterBreakdown" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px"></div>
+    </div>
     <!-- Rankings Table -->
     <div style="overflow-x:auto">
       <table id="scannerTable">
@@ -1253,11 +1256,11 @@ function renderScanner(rec, t1, t2) {
     // Filter breakdown
     const fc = t1.maturity_filter_counts || {};
     const filters = [
-      {label:'Too New', val:fc.too_new||0, color:'var(--amber)'},
-      {label:'Price Swing', val:fc.price_swing||0, color:'var(--red)'},
-      {label:'Low Volume', val:fc.low_volume||0, color:'var(--purple)'},
-      {label:'Vol Spike', val:fc.volume_spike||0, color:'var(--blue)'},
-      {label:'No 30d Data', val:fc.insufficient_30d_data||0, color:'var(--text3)'}
+      {label:'Too New (<60d)', val:fc.too_new||0, color:'var(--amber)'},
+      {label:'Price Swing (>120%)', val:fc.price_swing||0, color:'var(--red)'},
+      {label:'Low Volume (<$1M)', val:fc.low_volume||0, color:'var(--purple)'},
+      {label:'Volume Spike (>4×)', val:fc.volume_spike||0, color:'var(--blue)'},
+      {label:'Insufficient Data', val:fc.insufficient_30d_data||0, color:'var(--text3)'}
     ];
     $('scanFilterBreakdown').innerHTML = filters.map(f =>
       `<div style="text-align:center;padding:8px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">
