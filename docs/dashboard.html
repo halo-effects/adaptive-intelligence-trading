@@ -237,7 +237,7 @@ table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
         <span style="font-size:.8rem;color:var(--text2)">%</span>
       </div>
       <div class="adaptive-meter"><div class="adaptive-meter-fill" id="tpMeter" style="width:0%;background:var(--green)"></div></div>
-      <div class="adaptive-label"><span id="tpMin">0.6%</span><span id="tpMax">2.5%</span></div>
+      <div class="adaptive-label"><span id="tpMin">1.0%</span><span id="tpMax">2.5%</span></div>
     </div>
     <div>
       <div style="font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Grid Deviation</div>
@@ -566,8 +566,6 @@ function renderStatus() {
   const dot = $('statusDot');
   dot.className = 'status-dot ' + (s.halted ? 'halted' : s.running ? 'running' : 'stopped');
   $('statusLabel').textContent = s.halted ? 'HALTED' : s.running ? 'Running' : 'Stopped';
-  $('cPrice').textContent = fmtUsd(s.price, 3);
-  $('cRegime').innerHTML = regimeBadge(s.regime, true);
   $('cEquity').textContent = fmtUsd(s.equity);
   const deposits = s.total_deposits || 0;
   const tradingBase = s.start_equity + deposits;
@@ -1100,7 +1098,7 @@ function renderPortfolio() {
         current_dev_pct: firstCoin.adaptive_tp?.current_dev_pct || 2.5,
         atr_pct: firstCoin.adaptive_tp?.atr_pct || 0,
         atr_baseline_pct: 0.8,
-        tp_min: 0.6, tp_max: 2.5,
+        tp_min: 1.0, tp_max: 2.5,
         dev_min: 1.2, dev_max: 4.0,
         regime_tp_mult: 1.0, regime_dev_mult: 1.0,
       }
