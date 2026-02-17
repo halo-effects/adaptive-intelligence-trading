@@ -328,6 +328,7 @@ class AsterTrader:
         self.current_price = 0.0
         self.peak_equity = 0.0
         self.start_equity = 0.0
+        self.total_deposits = 0.0  # Track deposits to separate from trading PnL
         self.daily_start_equity = 0.0
         self.daily_start_date = ""
         self.consecutive_errors = 0
@@ -463,6 +464,7 @@ class AsterTrader:
             "current_price": self.current_price,
             "peak_equity": self.peak_equity,
             "start_equity": self.start_equity,
+            "total_deposits": self.total_deposits,
             "daily_start_equity": self.daily_start_equity,
             "daily_start_date": self.daily_start_date,
             "capital": self.capital,
@@ -510,6 +512,7 @@ class AsterTrader:
             self.current_price = s.get("current_price", 0)
             self.peak_equity = s.get("peak_equity", 0)
             self.start_equity = s.get("start_equity", 0)
+            self.total_deposits = s.get("total_deposits", 0)
             self.daily_start_equity = s.get("daily_start_equity", 0)
             self.daily_start_date = s.get("daily_start_date", "")
             self.capital = s.get("capital", self.capital)
@@ -539,7 +542,9 @@ class AsterTrader:
 
     def write_status(self):
         equity = self._get_equity()
-        pnl = equity - self.start_equity if self.start_equity else 0
+        gross_pnl = equity - self.start_equity if self.start_equity else 0
+        trading_pnl = gross_pnl - self.total_deposits  # Exclude deposits from trading returns
+        pnl = trading_pnl  # Dashboard shows true trading PnL
         dd = (self.peak_equity - equity) / self.peak_equity * 100 if self.peak_equity > 0 else 0
 
         long_info = self.long_deal.to_dict() if self.long_deal else None
@@ -561,8 +566,9 @@ class AsterTrader:
             "equity": round(equity, 2),
             "start_equity": round(self.start_equity, 2),
             "peak_equity": round(self.peak_equity, 2),
+            "total_deposits": round(self.total_deposits, 2),
             "pnl": round(pnl, 2),
-            "pnl_pct": round(pnl / self.start_equity * 100, 2) if self.start_equity else 0,
+            "pnl_pct": round(pnl / (self.start_equity + self.total_deposits) * 100, 2) if (self.start_equity + self.total_deposits) else 0,
             "drawdown_pct": round(dd, 2),
             "max_drawdown_threshold": self.max_drawdown_pct,
             "leverage": self.leverage,

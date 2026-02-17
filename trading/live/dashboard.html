@@ -569,8 +569,11 @@ function renderStatus() {
   $('cPrice').textContent = fmtUsd(s.price, 3);
   $('cRegime').innerHTML = regimeBadge(s.regime, true);
   $('cEquity').textContent = fmtUsd(s.equity);
-  const eqPct = s.start_equity ? ((s.equity - s.start_equity)/s.start_equity*100) : 0;
-  $('cEquitySub').innerHTML = `<span style="color:${pctColor(eqPct)}">${eqPct>=0?'+':''}${fmt(eqPct)}%</span> from start`;
+  const deposits = s.total_deposits || 0;
+  const tradingBase = s.start_equity + deposits;
+  const tradingPnl = s.equity - tradingBase;
+  const tradingPct = tradingBase ? (tradingPnl / tradingBase * 100) : 0;
+  $('cEquitySub').innerHTML = `<span style="color:${pctColor(tradingPct)}">${tradingPnl>=0?'+':''}${fmtUsd(tradingPnl)} (${tradingPct>=0?'+':''}${fmt(tradingPct)}%)</span> trading PnL` + (deposits > 0 ? `<br><span style="color:var(--text3);font-size:.65rem">Start: ${fmtUsd(s.start_equity)} + ${fmtUsd(deposits)} deposited</span>` : '');
 
   const alloc = s.regime_alloc;
   if (alloc) {
