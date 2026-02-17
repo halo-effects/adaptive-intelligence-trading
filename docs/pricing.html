@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plans & Pricing — Adaptive Intelligence Trading</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0f;
+  --card: #12121a;
+  --border: #1e1e2e;
+  --accent: #6366f1;
+  --accent2: #818cf8;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --gradient1: linear-gradient(135deg, #6366f1, #8b5cf6);
+  --gradient2: linear-gradient(135deg, #22c55e, #06b6d4);
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Hero */
+.hero {
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 80px 24px 60px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 50%, rgba(99,102,241,0.08) 0%, transparent 50%),
+              radial-gradient(circle at 70% 50%, rgba(34,197,94,0.06) 0%, transparent 50%);
+  animation: heroGlow 8s ease-in-out infinite alternate;
+}
+@keyframes heroGlow {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-2%, 2%); }
+}
+.hero-content { position: relative; z-index: 1; max-width: 800px; }
+.hero h1 {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #e2e8f0 0%, #6366f1 50%, #22c55e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero p {
+  font-size: 1.25rem;
+  color: var(--text2);
+  max-width: 600px;
+  margin: 0 auto 40px;
+}
+.hero-badges {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 32px;
+}
+.hero-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 50px;
+  background: rgba(99,102,241,0.15);
+  color: var(--accent2);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Sections */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+section { padding: 80px 0; }
+.section-label {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  background: rgba(99,102,241,0.1);
+  color: var(--accent2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700;
+  margin-bottom: 16px;
+  line-height: 1.2;
+  text-align: center;
+}
+.section-subtitle {
+  font-size: 1.1rem;
+  color: var(--text2);
+  max-width: 650px;
+  margin: 0 auto 48px;
+  text-align: center;
+}
+
+/* Pricing Tiers */
+.pricing-section { background: linear-gradient(180deg, var(--bg) 0%, #0d0d15 100%); }
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 48px;
+}
+.pricing-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 24px;
+  position: relative;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.pricing-card:hover { transform: translateY(-4px); }
+.pricing-card.featured {
+  border-color: var(--accent);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(99,102,241,0.2);
+}
+.pricing-card.featured:hover {
+  transform: translateY(-12px) scale(1.02);
+}
+.popular-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  background: var(--gradient1);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.tier-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.tier-price {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--green);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.tier-capital {
+  text-align: center;
+  color: var(--text2);
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+.tier-desc {
+  text-align: center;
+  color: var(--text3);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+.feature-list {
+  list-style: none;
+  margin-bottom: 32px;
+}
+.feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 0.9rem;
+}
+.feature-list li::before {
+  content: '✓';
+  color: var(--green);
+  font-weight: bold;
+}
+.select-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--gradient1);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.select-btn:hover { opacity: 0.9; }
+.featured .select-btn {
+  background: var(--gradient2);
+}
+
+/* All Plans Include */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 48px;
+}
+.feature-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+}
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 16px;
+}
+.feature-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.feature-desc {
+  color: var(--text2);
+  font-size: 0.9rem;
+}
+
+/* Capacity Pool */
+.capacity-section { background: #0d0d15; }
+.capacity-visual {
+  max-width: 600px;
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+}
+.capacity-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.capacity-bar {
+  width: 100%;
+  height: 20px;
+  background: var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.capacity-fill {
+  width: 15%;
+  height: 100%;
+  background: var(--gradient2);
+  border-radius: 10px;
+  animation: fillPulse 3s ease-in-out infinite;
+}
+@keyframes fillPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.capacity-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+.capacity-desc {
+  color: var(--text2);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+/* Breakeven Calculator */
+.breakeven-section { padding-top: 100px; }
+.breakeven-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-top: 32px;
+}
+.breakeven-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+.breakeven-tier {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.breakeven-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 8px;
+}
+.breakeven-daily {
+  color: var(--green);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.breakeven-days {
+  color: var(--text3);
+  font-size: 0.9rem;
+}
+.disclaimer {
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 10px;
+  color: var(--text2);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* How It Works */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 32px;
+  margin-top: 48px;
+}
+.step-card {
+  text-align: center;
+  padding: 32px 24px;
+}
+.step-number {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--gradient1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 auto 24px;
+}
+.step-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.step-desc {
+  color: var(--text2);
+  font-size: 0.95rem;
+}
+
+/* FAQ */
+.faq-section { background: #0d0d15; }
+.faq-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.faq-category {
+  margin-bottom: 40px;
+}
+.faq-category-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--accent2);
+}
+.faq-item {
+  margin-bottom: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.faq-question {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 20px 24px;
+  text-align: left;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.faq-question:hover {
+  background: rgba(99,102,241,0.05);
+}
+.faq-answer {
+  padding: 0 24px 20px 24px;
+  color: var(--text2);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  display: none;
+}
+.faq-answer.open {
+  display: block;
+}
+.faq-toggle {
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+}
+.faq-item.open .faq-toggle {
+  transform: rotate(45deg);
+}
+
+/* Bottom CTA */
+.bottom-cta {
+  text-align: center;
+  padding: 100px 24px;
+  position: relative;
+}
+.bottom-cta::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(99,102,241,0.08) 0%, transparent 60%);
+}
+.bottom-cta-content {
+  position: relative;
+  z-index: 1;
+}
+.bottom-cta h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+.bottom-cta p {
+  font-size: 1.1rem;
+  color: var(--text2);
+  margin-bottom: 32px;
+}
+.bottom-cta-btn {
+  display: inline-block;
+  padding: 16px 32px;
+  background: var(--gradient2);
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.bottom-cta-btn:hover {
+  opacity: 0.9;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 48px 24px;
+  border-top: 1px solid var(--border);
+  background: #0d0d15;
+}
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 24px;
+}
+.footer-links a {
+  color: var(--text2);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-links a:hover {
+  color: var(--accent2);
+}
+.footer-copyright {
+  color: var(--text3);
+  font-size: 0.9rem;
+}
+
+/* Scroll animations */
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-in.visible { opacity: 1; transform: none; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .pricing-card.featured {
+    transform: none;
+  }
+  .pricing-card.featured:hover {
+    transform: translateY(-4px);
+  }
+  .hero-badges {
+    gap: 16px;
+  }
+  .hero-badge {
+    font-size: 0.8rem;
+  }
+  .capacity-stats {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  .footer-links {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+@media (max-width: 600px) {
+  body { overflow-x: hidden; }
+  .top-header { padding: 8px 12px !important; gap: 8px !important; }
+  .header-logo { width: 26px !important; height: 26px !important; }
+  .header-title { font-size: .9rem !important; }
+  .header-nav { font-size: .8rem !important; }
+  .header-btn { padding: 4px 10px !important; font-size: .75rem !important; }
+  .hero { padding: 60px 16px 40px; min-height: 70vh; }
+  .hero h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); }
+  .hero p { font-size: .95rem; }
+  .hero-badges { 
+    flex-direction: column; 
+    align-items: center;
+    gap: 12px; 
+  }
+  .container { padding: 0 12px; }
+  section { padding: 48px 0; }
+  .section-title { font-size: clamp(1.4rem, 4vw, 1.8rem); }
+  .section-subtitle { font-size: .9rem; }
+  .features-grid { grid-template-columns: 1fr; gap: 16px; }
+  .steps-grid { grid-template-columns: 1fr; gap: 24px; }
+  .breakeven-grid { grid-template-columns: 1fr; gap: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Top Header -->
+<header class="top-header" style="position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;">
+  <a href="./" style="display:flex;align-items:center;flex-shrink:0;"><svg class="header-logo" width="32" height="32" viewBox="0 0 48 48" fill="none">
+    <rect x="4" y="4" width="40" height="40" rx="4" stroke="#30363d" stroke-width="1" fill="rgba(22,27,34,.8)"/>
+    <line x1="4" y1="17.3" x2="44" y2="17.3" stroke="#30363d" stroke-width="0.7"/>
+    <line x1="4" y1="24" x2="44" y2="24" stroke="#30363d" stroke-width="0.7"/>
+    <line x1="4" y1="30.7" x2="44" y2="30.7" stroke="#30363d" stroke-width="0.7"/>
+    <line x1="17.3" y1="4" x2="17.3" y2="44" stroke="#30363d" stroke-width="0.7"/>
+    <line x1="24" y1="4" x2="24" y2="44" stroke="#30363d" stroke-width="0.7"/>
+    <line x1="30.7" y1="4" x2="30.7" y2="44" stroke="#30363d" stroke-width="0.7"/>
+    <circle cx="24" cy="24" r="6" stroke="#58a6ff" stroke-width="2" fill="none" opacity=".9">
+      <animate attributeName="r" values="6;9;6" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values=".9;.3;.9" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="24" cy="24" r="11" stroke="#3fb950" stroke-width="1.5" fill="none" opacity=".5">
+      <animate attributeName="r" values="11;14;11" dur="3s" repeatCount="indefinite" begin="0.5s"/>
+      <animate attributeName="opacity" values=".5;.15;.5" dur="3s" repeatCount="indefinite" begin="0.5s"/>
+    </circle>
+    <circle cx="24" cy="24" r="16" stroke="#d29922" stroke-width="1" fill="none" opacity=".3">
+      <animate attributeName="r" values="16;18;16" dur="3s" repeatCount="indefinite" begin="1s"/>
+      <animate attributeName="opacity" values=".3;.1;.3" dur="3s" repeatCount="indefinite" begin="1s"/>
+    </circle>
+    <circle cx="24" cy="24" r="3" fill="#58a6ff">
+      <animate attributeName="r" values="3;4;3" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <path d="M24 8l4 5h-8z" fill="#3fb950" opacity=".8">
+      <animate attributeName="opacity" values=".8;.3;.8" dur="3s" repeatCount="indefinite"/>
+    </path>
+    <path d="M24 40l4-5h-8z" fill="#f85149" opacity=".8">
+      <animate attributeName="opacity" values=".8;.3;.8" dur="3s" repeatCount="indefinite" begin="1.5s"/>
+    </path>
+  </svg></a>
+  <a href="./" class="header-title" style="font-size:1.15rem;font-weight:600;letter-spacing:-.02em;white-space:nowrap;text-decoration:none;color:inherit;">Adaptive Intelligence Trading</a>
+  <a href="pricing.html" class="header-nav" style="margin-left:auto;color:var(--text2);text-decoration:none;font-size:.9rem;font-weight:500;padding:6px 12px;border-radius:6px;transition:color 0.2s;">Pricing</a>
+  <a class="header-btn" href="dashboard.html" target="_blank" style="padding:6px 16px;background:var(--gradient2);color:#fff;border-radius:6px;font-size:.85rem;font-weight:600;text-decoration:none;white-space:nowrap;">Live Dashboard</a>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <h1>One License. Lifetime Access.</h1>
+    <p>No monthly fees. No subscriptions. Pay once, trade forever. Your license pays for itself in about 29 days.</p>
+    <div class="hero-badges">
+      <div class="hero-badge">💰 No Recurring Fees</div>
+      <div class="hero-badge">📈 ~29 Day Breakeven</div>
+      <div class="hero-badge">🔓 Lifetime Updates</div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing Tiers -->
+<section class="pricing-section">
+  <div class="container">
+    <div class="section-label">Pricing</div>
+    <h2 class="section-title fade-in">Choose Your Trading Capital Tier</h2>
+    <p class="section-subtitle fade-in">All tiers include the complete AIT system with identical features. Choose based on your capital allocation goals.</p>
+    <div class="pricing-grid">
+      <div class="pricing-card fade-in">
+        <div class="tier-name">Starter</div>
+        <div class="tier-price">$500</div>
+        <div class="tier-capital">Max Capital: $5,000</div>
+        <div class="tier-desc">Perfect for testing the waters and learning automated trading</div>
+        <ul class="feature-list">
+          <li>Full bot software</li>
+          <li>Lifetime strategy updates</li>
+          <li>Two-tier coin scanner</li>
+          <li>Personal live dashboard</li>
+          <li>All 6 market regimes</li>
+          <li>Dual-tracking bidirectional DCA</li>
+          <li>Adaptive TP & deviation</li>
+          <li>Margin-aware safety orders</li>
+        </ul>
+        <button class="select-btn" onclick="alert('Payment integration coming soon — crypto payments launching shortly!')">Select Plan</button>
+      </div>
+      <div class="pricing-card fade-in">
+        <div class="tier-name">Trader</div>
+        <div class="tier-price">$1,000</div>
+        <div class="tier-capital">Max Capital: $10,000</div>
+        <div class="tier-desc">For serious traders ready to automate their portfolio</div>
+        <ul class="feature-list">
+          <li>Full bot software</li>
+          <li>Lifetime strategy updates</li>
+          <li>Two-tier coin scanner</li>
+          <li>Personal live dashboard</li>
+          <li>All 6 market regimes</li>
+          <li>Dual-tracking bidirectional DCA</li>
+          <li>Adaptive TP & deviation</li>
+          <li>Margin-aware safety orders</li>
+        </ul>
+        <button class="select-btn" onclick="alert('Payment integration coming soon — crypto payments launching shortly!')">Select Plan</button>
+      </div>
+      <div class="pricing-card featured fade-in">
+        <div class="popular-badge">Most Popular</div>
+        <div class="tier-name">Pro</div>
+        <div class="tier-price">$2,500</div>
+        <div class="tier-capital">Max Capital: $25,000</div>
+        <div class="tier-desc">The sweet spot for professional automated trading</div>
+        <ul class="feature-list">
+          <li>Full bot software</li>
+          <li>Lifetime strategy updates</li>
+          <li>Two-tier coin scanner</li>
+          <li>Personal live dashboard</li>
+          <li>All 6 market regimes</li>
+          <li>Dual-tracking bidirectional DCA</li>
+          <li>Adaptive TP & deviation</li>
+          <li>Margin-aware safety orders</li>
+        </ul>
+        <button class="select-btn" onclick="alert('Payment integration coming soon — crypto payments launching shortly!')">Select Plan</button>
+      </div>
+      <div class="pricing-card fade-in">
+        <div class="tier-name">Elite</div>
+        <div class="tier-price">$5,000</div>
+        <div class="tier-capital">Max Capital: $50,000</div>
+        <div class="tier-desc">For high-capital traders seeking maximum efficiency</div>
+        <ul class="feature-list">
+          <li>Full bot software</li>
+          <li>Lifetime strategy updates</li>
+          <li>Two-tier coin scanner</li>
+          <li>Personal live dashboard</li>
+          <li>All 6 market regimes</li>
+          <li>Dual-tracking bidirectional DCA</li>
+          <li>Adaptive TP & deviation</li>
+          <li>Margin-aware safety orders</li>
+        </ul>
+        <button class="select-btn" onclick="alert('Payment integration coming soon — crypto payments launching shortly!')">Select Plan</button>
+      </div>
+      <div class="pricing-card fade-in">
+        <div class="tier-name">Whale</div>
+        <div class="tier-price">$10,000</div>
+        <div class="tier-capital">Max Capital: $100,000</div>
+        <div class="tier-desc">For institutional-level capital deployment</div>
+        <ul class="feature-list">
+          <li>Full bot software</li>
+          <li>Lifetime strategy updates</li>
+          <li>Two-tier coin scanner</li>
+          <li>Personal live dashboard</li>
+          <li>All 6 market regimes</li>
+          <li>Dual-tracking bidirectional DCA</li>
+          <li>Adaptive TP & deviation</li>
+          <li>Margin-aware safety orders</li>
+        </ul>
+        <button class="select-btn" onclick="alert('Payment integration coming soon — crypto payments launching shortly!')">Select Plan</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- All Plans Include -->
+<section>
+  <div class="container">
+    <div class="section-label">What's Included</div>
+    <h2 class="section-title fade-in">Every License Includes Everything</h2>
+    <p class="section-subtitle fade-in">No tiered features, no hidden costs. Every plan gets the complete AIT system.</p>
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">Full Bot Software</div>
+        <div class="feature-desc">Run on your machine or VPS, you control everything</div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-title">Two-Tier Coin Scanner</div>
+        <div class="feature-desc">275+ pairs scanned every 4 hours, automatic rotation recommendations</div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Personal Dashboard</div>
+        <div class="feature-desc">Real-time monitoring with live charts, trade history, and adaptive intelligence panel</div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🧠</div>
+        <div class="feature-title">6 Market Regimes</div>
+        <div class="feature-desc">Automatic detection and parameter adaptation for any market condition</div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🔄</div>
+        <div class="feature-title">Dual-Tracking DCA</div>
+        <div class="feature-desc">Simultaneous long and short deals capture profit in both directions</div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🫁</div>
+        <div class="feature-title">Breathing Grid</div>
+        <div class="feature-desc">TP and deviation expand/contract with volatility via ATR</div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🧭</div>
+        <div class="feature-title">Directional Awareness</div>
+        <div class="feature-desc">SMA50 trend detection auto-adjusts allocation bias</div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🛡️</div>
+        <div class="feature-title">Margin Protection</div>
+        <div class="feature-desc">10% capital reserve, smart SO skipping, TP priority system</div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Lifetime Updates</div>
+        <div class="feature-desc">Strategy improvements, new features, exchange support forever</div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">💰</div>
+        <div class="feature-title">Zero Maker Fees</div>
+        <div class="feature-desc">All limit orders on Aster DEX = 0% maker fee</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Global Capacity Pool -->
+<section class="capacity-section">
+  <div class="container">
+    <div class="section-label">Platform Capacity</div>
+    <h2 class="section-title fade-in">Global Capacity Pool</h2>
+    <p class="section-subtitle fade-in">We cap total platform capital to protect everyone's edge</p>
+    <div class="capacity-visual fade-in">
+      <div class="capacity-title">Total Pool: $2.5M</div>
+      <div class="capacity-bar">
+        <div class="capacity-fill"></div>
+      </div>
+      <div class="capacity-stats">
+        <span>$375K Active</span>
+        <span>$2.125M Available</span>
+      </div>
+      <div class="capacity-desc">
+        We cap total platform capital to protect everyone's edge. When too many bots trade the same markets with the same strategy, profits erode. Our pool cap ensures your bot always has room to breathe.
+      </div>
+      <div style="color: var(--text3); font-size: 0.9rem; font-style: italic;">
+        Pool expands as we add new exchanges and coin pairs
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Breakeven Calculator -->
+<section class="breakeven-section">
+  <div class="container">
+    <div class="section-label">ROI Calculator</div>
+    <h2 class="section-title fade-in">Your License Pays for Itself</h2>
+    <p class="section-subtitle fade-in">At 0.35% average daily ROI based on backtested performance</p>
+    <div class="breakeven-grid">
+      <div class="breakeven-card fade-in">
+        <div class="breakeven-tier">Starter</div>
+        <div class="breakeven-price">$500</div>
+        <div class="breakeven-daily">~$17.50/day</div>
+        <div class="breakeven-days">29 days to break even</div>
+      </div>
+      <div class="breakeven-card fade-in">
+        <div class="breakeven-tier">Trader</div>
+        <div class="breakeven-price">$1,000</div>
+        <div class="breakeven-daily">~$35/day</div>
+        <div class="breakeven-days">29 days to break even</div>
+      </div>
+      <div class="breakeven-card fade-in">
+        <div class="breakeven-tier">Pro</div>
+        <div class="breakeven-price">$2,500</div>
+        <div class="breakeven-daily">~$87.50/day</div>
+        <div class="breakeven-days">29 days to break even</div>
+      </div>
+      <div class="breakeven-card fade-in">
+        <div class="breakeven-tier">Elite</div>
+        <div class="breakeven-price">$5,000</div>
+        <div class="breakeven-daily">~$175/day</div>
+        <div class="breakeven-days">29 days to break even</div>
+      </div>
+      <div class="breakeven-card fade-in">
+        <div class="breakeven-tier">Whale</div>
+        <div class="breakeven-price">$10,000</div>
+        <div class="breakeven-daily">~$350/day</div>
+        <div class="breakeven-days">29 days to break even</div>
+      </div>
+    </div>
+    <div class="disclaimer fade-in">
+      Past performance does not guarantee future results. Daily ROI varies with market conditions.
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section style="background: #0d0d15;">
+  <div class="container">
+    <div class="section-label">Getting Started</div>
+    <h2 class="section-title fade-in">How It Works</h2>
+    <p class="section-subtitle fade-in">Three simple steps to automated trading</p>
+    <div class="steps-grid">
+      <div class="step-card fade-in">
+        <div class="step-number">1</div>
+        <div class="step-title">Choose Your Plan</div>
+        <div class="step-desc">Select the capital tier that matches your trading goals</div>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-number">2</div>
+        <div class="step-title">Activate Your License</div>
+        <div class="step-desc">Get your license key, install the bot on your machine or VPS</div>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-number">3</div>
+        <div class="step-title">Start Trading</div>
+        <div class="step-desc">Connect your Aster DEX account, fund your wallet, and let AIT handle the rest</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="container">
+    <div class="section-label">FAQ</div>
+    <h2 class="section-title fade-in">Frequently Asked Questions</h2>
+    <div class="faq-container">
+      <div class="faq-category fade-in">
+        <div class="faq-category-title">Licensing & Access</div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What exactly do I get with my license?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Full bot software, lifetime updates, coin scanner, dashboard, strategy params. You run it on your own machine.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Is this really a lifetime license?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Yes. One payment, use forever. Includes all future strategy updates, new regime detections, and exchange support.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Can I upgrade my tier later?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Yes. Pay the difference between tiers. Instant activation. Starter→Pro = pay $2,000.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Can I transfer my license?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Contact support for license transfers. One active installation per license.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What if I want a refund?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            We offer a 7-day satisfaction guarantee. If the bot doesn't meet expectations, contact us for a full refund.
+          </div>
+        </div>
+      </div>
+      
+      <div class="faq-category fade-in">
+        <div class="faq-category-title">Technical & Setup</div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What do I need to run the bot?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            A computer or VPS (Windows/Linux), Python 3.10+, and an Aster DEX account with API keys. The bot runs 24/7 on your machine.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Which exchanges are supported?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Currently Aster DEX (Binance-compatible futures API). More exchanges planned — your license covers all future exchange support.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Is my capital safe?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            The bot uses your exchange API keys with trade-only permissions — no withdrawal access. Your funds never leave your exchange account.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            How much capital do I need minimum?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            We recommend at least $500 for the Starter tier. Below this, minimum order sizes can limit the strategy's effectiveness.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-category fade-in">
+        <div class="faq-category-title">Trading & Strategy</div>
+        <div class="faq-item">
+          <button class="faq-question">
+            How does the dual-tracking DCA work?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            The bot runs simultaneous LONG and SHORT deals. In a ranging market, both sides capture small profits continuously. In trending markets, the trend side captures bigger moves while the counter-trend side provides a hedge.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What are the 6 market regimes?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Accumulation, Ranging, Mild Trend, Trending, Distribution, and Extreme. Each has different allocation splits, TP targets, and grid spacing.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What happens in an Extreme regime?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Trading halts automatically. No new deals are opened. This protects your capital during flash crashes or extreme volatility events.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What's the expected ROI?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Backtested performance shows ~0.35% daily ROI on average. Actual results vary with market conditions, volatility, and the specific coin being traded. This is not a guarantee.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Can I lose money?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Yes. All trading carries risk. The DCA strategy can experience drawdowns, especially in strong one-directional moves. The margin protection and regime detection help minimize risk but cannot eliminate it.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What coins does it trade?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            The two-tier scanner evaluates 275+ Aster DEX pairs every 4 hours and recommends the optimal coin. Currently HYPE/USDT is the top pick.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-category fade-in">
+        <div class="faq-category-title">Capital & Pool</div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Why are there capital caps?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            To protect edge. If too many bots trade the same markets with identical strategies, order clustering erodes profits for everyone. Caps ensure the strategy remains effective.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What is the Global Capacity Pool?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            The total platform-wide capital allocation across all customers. Currently capped at $2.5M to maintain strategy effectiveness.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What if the pool is full?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Join the waitlist. Pool capacity expands as we add new exchanges and coin pairs.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Can I use more capital than my tier allows?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            The bot enforces your tier's capital cap. To trade with more capital, upgrade to a higher tier.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-category fade-in">
+        <div class="faq-category-title">Payments</div>
+        <div class="faq-item">
+          <button class="faq-question">
+            How do I pay?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Cryptocurrency payments (coming soon). We'll support major cryptocurrencies including USDT, BTC, and ETH.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Is there a trial period?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            We offer a 7-day satisfaction guarantee with full refund. No free trial — the lifetime pricing already reflects exceptional value.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bottom CTA -->
+<section class="bottom-cta">
+  <div class="bottom-cta-content">
+    <h2 class="fade-in">Ready to Trade Smarter?</h2>
+    <p class="fade-in">Join the next generation of adaptive grid trading. Your license pays for itself in about a month.</p>
+    <a href="#pricing" class="bottom-cta-btn fade-in" onclick="document.querySelector('.pricing-section').scrollIntoView({behavior: 'smooth'});">Choose Your Plan</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-links">
+    <a href="./">Product Overview</a>
+    <a href="dashboard.html">Live Dashboard</a>
+    <a href="pricing.html">Pricing</a>
+  </div>
+  <div class="footer-copyright">
+    © 2026 Halo Effects · Adaptive Intelligence Trading
+  </div>
+</footer>
+
+<script>
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// FAQ functionality
+document.querySelectorAll('.faq-question').forEach(question => {
+  question.addEventListener('click', () => {
+    const faqItem = question.parentElement;
+    const answer = faqItem.querySelector('.faq-answer');
+    const isOpen = faqItem.classList.contains('open');
+    
+    // Close all other FAQ items
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.classList.remove('open');
+      item.querySelector('.faq-answer').classList.remove('open');
+    });
+    
+    // Toggle current item
+    if (!isOpen) {
+      faqItem.classList.add('open');
+      answer.classList.add('open');
+    }
+  });
+});
+</script>
+</body>
+</html>
