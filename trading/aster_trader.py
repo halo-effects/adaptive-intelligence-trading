@@ -944,7 +944,7 @@ class AsterTrader:
             self._set_deal(direction, new_deal)
             self._place_so_orders_dry(new_deal)
             self._place_tp_order_dry(new_deal)
-            send_telegram(f"{dir_emoji} <b>[DRY] Trade #{self.deal_counter} {direction}</b>\n{self.symbol}\nEntry: ${self.current_price:.3f}\nQty: {qty}\nRegime: {self.current_regime}")
+            send_telegram(f"{dir_emoji} <b>[DRY] Trade #{self.deal_counter} {direction}</b>\n{self.symbol}\nEntry: ${self.current_price:.3f}\nQty: {qty}\nLeverage: {self.leverage}x\nRegime: {self.current_regime}")
             return
 
         # Place market entry
@@ -993,7 +993,7 @@ class AsterTrader:
                 f"{dir_emoji} <b>Trade #{self.deal_counter} {direction}</b>\n{self.symbol}\n"
                 f"Entry: ${fill_price:.3f}\nQty: {fill_qty}\n"
                 f"TP: ${new_deal.tp_price(self.current_tp_pct):.3f} ({'+' if direction == 'LONG' else '-'}{self.current_tp_pct:.2f}%)\n"
-                f"SOs: {self.MAX_SOS} pending\nRegime: {self.current_regime}"
+                f"SOs: {self.MAX_SOS} pending\nLeverage: {self.leverage}x\nRegime: {self.current_regime}"
             )
         except Exception as e:
             print(f"  ❌ Failed to open {direction} deal: {e}")
@@ -1203,6 +1203,7 @@ class AsterTrader:
                         f"{self.symbol} closed @ ${fill_price:.3f}\n"
                         f"PnL: <b>${pnl:.2f} ({pnl_pct:+.1f}%)</b>\n"
                         f"SOs used: {deal.safety_orders_filled}/{self.MAX_SOS}\n"
+                        f"Leverage: {self.leverage}x\n"
                         f"Duration: {analysis.get('duration', '?')} | TP%: {analysis.get('tp_pct', '?')}%"
                     )
                     deal.closed = True
@@ -1626,7 +1627,7 @@ class AsterTrader:
         send_telegram(
             f"🚀 <b>Bot Started [{mode}]</b>\n"
             f"{self.symbol} | {self.timeframe} | Dual-tracking\n"
-            f"Capital: ${self.capital:.2f}\n"
+            f"Capital: ${self.capital:.2f} | Leverage: {self.leverage}x\n"
             f"TP: {self.TP_PCT}% | Dev: {self.DEVIATION_PCT}% | SOs: {self.MAX_SOS}\n"
             f"Hedge mode: {'✓' if self.hedge_mode else '✗'}"
         )

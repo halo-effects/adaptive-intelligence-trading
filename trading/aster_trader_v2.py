@@ -510,11 +510,14 @@ class PaperDealManager:
                     print(f"[PAPER] {direction} SO#{deal.safety_orders_filled} filled @ ${fill_price:.3f}")
                     print(f"    New avg: ${deal.avg_entry:.3f} | New TP: ${deal.tp_price:.3f}")
                     
+                    active = self.profile_manager.get_active_profile()
+                    lev = self.profile_manager.get_profile_params(active).get("leverage", 1)
                     send_telegram(
                         f"SO #{deal.safety_orders_filled} Filled ({direction})\n"
                         f"HYPEUSDT @ ${fill_price:.3f}\n"
                         f"New avg: ${deal.avg_entry:.3f}\n"
-                        f"New TP: ${deal.tp_price:.3f}"
+                        f"New TP: ${deal.tp_price:.3f}\n"
+                        f"Leverage: {lev}x"
                     )
                 else:
                     # SOs must fill in order, so if this one didn't trigger, stop checking deeper ones
@@ -542,11 +545,14 @@ class PaperDealManager:
                 print(f"[PAPER] TP HIT! Deal #{deal.deal_id} {direction} @ ${fill_price:.3f}")
                 print(f"    PnL: ${pnl:.2f} ({pnl_pct:+.1f}%) | SOs used: {deal.safety_orders_filled}")
                 
+                active = self.profile_manager.get_active_profile()
+                lev = self.profile_manager.get_profile_params(active).get("leverage", 1)
                 send_telegram(
                     f"TP HIT - Deal #{deal.deal_id} {direction}\n"
                     f"HYPEUSDT closed @ ${fill_price:.3f}\n"
                     f"PnL: ${pnl:.2f} ({pnl_pct:+.1f}%)\n"
-                    f"SOs used: {deal.safety_orders_filled}"
+                    f"SOs used: {deal.safety_orders_filled}\n"
+                    f"Leverage: {lev}x"
                 )
                 
                 self._set_deal(direction, None)
@@ -685,11 +691,13 @@ class AsterTraderV2:
         print(f"\nPaper Trading Bot started!")
         print(f"  Symbol: {self.symbol} | TF: {self.timeframe} | Capital: ${self.capital:.2f}")
         
+        active = self.profile_manager.get_active_profile()
+        lev = self.profile_manager.get_profile_params(active).get("leverage", 1)
         send_telegram(
             f"Paper Trading Bot Started\n"
             f"{self.symbol} | {self.timeframe}\n"
-            f"Capital: ${self.capital:.2f}\n"
-            f"Profile: {PROFILES[self.profile_manager.get_active_profile()]['name']}"
+            f"Capital: ${self.capital:.2f} | Leverage: {lev}x\n"
+            f"Profile: {PROFILES[active]['name']}"
         )
         
         while self._running:
