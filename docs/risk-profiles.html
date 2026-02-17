@@ -1723,7 +1723,7 @@ section { padding: 100px 0; }
           <span class="faq-toggle">+</span>
         </button>
         <div class="faq-answer">
-          Automatic triggers based on drawdown thresholds: Medium Risk auto-reduces to Low Risk at 30% drawdown, High Risk reduces to Medium at 50% and to Low at 60%. Complete portfolio halt if total drawdown exceeds 70%. These are hard limits built into the system — no manual intervention required.
+          The system uses a cascading protection model with three hard limits:<br><br>• <strong>Medium Risk</strong> → automatically shifts to Low Risk if drawdown hits 30%<br>• <strong>High Risk</strong> → steps down to Medium Risk at 50% drawdown, then to Low Risk at 60%<br>• <strong>Kill Switch</strong> → complete trading halt if total portfolio drawdown exceeds 70%<br><br>These triggers are automatic and immediate — no manual intervention required. Capital flows from riskier profiles into safer ones, preserving your account while the market stabilizes.
         </div>
       </div>
       
