@@ -644,35 +644,48 @@ section { padding: 100px 0; }
 
 /* Competitive Edge */
 .competitive-section { padding-top: 100px; }
-.competitive-grid {
+.compare-table {
+  max-width: 900px;
+  margin: 48px auto 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.compare-header {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 48px;
-  margin-top: 48px;
-  align-items: center;
 }
-.competitive-column h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 24px;
+.compare-header-cell {
+  padding: 20px 24px;
   text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
 }
-.competitive-item {
-  padding: 16px 20px;
-  margin-bottom: 16px;
-  border-radius: 12px;
-  font-size: 1rem;
+.compare-header-cell.others { background: rgba(239,68,68,0.08); color: var(--red); }
+.compare-header-cell.ait { background: rgba(34,197,94,0.08); color: var(--green); }
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--border);
 }
-.traditional-item {
-  background: rgba(239,68,68,0.1);
-  border: 1px solid rgba(239,68,68,0.2);
-  color: var(--text2);
+.compare-row:hover { background: rgba(99,102,241,0.03); }
+.compare-cell {
+  padding: 16px 24px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.ait-item {
-  background: rgba(34,197,94,0.1);
-  border: 1px solid rgba(34,197,94,0.2);
-  color: var(--text);
-  font-weight: 500;
+.compare-cell.others { color: var(--text3); }
+.compare-cell.ait { color: var(--text); font-weight: 500; }
+.compare-icon { font-size: 1rem; flex-shrink: 0; }
+@media (max-width: 600px) {
+  .compare-row { grid-template-columns: 1fr; }
+  .compare-header { grid-template-columns: 1fr; }
+  .compare-cell { padding: 12px 16px; font-size: 0.82rem; }
+  .compare-cell.others { border-bottom: none; padding-bottom: 4px; }
+  .compare-cell.ait { padding-top: 4px; }
 }
 
 /* FAQ */
@@ -1560,27 +1573,38 @@ section { padding: 100px 0; }
     <h2 class="section-title fade-in">Most Bots vs. AIT Risk Profiles</h2>
     <p class="section-subtitle fade-in">See how the portfolio approach compares to traditional one-size-fits-all trading bots.</p>
     
-    <div class="competitive-grid fade-in">
-      <div class="competitive-column">
-        <h3 style="color: var(--red);">❌ Most Trading Bots</h3>
-        <div class="traditional-item">One strategy. One risk level. Take it or leave it.</div>
-        <div class="traditional-item">Binary choices: "Conservative" or "Aggressive" — no middle ground</div>
-        <div class="traditional-item">Black box parameter selection — you don't know why settings are chosen</div>
-        <div class="traditional-item">No transparency into risk/reward tradeoffs</div>
-        <div class="traditional-item">Single point of failure — if the strategy doesn't work for current conditions, you're stuck</div>
-        <div class="traditional-item">No portfolio diversification within the system</div>
-        <div class="traditional-item">No risk progression path for growing experience</div>
+    <div class="compare-table fade-in">
+      <div class="compare-header">
+        <div class="compare-header-cell others">❌ Most Trading Bots</div>
+        <div class="compare-header-cell ait">✅ AIT Risk Profiles</div>
       </div>
-      
-      <div class="competitive-column">
-        <h3 style="color: var(--green);">✅ AIT Risk Profiles</h3>
-        <div class="ait-item">You decide how much risk to take. You control the dial.</div>
-        <div class="ait-item">Granular control with transparent parameter mapping for each profile</div>
-        <div class="ait-item">Full transparency — see exactly what each setting does and why</div>
-        <div class="ait-item">Educational component builds understanding of trading risk management</div>
-        <div class="ait-item">Portfolio theory applied to automated trading — diversify within your bot</div>
-        <div class="ait-item">Natural progression path from Conservative → Balanced → Aggressive</div>
-        <div class="ait-item">Built-in safeguards with automatic risk reduction when needed</div>
+      <div class="compare-row">
+        <div class="compare-cell others"><span class="compare-icon">⛔</span> One strategy, one risk level — take it or leave it</div>
+        <div class="compare-cell ait"><span class="compare-icon">🎛️</span> Three profiles with custom allocation sliders</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell others"><span class="compare-icon">⛔</span> Binary "Conservative" or "Aggressive" — no middle ground</div>
+        <div class="compare-cell ait"><span class="compare-icon">📊</span> Granular control — split capital across Low, Medium & High</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell others"><span class="compare-icon">⛔</span> Black box parameters — you don't know why settings are chosen</div>
+        <div class="compare-cell ait"><span class="compare-icon">🔍</span> Full transparency — see exactly what each setting does and why</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell others"><span class="compare-icon">⛔</span> No insight into risk/reward tradeoffs</div>
+        <div class="compare-cell ait"><span class="compare-icon">📈</span> Clear ROI projections and drawdown expectations per profile</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell others"><span class="compare-icon">⛔</span> Single point of failure if conditions don't suit the strategy</div>
+        <div class="compare-cell ait"><span class="compare-icon">🛡️</span> Portfolio diversification within your bot across risk levels</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell others"><span class="compare-icon">⛔</span> No progression path as experience grows</div>
+        <div class="compare-cell ait"><span class="compare-icon">🚀</span> Natural progression: Conservative → Balanced → Aggressive</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell others"><span class="compare-icon">⛔</span> No automatic safety nets when things go wrong</div>
+        <div class="compare-cell ait"><span class="compare-icon">🔒</span> Auto-guardrails reduce risk when drawdown thresholds are hit</div>
       </div>
     </div>
     
