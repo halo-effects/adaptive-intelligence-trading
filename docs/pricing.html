@@ -621,7 +621,7 @@ section { padding: 80px 0; }
   <div class="container">
     <div class="section-label">Pricing</div>
     <h2 class="section-title fade-in">Choose Your Trading Capital Tier</h2>
-    <p class="section-subtitle fade-in">All tiers include the complete AIT system with identical features. Choose based on your capital allocation goals.</p>
+    <p class="section-subtitle fade-in">All tiers include the complete AIT system with identical features. Capital caps apply per exchange — currently <strong style="color:var(--accent2)">Aster DEX</strong>. Choose based on your capital allocation goals.</p>
     <div class="pricing-grid">
       <div class="pricing-card fade-in">
         <div class="tier-name">Starter</div>
@@ -781,7 +781,7 @@ section { padding: 80px 0; }
     <h2 class="section-title fade-in">Global Capacity Pool</h2>
     <p class="section-subtitle fade-in">We cap total platform capital to protect everyone's edge</p>
     <div class="capacity-visual fade-in">
-      <div class="capacity-title">Total Pool: $2.5M</div>
+      <div class="capacity-title">Aster DEX Pool: $2.5M</div>
       <div class="capacity-bar">
         <div class="capacity-fill"></div>
       </div>
@@ -790,10 +790,10 @@ section { padding: 80px 0; }
         <span>$2.125M Available</span>
       </div>
       <div class="capacity-desc">
-        We cap total platform capital to protect everyone's edge. When too many bots trade the same markets with the same strategy, profits erode. Our pool cap ensures your bot always has room to breathe.
+        We cap total platform capital per exchange to protect everyone's edge. When too many bots trade the same markets with the same strategy, order clustering erodes profits for everyone. Our pool cap ensures your bot always has room to breathe.
       </div>
       <div style="color: var(--text3); font-size: 0.9rem; font-style: italic;">
-        Pool expands as we add new exchanges and coin pairs
+        Each new exchange (Binance, Bybit, etc.) adds its own separate pool — expanding total platform capacity and your upgrade options
       </div>
     </div>
   </div>
@@ -901,7 +901,16 @@ section { padding: 80px 0; }
             <span class="faq-toggle">+</span>
           </button>
           <div class="faq-answer">
-            Yes. Pay the difference between tiers. Instant activation. Starter→Pro = pay $2,000.
+            Absolutely. You only pay the difference between your current tier and the new one — for example, upgrading from Starter ($500) to Pro ($2,500) costs $2,000. The upgrade is instant: your capital cap increases immediately and the bot automatically scales up order sizing on the next deal cycle. No downtime, no reconfiguration needed. You can upgrade at any time from your license dashboard.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What happens when I reach my capital cap?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            The bot will notify you as you approach your tier's capital limit. At 90% utilization, you'll receive a heads-up suggesting an upgrade. If your account equity grows beyond your cap (e.g., from trading profits), the bot continues running but won't scale order sizes beyond your tier's limit — meaning excess capital sits idle. Upgrading unlocks the full potential of your growing account. Your profits are always yours; the cap only limits how much active capital the bot deploys.
           </div>
         </div>
         <div class="faq-item">
@@ -1039,7 +1048,7 @@ section { padding: 80px 0; }
             <span class="faq-toggle">+</span>
           </button>
           <div class="faq-answer">
-            The total platform-wide capital allocation across all customers. Currently capped at $2.5M to maintain strategy effectiveness.
+            The total platform-wide capital allocation across all customers on a given exchange. The Aster DEX pool is currently capped at $2.5M to maintain strategy effectiveness. Each new exchange we support (Binance, Bybit, etc.) gets its own separate pool, expanding total platform capacity.
           </div>
         </div>
         <div class="faq-item">
@@ -1048,7 +1057,7 @@ section { padding: 80px 0; }
             <span class="faq-toggle">+</span>
           </button>
           <div class="faq-answer">
-            Join the waitlist. Pool capacity expands as we add new exchanges and coin pairs.
+            Join the waitlist. Pool capacity expands as we add new exchanges and coin pairs. Each new exchange adds its own pool — so even if the Aster DEX pool is full, a Binance or Bybit expansion opens fresh capacity.
           </div>
         </div>
         <div class="faq-item">
@@ -1057,7 +1066,7 @@ section { padding: 80px 0; }
             <span class="faq-toggle">+</span>
           </button>
           <div class="faq-answer">
-            The bot enforces your tier's capital cap. To trade with more capital, upgrade to a higher tier.
+            The bot enforces your tier's capital cap. If your profits push your account beyond your cap, the excess capital simply sits idle — the bot won't scale into it. To unlock your full account, upgrade to a higher tier. You only pay the difference, and the upgrade is instant.
           </div>
         </div>
       </div>
