@@ -1255,10 +1255,16 @@ class AsterTrader:
             self._check_orders_for_deal(self.short_deal)
 
     def _check_position_sync(self):
-        """Reconcile deal state with actual exchange position(s)."""
+        """Reconcile deal state with actual exchange position(s).
+        
+        In net position mode, the exchange holds a single net position.
+        We track virtual long_deal and short_deal separately.
+        This function detects drift between exchange reality and our tracking,
+        and logs warnings when quantities don't match.
+        
+        Critical: also detects orphaned position excess that the bot isn't tracking.
+        """
         if self.dry_run:
-            return
-        if not self.long_deal and not self.short_deal:
             return
         try:
             positions = self.api.position_risk(self.symbol)
@@ -1280,39 +1286,71 @@ class AsterTrader:
                         self.short_deal = None
                 else:
                     # Net position mode: single entry with positionSide=BOTH
-                    if pos_side == "BOTH":
-                        if pos_amt == 0 and (self.long_deal or self.short_deal):
-                            # In dual-tracking, net=0 is EXPECTED when both sides have equal qty
-                            # Only clear if we DON'T have both sides (single deal should have position)
-                            if self.long_deal and self.short_deal:
-                                pass  # Both tracked, net zero is normal — opposing positions offset
-                            elif self.long_deal and not self.short_deal:
-                                print("  ⚠️  Net position is zero but LONG deal tracked (no short) — clearing long_deal")
-                                self._cancel_remaining_sos(self.long_deal)
-                                self.long_deal = None
-                            elif self.short_deal and not self.long_deal:
-                                print("  ⚠️  Net position is zero but SHORT deal tracked (no long) — clearing short_deal")
-                                self._cancel_remaining_sos(self.short_deal)
-                                self.short_deal = None
-                        # In net mode: infer which deals are still alive from net position sign
-                        if pos_amt > 0 and self.long_deal and not self.short_deal:
-                            pass  # long only, expected
-                        elif pos_amt < 0 and self.short_deal and not self.long_deal:
-                            pass  # short only, expected
-                        elif pos_amt > 0 and self.long_deal and self.short_deal:
-                            # Net positive but we think both are open — short must have closed
-                            expected_net = self.long_deal.total_qty - self.short_deal.total_qty
-                            if abs(pos_amt - self.long_deal.total_qty) < 0.01:
-                                # Net matches long only — short was closed
-                                print("  ⚠️  Net position matches LONG only — clearing short_deal")
-                                self._cancel_remaining_sos(self.short_deal)
-                                self.short_deal = None
-                        elif pos_amt < 0 and self.long_deal and self.short_deal:
-                            # Net negative but both tracked — long must have closed
-                            if abs(abs(pos_amt) - self.short_deal.total_qty) < 0.01:
-                                print("  ⚠️  Net position matches SHORT only — clearing long_deal")
-                                self._cancel_remaining_sos(self.long_deal)
-                                self.long_deal = None
+                    if pos_side != "BOTH":
+                        continue
+
+                    # Calculate expected net from our tracked deals
+                    tracked_long_qty = self.long_deal.total_qty if self.long_deal else 0
+                    tracked_short_qty = self.short_deal.total_qty if self.short_deal else 0
+                    expected_net = round(tracked_long_qty - tracked_short_qty, 4)
+                    actual_net = round(pos_amt, 4)
+                    drift = round(actual_net - expected_net, 4)
+
+                    # --- Case 1: No deals tracked ---
+                    if not self.long_deal and not self.short_deal:
+                        if abs(actual_net) > 0.01:
+                            print(f"  🚨 POSITION DRIFT: No deals tracked but exchange has {actual_net:+.4f} net position!")
+                            send_telegram(
+                                f"🚨 POSITION DRIFT DETECTED\n"
+                                f"Exchange: {actual_net:+.4f} net\n"
+                                f"Tracked: no deals\n"
+                                f"Action needed: orphaned position"
+                            )
+                        return
+
+                    # --- Case 2: Deals tracked, check for zero position ---
+                    if pos_amt == 0 and (self.long_deal or self.short_deal):
+                        if self.long_deal and self.short_deal:
+                            # Both tracked, net zero could be normal if quantities match
+                            if abs(tracked_long_qty - tracked_short_qty) > 0.01:
+                                print(f"  ⚠️  Net position is zero but tracked deals are unequal (L:{tracked_long_qty} S:{tracked_short_qty})")
+                        elif self.long_deal and not self.short_deal:
+                            print("  ⚠️  Net position is zero but LONG deal tracked (no short) — clearing long_deal")
+                            self._cancel_remaining_sos(self.long_deal)
+                            self.long_deal = None
+                        elif self.short_deal and not self.long_deal:
+                            print("  ⚠️  Net position is zero but SHORT deal tracked (no long) — clearing short_deal")
+                            self._cancel_remaining_sos(self.short_deal)
+                            self.short_deal = None
+                        return
+
+                    # --- Case 3: Quantity drift detection ---
+                    # Allow small tolerance for rounding (0.5% of tracked qty or 0.02, whichever is larger)
+                    tolerance = max(0.02, (tracked_long_qty + tracked_short_qty) * 0.005)
+                    if abs(drift) > tolerance:
+                        drift_value = abs(drift) * self.current_price
+                        print(f"  🚨 POSITION DRIFT: exchange={actual_net:+.4f} expected={expected_net:+.4f} drift={drift:+.4f} (~${drift_value:.2f})")
+                        print(f"     Tracked: L={tracked_long_qty:.4f} S={tracked_short_qty:.4f}")
+                        send_telegram(
+                            f"🚨 POSITION DRIFT DETECTED\n"
+                            f"Exchange net: {actual_net:+.4f}\n"
+                            f"Expected net: {expected_net:+.4f}\n"
+                            f"Drift: {drift:+.4f} (~${drift_value:.2f})\n"
+                            f"Tracked: L={tracked_long_qty:.4f} S={tracked_short_qty:.4f}"
+                        )
+
+                    # --- Case 4: Sign mismatch (deal tracking thinks opposite) ---
+                    if pos_amt > 0 and self.long_deal and self.short_deal:
+                        if abs(pos_amt - tracked_long_qty) < tolerance:
+                            # Net matches long only — short was likely closed on exchange
+                            print("  ⚠️  Net position matches LONG only — clearing short_deal")
+                            self._cancel_remaining_sos(self.short_deal)
+                            self.short_deal = None
+                    elif pos_amt < 0 and self.long_deal and self.short_deal:
+                        if abs(abs(pos_amt) - tracked_short_qty) < tolerance:
+                            print("  ⚠️  Net position matches SHORT only — clearing long_deal")
+                            self._cancel_remaining_sos(self.long_deal)
+                            self.long_deal = None
         except Exception as e:
             print(f"  [WARN] Position sync error: {e}")
 
