@@ -10,7 +10,7 @@ from pathlib import Path
 # Add parent to path so trading package imports work
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from trading.aster_trader_v2 import AsterTraderV2, PROFILES
+from trading.aster_trader_v2 import AsterTraderV2, PROFILES, get_max_coins_for_capital
 
 def signal_handler(signum, frame):
     """Handle Ctrl+C gracefully."""
@@ -30,6 +30,8 @@ def main():
                        help="Starting capital in USD (default: 10000)")
     parser.add_argument("--profile", choices=list(PROFILES.keys()), default="medium",
                        help="Initial risk profile (default: medium)")
+    parser.add_argument("--max-coins", type=int, default=None,
+                       help="Override max coins (default: auto from tier)")
     
     args = parser.parse_args()
     
@@ -38,12 +40,13 @@ def main():
     if hasattr(signal, 'SIGTERM'):
         signal.signal(signal.SIGTERM, signal_handler)
     
-    print("AIT Paper Trading Bot v2.0")
+    print("AIT Paper Trading Bot v2.0 - Multi-Coin")
     print("=" * 50)
-    print(f"Symbol: {args.symbol}")
+    print(f"Symbol: {args.symbol} (legacy)")
     print(f"Timeframe: {args.timeframe}")
     print(f"Capital: ${args.capital:,.2f}")
     print(f"Profile: {PROFILES[args.profile]['name']}")
+    print(f"Max Coins: {args.max_coins or 'auto'}")
     print("=" * 50)
     
     # Create bot instance
@@ -52,7 +55,8 @@ def main():
         symbol=args.symbol,
         timeframe=args.timeframe,
         capital=args.capital,
-        profile=args.profile
+        profile=args.profile,
+        max_coins=args.max_coins
     )
     
     try:

@@ -630,6 +630,73 @@ Example: Pro Tier ($25K max capital)
 
 ---
 
+## 11. Tier-Based Coin Scaling
+
+### 11.1 Capital Tier Framework
+
+The AIT system scales coin allocation based on user capital tiers, providing broader market diversification as capital increases while maintaining appropriate per-coin minimums.
+
+| Tier | Capital | Max Coins | Per-Coin Floor |
+|------|---------|-----------|----------------|
+| Starter | $5K | 1 | ~$5K |
+| Trader | $10K | 2 | ~$5K |
+| Pro | $25K | 3 | ~$8K |
+| Elite | $50K | 5 | ~$10K |
+| Whale | $100K | 8 | ~$12.5K |
+
+### 11.2 Allocation Rules
+
+**Scanner Integration**
+- Scanner runs every 4 hours, identifying top N coins per user's tier
+- Coins allocated proportional to scanner scores within tier limits
+- Each coin's allocation further splits across active risk profiles (Low/Medium/High)
+
+**Capital Distribution**
+- 10% global reserve stays off the table for risk management
+- Remaining 90% of capital distributed across selected coins
+- Minimum ~$3K per coin floor — if capital can't support a coin above this threshold, reduce max coins
+- Higher tiers get broader market coverage, not just more capital per coin
+
+**Rotation Management**
+- When a coin rotates out of top recommendations: no new deals initiated
+- Graceful wind-down process: 2-hour force-close window, 4-hour minimum hold requirement
+- Prevents excessive churn while allowing portfolio optimization
+
+### 11.3 Multi-Coin Risk Distribution
+
+**Risk Profile Integration**
+- Each selected coin operates across all active risk profiles
+- Low Risk profile parameters applied to Low Risk allocation for each coin
+- Medium Risk profile parameters applied to Medium Risk allocation for each coin  
+- High Risk profile parameters applied to High Risk allocation for each coin
+
+**Example: $25K Pro Tier User with 60% Low / 30% Medium / 10% High allocation**
+```
+Total Capital: $25K
+Reserve (10%): $2.5K  
+Available: $22.5K
+Max Coins: 3
+
+Per-Coin Allocation:
+Coin A (40% scanner score): $9K → $5.4K Low + $2.7K Medium + $0.9K High
+Coin B (35% scanner score): $7.9K → $4.7K Low + $2.4K Medium + $0.8K High  
+Coin C (25% scanner score): $5.6K → $3.4K Low + $1.7K Medium + $0.5K High
+```
+
+### 11.4 Implementation Benefits
+
+**Diversification Without Dilution**
+- Higher capital tiers achieve broader market exposure
+- Each coin maintains meaningful allocation sizes
+- Risk profiles apply consistently across all coins
+
+**Scalable Architecture**
+- Single framework scales from $5K starter accounts to $100K+ whale accounts
+- Maintains risk management principles at all capital levels
+- Natural upgrade path encourages tier progression
+
+---
+
 ## Appendix A: Technical Implementation Notes
 
 ### A.1 Database Schema Extensions

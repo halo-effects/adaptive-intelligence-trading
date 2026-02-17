@@ -34,6 +34,15 @@ except ImportError:
 PAPER_DIR = Path(__file__).parent / "paper"
 PAPER_DIR.mkdir(exist_ok=True)
 
+# Tier-based coin scaling
+TIER_COIN_LIMITS = {
+    5000: 1,    # Starter
+    10000: 2,   # Trader 
+    25000: 3,   # Pro
+    50000: 5,   # Elite
+    100000: 8   # Whale
+}
+
 # Telegram config (same as live)
 TG_TOKEN = "8528958079:AAF90HSJ5Ck1urUydzS5CUvyf2EEeB7LUwc"
 TG_CHAT_ID = "5221941584"
@@ -123,6 +132,83 @@ def send_telegram(msg: str):
         )
     except Exception:
         pass
+
+
+def get_max_coins_for_capital(capital: float) -> int:
+    """Determine max coins based on capital tier."""
+    for tier_capital in sorted(TIER_COIN_LIMITS.keys(), reverse=True):
+        if capital >= tier_capital:
+            return TIER_COIN_LIMITS[tier_capital]
+    return 1  # Default to 1 coin for very low capital
+
+
+def load_scanner_recommendations() -> List[Dict]:
+    """Load scanner results from live directory."""
+    scanner_path = Path(__file__).parent / "live" / "scanner_recommendation.json"
+    try:
+        with open(scanner_path) as f:
+            data = json.load(f)
+            
+        # Check if data is stale (>24h)
+        timestamp = datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00"))
+        age = datetime.now(timezone.utc) - timestamp
+        if age > timedelta(hours=24):
+            print(f"[WARN] Scanner data is {age.total_seconds()/3600:.1f}h old, falling back to HYPEUSDT")
+            return [{"symbol": "HYPE/USDT", "score": 100.0}]
+            
+        # Convert top_5 to standardized format
+        coins = []
+        for coin in data.get("top_5", []):
+            symbol = coin["symbol"]
+            # Convert from format like "HYPE/USDT" to "HYPEUSDT"
+            if "/" in symbol:
+                symbol = symbol.replace("/", "")
+            coins.append({"symbol": symbol, "score": coin["score"]})
+            
+        return coins
+    except Exception as e:
+        print(f"[WARN] Failed to load scanner data: {e}, falling back to HYPEUSDT")
+        return [{"symbol": "HYPEUSDT", "score": 100.0}]
+
+
+def get_coins_for_trading(capital: float, max_coins_override: Optional[int] = None) -> List[Dict]:
+    """Get top coins for trading based on capital tier and scanner results."""
+    max_coins = max_coins_override or get_max_coins_for_capital(capital)
+    scanner_coins = load_scanner_recommendations()
+    
+    # Take top N coins up to max_coins limit
+    selected_coins = scanner_coins[:max_coins]
+    
+    # Calculate total score for proportional allocation
+    total_score = sum(coin["score"] for coin in selected_coins)
+    
+    # Calculate capital allocation per coin with $3K minimum floor
+    min_per_coin = 3000
+    available_capital = capital * 0.9  # 10% reserve
+    
+    # First pass: calculate proportional allocation
+    for coin in selected_coins:
+        coin["allocation"] = (coin["score"] / total_score) * available_capital
+    
+    # Check if any coin falls below minimum - if so, reduce max coins
+    coins_below_min = [c for c in selected_coins if c["allocation"] < min_per_coin]
+    while coins_below_min and len(selected_coins) > 1:
+        # Remove lowest scoring coin below minimum
+        lowest_coin = min(coins_below_min, key=lambda x: x["score"])
+        selected_coins.remove(lowest_coin)
+        
+        # Recalculate allocations
+        total_score = sum(coin["score"] for coin in selected_coins)
+        for coin in selected_coins:
+            coin["allocation"] = (coin["score"] / total_score) * available_capital
+        
+        coins_below_min = [c for c in selected_coins if c["allocation"] < min_per_coin]
+    
+    print(f"Selected {len(selected_coins)} coins for ${capital:,.0f} capital (max: {max_coins})")
+    for coin in selected_coins:
+        print(f"  {coin['symbol']}: ${coin['allocation']:,.0f} (score: {coin['score']:.1f})")
+    
+    return selected_coins
 
 
 class AsterAPI:
@@ -354,9 +440,10 @@ class ProfileManager:
 class PaperDealManager:
     """Manages virtual deals like the live DealManager."""
     
-    def __init__(self, profile_manager: ProfileManager, virtual_account: VirtualAccount):
+    def __init__(self, profile_manager: ProfileManager, virtual_account: VirtualAccount, symbol: str = "HYPEUSDT"):
         self.profile_manager = profile_manager
         self.virtual_account = virtual_account
+        self.symbol = symbol
         self.long_deal: Optional[VirtualDeal] = None
         self.short_deal: Optional[VirtualDeal] = None
         self.deal_counter = 0
@@ -440,7 +527,7 @@ class PaperDealManager:
         
         deal = VirtualDeal(
             deal_id=self.deal_counter,
-            symbol="HYPEUSDT",  # Hardcoded for now
+            symbol=self.symbol,
             entry_price=entry_price,
             entry_qty=qty,
             entry_cost=cost,
@@ -467,7 +554,7 @@ class PaperDealManager:
         
         send_telegram(
             f"{dir_emoji} Deal #{self.deal_counter} {direction}\n"
-            f"HYPEUSDT\nEntry: ${entry_price:.3f}\nQty: {qty}\n"
+            f"{self.symbol}\nEntry: ${entry_price:.3f}\nQty: {qty}\n"
             f"TP: ${deal.tp_price:.3f}\nLeverage: {params['leverage']}x\nProfile: {PROFILES[profile]['name']}"
         )
         
@@ -514,7 +601,7 @@ class PaperDealManager:
                     lev = self.profile_manager.get_profile_params(active).get("leverage", 1)
                     send_telegram(
                         f"SO #{deal.safety_orders_filled} Filled ({direction})\n"
-                        f"HYPEUSDT @ ${fill_price:.3f}\n"
+                        f"{self.symbol} @ ${fill_price:.3f}\n"
                         f"New avg: ${deal.avg_entry:.3f}\n"
                         f"New TP: ${deal.tp_price:.3f}\n"
                         f"Leverage: {lev}x"
@@ -549,7 +636,7 @@ class PaperDealManager:
                 lev = self.profile_manager.get_profile_params(active).get("leverage", 1)
                 send_telegram(
                     f"TP HIT - Deal #{deal.deal_id} {direction}\n"
-                    f"HYPEUSDT closed @ ${fill_price:.3f}\n"
+                    f"{self.symbol} closed @ ${fill_price:.3f}\n"
                     f"PnL: ${pnl:.2f} ({pnl_pct:+.1f}%)\n"
                     f"SOs used: {deal.safety_orders_filled}\n"
                     f"Leverage: {lev}x"
@@ -562,13 +649,14 @@ class PaperDealManager:
 
 
 class AsterTraderV2:
-    """Paper Trading Bot with Risk Profiles."""
+    """Paper Trading Bot with Risk Profiles and Multi-Coin Support."""
     
     def __init__(self, symbol: str = "HYPEUSDT", timeframe: str = "5m",
-                 capital: float = 10000, profile: str = "medium"):
-        self.symbol = symbol
+                 capital: float = 10000, profile: str = "medium", max_coins: Optional[int] = None):
+        self.symbol = symbol  # Legacy - kept for backwards compatibility
         self.timeframe = timeframe
         self.capital = capital
+        self.max_coins_override = max_coins
         
         self.api = AsterAPI()
         self.virtual_account = VirtualAccount(capital)
@@ -576,43 +664,56 @@ class AsterTraderV2:
         # Profile management
         self.profile_manager = ProfileManager(PAPER_DIR / "allocation.json")
         
-        # Deal management
-        self.deal_manager = PaperDealManager(self.profile_manager, self.virtual_account)
+        # Multi-coin setup
+        self.coins = get_coins_for_trading(capital, max_coins)
+        self.coin_managers = {}  # symbol -> PaperDealManager
+        self.coin_prices = {}    # symbol -> current price
+        self.coin_regimes = {}   # symbol -> current regime
+        self.coin_trends = {}    # symbol -> bullish/bearish
+        
+        # Initialize deal managers for each coin
+        for coin_data in self.coins:
+            symbol = coin_data["symbol"]
+            # Create individual profile manager for each coin with allocated capital
+            coin_profile_manager = ProfileManager(PAPER_DIR / "allocation.json")
+            coin_profile_manager.allocation["total_capital"] = coin_data["allocation"]
+            
+            self.coin_managers[symbol] = PaperDealManager(coin_profile_manager, self.virtual_account, symbol)
         
         # State
-        self.current_regime = "UNKNOWN"
-        self.current_price = 0.0
         self.start_equity = capital
         self.start_time = datetime.now(timezone.utc).isoformat()
         self.cycle_count = 0
         self._running = False
-        self._trend_bullish = True
-        self._last_klines_df: Optional[pd.DataFrame] = None
         self.guardrail_events = []
         
-        print(f"Paper trading bot initialized: {self.symbol} | Capital: ${self.capital}")
+        coin_list = ", ".join([f"{c['symbol']}(${c['allocation']:,.0f})" for c in self.coins])
+        print(f"Paper trading bot initialized: {coin_list} | Total: ${self.capital:,.0f}")
         
-    def detect_regime(self) -> str:
-        """Detect market regime using same logic as live bot."""
+    def detect_regime_for_coin(self, symbol: str) -> str:
+        """Detect market regime for a specific coin."""
         try:
-            df = self.api.klines(self.symbol, self.timeframe, limit=300)
+            df = self.api.klines(symbol, self.timeframe, limit=300)
             if len(df) < 100:
                 return "UNKNOWN"
-            self.current_price = float(df["close"].iloc[-1])
-            self._last_klines_df = df
+            price = float(df["close"].iloc[-1])
+            self.coin_prices[symbol] = price
+            
             regimes = classify_regime_v2(df, self.timeframe)
             
             # Detect trend direction via SMA50
             sma50 = df["close"].rolling(50).mean().iloc[-1]
-            self._trend_bullish = self.current_price >= sma50
+            self.coin_trends[symbol] = price >= sma50
             
-            return regimes.iloc[-1]
+            regime = regimes.iloc[-1]
+            self.coin_regimes[symbol] = regime
+            return regime
         except Exception as e:
-            print(f"  [WARN] Regime detection error: {e}")
-            return self.current_regime
+            print(f"  [WARN] Regime detection error for {symbol}: {e}")
+            return self.coin_regimes.get(symbol, "UNKNOWN")
             
     def write_status(self):
-        """Write comprehensive status JSON."""
+        """Write comprehensive status JSON with multi-coin data."""
         equity = self.virtual_account.get_equity()
         pnl = equity - self.start_equity
         pnl_pct = pnl / self.start_equity * 100 if self.start_equity > 0 else 0
@@ -621,17 +722,43 @@ class AsterTraderV2:
         active_profile = self.profile_manager.get_active_profile()
         profile_params = self.profile_manager.get_profile_params(active_profile)
         
-        long_alloc, short_alloc = REGIME_ALLOC.get(self.current_regime, (0.5, 0.5))
-        if self.current_regime in DIRECTIONAL_REGIMES and not self._trend_bullish:
-            long_alloc, short_alloc = short_alloc, long_alloc
+        # Collect per-coin data
+        coin_data = {}
+        total_deal_counter = 0
+        
+        for coin_info in self.coins:
+            symbol = coin_info["symbol"]
+            manager = self.coin_managers[symbol]
+            price = self.coin_prices.get(symbol, 0.0)
+            regime = self.coin_regimes.get(symbol, "UNKNOWN")
+            trend_bullish = self.coin_trends.get(symbol, True)
+            
+            # Get regime allocation for this coin
+            long_alloc, short_alloc = REGIME_ALLOC.get(regime, (0.5, 0.5))
+            if regime in DIRECTIONAL_REGIMES and not trend_bullish:
+                long_alloc, short_alloc = short_alloc, long_alloc
+            
+            coin_data[symbol] = {
+                "allocation": coin_info["allocation"],
+                "price": price,
+                "regime": regime,
+                "trend_direction": "bullish" if trend_bullish else "bearish",
+                "regime_alloc": {"long": long_alloc, "short": short_alloc},
+                "long_deal": manager.long_deal.to_dict() if manager.long_deal else None,
+                "short_deal": manager.short_deal.to_dict() if manager.short_deal else None,
+                "deal_counter": manager.deal_counter,
+                "adaptive_tp": {
+                    "current_tp_pct": round(manager.current_tp_pct, 3),
+                    "current_dev_pct": round(manager.current_dev_pct, 3),
+                }
+            }
+            total_deal_counter += manager.deal_counter
             
         status = {
             "mode": "paper",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "symbol": self.symbol,
             "timeframe": self.timeframe,
             "running": self._running,
-            "price": self.current_price,
             "active_profile": active_profile,
             "allocation": self.profile_manager.allocation,
             "total_capital": self.capital,
@@ -640,17 +767,6 @@ class AsterTraderV2:
             "pnl": round(pnl, 2),
             "pnl_pct": round(pnl_pct, 2),
             "drawdown_pct": round(drawdown_pct, 2),
-            "regime": self.current_regime,
-            "trend_direction": "bullish" if self._trend_bullish else "bearish",
-            "regime_alloc": {"long": long_alloc, "short": short_alloc},
-            "adaptive_tp": {
-                "current_tp_pct": round(self.deal_manager.current_tp_pct, 3),
-                "current_dev_pct": round(self.deal_manager.current_dev_pct, 3),
-                "tp_range": profile_params["tp_range"],
-                "deviation_range": profile_params["deviation_range"],
-            },
-            "long_deal": self.deal_manager.long_deal.to_dict() if self.deal_manager.long_deal else None,
-            "short_deal": self.deal_manager.short_deal.to_dict() if self.deal_manager.short_deal else None,
             "config": {
                 "profile": active_profile,
                 "leverage": profile_params["leverage"],
@@ -659,18 +775,25 @@ class AsterTraderV2:
                 "base_order_pct": profile_params["base_order_pct"],
                 "capital_reserve": profile_params["capital_reserve"],
             },
-            "deal_counter": self.deal_manager.deal_counter,
+            "total_deal_counter": total_deal_counter,
             "cycle_count": self.cycle_count,
             "start_time": self.start_time,
             "guardrail_events": self.guardrail_events,
+            "coins": coin_data,
+            "coin_count": len(self.coins),
+            "max_coins": self.max_coins_override or get_max_coins_for_capital(self.capital),
+            
+            # Legacy fields for backwards compatibility
+            "symbol": self.coins[0]["symbol"] if self.coins else "UNKNOWN",
+            "price": self.coin_prices.get(self.coins[0]["symbol"], 0.0) if self.coins else 0.0,
         }
         
         with open(PAPER_DIR / "status.json", "w") as f:
             json.dump(status, f, indent=2)
             
-    def log_trade(self, action: str, price: float, qty: float, notional: float,
-                  so_count: int = 0, pnl: float = 0, direction: str = "LONG", deal_id: int = 0):
-        """Log trade to CSV file."""
+    def log_trade(self, action: str, symbol: str, price: float, qty: float, notional: float,
+                  so_count: int = 0, pnl: float = 0, direction: str = "LONG", deal_id: int = 0, regime: str = "UNKNOWN"):
+        """Log trade to CSV file with symbol column."""
         path = PAPER_DIR / "trades.csv"
         write_header = not path.exists()
         with open(path, "a", newline="") as f:
@@ -679,24 +802,25 @@ class AsterTraderV2:
                 w.writerow(["timestamp", "action", "symbol", "deal_id", "direction", "price", "qty",
                             "notional", "so_count", "pnl", "regime"])
             w.writerow([
-                datetime.now(timezone.utc).isoformat(), action, self.symbol,
+                datetime.now(timezone.utc).isoformat(), action, symbol,
                 deal_id, direction, f"{price:.3f}", f"{qty:.2f}", f"{notional:.2f}", 
-                so_count, f"{pnl:.2f}", self.current_regime
+                so_count, f"{pnl:.2f}", regime
             ])
             
     def start(self):
-        """Main trading loop."""
+        """Main trading loop with multi-coin support."""
         self._running = True
         
+        coin_list = ", ".join([f"{c['symbol']}(${c['allocation']:,.0f})" for c in self.coins])
         print(f"\nPaper Trading Bot started!")
-        print(f"  Symbol: {self.symbol} | TF: {self.timeframe} | Capital: ${self.capital:.2f}")
+        print(f"  Coins: {coin_list} | TF: {self.timeframe} | Total: ${self.capital:,.0f}")
         
         active = self.profile_manager.get_active_profile()
         lev = self.profile_manager.get_profile_params(active).get("leverage", 1)
         send_telegram(
-            f"Paper Trading Bot Started\n"
-            f"{self.symbol} | {self.timeframe}\n"
-            f"Capital: ${self.capital:.2f} | Leverage: {lev}x\n"
+            f"Multi-Coin Paper Trading Bot Started\n"
+            f"Coins: {len(self.coins)} | {self.timeframe}\n"
+            f"Capital: ${self.capital:,.0f} | Leverage: {lev}x\n"
             f"Profile: {PROFILES[active]['name']}"
         )
         
@@ -709,76 +833,85 @@ class AsterTraderV2:
                     print(f"API ping failed, retrying...")
                     time.sleep(10)
                     continue
-                    
-                # Detect regime
-                self.current_regime = self.detect_regime()
                 
                 # Check for profile changes
                 profile_changed = self.profile_manager.refresh_allocation()
                 active_profile = self.profile_manager.get_active_profile()
                 params = self.profile_manager.get_profile_params(active_profile)
                 
-                # Get regime allocation
-                long_alloc, short_alloc = REGIME_ALLOC.get(self.current_regime, (0.5, 0.5))
+                print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Cycle #{self.cycle_count} | {PROFILES[active_profile]['name']}")
                 
-                # Handle EXTREME regime per profile
-                if self.current_regime == "EXTREME":
-                    extreme_alloc = params["extreme_allocation"]
-                    long_alloc, short_alloc = extreme_alloc[0] / 100, extreme_alloc[1] / 100
+                # Process each coin
+                for coin_info in self.coins:
+                    symbol = coin_info["symbol"]
+                    manager = self.coin_managers[symbol]
                     
-                # Directional awareness
-                if self.current_regime in DIRECTIONAL_REGIMES and not self._trend_bullish:
-                    long_alloc, short_alloc = short_alloc, long_alloc
+                    # Detect regime for this coin
+                    regime = self.detect_regime_for_coin(symbol)
+                    price = self.coin_prices.get(symbol, 0.0)
+                    trend_bullish = self.coin_trends.get(symbol, True)
                     
-                # Apply max directional bias
-                max_bias = params["max_directional_bias"]
-                max_long, max_short = max_bias[0] / 100, max_bias[1] / 100
-                if long_alloc > max_long:
-                    excess = long_alloc - max_long
-                    long_alloc = max_long
-                    short_alloc = min(short_alloc + excess, 1.0)
-                if short_alloc > max_short:
-                    excess = short_alloc - max_short
-                    short_alloc = max_short  
-                    long_alloc = min(long_alloc + excess, 1.0)
-                
-                trend_dir = "^" if self._trend_bullish else "v"
-                long_str = f"L#{self.deal_manager.long_deal.deal_id}({self.deal_manager.long_deal.safety_orders_filled}SO)" if self.deal_manager.long_deal else "—"
-                short_str = f"S#{self.deal_manager.short_deal.deal_id}({self.deal_manager.short_deal.safety_orders_filled}SO)" if self.deal_manager.short_deal else "—"
-                print(f"\n[{datetime.now().strftime('%H:%M:%S')}] ${self.current_price:.3f} | {self.current_regime}{trend_dir} | {PROFILES[active_profile]['name']} | {long_str} {short_str} | alloc L:{long_alloc:.0%}/S:{short_alloc:.0%}")
-                
-                # Update current price in deal manager
-                self.deal_manager.current_price = self.current_price
-                
-                # Check existing deals for fills
-                closed_deals = self.deal_manager.check_deals_for_fills()
-                
-                # Log closed deals
-                for closed in closed_deals:
-                    direction, deal_id = closed.split('_')
-                    self.log_trade("TP_HIT", self.current_price, 0, 0, direction=direction, deal_id=int(deal_id))
-                
-                # Open new deals based on allocation (only if we have valid price)
-                if self.current_price > 0:
-                    if not self.deal_manager.long_deal and long_alloc > 0:
-                        print(f"    Opening LONG deal (alloc: {long_alloc:.0%})")
-                        self.deal_manager.open_deal("LONG", active_profile, long_alloc)
-                        if self.deal_manager.long_deal:
-                            self.log_trade("OPEN", self.deal_manager.long_deal.entry_price, 
-                                         self.deal_manager.long_deal.entry_qty,
-                                         self.deal_manager.long_deal.entry_cost,
-                                         direction="LONG", deal_id=self.deal_manager.long_deal.deal_id)
+                    # Get regime allocation
+                    long_alloc, short_alloc = REGIME_ALLOC.get(regime, (0.5, 0.5))
                     
-                    if not self.deal_manager.short_deal and short_alloc > 0:
-                        print(f"    Opening SHORT deal (alloc: {short_alloc:.0%})")
-                        self.deal_manager.open_deal("SHORT", active_profile, short_alloc)
-                        if self.deal_manager.short_deal:
-                            self.log_trade("OPEN", self.deal_manager.short_deal.entry_price,
-                                         self.deal_manager.short_deal.entry_qty,
-                                         self.deal_manager.short_deal.entry_cost,
-                                         direction="SHORT", deal_id=self.deal_manager.short_deal.deal_id)
-                else:
-                    print(f"    Waiting for price data to open new deals...")
+                    # Handle EXTREME regime per profile
+                    if regime == "EXTREME":
+                        extreme_alloc = params["extreme_allocation"]
+                        long_alloc, short_alloc = extreme_alloc[0] / 100, extreme_alloc[1] / 100
+                        
+                    # Directional awareness
+                    if regime in DIRECTIONAL_REGIMES and not trend_bullish:
+                        long_alloc, short_alloc = short_alloc, long_alloc
+                        
+                    # Apply max directional bias
+                    max_bias = params["max_directional_bias"]
+                    max_long, max_short = max_bias[0] / 100, max_bias[1] / 100
+                    if long_alloc > max_long:
+                        excess = long_alloc - max_long
+                        long_alloc = max_long
+                        short_alloc = min(short_alloc + excess, 1.0)
+                    if short_alloc > max_short:
+                        excess = short_alloc - max_short
+                        short_alloc = max_short  
+                        long_alloc = min(long_alloc + excess, 1.0)
+                    
+                    trend_dir = "^" if trend_bullish else "v"
+                    long_str = f"L#{manager.long_deal.deal_id}({manager.long_deal.safety_orders_filled}SO)" if manager.long_deal else "—"
+                    short_str = f"S#{manager.short_deal.deal_id}({manager.short_deal.safety_orders_filled}SO)" if manager.short_deal else "—"
+                    print(f"  {symbol}: ${price:.3f} | {regime}{trend_dir} | {long_str} {short_str} | L:{long_alloc:.0%}/S:{short_alloc:.0%}")
+                    
+                    # Update current price in deal manager
+                    manager.current_price = price
+                    
+                    # Check existing deals for fills
+                    closed_deals = manager.check_deals_for_fills()
+                    
+                    # Log closed deals
+                    for closed in closed_deals:
+                        direction, deal_id = closed.split('_')
+                        self.log_trade("TP_HIT", symbol, price, 0, 0, direction=direction, deal_id=int(deal_id), regime=regime)
+                    
+                    # Open new deals based on allocation (only if we have valid price)
+                    if price > 0:
+                        if not manager.long_deal and long_alloc > 0:
+                            print(f"      Opening LONG deal for {symbol} (alloc: {long_alloc:.0%})")
+                            manager.open_deal("LONG", active_profile, long_alloc)
+                            if manager.long_deal:
+                                self.log_trade("OPEN", symbol, manager.long_deal.entry_price, 
+                                             manager.long_deal.entry_qty,
+                                             manager.long_deal.entry_cost,
+                                             direction="LONG", deal_id=manager.long_deal.deal_id, regime=regime)
+                        
+                        if not manager.short_deal and short_alloc > 0:
+                            print(f"      Opening SHORT deal for {symbol} (alloc: {short_alloc:.0%})")
+                            manager.open_deal("SHORT", active_profile, short_alloc)
+                            if manager.short_deal:
+                                self.log_trade("OPEN", symbol, manager.short_deal.entry_price,
+                                             manager.short_deal.entry_qty,
+                                             manager.short_deal.entry_cost,
+                                             direction="SHORT", deal_id=manager.short_deal.deal_id, regime=regime)
+                    else:
+                        print(f"      Waiting for {symbol} price data...")
                 
                 # Write status
                 self.write_status()
