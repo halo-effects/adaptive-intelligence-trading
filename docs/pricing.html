@@ -613,6 +613,7 @@ section { padding: 80px 0; }
     <div class="hero-badges">
       <div class="hero-badge">💰 No Recurring Fees</div>
       <div class="hero-badge">📈 ~29 Day Breakeven</div>
+      <div class="hero-badge">⚖️ 3 Risk Profiles</div>
       <div class="hero-badge">🔓 Lifetime Updates</div>
     </div>
   </div>
@@ -632,6 +633,7 @@ section { padding: 80px 0; }
         <div class="tier-desc">Perfect for testing the waters and learning automated trading</div>
         <ul class="feature-list">
           <li>1 simultaneous coin</li>
+          <li>3 risk profiles (Low, Medium, High)</li>
           <li>Full bot software</li>
           <li>Lifetime strategy updates</li>
           <li>Two-tier coin scanner</li>
@@ -650,6 +652,7 @@ section { padding: 80px 0; }
         <div class="tier-desc">For serious traders ready to automate their portfolio</div>
         <ul class="feature-list">
           <li>Up to 2 simultaneous coins</li>
+          <li>3 risk profiles (Low, Medium, High)</li>
           <li>Full bot software</li>
           <li>Lifetime strategy updates</li>
           <li>Two-tier coin scanner</li>
@@ -669,6 +672,7 @@ section { padding: 80px 0; }
         <div class="tier-desc">The sweet spot for professional automated trading</div>
         <ul class="feature-list">
           <li>Up to 3 simultaneous coins</li>
+          <li>3 risk profiles (Low, Medium, High)</li>
           <li>Full bot software</li>
           <li>Lifetime strategy updates</li>
           <li>Two-tier coin scanner</li>
@@ -687,6 +691,7 @@ section { padding: 80px 0; }
         <div class="tier-desc">For high-capital traders seeking maximum efficiency</div>
         <ul class="feature-list">
           <li>Up to 5 simultaneous coins</li>
+          <li>3 risk profiles (Low, Medium, High)</li>
           <li>Full bot software</li>
           <li>Lifetime strategy updates</li>
           <li>Two-tier coin scanner</li>
@@ -705,6 +710,7 @@ section { padding: 80px 0; }
         <div class="tier-desc">For institutional-level capital deployment</div>
         <ul class="feature-list">
           <li>Up to 8 simultaneous coins</li>
+          <li>3 risk profiles (Low, Medium, High)</li>
           <li>Full bot software</li>
           <li>Lifetime strategy updates</li>
           <li>Two-tier coin scanner</li>
@@ -746,6 +752,11 @@ section { padding: 80px 0; }
         <div class="feature-icon">🧠</div>
         <div class="feature-title">6 Market Regimes</div>
         <div class="feature-desc">Automatic detection and parameter adaptation for any market condition</div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">⚖️</div>
+        <div class="feature-title">3 Risk Profiles</div>
+        <div class="feature-desc">Low (1×), Medium (2×), High (5×) leverage — allocate capital across profiles with auto-guardrails</div>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-icon">🔄</div>
@@ -816,30 +827,35 @@ section { padding: 80px 0; }
       <div class="breakeven-card fade-in">
         <div class="breakeven-tier">Starter</div>
         <div class="breakeven-price">$500</div>
+        <div style="color:var(--text3);font-size:0.8rem;margin-bottom:8px;">$5K cap · 1 coin</div>
         <div class="breakeven-daily">~$17.50/day</div>
         <div class="breakeven-days">29 days to break even</div>
       </div>
       <div class="breakeven-card fade-in">
         <div class="breakeven-tier">Trader</div>
         <div class="breakeven-price">$1,000</div>
+        <div style="color:var(--text3);font-size:0.8rem;margin-bottom:8px;">$10K cap · 2 coins</div>
         <div class="breakeven-daily">~$35/day</div>
         <div class="breakeven-days">29 days to break even</div>
       </div>
       <div class="breakeven-card fade-in">
         <div class="breakeven-tier">Pro</div>
         <div class="breakeven-price">$2,500</div>
+        <div style="color:var(--text3);font-size:0.8rem;margin-bottom:8px;">$25K cap · 3 coins</div>
         <div class="breakeven-daily">~$87.50/day</div>
         <div class="breakeven-days">29 days to break even</div>
       </div>
       <div class="breakeven-card fade-in">
         <div class="breakeven-tier">Elite</div>
         <div class="breakeven-price">$5,000</div>
+        <div style="color:var(--text3);font-size:0.8rem;margin-bottom:8px;">$50K cap · 5 coins</div>
         <div class="breakeven-daily">~$175/day</div>
         <div class="breakeven-days">29 days to break even</div>
       </div>
       <div class="breakeven-card fade-in">
         <div class="breakeven-tier">Whale</div>
         <div class="breakeven-price">$10,000</div>
+        <div style="color:var(--text3);font-size:0.8rem;margin-bottom:8px;">$100K cap · 8 coins</div>
         <div class="breakeven-daily">~$350/day</div>
         <div class="breakeven-days">29 days to break even</div>
       </div>
@@ -870,7 +886,7 @@ section { padding: 80px 0; }
       <div class="step-card fade-in">
         <div class="step-number">3</div>
         <div class="step-title">Start Trading</div>
-        <div class="step-desc">Connect your Aster DEX account, fund your wallet, and let AIT handle the rest</div>
+        <div class="step-desc">Connect your Aster DEX account, choose your risk profile allocation, and let AIT handle the rest</div>
       </div>
     </div>
   </div>
@@ -890,7 +906,7 @@ section { padding: 80px 0; }
             <span class="faq-toggle">+</span>
           </button>
           <div class="faq-answer">
-            Full bot software, lifetime updates, coin scanner, dashboard, strategy params. You run it on your own machine.
+            Full bot software with 3 risk profiles (Low, Medium, High leverage), multi-coin trading (tier-dependent), two-tier coin scanner, personal dashboard, lifetime strategy updates, and all adaptive trading parameters. You run it on your own machine — your keys, your data, your control.
           </div>
         </div>
         <div class="faq-item">
@@ -908,7 +924,7 @@ section { padding: 80px 0; }
             <span class="faq-toggle">+</span>
           </button>
           <div class="faq-answer">
-            Absolutely. You only pay the difference between your current tier and the new one — for example, upgrading from Starter ($500) to Pro ($2,500) costs $2,000. The upgrade is instant: your capital cap increases immediately and the bot automatically scales up order sizing on the next deal cycle. No downtime, no reconfiguration needed. You can upgrade at any time from your license dashboard.
+            Absolutely. You only pay the difference between your current tier and the new one — for example, upgrading from Starter ($500) to Pro ($2,500) costs $2,000. The upgrade is instant: your capital cap increases, you unlock more simultaneous coins (e.g., Starter's 1 coin → Pro's 3 coins), and the bot automatically scales up on the next deal cycle. No downtime, no reconfiguration needed.
           </div>
         </div>
         <div class="faq-item">
@@ -1025,6 +1041,15 @@ section { padding: 80px 0; }
           </button>
           <div class="faq-answer">
             Yes. All trading carries risk. The DCA strategy can experience drawdowns, especially in strong one-directional moves. The margin protection and regime detection help minimize risk but cannot eliminate it.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What are risk profiles?
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer">
+            Three built-in trading configurations that control leverage, grid depth, and adaptive parameters. <strong>Low</strong> (1× leverage, 8 safety orders) is conservative and capital-preserving — this is the default. <strong>Medium</strong> (2× leverage, 12 safety orders) offers higher returns with moderate risk. <strong>High</strong> (5× leverage, 16 safety orders) is aggressive with deeper grids for experienced traders. You allocate your capital across profiles like a portfolio — for example, 60% Low / 30% Medium / 10% High. Built-in guardrails automatically shift capital to lower profiles if drawdowns hit thresholds (e.g., Medium → Low at 30% drawdown). <a href="risk-profiles.html" style="color:var(--accent2);">Learn more →</a>
           </div>
         </div>
         <div class="faq-item">
