@@ -1,25 +1,25 @@
 {
-  "timestamp": "2026-02-18T15:42:49.651188+00:00",
+  "timestamp": "2026-02-18T15:44:52.230724+00:00",
   "symbol": "HYPEUSDT",
   "timeframe": "5m",
   "running": true,
   "dry_run": false,
   "halted": false,
   "halt_reason": "",
-  "regime": "ACCUMULATION",
-  "price": 29.463,
-  "equity": 327.57,
+  "regime": "TRENDING",
+  "price": 29.441,
+  "equity": 327.53,
   "start_equity": 291.97,
   "peak_equity": 336.7,
   "total_deposits": 40,
-  "pnl": -4.4,
-  "pnl_pct": -1.33,
-  "drawdown_pct": 2.71,
+  "pnl": -4.45,
+  "pnl_pct": -1.34,
+  "drawdown_pct": 2.72,
   "max_drawdown_threshold": 25.0,
   "leverage": 1,
-  "capital": 327.6,
-  "available_balance": 136.5,
-  "cycle_count": 11287,
+  "capital": 327.53,
+  "available_balance": 123.38,
+  "cycle_count": 11290,
   "start_time": "2026-02-13T03:50:51.737221+00:00",
   "hedge_mode": false,
   "long_deal": {
@@ -32,7 +32,7 @@
     "direction": "LONG",
     "safety_orders_filled": 3,
     "safety_order_ids": [],
-    "tp_order_id": 1439239258,
+    "tp_order_id": 1439265557,
     "total_qty": 6.53,
     "total_cost": 197.37982,
     "avg_entry": 30.22661868300153,
@@ -50,8 +50,10 @@
     "entry_time": "2026-02-18T14:35:11.619890+00:00",
     "direction": "SHORT",
     "safety_orders_filled": 2,
-    "safety_order_ids": [],
-    "tp_order_id": 1439246756,
+    "safety_order_ids": [
+      1439265897
+    ],
+    "tp_order_id": 1439265846,
     "total_qty": 3.12,
     "total_cost": 91.41186,
     "avg_entry": 29.298673076923077,
@@ -62,28 +64,28 @@
   },
   "trend_direction": "bullish",
   "regime_alloc": {
-    "long": 0.7,
-    "short": 0.3
+    "long": 0.75,
+    "short": 0.25
   },
   "deal_counter": 84,
   "adaptive_tp": {
-    "current_tp_pct": 1.0,
+    "current_tp_pct": 1.17,
     "baseline_tp_pct": 1.5,
-    "current_dev_pct": 1.5,
+    "current_dev_pct": 2.112,
     "baseline_dev_pct": 2.5,
-    "atr_pct": 0.513,
+    "atr_pct": 0.5199,
     "atr_baseline_pct": 0.8,
     "tp_min": 1.0,
     "tp_max": 2.5,
     "dev_min": 1.2,
     "dev_max": 4.0,
-    "regime_tp_mult": 0.85,
-    "regime_dev_mult": 0.85
+    "regime_tp_mult": 1.2,
+    "regime_dev_mult": 1.3
   },
   "config": {
-    "tp_pct": 1.0,
+    "tp_pct": 1.17,
     "max_sos": 8,
-    "deviation_pct": 1.5,
+    "deviation_pct": 2.112,
     "so_vol_mult": 2.0,
     "base_order_pct": 0.04
   },
@@ -91,5 +93,5 @@
   "last_funding_time": "2026-02-18T12:00:00+00:00",
   "last_funding_rate": -7.018e-05,
   "last_funding_cost": -0.0123,
-  "current_funding_rate": -6.377e-05
+  "current_funding_rate": -6.514e-05
 }
