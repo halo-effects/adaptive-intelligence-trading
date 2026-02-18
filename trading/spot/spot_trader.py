@@ -30,6 +30,9 @@ logger = logging.getLogger(__name__)
 PAPER_BASE = Path(__file__).parent / "paper"
 PAPER_BASE.mkdir(exist_ok=True)
 
+LIVE_BASE = Path(__file__).parent / "live"
+LIVE_BASE.mkdir(exist_ok=True)
+
 # ── Telegram ───────────────────────────────────────────────────────────────
 
 TG_TOKEN = "8528958079:AAF90HSJ5Ck1urUydzS5CUvyf2EEeB7LUwc"
@@ -240,11 +243,13 @@ class SpotPaperTrader:
         symbols: Optional[List[str]] = None,
         timeframe: str = "15m",
         max_coins: Optional[int] = None,
+        live: bool = False,
     ):
         self.exchange_name = exchange.lower()
         self.profile = PROFILES[profile.lower()]
         self.initial_capital = capital
         self.cash = capital
+        self.live = live
         self.timeframe = timeframe
         self.max_coins = max_coins or self.profile.max_coins
         self.symbols = symbols or DEFAULT_SYMBOLS.get(self.exchange_name, ["ETH/USDT"])
@@ -271,8 +276,13 @@ class SpotPaperTrader:
         self._max_so_adjustments: Dict[str, int] = {}
         self._skip_next_so: set = set()
 
+        # Live mode: order tracking
+        self._open_orders: Dict[str, List[dict]] = {}  # symbol -> list of open order records
+        self._tp_orders: Dict[str, dict] = {}  # symbol -> {order_id, symbol, amount, price}
+
         # Per-exchange output directory
-        self.paper_dir = PAPER_BASE / self.exchange_name
+        base_dir = LIVE_BASE if live else PAPER_BASE
+        self.paper_dir = base_dir / self.exchange_name
         self.paper_dir.mkdir(parents=True, exist_ok=True)
 
         # Exchange client
@@ -288,6 +298,320 @@ class SpotPaperTrader:
         fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
         logger.addHandler(fh)
         logger.setLevel(logging.DEBUG)
+
+    # ── Live Order Execution ───────────────────────────────────────────
+
+    def _get_balance(self, asset: str = 'USDT') -> float:
+        """Get available (free) balance for asset."""
+        try:
+            bal = self.client.fetch_balance(asset)
+            return float(bal.get("free", 0) or 0)
+        except Exception as e:
+            logger.error("Failed to fetch balance for %s: %s", asset, e)
+            return 0.0
+
+    def _get_spot_position(self, symbol: str) -> float:
+        """Get current holdings of base asset (e.g. ETH from ETH/USDT)."""
+        base = symbol.split('/')[0]
+        return self._get_balance(base)
+
+    def _get_min_order(self, symbol: str) -> dict:
+        """Get minimum order constraints for a symbol."""
+        try:
+            return self.client.get_min_order_size(symbol)
+        except Exception as e:
+            logger.error("Failed to get min order size for %s: %s", symbol, e)
+            return {"min_amount": None, "min_cost": 5.0}
+
+    def _place_market_buy(self, symbol: str, cost_usd: float) -> Optional[dict]:
+        """Place market buy for a given USD cost. Returns order info or None."""
+        try:
+            # Get current price to calculate amount
+            price = self._get_current_price(symbol)
+            if not price or price <= 0:
+                logger.error("Cannot get price for market buy %s", symbol)
+                return None
+
+            amount = cost_usd / price
+
+            # Check minimums
+            mins = self._get_min_order(symbol)
+            min_cost = float(mins.get("min_cost") or 5.0)
+            min_amount = float(mins.get("min_amount") or 0)
+            if cost_usd < min_cost:
+                logger.warning("Order cost $%.2f below minimum $%.2f for %s", cost_usd, min_cost, symbol)
+                return None
+            if amount < min_amount:
+                logger.warning("Order amount %.8f below minimum %.8f for %s", amount, min_amount, symbol)
+                return None
+
+            # Check balance
+            quote = symbol.split('/')[1]
+            available = self._get_balance(quote)
+            if available < cost_usd:
+                logger.warning("Insufficient %s balance: $%.2f < $%.2f", quote, available, cost_usd)
+                self._alert(f"⚠️ Insufficient balance for {symbol} buy: ${available:.2f} < ${cost_usd:.2f}")
+                return None
+
+            logger.info("🔵 LIVE MARKET BUY %s: amount=%.8f (~$%.2f)", symbol, amount, cost_usd)
+            order = self.client.create_market_buy(symbol, amount)
+
+            # Wait for fill confirmation (up to 30s)
+            order_id = order.get('id')
+            if order_id:
+                order = self._wait_for_fill(symbol, order_id, timeout=30)
+
+            fill_price = float(order.get('average') or order.get('price') or price)
+            fill_qty = float(order.get('filled') or order.get('amount') or amount)
+            fill_cost = float(order.get('cost') or (fill_price * fill_qty))
+            fee_cost = 0.0
+            if order.get('fee'):
+                fee_cost = float(order['fee'].get('cost', 0) or 0)
+
+            logger.info("✅ FILLED: %s @ $%.6f, qty=%.8f, cost=$%.2f, fee=$%.4f",
+                        symbol, fill_price, fill_qty, fill_cost, fee_cost)
+            return {
+                'order_id': order_id,
+                'price': fill_price,
+                'qty': fill_qty,
+                'cost': fill_cost,
+                'fee': fee_cost,
+                'raw': order,
+            }
+        except Exception as e:
+            logger.error("LIVE MARKET BUY FAILED %s: %s", symbol, e)
+            self._alert(f"❌ Market buy failed for {symbol}: {e}")
+            return None
+
+    def _place_market_sell(self, symbol: str, amount: float) -> Optional[dict]:
+        """Place market sell. Returns order info or None."""
+        try:
+            mins = self._get_min_order(symbol)
+            min_amount = float(mins.get("min_amount") or 0)
+            if amount < min_amount:
+                logger.warning("Sell amount %.8f below minimum %.8f for %s", amount, min_amount, symbol)
+                return None
+
+            # Verify we have the asset
+            actual = self._get_spot_position(symbol)
+            if actual < amount * 0.99:  # 1% tolerance for rounding
+                logger.warning("Insufficient %s holdings: %.8f < %.8f", symbol, actual, amount)
+                amount = actual  # sell what we have
+
+            if amount <= 0:
+                return None
+
+            logger.info("🔴 LIVE MARKET SELL %s: amount=%.8f", symbol, amount)
+            order = self.client.create_market_sell(symbol, amount)
+
+            order_id = order.get('id')
+            if order_id:
+                order = self._wait_for_fill(symbol, order_id, timeout=30)
+
+            price = self._get_current_price(symbol) or 0
+            fill_price = float(order.get('average') or order.get('price') or price)
+            fill_qty = float(order.get('filled') or order.get('amount') or amount)
+            fee_cost = 0.0
+            if order.get('fee'):
+                fee_cost = float(order['fee'].get('cost', 0) or 0)
+
+            logger.info("✅ SOLD: %s @ $%.6f, qty=%.8f, fee=$%.4f",
+                        symbol, fill_price, fill_qty, fee_cost)
+            return {
+                'order_id': order_id,
+                'price': fill_price,
+                'qty': fill_qty,
+                'cost': fill_price * fill_qty,
+                'fee': fee_cost,
+                'raw': order,
+            }
+        except Exception as e:
+            logger.error("LIVE MARKET SELL FAILED %s: %s", symbol, e)
+            self._alert(f"❌ Market sell failed for {symbol}: {e}")
+            return None
+
+    def _place_limit_sell(self, symbol: str, amount: float, price: float) -> Optional[dict]:
+        """Place limit sell (TP) order. Returns order info or None."""
+        try:
+            mins = self._get_min_order(symbol)
+            min_amount = float(mins.get("min_amount") or 0)
+            if amount < min_amount:
+                logger.warning("Limit sell amount %.8f below min %.8f for %s", amount, min_amount, symbol)
+                return None
+
+            logger.info("📋 LIVE LIMIT SELL %s: amount=%.8f @ $%.6f", symbol, amount, price)
+            order = self.client.create_limit_sell(symbol, amount, price)
+            order_id = order.get('id')
+
+            logger.info("📋 Limit sell placed: order_id=%s", order_id)
+            return {
+                'order_id': order_id,
+                'symbol': symbol,
+                'amount': amount,
+                'price': price,
+                'status': 'open',
+                'raw': order,
+            }
+        except Exception as e:
+            logger.error("LIVE LIMIT SELL FAILED %s: %s", symbol, e)
+            self._alert(f"❌ Limit sell failed for {symbol}: {e}")
+            return None
+
+    def _cancel_order(self, symbol: str, order_id: str) -> bool:
+        """Cancel an open order. Returns True if successful."""
+        try:
+            self.client.cancel_order(order_id, symbol)
+            logger.info("❌ Cancelled order %s on %s", order_id, symbol)
+            return True
+        except Exception as e:
+            logger.error("Cancel order failed %s/%s: %s", symbol, order_id, e)
+            return False
+
+    def _check_order_status(self, symbol: str, order_id: str) -> dict:
+        """Check order status. Returns {status, filled, remaining, price, cost}."""
+        try:
+            order = self.client.fetch_order(order_id, symbol)
+            return {
+                'status': order.get('status', 'unknown'),
+                'filled': float(order.get('filled', 0) or 0),
+                'remaining': float(order.get('remaining', 0) or 0),
+                'price': float(order.get('average') or order.get('price') or 0),
+                'cost': float(order.get('cost', 0) or 0),
+                'fee': float((order.get('fee') or {}).get('cost', 0) or 0),
+            }
+        except Exception as e:
+            logger.error("Check order status failed %s/%s: %s", symbol, order_id, e)
+            return {'status': 'unknown', 'filled': 0, 'remaining': 0, 'price': 0, 'cost': 0, 'fee': 0}
+
+    def _wait_for_fill(self, symbol: str, order_id: str, timeout: int = 30) -> dict:
+        """Poll order until filled or timeout. Returns final order state."""
+        import time as _time
+        deadline = _time.time() + timeout
+        while _time.time() < deadline:
+            try:
+                order = self.client.fetch_order(order_id, symbol)
+                status = order.get('status', '')
+                if status in ('closed', 'filled'):
+                    return order
+                if status in ('canceled', 'cancelled', 'rejected', 'expired'):
+                    logger.warning("Order %s status: %s", order_id, status)
+                    return order
+            except Exception as e:
+                logger.warning("Error polling order %s: %s", order_id, e)
+            _time.sleep(1)
+        logger.warning("Order %s did not fill within %ds", order_id, timeout)
+        # Return last known state
+        try:
+            return self.client.fetch_order(order_id, symbol)
+        except Exception:
+            return {'id': order_id, 'status': 'timeout'}
+
+    def _cancel_all_symbol_orders(self, symbol: str):
+        """Cancel all open orders for a symbol."""
+        try:
+            open_orders = self.client.fetch_open_orders(symbol)
+            for o in open_orders:
+                oid = o.get('id')
+                if oid:
+                    self._cancel_order(symbol, oid)
+        except Exception as e:
+            logger.error("Failed to cancel all orders for %s: %s", symbol, e)
+
+    def _reconcile_on_startup(self):
+        """Verify exchange state matches saved state on startup (live mode only)."""
+        if not self.live:
+            return
+        logger.info("🔄 Running startup reconciliation...")
+        alerts = []
+
+        for symbol, deal in list(self.deals.items()):
+            # Check actual position
+            actual_qty = self._get_spot_position(symbol)
+            expected_qty = deal.total_qty
+
+            if expected_qty > 0:
+                diff_pct = abs(actual_qty - expected_qty) / expected_qty * 100
+                if diff_pct > 5:  # >5% discrepancy
+                    msg = (f"⚠️ Position mismatch for {symbol}: "
+                           f"expected {expected_qty:.8f}, actual {actual_qty:.8f} "
+                           f"(diff {diff_pct:.1f}%)")
+                    logger.warning(msg)
+                    alerts.append(msg)
+
+            # Check TP orders still exist
+            tp_info = self._tp_orders.get(symbol)
+            if tp_info and tp_info.get('order_id'):
+                status = self._check_order_status(symbol, tp_info['order_id'])
+                if status['status'] in ('closed', 'filled'):
+                    msg = f"ℹ️ TP order for {symbol} filled while offline!"
+                    logger.info(msg)
+                    alerts.append(msg)
+                elif status['status'] in ('canceled', 'cancelled', 'expired'):
+                    msg = f"⚠️ TP order for {symbol} was cancelled/expired"
+                    logger.warning(msg)
+                    alerts.append(msg)
+                    self._tp_orders.pop(symbol, None)
+
+        # Report balance
+        quote = 'USDT'
+        balance = self._get_balance(quote)
+        logger.info("💰 %s balance: $%.2f", quote, balance)
+
+        if alerts:
+            full_msg = "🔄 <b>Startup Reconciliation</b>\n" + "\n".join(alerts)
+            send_telegram(full_msg)
+        else:
+            logger.info("✅ Reconciliation OK — state matches exchange")
+
+    def _alert(self, msg: str):
+        """Send alert via telegram and log."""
+        logger.warning(msg)
+        send_telegram(msg)
+
+    def test_connectivity(self) -> bool:
+        """Test exchange connectivity without placing orders."""
+        try:
+            config_path = Path(__file__).parent / "spot_config.json"
+            config = {}
+            if config_path.exists():
+                with open(config_path) as f:
+                    cfg = json.load(f)
+                exc_cfg = cfg.get("exchanges", {}).get(self.exchange_name, {})
+                config = {"options": exc_cfg.get("options", {})}
+            self.client.connect(self.exchange_name, config)
+
+            # Load markets
+            self.client._ensure_markets()
+            print(f"✅ Connected to {self.exchange_name}")
+            print(f"   Markets loaded: {len(self.client.exchange.markets)}")
+
+            # Check balance
+            quote = 'USDT'
+            bal = self.client.fetch_balance(quote)
+            print(f"   {quote} balance: free=${bal['free']}, used=${bal['used']}, total=${bal['total']}")
+
+            # Check symbols
+            for sym in self.symbols:
+                if sym in self.client.exchange.markets:
+                    mins = self._get_min_order(sym)
+                    print(f"   {sym}: min_amount={mins.get('min_amount')}, min_cost={mins.get('min_cost')}")
+                else:
+                    print(f"   ⚠️ {sym} not found in markets!")
+
+            # Check open orders
+            for sym in self.symbols:
+                try:
+                    orders = self.client.fetch_open_orders(sym)
+                    if orders:
+                        print(f"   {sym}: {len(orders)} open order(s)")
+                except Exception:
+                    pass
+
+            print("✅ All connectivity checks passed")
+            return True
+        except Exception as e:
+            print(f"❌ Connectivity test failed: {e}")
+            return False
 
     # ── Adaptive parameters ────────────────────────────────────────────
 
@@ -364,37 +688,89 @@ class SpotPaperTrader:
         # Check manual controls
         if self._manually_paused or symbol in self._paused_coins:
             return
-        # Capital per coin with 10% reserve
-        available = self.cash * 0.9 / max(1, self.max_coins - len(self.deals))
-        base_cost = self.initial_capital * self.profile.base_order_pct
-        base_cost = min(base_cost, available)
-        if base_cost < 5.0 or base_cost > self.cash:
-            return
 
-        fee = base_cost * self.taker_fee
-        qty = (base_cost - fee) / price
+        if self.live:
+            # LIVE: use actual exchange balance
+            quote = symbol.split('/')[1]
+            available_balance = self._get_balance(quote)
+            reserve = available_balance * 0.1
+            per_coin = (available_balance - reserve) / max(1, self.max_coins - len(self.deals))
+            base_cost = min(self.initial_capital * self.profile.base_order_pct, per_coin)
+            if base_cost < 5.0 or base_cost > available_balance:
+                logger.info("Skipping deal for %s: insufficient balance ($%.2f)", symbol, available_balance)
+                return
 
-        self._deal_counter += 1
-        lot = Lot(
-            lot_id=0, buy_price=price, qty=qty,
-            cost_usd=base_cost, buy_fee=fee, buy_time=ts,
-            tp_target=price * (1 + tp_pct / 100),
-        )
-        deal = Deal(
-            deal_id=self._deal_counter, symbol=symbol,
-            lots=[lot], open_time=ts, regime_at_open=regime,
-        )
-        self.deals[symbol] = deal
-        self.cash -= base_cost
+            result = self._place_market_buy(symbol, base_cost)
+            if not result:
+                return
 
-        logger.info("📥 DEAL %d OPENED: %s @ $%.4f (regime=%s, TP=%.2f%%)",
-                     deal.deal_id, symbol, price, regime, tp_pct)
-        send_telegram(
-            f"📥 <b>Spot Paper: Deal Opened</b>\n"
-            f"Coin: {symbol}\nProfile: {self.profile.name}\n"
-            f"Entry: ${price:.4f}\nBase size: ${base_cost:.2f}\n"
-            f"Regime: {regime}\nTP target: ${lot.tp_target:.4f}"
-        )
+            fill_price = result['price']
+            fill_qty = result['qty']
+            fill_cost = result['cost']
+            fee = result['fee']
+
+            self._deal_counter += 1
+            lot = Lot(
+                lot_id=0, buy_price=fill_price, qty=fill_qty,
+                cost_usd=fill_cost, buy_fee=fee, buy_time=ts,
+                tp_target=fill_price * (1 + tp_pct / 100),
+            )
+            deal = Deal(
+                deal_id=self._deal_counter, symbol=symbol,
+                lots=[lot], open_time=ts, regime_at_open=regime,
+            )
+            self.deals[symbol] = deal
+            # In live mode, cash tracks what exchange reports
+            self.cash = self._get_balance(quote)
+
+            # Place TP limit sell immediately
+            tp_price = lot.tp_target
+            tp_order = self._place_limit_sell(symbol, fill_qty, tp_price)
+            if tp_order:
+                self._tp_orders[symbol] = tp_order
+
+            mode_label = "Spot Live"
+            logger.info("📥 LIVE DEAL %d OPENED: %s @ $%.4f (fill), regime=%s, TP=%.2f%%",
+                         deal.deal_id, symbol, fill_price, regime, tp_pct)
+            send_telegram(
+                f"📥 <b>{mode_label}: Deal Opened</b>\n"
+                f"Coin: {symbol}\nProfile: {self.profile.name}\n"
+                f"Entry: ${fill_price:.4f} (filled)\nBase size: ${fill_cost:.2f}\n"
+                f"Regime: {regime}\nTP target: ${tp_price:.4f}\n"
+                f"Order ID: {result['order_id']}"
+            )
+        else:
+            # PAPER mode (unchanged)
+            available = self.cash * 0.9 / max(1, self.max_coins - len(self.deals))
+            base_cost = self.initial_capital * self.profile.base_order_pct
+            base_cost = min(base_cost, available)
+            if base_cost < 5.0 or base_cost > self.cash:
+                return
+
+            fee = base_cost * self.taker_fee
+            qty = (base_cost - fee) / price
+
+            self._deal_counter += 1
+            lot = Lot(
+                lot_id=0, buy_price=price, qty=qty,
+                cost_usd=base_cost, buy_fee=fee, buy_time=ts,
+                tp_target=price * (1 + tp_pct / 100),
+            )
+            deal = Deal(
+                deal_id=self._deal_counter, symbol=symbol,
+                lots=[lot], open_time=ts, regime_at_open=regime,
+            )
+            self.deals[symbol] = deal
+            self.cash -= base_cost
+
+            logger.info("📥 DEAL %d OPENED: %s @ $%.4f (regime=%s, TP=%.2f%%)",
+                         deal.deal_id, symbol, price, regime, tp_pct)
+            send_telegram(
+                f"📥 <b>Spot Paper: Deal Opened</b>\n"
+                f"Coin: {symbol}\nProfile: {self.profile.name}\n"
+                f"Entry: ${price:.4f}\nBase size: ${base_cost:.2f}\n"
+                f"Regime: {regime}\nTP target: ${lot.tp_target:.4f}"
+            )
 
     def _check_safety_orders(self, deal: Deal, current_price: float, ts: str,
                               regime: str, dev_pct: float, tp_pct: float, is_bullish: bool):
@@ -422,33 +798,186 @@ class SpotPaperTrader:
         if current_price <= trigger:
             base_cost = self.initial_capital * self.profile.base_order_pct
             so_cost = self._so_cost(base_cost, next_so)
-            so_cost = min(so_cost, self.cash * 0.95)  # leave small buffer
-            if so_cost < 5.0:
-                return
 
-            fee = so_cost * self.taker_fee
-            qty = (so_cost - fee) / trigger
+            if self.live:
+                # LIVE: check real balance and place real order
+                quote = deal.symbol.split('/')[1]
+                available = self._get_balance(quote)
+                so_cost = min(so_cost, available * 0.95)
+                if so_cost < 5.0:
+                    return
 
-            lot = Lot(
-                lot_id=next_so, buy_price=trigger, qty=qty,
-                cost_usd=so_cost, buy_fee=fee, buy_time=ts,
-                tp_target=trigger * (1 + tp_pct / 100),
-            )
-            deal.lots.append(lot)
-            self.cash -= so_cost
+                # Cancel existing TP order before adding to position
+                tp_info = self._tp_orders.get(deal.symbol)
+                if tp_info and tp_info.get('order_id'):
+                    self._cancel_order(deal.symbol, tp_info['order_id'])
+                    self._tp_orders.pop(deal.symbol, None)
 
-            logger.info("📦 DEAL %d SO%d FILLED: %s @ $%.4f ($%.2f)",
-                         deal.deal_id, next_so, deal.symbol, trigger, so_cost)
-            send_telegram(
-                f"📦 <b>Spot Paper: SO{next_so} Filled</b>\n"
-                f"Coin: {deal.symbol}\nPrice: ${trigger:.4f}\n"
-                f"Size: ${so_cost:.2f}\nTotal layers: {len(deal.lots)}"
-            )
+                result = self._place_market_buy(deal.symbol, so_cost)
+                if not result:
+                    return
+
+                lot = Lot(
+                    lot_id=next_so, buy_price=result['price'], qty=result['qty'],
+                    cost_usd=result['cost'], buy_fee=result['fee'], buy_time=ts,
+                    tp_target=result['price'] * (1 + tp_pct / 100),
+                )
+                deal.lots.append(lot)
+                self.cash = self._get_balance(quote)
+
+                # Re-place TP for all unsold lots (weighted avg approach: sell all at once)
+                total_unsold_qty = deal.total_qty
+                # Use the highest unsold lot's TP (reverse order exit)
+                unsold_sorted = sorted(deal.unsold_lots, key=lambda l: l.lot_id, reverse=True)
+                if unsold_sorted:
+                    tp_price = unsold_sorted[0].tp_target
+                    tp_order = self._place_limit_sell(deal.symbol, total_unsold_qty, tp_price)
+                    if tp_order:
+                        self._tp_orders[deal.symbol] = tp_order
+
+                logger.info("📦 LIVE DEAL %d SO%d FILLED: %s @ $%.4f ($%.2f)",
+                             deal.deal_id, next_so, deal.symbol, result['price'], result['cost'])
+                send_telegram(
+                    f"📦 <b>Spot Live: SO{next_so} Filled</b>\n"
+                    f"Coin: {deal.symbol}\nPrice: ${result['price']:.4f}\n"
+                    f"Size: ${result['cost']:.2f}\nTotal layers: {len(deal.lots)}\n"
+                    f"Order ID: {result['order_id']}"
+                )
+            else:
+                # PAPER mode (unchanged)
+                so_cost = min(so_cost, self.cash * 0.95)
+                if so_cost < 5.0:
+                    return
+
+                fee = so_cost * self.taker_fee
+                qty = (so_cost - fee) / trigger
+
+                lot = Lot(
+                    lot_id=next_so, buy_price=trigger, qty=qty,
+                    cost_usd=so_cost, buy_fee=fee, buy_time=ts,
+                    tp_target=trigger * (1 + tp_pct / 100),
+                )
+                deal.lots.append(lot)
+                self.cash -= so_cost
+
+                logger.info("📦 DEAL %d SO%d FILLED: %s @ $%.4f ($%.2f)",
+                             deal.deal_id, next_so, deal.symbol, trigger, so_cost)
+                send_telegram(
+                    f"📦 <b>Spot Paper: SO{next_so} Filled</b>\n"
+                    f"Coin: {deal.symbol}\nPrice: ${trigger:.4f}\n"
+                    f"Size: ${so_cost:.2f}\nTotal layers: {len(deal.lots)}"
+                )
 
     def _check_exits(self, deal: Deal, current_price: float, ts: str,
                       regime: str, atr_pct: float):
         """Sell lots in REVERSE order (largest SO first) when TP hit."""
         tp_pct = self._adaptive_tp(regime, atr_pct)
+
+        if self.live:
+            self._check_exits_live(deal, current_price, ts, regime, atr_pct, tp_pct)
+        else:
+            self._check_exits_paper(deal, current_price, ts, tp_pct)
+
+    def _check_exits_live(self, deal: Deal, current_price: float, ts: str,
+                           regime: str, atr_pct: float, tp_pct: float):
+        """Live mode exit: check if TP limit order filled, or update TP targets."""
+        symbol = deal.symbol
+        unsold = sorted(deal.unsold_lots, key=lambda l: l.lot_id, reverse=True)
+
+        # Update TP targets based on current regime
+        for lot in unsold:
+            lot.tp_target = lot.buy_price * (1 + tp_pct / 100)
+
+        # Check if we have a TP order on the exchange
+        tp_info = self._tp_orders.get(symbol)
+        if tp_info and tp_info.get('order_id'):
+            status = self._check_order_status(symbol, tp_info['order_id'])
+
+            if status['status'] in ('closed', 'filled'):
+                # TP filled! Close the lot(s) that were covered
+                fill_price = status['price'] or tp_info.get('price', current_price)
+                fill_qty = status['filled']
+                fee = status['fee']
+                self._tp_orders.pop(symbol, None)
+
+                # Sell lots in reverse order up to fill_qty
+                remaining_qty = fill_qty
+                for lot in unsold:
+                    if remaining_qty <= 0:
+                        break
+                    sell_qty = min(lot.qty, remaining_qty)
+                    revenue = sell_qty * fill_price
+                    lot_fee = fee * (sell_qty / fill_qty) if fill_qty > 0 else 0
+                    net_revenue = revenue - lot_fee
+                    pnl = net_revenue - lot.cost_usd
+
+                    lot.sell_price = fill_price
+                    lot.sell_fee = lot_fee
+                    lot.sell_time = ts
+                    lot.pnl = pnl
+                    remaining_qty -= sell_qty
+
+                    logger.info("📤 LIVE DEAL %d LOT %d SOLD: %s @ $%.4f, PnL=$%.2f",
+                                 deal.deal_id, lot.lot_id, symbol, fill_price, pnl)
+                    send_telegram(
+                        f"📤 <b>Spot Live: Layer Sold</b>\n"
+                        f"Coin: {symbol}\nLot: SO{lot.lot_id}\n"
+                        f"Sell: ${fill_price:.4f}\nPnL: ${pnl:.2f}"
+                    )
+
+                # Update cash from exchange
+                quote = symbol.split('/')[1]
+                self.cash = self._get_balance(quote)
+
+                # If there are still unsold lots, place new TP
+                if not deal.is_complete:
+                    remaining_unsold = deal.unsold_lots
+                    if remaining_unsold:
+                        top_lot = sorted(remaining_unsold, key=lambda l: l.lot_id, reverse=True)[0]
+                        total_qty = sum(l.qty for l in remaining_unsold)
+                        tp_order = self._place_limit_sell(symbol, total_qty, top_lot.tp_target)
+                        if tp_order:
+                            self._tp_orders[symbol] = tp_order
+
+            elif status['status'] == 'open':
+                # TP still open — check if target needs updating
+                current_tp_price = tp_info.get('price', 0)
+                desired_tp = unsold[0].tp_target if unsold else 0
+                if desired_tp > 0 and abs(current_tp_price - desired_tp) / desired_tp > 0.005:
+                    # TP target shifted >0.5%, cancel and replace
+                    self._cancel_order(symbol, tp_info['order_id'])
+                    total_qty = deal.total_qty
+                    tp_order = self._place_limit_sell(symbol, total_qty, desired_tp)
+                    if tp_order:
+                        self._tp_orders[symbol] = tp_order
+                    else:
+                        self._tp_orders.pop(symbol, None)
+
+            else:
+                # Order cancelled/expired/unknown — remove tracking
+                self._tp_orders.pop(symbol, None)
+                # Re-place TP if we have unsold lots
+                if unsold:
+                    total_qty = deal.total_qty
+                    tp_price = unsold[0].tp_target
+                    tp_order = self._place_limit_sell(symbol, total_qty, tp_price)
+                    if tp_order:
+                        self._tp_orders[symbol] = tp_order
+
+        elif unsold:
+            # No TP order tracked — place one
+            total_qty = deal.total_qty
+            tp_price = unsold[0].tp_target
+            tp_order = self._place_limit_sell(symbol, total_qty, tp_price)
+            if tp_order:
+                self._tp_orders[symbol] = tp_order
+
+        # Check if deal complete
+        if deal.is_complete:
+            self._complete_deal(deal, ts)
+
+    def _check_exits_paper(self, deal: Deal, current_price: float, ts: str, tp_pct: float):
+        """Paper mode exit logic (original, unchanged)."""
         unsold = sorted(deal.unsold_lots, key=lambda l: l.lot_id, reverse=True)
 
         for lot in unsold:
@@ -477,28 +1006,35 @@ class SpotPaperTrader:
 
         # Check if deal complete
         if deal.is_complete:
-            deal.close_time = ts
-            self.completed_deals.append(deal)
-            del self.deals[deal.symbol]
+            self._complete_deal(deal, ts)
 
-            duration_h = 0.0
-            try:
-                t0 = datetime.fromisoformat(deal.open_time)
-                t1 = datetime.fromisoformat(deal.close_time)
-                duration_h = (t1 - t0).total_seconds() / 3600
-            except Exception:
-                pass
+    def _complete_deal(self, deal: Deal, ts: str):
+        """Finalize a completed deal (shared by live and paper)."""
+        deal.close_time = ts
+        self.completed_deals.append(deal)
+        sym = deal.symbol
+        del self.deals[sym]
+        self._tp_orders.pop(sym, None)
 
-            logger.info("✅ DEAL %d COMPLETE: %s, PnL=$%.2f, Duration=%.1fh",
-                         deal.deal_id, deal.symbol, deal.total_pnl, duration_h)
-            send_telegram(
-                f"✅ <b>Spot Paper: Deal Complete</b>\n"
-                f"Coin: {deal.symbol}\nTotal PnL: ${deal.total_pnl:.2f}\n"
-                f"Invested: ${deal.total_invested:.2f}\n"
-                f"Return: {deal.total_pnl / deal.total_invested * 100:.2f}%\n"
-                f"Duration: {duration_h:.1f}h"
-            )
-            self._append_trade_csv(deal)
+        duration_h = 0.0
+        try:
+            t0 = datetime.fromisoformat(deal.open_time)
+            t1 = datetime.fromisoformat(deal.close_time)
+            duration_h = (t1 - t0).total_seconds() / 3600
+        except Exception:
+            pass
+
+        mode = "Spot Live" if self.live else "Spot Paper"
+        logger.info("✅ DEAL %d COMPLETE: %s, PnL=$%.2f, Duration=%.1fh",
+                     deal.deal_id, sym, deal.total_pnl, duration_h)
+        send_telegram(
+            f"✅ <b>{mode}: Deal Complete</b>\n"
+            f"Coin: {sym}\nTotal PnL: ${deal.total_pnl:.2f}\n"
+            f"Invested: ${deal.total_invested:.2f}\n"
+            f"Return: {deal.total_pnl / deal.total_invested * 100:.2f}%\n"
+            f"Duration: {duration_h:.1f}h"
+        )
+        self._append_trade_csv(deal)
 
     # ── Equity ─────────────────────────────────────────────────────────
 
@@ -673,39 +1209,80 @@ class SpotPaperTrader:
         deal = self.deals.get(symbol)
         if not deal or not deal.unsold_lots:
             return
-        try:
-            df = self._fetch_candles(symbol)
-            if df is None or df.empty:
-                logger.error("Cannot fetch price for force close of %s", symbol)
-                return
-            price = float(df["close"].iloc[-1])
-        except Exception as e:
-            logger.error("Error fetching price for force close of %s: %s", symbol, e)
-            return
 
         ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        total_revenue = 0.0
-        for lot in deal.unsold_lots:
-            revenue = lot.qty * price
-            fee = revenue * self.taker_fee
-            net = revenue - fee
-            lot.sell_price = price
-            lot.sell_fee = fee
-            lot.sell_time = ts
-            lot.pnl = net - lot.cost_usd
-            total_revenue += net
 
-        self.cash += total_revenue
+        if self.live:
+            # Cancel all open orders for this symbol
+            self._cancel_all_symbol_orders(symbol)
+            self._tp_orders.pop(symbol, None)
+
+            # Market sell all holdings
+            total_qty = deal.total_qty
+            result = self._place_market_sell(symbol, total_qty)
+            if not result:
+                # Try fetching actual position and selling that
+                actual = self._get_spot_position(symbol)
+                if actual > 0:
+                    result = self._place_market_sell(symbol, actual)
+                if not result:
+                    logger.error("Force close FAILED for %s — could not sell", symbol)
+                    self._alert(f"❌ Force close FAILED for {symbol}")
+                    return
+
+            fill_price = result['price']
+            fill_qty = result['qty']
+            total_revenue = fill_price * fill_qty
+            fee = result['fee']
+
+            # Distribute PnL across lots
+            for lot in deal.unsold_lots:
+                lot_share = lot.qty / total_qty if total_qty > 0 else 1.0 / len(deal.unsold_lots)
+                lot_revenue = total_revenue * lot_share
+                lot_fee = fee * lot_share
+                lot.sell_price = fill_price
+                lot.sell_fee = lot_fee
+                lot.sell_time = ts
+                lot.pnl = (lot_revenue - lot_fee) - lot.cost_usd
+
+            quote = symbol.split('/')[1]
+            self.cash = self._get_balance(quote)
+        else:
+            # PAPER mode (unchanged)
+            try:
+                df = self._fetch_candles(symbol)
+                if df is None or df.empty:
+                    logger.error("Cannot fetch price for force close of %s", symbol)
+                    return
+                price = float(df["close"].iloc[-1])
+            except Exception as e:
+                logger.error("Error fetching price for force close of %s: %s", symbol, e)
+                return
+
+            total_revenue = 0.0
+            for lot in deal.unsold_lots:
+                revenue = lot.qty * price
+                fee = revenue * self.taker_fee
+                net = revenue - fee
+                lot.sell_price = price
+                lot.sell_fee = fee
+                lot.sell_time = ts
+                lot.pnl = net - lot.cost_usd
+                total_revenue += net
+            self.cash += total_revenue
+            fill_price = price
+
         deal.close_time = ts
         self.completed_deals.append(deal)
         del self.deals[symbol]
+        self._tp_orders.pop(symbol, None)
 
         pnl = deal.total_pnl
-        logger.info("🔴 FORCE CLOSED %s: PnL=$%.2f, returned $%.2f to cash",
-                     symbol, pnl, total_revenue)
+        mode = "Live" if self.live else "Paper"
+        logger.info("🔴 FORCE CLOSED %s (%s): PnL=$%.2f", symbol, mode, pnl)
         send_telegram(
-            f"🔴 <b>Force Closed Deal</b>\n"
-            f"Coin: {symbol}\nClose price: ${price:.4f}\n"
+            f"🔴 <b>Force Closed Deal ({mode})</b>\n"
+            f"Coin: {symbol}\nClose price: ${fill_price:.4f}\n"
             f"PnL: ${pnl:.2f}\nInvested: ${deal.total_invested:.2f}\n"
             f"Return: {pnl / deal.total_invested * 100:.2f}%"
         )
@@ -729,6 +1306,8 @@ class SpotPaperTrader:
             "conviction_overrides": self._conviction_overrides,
             "max_so_adjustments": self._max_so_adjustments,
             "skip_next_so": list(self._skip_next_so),
+            "live": self.live,
+            "tp_orders": {s: {k: v for k, v in o.items() if k != 'raw'} for s, o in self._tp_orders.items()},
         }
         state_path = self.paper_dir / "state.json"
         state_path.write_text(json.dumps(state, indent=2, default=str), encoding="utf-8")
@@ -761,8 +1340,10 @@ class SpotPaperTrader:
             self._conviction_overrides = state.get("conviction_overrides", {})
             self._max_so_adjustments = state.get("max_so_adjustments", {})
             self._skip_next_so = set(state.get("skip_next_so", []))
-            logger.info("State loaded: cash=$%.2f, %d active deals, %d completed, symbols=%s",
-                        self.cash, len(self.deals), len(self.completed_deals), self.symbols)
+            # Live order tracking
+            self._tp_orders = state.get("tp_orders", {})
+            logger.info("State loaded: cash=$%.2f, %d active deals, %d completed, symbols=%s, live=%s",
+                        self.cash, len(self.deals), len(self.completed_deals), self.symbols, self.live)
         except Exception as e:
             logger.error("Failed to load state: %s", e)
 
@@ -815,6 +1396,7 @@ class SpotPaperTrader:
 
         status = {
             "running": self._running,
+            "mode": "live" if self.live else "paper",
             "profile": self.profile.name,
             "exchange": self.exchange_name,
             "capital": self.initial_capital,
@@ -877,8 +1459,9 @@ class SpotPaperTrader:
 
     def run(self):
         """Main blocking run loop."""
+        mode = "LIVE" if self.live else "PAPER"
         logger.info("=" * 60)
-        logger.info("Spot Paper Trader starting")
+        logger.info("Spot %s Trader starting", mode)
         logger.info("Exchange: %s | Profile: %s | Capital: $%.0f",
                      self.exchange_name, self.profile.name, self.initial_capital)
         logger.info("Symbols: %s | Timeframe: %s | Max coins: %d",
@@ -904,14 +1487,22 @@ class SpotPaperTrader:
         # Load persisted state
         self._load_state()
 
+        # Live mode: sync cash from exchange and reconcile
+        if self.live:
+            quote = 'USDT'  # default, could be parameterized
+            self.cash = self._get_balance(quote)
+            self.initial_capital = self.initial_capital or self.cash
+            self._reconcile_on_startup()
+
         self._running = True
         self._start_time = datetime.now(timezone.utc)
         poll_seconds = TIMEFRAME_SECONDS.get(self.timeframe, 900)
 
         send_telegram(
-            f"🚀 <b>Spot Paper Trader Started</b>\n"
+            f"🚀 <b>Spot {mode} Trader Started</b>\n"
             f"Exchange: {self.exchange_name}\nProfile: {self.profile.name}\n"
-            f"Capital: ${self.initial_capital:.0f}\nSymbols: {', '.join(self.symbols)}\n"
+            f"Capital: ${self.initial_capital:.0f}\nCash: ${self.cash:.2f}\n"
+            f"Symbols: {', '.join(self.symbols)}\n"
             f"Timeframe: {self.timeframe}\nPoll: {poll_seconds}s"
         )
 
@@ -945,8 +1536,8 @@ class SpotPaperTrader:
         self._running = False
         self._save_state()
         self._write_status({}, {})
-        logger.info("Paper trader stopped.")
-        send_telegram("🛑 <b>Spot Paper Trader Stopped</b>")
+        logger.info("%s trader stopped.", mode)
+        send_telegram(f"🛑 <b>Spot {mode} Trader Stopped</b>")
 
     def _run_cycle(self, cycle: int):
         ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
