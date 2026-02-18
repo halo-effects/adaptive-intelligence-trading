@@ -1917,6 +1917,47 @@ function renderCharts() {
 
 let tradePage = 0;
 
+function renderSpotTrades() {
+  const ctx3 = $('chartTrades').getContext('2d');
+  if(chartTrades) chartTrades.destroy();
+  const dailyPnl = {}, dailyCount = {};
+  trades.forEach(t => {
+    const ct = t.close_time ? new Date(t.close_time) : null;
+    if (!ct) return;
+    const day = ct.toLocaleDateString('en-CA');
+    dailyPnl[day] = (dailyPnl[day] || 0) + parseFloat(t.pnl || 0);
+    dailyCount[day] = (dailyCount[day] || 0) + 1;
+  });
+  const days = Object.keys(dailyPnl).sort();
+  if(days.length > 0) {
+    chartTrades = new Chart(ctx3, {
+      type: 'bar',
+      data: {
+        labels: days,
+        datasets: [{
+          label: 'Daily PnL', data: days.map(d => dailyPnl[d]),
+          backgroundColor: days.map(d => dailyPnl[d] >= 0 ? 'rgba(63,185,80,.7)' : 'rgba(248,81,73,.7)'),
+          borderRadius: 3, yAxisID: 'y'
+        },{
+          label: 'Deals', data: days.map(d => dailyCount[d]),
+          type: 'line', borderColor: '#58a6ff', backgroundColor: 'transparent',
+          pointRadius: 3, pointBackgroundColor: '#58a6ff', borderWidth: 1.5, yAxisID: 'y1'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#8b949e', boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          x: { ticks: { color: '#484f58', font: { size: 10 } }, grid: { display: false } },
+          y: { position: 'left', ticks: { color: '#3fb950', font: { size: 10 }, callback: v => '$'+v.toFixed(2) }, grid: { color: '#21262d' } },
+          y1: { position: 'right', ticks: { color: '#58a6ff', font: { size: 10 }, stepSize: 1 }, grid: { display: false }, beginAtZero: true }
+        }
+      }
+    });
+  }
+  renderSpotTradesPage();
+}
+
 function renderTrades() {
   if (IS_SPOT) { renderSpotTrades(); return; }
   const tpTrades = trades.filter(t => t.action === 'TP_HIT');
