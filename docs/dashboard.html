@@ -96,6 +96,17 @@ tr:hover td{background:rgba(88,166,255,.04)}
 .feature-title{font-size:.8rem;font-weight:600;margin-bottom:4px}
 .feature-desc{font-size:.7rem;color:var(--text2);line-height:1.4}
 
+/* Portfolio allocation donut */
+.alloc-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.alloc-chart{flex-shrink:0}
+.alloc-legend{display:grid;grid-template-columns:1fr;gap:6px;font-size:.78rem}
+.alloc-legend-item{display:flex;align-items:center;gap:8px}
+.alloc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.alloc-legend-sym{font-weight:600;min-width:48px}
+.alloc-legend-pct{color:var(--text2);min-width:42px;text-align:right}
+.alloc-legend-amt{color:var(--text2);min-width:70px;text-align:right}
+.alloc-legend-pnl{min-width:70px;text-align:right}
+
 /* Conviction gauge */
 .conviction-gauge{position:relative;width:200px;height:120px;margin:0 auto 16px}
 .conviction-gauge svg{width:100%;height:100%}
@@ -324,6 +335,12 @@ table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
 <div class="section" id="compoundingSection" style="display:none">
   <h2>📈 Compounding Tracker</h2>
   <div id="compoundingContent"></div>
+</div>
+
+<!-- Spot: Portfolio Allocation -->
+<div class="section" id="portfolioAllocSection" style="display:none">
+  <h2>🥧 Portfolio Allocation</h2>
+  <div id="portfolioAllocContent"></div>
 </div>
 
 <!-- Spot: Risk Profile & Regime -->
@@ -750,6 +767,7 @@ function showSpotUI() {
   // Show spot sections
   $('lifecycleSection').style.display = '';
   $('compoundingSection').style.display = '';
+  $('portfolioAllocSection').style.display = '';
   $('riskProfileSection').style.display = '';
   $('convictionSection').style.display = '';
   $('macroSection').style.display = '';
@@ -772,6 +790,7 @@ function showSpotUI() {
 function showFuturesUI() {
   $('lifecycleSection').style.display = 'none';
   $('compoundingSection').style.display = 'none';
+  $('portfolioAllocSection').style.display = 'none';
   $('riskProfileSection').style.display = 'none';
   $('convictionSection').style.display = 'none';
   $('macroSection').style.display = 'none';
@@ -849,6 +868,8 @@ function renderSpotStatus() {
   renderLifecycle(s);
   // Compounding
   renderCompounding(s);
+  // Portfolio Allocation
+  renderPortfolioAllocation(s);
   // Risk Profile & Regime
   renderRiskProfile(s);
   // Coin Selector
