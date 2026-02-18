@@ -1,25 +1,25 @@
 {
-  "timestamp": "2026-02-18T13:47:25.907854+00:00",
+  "timestamp": "2026-02-18T13:49:24.591081+00:00",
   "symbol": "HYPEUSDT",
   "timeframe": "5m",
   "running": true,
   "dry_run": false,
   "halted": false,
   "halt_reason": "",
-  "regime": "RANGING",
-  "price": 29.076,
-  "equity": 325.14,
+  "regime": "TRENDING",
+  "price": 29.05,
+  "equity": 325.01,
   "start_equity": 291.97,
   "peak_equity": 336.7,
   "total_deposits": 40,
-  "pnl": -6.84,
-  "pnl_pct": -2.06,
-  "drawdown_pct": 3.43,
+  "pnl": -6.96,
+  "pnl_pct": -2.1,
+  "drawdown_pct": 3.47,
   "max_drawdown_threshold": 25.0,
   "leverage": 1,
-  "capital": 325.1,
-  "available_balance": 135.48,
-  "cycle_count": 11113,
+  "capital": 325.02,
+  "available_balance": 135.49,
+  "cycle_count": 11116,
   "start_time": "2026-02-13T03:50:51.737221+00:00",
   "hedge_mode": false,
   "long_deal": {
@@ -51,7 +51,7 @@
     "direction": "SHORT",
     "safety_orders_filled": 1,
     "safety_order_ids": [
-      1437255895
+      1438238642
     ],
     "tp_order_id": 1437987153,
     "total_qty": 1.34,
@@ -64,28 +64,28 @@
   },
   "trend_direction": "bearish",
   "regime_alloc": {
-    "long": 0.5,
-    "short": 0.5
+    "long": 0.25,
+    "short": 0.75
   },
   "deal_counter": 83,
   "adaptive_tp": {
-    "current_tp_pct": 1.0,
+    "current_tp_pct": 1.004,
     "baseline_tp_pct": 1.5,
-    "current_dev_pct": 1.5,
+    "current_dev_pct": 1.812,
     "baseline_dev_pct": 2.5,
-    "atr_pct": 0.4255,
+    "atr_pct": 0.446,
     "atr_baseline_pct": 0.8,
     "tp_min": 1.0,
     "tp_max": 2.5,
     "dev_min": 1.2,
     "dev_max": 4.0,
-    "regime_tp_mult": 0.85,
-    "regime_dev_mult": 0.8
+    "regime_tp_mult": 1.2,
+    "regime_dev_mult": 1.3
   },
   "config": {
-    "tp_pct": 1.0,
+    "tp_pct": 1.004,
     "max_sos": 8,
-    "deviation_pct": 1.5,
+    "deviation_pct": 1.812,
     "so_vol_mult": 2.0,
     "base_order_pct": 0.04
   },
@@ -93,5 +93,5 @@
   "last_funding_time": "2026-02-18T12:00:00+00:00",
   "last_funding_rate": -7.018e-05,
   "last_funding_cost": -0.0123,
-  "current_funding_rate": -5.982e-05
+  "current_funding_rate": -5.65e-05
 }
