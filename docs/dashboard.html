@@ -204,49 +204,136 @@ tr:hover td{background:rgba(88,166,255,.04)}
 .ctrl-label{font-size:.7rem;color:var(--text2)}
 .ctrl-divider{width:1px;height:20px;background:var(--border);margin:0 4px}
 
-@media(max-width:900px){.charts-row{grid-template-columns:1fr}.trades-grid{grid-template-columns:1fr}.adaptive-viz{grid-template-columns:1fr}.macro-grid{grid-template-columns:1fr}.conviction-breakdown{grid-template-columns:1fr}.risk-profile-grid{grid-template-columns:1fr!important}}
-@media(max-width:600px){
-body{padding:8px}
-.header{flex-direction:column;align-items:flex-start;gap:8px;padding:8px 0 12px}
-.header h1{font-size:1.1rem;gap:8px}
-.logo-wrap{width:36px;height:36px}
-.logo-wrap svg{width:36px;height:36px}
-.header-right{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:8px}
-.cards{grid-template-columns:repeat(2,1fr);gap:8px}
-.card{padding:10px}
-.card-value{font-size:1.15rem}
-.card-sub{font-size:.68rem}
-.section{padding:12px}
-.charts-row{grid-template-columns:1fr;gap:8px}
-.chart-wrap{height:200px}
-.trade-chart-wrap{height:140px}
-.trades-grid{grid-template-columns:1fr}
-.trade-panel{padding:12px}
-.deal-stats{grid-template-columns:repeat(2,1fr);gap:8px}
-.deal-stat-value{font-size:.85rem}
-.features-grid{grid-template-columns:1fr 1fr;gap:8px}
-.feature-card{padding:12px}
-.feature-card:hover{transform:none;box-shadow:none;border-color:var(--border)}
-.bottom-bar{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:10px;padding:10px 12px}
-.bottom-stat span:last-child{font-size:.78rem}
-th,td{padding:5px 3px;font-size:.68rem}
-.section h2{font-size:.9rem}
-.adaptive-viz{grid-template-columns:1fr}
-.coin-selector{grid-template-columns:1fr}
-.regime-strip{gap:6px}
-.regime-item{font-size:.68rem}
-.alloc-badge{font-size:.65rem}
-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.macro-grid{grid-template-columns:1fr}
-.conviction-breakdown{grid-template-columns:1fr}
-.conviction-multipliers{grid-template-columns:repeat(2,1fr)}
-.account-switcher{gap:4px}
-.account-pill{padding:4px 10px;font-size:.68rem}
+/* ── Responsive: Tablet ≤768px ── */
+@media(max-width:768px){
+  .charts-row{grid-template-columns:1fr}
+  .trades-grid{grid-template-columns:1fr}
+  .adaptive-viz{grid-template-columns:1fr}
+  .macro-grid{grid-template-columns:1fr}
+  .conviction-breakdown{grid-template-columns:1fr}
+  .risk-profile-grid{grid-template-columns:1fr!important}
+  /* Portfolio donut: reduce size */
+  .alloc-wrap{flex-direction:column;align-items:center;gap:12px}
+  .alloc-chart{width:140px!important;height:140px!important}
+  .alloc-legend{font-size:.72rem;gap:4px}
+  .alloc-legend-sym{min-width:40px}
+  .alloc-legend-pct{min-width:36px}
+  .alloc-legend-amt{min-width:60px}
+  .alloc-legend-pnl{min-width:60px}
+  /* Risk profile: force single column on tablet so stat boxes get room */
+  .risk-profile-layout{grid-template-columns:1fr!important}
+  /* Tables: horizontal scroll */
+  .table-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+  .table-scroll-wrap table{min-width:500px}
+  /* Capital donut smaller */
+  #capDonutLg{width:160px!important;height:160px!important}
 }
+
+/* ── Responsive: Mobile ≤600px ── */
+@media(max-width:600px){
+  body{padding:8px}
+  .header{flex-direction:column;align-items:flex-start;gap:6px;padding:6px 0 10px}
+  .header h1{font-size:1.05rem;gap:6px}
+  .logo-wrap{width:32px;height:32px}
+  .logo-wrap svg{width:32px;height:32px}
+  .header-right{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:6px;font-size:.72rem}
+  /* Account pills */
+  .account-switcher{gap:4px}
+  .account-pill{padding:4px 10px;font-size:.68rem}
+  /* Cards compact */
+  .cards{grid-template-columns:repeat(2,1fr);gap:6px}
+  .card{padding:8px 10px}
+  .card-label{font-size:.62rem;margin-bottom:2px}
+  .card-value{font-size:1.1rem}
+  .card-sub{font-size:.65rem;margin-top:2px}
+  /* Sections tighter */
+  .section{padding:10px;margin-bottom:10px}
+  .section h2{font-size:.85rem;margin-bottom:10px}
+  /* Charts */
+  .charts-row{grid-template-columns:1fr;gap:8px}
+  .chart-box{padding:10px}
+  .chart-box h3{font-size:.72rem;margin-bottom:8px}
+  .chart-wrap{height:180px}
+  .trade-chart-wrap{height:130px}
+  /* Trades */
+  .trades-grid{grid-template-columns:1fr}
+  .trade-panel{padding:10px}
+  .deal-stats{grid-template-columns:repeat(2,1fr);gap:6px}
+  .deal-stat{padding:6px 0}
+  .deal-stat-label{font-size:.6rem}
+  .deal-stat-value{font-size:.82rem}
+  /* Portfolio donut: even smaller */
+  .alloc-chart{width:120px!important;height:120px!important}
+  .alloc-legend{font-size:.68rem}
+  /* Features */
+  .features-grid{grid-template-columns:1fr 1fr;gap:6px}
+  .feature-card{padding:10px}
+  .feature-card:hover{transform:none;box-shadow:none;border-color:var(--border)}
+  /* Bottom bar */
+  .bottom-bar{flex-wrap:wrap;justify-content:center;gap:8px;padding:8px 10px}
+  .bottom-stat span:first-child{font-size:.55rem}
+  .bottom-stat span:last-child{font-size:.75rem}
+  /* Tables */
+  th,td{padding:4px 3px;font-size:.66rem}
+  th{font-size:.6rem}
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* Coin cards */
+  .coin-selector{grid-template-columns:1fr}
+  .coin-mini-card{padding:10px}
+  /* Misc */
+  .adaptive-viz{grid-template-columns:1fr}
+  .regime-strip{gap:4px}
+  .regime-item{font-size:.65rem}
+  .alloc-badge{font-size:.62rem}
+  .macro-grid{grid-template-columns:1fr}
+  .macro-card{padding:10px}
+  .macro-card-value{font-size:1.4rem}
+  .macro-card-sub{font-size:.65rem}
+  .conviction-breakdown{grid-template-columns:1fr}
+  .conviction-multipliers{grid-template-columns:repeat(2,1fr)}
+  .conviction-gauge{width:160px;height:96px}
+  /* Spot coin cards compact */
+  .spot-coin-card{padding:12px;margin-bottom:8px}
+  .spot-coin-header{margin-bottom:10px}
+  .spot-coin-symbol{font-size:1rem}
+  /* Lifecycle pipeline compact */
+  .lifecycle-stage{padding:4px 8px;font-size:.6rem}
+}
+
+/* ── Responsive: Small phones ≤480px ── */
+@media(max-width:480px){
+  body{padding:6px}
+  .cards{grid-template-columns:repeat(2,1fr);gap:5px}
+  .card{padding:6px 8px}
+  .card-value{font-size:1rem}
+  .card-label{font-size:.58rem}
+  .section{padding:8px;margin-bottom:8px}
+  .section h2{font-size:.8rem;margin-bottom:8px}
+  .alloc-chart{width:100px!important;height:100px!important}
+  .alloc-legend{font-size:.64rem}
+  .alloc-legend-item{gap:4px}
+  .alloc-legend-sym{min-width:32px;font-size:.68rem}
+  .alloc-legend-pct,.alloc-legend-amt,.alloc-legend-pnl{font-size:.62rem;min-width:auto}
+  .account-pill{padding:3px 8px;font-size:.62rem}
+  .account-pill .pill-dot{width:5px;height:5px}
+  .bottom-bar{padding:6px 8px;gap:6px}
+  .bottom-stat span:last-child{font-size:.7rem}
+  th,td{padding:3px 2px;font-size:.62rem}
+  th{font-size:.56rem}
+  .chart-wrap{height:160px}
+  .trade-chart-wrap{height:110px}
+  .macro-card-value{font-size:1.2rem}
+  .deal-progress{height:28px}
+  .features-grid{grid-template-columns:1fr}
+  .feature-card{padding:8px}
+  .conviction-gauge{width:130px;height:78px}
+  .conviction-score-text{font-size:2rem!important}
+}
+
+/* ── Responsive: Very small ≤380px ── */
 @media(max-width:380px){
-.cards{grid-template-columns:1fr}
-.features-grid{grid-template-columns:1fr}
-.card-value{font-size:1rem}
+  .cards{grid-template-columns:1fr}
+  .card-value{font-size:1rem}
 }
 </style>
 </head>
@@ -1229,7 +1316,7 @@ function renderRiskProfile(s) {
 
   section.style.display = '';
   $('riskProfileContent').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch">
+    <div class="risk-profile-layout" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch">
       <!-- Left: Profile + Params -->
       <div>
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;min-height:40px">
