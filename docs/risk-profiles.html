@@ -981,21 +981,29 @@ section { padding: 100px 0; }
             <span class="spec-value">5–15%</span>
           </div>
           <div class="spec-item">
-            <span class="spec-label">Leverage</span>
-            <span class="spec-value">1× (No amplification)</span>
+            <span class="spec-label">Safety Orders</span>
+            <span class="spec-value">5 (Shallow grid)</span>
           </div>
           <div class="spec-item">
-            <span class="spec-label">Extreme Markets</span>
-            <span class="spec-value">Halts (Capital protection)</span>
+            <span class="spec-label">Deviation</span>
+            <span class="spec-value">3.0% (Wide — waits for bigger dips)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">Take Profit</span>
+            <span class="spec-value">1.5% (Patient captures)</span>
           </div>
           <div class="spec-item">
             <span class="spec-label">Capital Reserve</span>
-            <span class="spec-value">10% (Substantial buffer)</span>
+            <span class="spec-value">30% (Maximum safety margin)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">Conviction Response</span>
+            <span class="spec-value">Gentle</span>
           </div>
         </div>
         
         <div class="profile-description">
-          Perfect for capital preservation, beginners, and long-term compounding. Conservative grid with patient profit-taking. Survives extended drawdowns without liquidation. Think fortress — unbreakable, steady growth.
+          Perfect for capital preservation, beginners, and long-term compounding. Wide deviation waits for significant dips, fewer safety orders limit capital deployment, and high reserves ensure you always have dry powder. Think fortress — unbreakable, steady growth.
         </div>
       </div>
 
@@ -1018,21 +1026,29 @@ section { padding: 100px 0; }
             <span class="spec-value">15–35%</span>
           </div>
           <div class="spec-item">
-            <span class="spec-label">Leverage</span>
-            <span class="spec-value">2–3×</span>
+            <span class="spec-label">Safety Orders</span>
+            <span class="spec-value">8 (Extended depth)</span>
           </div>
           <div class="spec-item">
-            <span class="spec-label">Extreme Markets</span>
-            <span class="spec-value">Reduced activity</span>
+            <span class="spec-label">Deviation</span>
+            <span class="spec-value">2.5% (Balanced spacing)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">Take Profit</span>
+            <span class="spec-value">1.2% (Faster cycling)</span>
           </div>
           <div class="spec-item">
             <span class="spec-label">Capital Reserve</span>
-            <span class="spec-value">5% (Higher utilization)</span>
+            <span class="spec-value">15% (Moderate buffer)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">Conviction Response</span>
+            <span class="spec-value">Moderate</span>
           </div>
         </div>
         
         <div class="profile-description">
-          For experienced traders scaling up their returns. Deeper grid, faster profit realization, moderate leverage. Can handle medium-term adverse moves. Think rocket — controlled power for faster acceleration.
+          For experienced traders scaling up their returns. Deeper grid with more safety orders, tighter deviation for more frequent fills, and moderate conviction response. Think rocket — controlled power for faster acceleration.
         </div>
       </div>
 
@@ -1055,21 +1071,29 @@ section { padding: 100px 0; }
             <span class="spec-value">35–70%</span>
           </div>
           <div class="spec-item">
-            <span class="spec-label">Leverage</span>
-            <span class="spec-value">5–10×</span>
+            <span class="spec-label">Safety Orders</span>
+            <span class="spec-value">12 (Deep accumulation)</span>
           </div>
           <div class="spec-item">
-            <span class="spec-label">Extreme Markets</span>
-            <span class="spec-value">Continues trading</span>
+            <span class="spec-label">Deviation</span>
+            <span class="spec-value">2.0% (Tight — frequent fills)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">Take Profit</span>
+            <span class="spec-value">1.0% (Rapid cycling)</span>
           </div>
           <div class="spec-item">
             <span class="spec-label">Capital Reserve</span>
-            <span class="spec-value">2% (Maximum utilization)</span>
+            <span class="spec-value">5% (Maximum deployment)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">Conviction Response</span>
+            <span class="spec-value">Strong</span>
           </div>
         </div>
         
         <div class="profile-description">
-          For risk-tolerant experienced traders seeking maximum growth. Deep Martingale, tight parameters, trades through extreme volatility. High return potential with commensurate risk. Think lightning — maximum power, maximum speed, maximum danger.
+          For risk-tolerant experienced traders seeking maximum growth. Deep accumulation grid with 12 safety orders, tight deviation for frequent fills, and aggressive conviction-driven parameter adjustment. High capital deployment with minimal reserves. Think lightning — maximum speed, maximum opportunity.
         </div>
       </div>
     </div>
@@ -1094,34 +1118,34 @@ section { padding: 100px 0; }
       </thead>
       <tbody>
         <tr>
-          <td>Leverage Multiplier</td>
-          <td class="low">1× (No amplification)</td>
-          <td class="medium">2–3× (Moderate)</td>
-          <td class="high">5–10× (Aggressive)</td>
-        </tr>
-        <tr>
           <td>Max Safety Orders</td>
-          <td class="low">8 (Conservative grid)</td>
-          <td class="medium">12 (Extended depth)</td>
-          <td class="high">16 (Deep Martingale)</td>
+          <td class="low">5 (Shallow grid)</td>
+          <td class="medium">8 (Extended depth)</td>
+          <td class="high">12 (Deep accumulation)</td>
         </tr>
         <tr>
-          <td>SO Volume Multiplier</td>
-          <td class="low">2.0× (Gradual averaging)</td>
-          <td class="medium">2.5× (Aggressive DCA)</td>
-          <td class="high">3.0× (Rapid averaging)</td>
+          <td>Deviation Width</td>
+          <td class="low">3.0% (Wide — waits for bigger dips)</td>
+          <td class="medium">2.5% (Balanced spacing)</td>
+          <td class="high">2.0% (Tight — frequent fills)</td>
         </tr>
         <tr>
-          <td>Base Order %</td>
-          <td class="low">4% (Moderate positions)</td>
-          <td class="medium">6% (Larger positions)</td>
-          <td class="high">8% (Maximum positions)</td>
+          <td>Take Profit Target</td>
+          <td class="low">1.5% (Patient captures)</td>
+          <td class="medium">1.2% (Faster cycling)</td>
+          <td class="high">1.0% (Rapid cycling)</td>
         </tr>
         <tr>
           <td>Capital Reserve</td>
-          <td class="low">10% (Safety buffer)</td>
-          <td class="medium">5% (Higher utilization)</td>
-          <td class="high">2% (Maximum deployment)</td>
+          <td class="low">30% (Maximum safety margin)</td>
+          <td class="medium">15% (Moderate buffer)</td>
+          <td class="high">5% (Maximum deployment)</td>
+        </tr>
+        <tr>
+          <td>Conviction Response</td>
+          <td class="low">Gentle (Conservative adjustment)</td>
+          <td class="medium">Moderate (Balanced adjustment)</td>
+          <td class="high">Strong (Aggressive adjustment)</td>
         </tr>
         <tr>
           <td>Take Profit Range</td>
@@ -1175,18 +1199,18 @@ section { padding: 100px 0; }
       <div class="amplifier-item fade-in">
         <div class="amplifier-rank">1</div>
         <div class="amplifier-content">
-          <div class="amplifier-title">Leverage (Highest Impact)</div>
-          <div class="amplifier-desc">Multiplies every trade outcome proportionally — 3× leverage means 3× gains AND 3× losses.</div>
-          <div class="amplifier-impact">Direct position size amplification affects every single trade result and liquidation threshold.</div>
+          <div class="amplifier-title">SO Depth (Highest Impact)</div>
+          <div class="amplifier-desc">More safety orders = deeper accumulation and more capital deployed on dips. 12 SOs commits far more capital than 5.</div>
+          <div class="amplifier-impact">Each safety order compounds previous positions, creating exponential exposure growth during drawdowns.</div>
         </div>
       </div>
       
       <div class="amplifier-item fade-in">
         <div class="amplifier-rank">2</div>
         <div class="amplifier-content">
-          <div class="amplifier-title">SO Depth & Multiplier</div>
-          <div class="amplifier-desc">Deeper Martingale = larger drawdowns before recovery, but faster recovery when trends reverse.</div>
-          <div class="amplifier-impact">Each safety order compounds previous positions, creating exponential exposure growth.</div>
+          <div class="amplifier-title">Deviation Width</div>
+          <div class="amplifier-desc">Tighter deviation = more frequent fills and faster capital deployment. Wider = waits for bigger dips, more selective.</div>
+          <div class="amplifier-impact">Controls how quickly your grid fills during a drawdown — tight deviation accelerates capital commitment.</div>
         </div>
       </div>
       
@@ -1195,7 +1219,7 @@ section { padding: 100px 0; }
         <div class="amplifier-content">
           <div class="amplifier-title">Capital Reserve Reduction</div>
           <div class="amplifier-desc">Less buffer for unexpected volatility spikes, but higher capital utilization means more active opportunities.</div>
-          <div class="amplifier-impact">Lower reserves = less ability to handle multiple simultaneous deals and margin volatility.</div>
+          <div class="amplifier-impact">Lower reserves = less ability to handle multiple simultaneous deals and unexpected volatility.</div>
         </div>
       </div>
       
@@ -1229,7 +1253,7 @@ section { padding: 100px 0; }
     
     <div style="margin-top: 32px; padding: 24px; background: rgba(99,102,241,0.08); border-radius: 16px; border: 1px solid rgba(99,102,241,0.15);">
       <h3 style="color: var(--accent2); font-size: 1.2rem; margin-bottom: 12px;">⚠️ Compound Risk Effects</h3>
-      <p style="color: var(--text2);">Risk amplifiers <strong>multiply each other</strong> rather than simply adding. High leverage + deep SOs + low reserves = exponential risk increase. Conservative settings across all parameters = compound safety. This is why profile selection matters more than any single parameter tweak.</p>
+      <p style="color: var(--text2);">Risk amplifiers <strong>multiply each other</strong> rather than simply adding. Deep SOs + tight deviation + low reserves = exponential risk increase. Conservative settings across all parameters = compound safety. This is why profile selection matters more than any single parameter tweak.</p>
     </div>
   </div>
 </section>
@@ -1462,7 +1486,7 @@ section { padding: 100px 0; }
         <div class="waterfall-step">
           <div class="waterfall-box high">
             <span>High Risk</span>
-            <span class="leverage-text">5-10× Leverage</span>
+            <span class="leverage-text">12 SOs · 5% Reserve</span>
           </div>
           <div class="waterfall-label">🔴 High Risk</div>
           <div class="waterfall-trigger">50% DD → Medium</div>
@@ -1473,7 +1497,7 @@ section { padding: 100px 0; }
         <div class="waterfall-step">
           <div class="waterfall-box medium">
             <span>Medium Risk</span>
-            <span class="leverage-text">2-3× Leverage</span>
+            <span class="leverage-text">8 SOs · 15% Reserve</span>
           </div>
           <div class="waterfall-label">🟡 Medium Risk</div>
           <div class="waterfall-trigger">30% DD → Low</div>
@@ -1484,7 +1508,7 @@ section { padding: 100px 0; }
         <div class="waterfall-step">
           <div class="waterfall-box low">
             <span>Low Risk</span>
-            <span class="leverage-text">1× Leverage</span>
+            <span class="leverage-text">5 SOs · 30% Reserve</span>
           </div>
           <div class="waterfall-label">🟢 Low Risk</div>
           <div class="waterfall-trigger">Capital Protected</div>
@@ -1713,7 +1737,7 @@ section { padding: 100px 0; }
           <span class="faq-toggle">+</span>
         </button>
         <div class="faq-answer">
-          High Risk is exactly that — high risk. It uses 5-10× leverage and can experience 35-70% drawdowns. Auto-guardrails help (automatic reduction at 50% drawdown), but they can't eliminate risk. Only allocate capital you can afford to lose entirely. Requires manual acknowledgment and experience confirmation.
+          High Risk is exactly that — high risk. It uses 12 safety orders with tight 2.0% deviation and only 5% reserves, deploying nearly all your capital into deep accumulation grids. It can experience 35-70% drawdowns. Auto-guardrails help (automatic reduction at 50% drawdown), but they can't eliminate risk. Only allocate capital you can afford to lose entirely.
         </div>
       </div>
       
