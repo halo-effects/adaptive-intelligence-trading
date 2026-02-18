@@ -489,6 +489,119 @@ class SpotPaperTrader:
             unsold_value += sum(l.qty * p for l in deal.unsold_lots)
         return self.cash + unsold_value
 
+    # ── Command Processing ────────────────────────────────────────────
+
+    def _check_commands(self):
+        """Check for and process commands from commands.json."""
+        cmd_path = self.paper_dir / "commands.json"
+        if not cmd_path.exists():
+            return
+        try:
+            commands = json.loads(cmd_path.read_text(encoding="utf-8"))
+            if not isinstance(commands, list) or not commands:
+                cmd_path.unlink(missing_ok=True)
+                return
+            logger.info("📋 Processing %d command(s)", len(commands))
+            for cmd in commands:
+                action = cmd.get("action", "")
+                try:
+                    if action == "add_coin":
+                        self._cmd_add_coin(cmd["symbol"])
+                    elif action == "remove_coin":
+                        self._cmd_remove_coin(cmd["symbol"])
+                    elif action == "switch_coin":
+                        self._cmd_remove_coin(cmd["from"])
+                        self._cmd_add_coin(cmd["to"])
+                    else:
+                        logger.warning("Unknown command action: %s", action)
+                except Exception as e:
+                    logger.error("Error processing command %s: %s", cmd, e)
+            cmd_path.unlink(missing_ok=True)
+            self._save_state()
+            self._write_status({}, {})
+        except Exception as e:
+            logger.error("Failed to read commands.json: %s", e)
+            try:
+                cmd_path.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    def _cmd_add_coin(self, symbol: str):
+        """Add a coin to the active symbols list."""
+        if symbol in self.symbols:
+            logger.info("⚠️ %s already in symbols, skipping add", symbol)
+            return
+        if len(self.symbols) >= self.max_coins:
+            logger.warning("⚠️ Cannot add %s — at max_coins (%d)", symbol, self.max_coins)
+            send_telegram(f"⚠️ Cannot add {symbol} — already at max coins ({self.max_coins})")
+            return
+        self.symbols.append(symbol)
+        logger.info("➕ Added %s to symbols: %s", symbol, self.symbols)
+        send_telegram(
+            f"➕ <b>Coin Added</b>\n"
+            f"Symbol: {symbol}\n"
+            f"Active coins: {', '.join(self.symbols)}"
+        )
+
+    def _cmd_remove_coin(self, symbol: str):
+        """Remove a coin, force-closing any active deal."""
+        if symbol not in self.symbols:
+            logger.info("⚠️ %s not in symbols, skipping remove", symbol)
+            return
+        # Force close active deal if exists
+        if symbol in self.deals:
+            self._force_close_deal(symbol)
+        self.symbols.remove(symbol)
+        logger.info("➖ Removed %s from symbols: %s", symbol, self.symbols)
+        send_telegram(
+            f"➖ <b>Coin Removed</b>\n"
+            f"Symbol: {symbol}\n"
+            f"Active coins: {', '.join(self.symbols) if self.symbols else 'none'}"
+        )
+
+    def _force_close_deal(self, symbol: str):
+        """Force close an active deal at current market price."""
+        deal = self.deals.get(symbol)
+        if not deal or not deal.unsold_lots:
+            return
+        try:
+            df = self._fetch_candles(symbol)
+            if df is None or df.empty:
+                logger.error("Cannot fetch price for force close of %s", symbol)
+                return
+            price = float(df["close"].iloc[-1])
+        except Exception as e:
+            logger.error("Error fetching price for force close of %s: %s", symbol, e)
+            return
+
+        ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        total_revenue = 0.0
+        for lot in deal.unsold_lots:
+            revenue = lot.qty * price
+            fee = revenue * self.taker_fee
+            net = revenue - fee
+            lot.sell_price = price
+            lot.sell_fee = fee
+            lot.sell_time = ts
+            lot.pnl = net - lot.cost_usd
+            total_revenue += net
+
+        self.cash += total_revenue
+        deal.close_time = ts
+        self.completed_deals.append(deal)
+        del self.deals[symbol]
+
+        pnl = deal.total_pnl
+        logger.info("🔴 FORCE CLOSED %s: PnL=$%.2f, returned $%.2f to cash",
+                     symbol, pnl, total_revenue)
+        send_telegram(
+            f"🔴 <b>Force Closed Deal</b>\n"
+            f"Coin: {symbol}\nClose price: ${price:.4f}\n"
+            f"PnL: ${pnl:.2f}\nInvested: ${deal.total_invested:.2f}\n"
+            f"Return: {pnl / deal.total_invested * 100:.2f}%"
+        )
+        self._append_trade_csv(deal)
+
     # ── Persistence ────────────────────────────────────────────────────
 
     def _save_state(self):
@@ -499,6 +612,7 @@ class SpotPaperTrader:
             "peak_equity": self._peak_equity,
             "max_dd": self._max_dd,
             "start_time": self._start_time.isoformat(),
+            "symbols": self.symbols,
             "deals": {s: d.to_dict() for s, d in self.deals.items()},
             "completed_deals": [d.to_dict() for d in self.completed_deals[-50:]],  # keep last 50
         }
@@ -521,12 +635,14 @@ class SpotPaperTrader:
                     self._start_time = datetime.fromisoformat(state["start_time"])
                 except Exception:
                     pass
+            if state.get("symbols"):
+                self.symbols = state["symbols"]
             for sym, d in state.get("deals", {}).items():
                 self.deals[sym] = Deal.from_dict(d)
             for d in state.get("completed_deals", []):
                 self.completed_deals.append(Deal.from_dict(d))
-            logger.info("State loaded: cash=$%.2f, %d active deals, %d completed",
-                        self.cash, len(self.deals), len(self.completed_deals))
+            logger.info("State loaded: cash=$%.2f, %d active deals, %d completed, symbols=%s",
+                        self.cash, len(self.deals), len(self.completed_deals), self.symbols)
         except Exception as e:
             logger.error("Failed to load state: %s", e)
 
@@ -704,6 +820,9 @@ class SpotPaperTrader:
     def _run_cycle(self, cycle: int):
         ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
         logger.info("── Cycle %d at %s ──", cycle, ts)
+
+        # Check for coin management commands
+        self._check_commands()
 
         prices: Dict[str, float] = {}
         regime_info: Dict[str, Tuple[str, bool]] = {}

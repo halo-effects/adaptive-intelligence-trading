@@ -353,6 +353,40 @@ table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
   <div id="spotCoinsContent"></div>
 </div>
 
+<!-- Spot: Smart Entry Leaderboard -->
+<div class="section" id="spotScannerSection" style="display:none">
+  <h2>🏆 Smart Entry Leaderboard <span id="spotScannerStatus" style="font-size:.8rem;color:var(--text2);font-weight:400"></span></h2>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:6px">
+      <span class="badge badge-blue" id="spotScanTotal">--</span>
+      <span style="font-size:.7rem;color:var(--text3)">scanned →</span>
+      <span class="badge badge-purple" id="spotScanMature">--</span>
+      <span style="font-size:.7rem;color:var(--text3)">mature →</span>
+      <span class="badge badge-green" id="spotScanQualified">--</span>
+      <span style="font-size:.7rem;color:var(--text3)">backtested</span>
+    </div>
+    <div style="margin-left:auto;font-size:.72rem;color:var(--text2)">
+      <span>Last scan: <span id="spotScanLastRun">--</span></span>
+    </div>
+  </div>
+  <div id="spotScanRecommendation" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:16px">
+    <span id="spotScanAction" class="badge" style="font-size:.8rem;padding:4px 12px">--</span>
+    <span id="spotScanActionText" style="font-size:.85rem;color:var(--text2)">Loading scanner data...</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th style="width:36px">#</th><th>Coin</th><th>Score</th><th>Daily ROI</th>
+        <th>Win Rate</th><th>Max DD</th><th>Status</th><th>Action</th>
+      </tr></thead>
+      <tbody id="spotScannerTableBody"><tr><td colspan="8" style="text-align:center;color:var(--text3)">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Spot: Toast notification -->
+<div id="cmdToast" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:10px 20px;border-radius:8px;font-size:.8rem;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.4);transition:opacity .3s">Copied!</div>
+
 <!-- Spot: Sentiment -->
 <div class="section" id="sentimentSection" style="display:none">
   <h2>💬 Sentiment Analysis</h2>
@@ -653,6 +687,7 @@ function showSpotUI() {
   $('macroSection').style.display = '';
   $('spotCoinSelectorSection').style.display = '';
   $('spotCoinsSection').style.display = '';
+  $('spotScannerSection').style.display = '';
   $('sentimentSection').style.display = '';
   // Hide futures sections
   $('adaptiveSection').style.display = 'none';
@@ -670,6 +705,7 @@ function showFuturesUI() {
   $('macroSection').style.display = 'none';
   $('spotCoinSelectorSection').style.display = 'none';
   $('spotCoinsSection').style.display = 'none';
+  $('spotScannerSection').style.display = 'none';
   $('sentimentSection').style.display = 'none';
   $('adaptiveSection').style.display = '';
   $('scannerSection').style.display = '';
@@ -1694,6 +1730,95 @@ function renderBottom() {
   ddBar.style.background = dd > maxDD*0.7 ? 'var(--red)' : dd > maxDD*0.4 ? 'var(--amber)' : 'var(--green)';
 }
 
+// ── Spot Scanner Leaderboard ──────────────────────────────
+async function fetchSpotScanner() {
+  try {
+    const [recRes, t1Res, t2Res] = await Promise.all([
+      fetch(DATA_PREFIX+'scanner_recommendation.json?t='+Date.now()),
+      fetch(DATA_PREFIX+'scanner_t1.json?t='+Date.now()),
+      fetch(DATA_PREFIX+'scanner_t2.json?t='+Date.now())
+    ]);
+    const safeParse = async (r) => { if(!r.ok) return null; const t = await r.text(); return JSON.parse(t.replace(/\bInfinity\b/g, '9999')); };
+    const rec = await safeParse(recRes);
+    const t1 = await safeParse(t1Res);
+    const t2 = await safeParse(t2Res);
+    renderSpotScanner(rec, t1, t2);
+  } catch(e) { console.error('fetchSpotScanner error:', e); }
+}
+
+function showCmdToast(msg) {
+  const t = $('cmdToast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.style.opacity = '1';
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.style.display = 'none', 300); }, 2500);
+}
+
+function copyCommand(cmdJson, label) {
+  const acctDir = ACCOUNT_ID.replace('paper-', '');
+  const cmd = `echo '${JSON.stringify(cmdJson)}' > trading/spot/paper/${acctDir}/commands.json`;
+  navigator.clipboard.writeText(cmd).then(() => {
+    showCmdToast('📋 Copied: ' + label);
+  }).catch(() => {
+    prompt('Copy this command:', cmd);
+  });
+}
+
+function renderSpotScanner(rec, t1, t2) {
+  const section = $('spotScannerSection');
+  if (!section) return;
+  if (!rec && !t1 && !t2) { $('spotScannerTableBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3)">No scanner data available</td></tr>'; return; }
+
+  if (t1) {
+    $('spotScanTotal').textContent = t1.total_pairs_scanned + ' pairs';
+    $('spotScanMature').textContent = t1.passed_maturity + ' passed';
+    $('spotScanQualified').textContent = (t1.passed_technical || t1.shortlist_size || 0) + ' qualified';
+  }
+  if (rec && rec.timestamp) {
+    const d = new Date(rec.timestamp);
+    const ago = Math.round((Date.now() - d.getTime()) / 60000);
+    $('spotScanLastRun').textContent = d.toLocaleTimeString() + ' (' + (ago < 60 ? ago+'m ago' : Math.round(ago/60)+'h ago') + ')';
+    if (rec.action === 'HOLD') {
+      $('spotScanAction').className = 'badge badge-green'; $('spotScanAction').textContent = '✓ HOLD';
+      $('spotScanActionText').textContent = `Current pick remains optimal (score: ${rec.best_score?.toFixed(1) || '--'})`;
+    } else {
+      $('spotScanAction').className = 'badge badge-amber'; $('spotScanAction').textContent = '↻ ROTATE';
+      $('spotScanActionText').textContent = `Consider switching to ${(rec.best_coin||'').replace('/USDT','')} (${rec.best_score?.toFixed(1)} vs ${rec.current_score?.toFixed(1)})`;
+    }
+    $('spotScannerStatus').textContent = rec.action === 'HOLD' ? '— Holding current' : '— Rotation suggested';
+  }
+
+  if (t2 && t2.rankings && t2.rankings.length) {
+    const activeSymbols = status ? (status.symbols || Object.keys(status.coins || {})) : [];
+    const lowestActive = activeSymbols.length > 0 ? t2.rankings.filter(r => activeSymbols.includes(r.symbol)).sort((a,b) => a.composite_score - b.composite_score)[0] : null;
+    const maxCoins = status ? (status.max_coins || 3) : 3;
+    const canAdd = activeSymbols.length < maxCoins;
+
+    $('spotScannerTableBody').innerHTML = t2.rankings.map((r, i) => {
+      const isActive = activeSymbols.includes(r.symbol);
+      const rowBg = isActive ? 'background:rgba(63,185,80,.08)' : '';
+      const statusBadge = isActive
+        ? '<span class="badge badge-green">ACTIVE</span>'
+        : '<span class="badge badge-gray">Available</span>';
+
+      let actionBtns = '';
+      if (isActive) {
+        actionBtns = `<button onclick="copyCommand([{action:'remove_coin',symbol:'${r.symbol}'}],'Remove ${r.symbol.replace('/USDT','')}')" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3);padding:3px 8px;border-radius:4px;font-size:.7rem;cursor:pointer">Remove</button>`;
+      } else {
+        if (canAdd) {
+          actionBtns += `<button onclick="copyCommand([{action:'add_coin',symbol:'${r.symbol}'}],'Add ${r.symbol.replace('/USDT','')}')" style="background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3);padding:3px 8px;border-radius:4px;font-size:.7rem;cursor:pointer;margin-right:4px">Add</button>`;
+        }
+        if (lowestActive && r.composite_score > lowestActive.composite_score) {
+          actionBtns += `<button onclick="copyCommand([{action:'switch_coin',from:'${lowestActive.symbol}',to:'${r.symbol}'}],'Switch to ${r.symbol.replace('/USDT','')}')" style="background:rgba(210,153,34,.15);color:var(--amber);border:1px solid rgba(210,153,34,.3);padding:3px 8px;border-radius:4px;font-size:.7rem;cursor:pointer">Switch</button>`;
+        }
+      }
+
+      const ddColor = r.max_drawdown_pct < -5 ? 'var(--red)' : r.max_drawdown_pct < -3 ? 'var(--amber)' : 'var(--green)';
+      return `<tr style="${rowBg}"><td style="color:var(--text3);font-weight:600">${i+1}</td><td style="font-weight:600">${r.symbol.replace('/USDT','')}</td><td><span style="font-size:1.1rem;font-weight:700;color:var(--blue)">${r.composite_score.toFixed(1)}</span></td><td style="color:var(--green)">${r.daily_roi_pct.toFixed(3)}%</td><td>${r.win_rate.toFixed(0)}%</td><td style="color:${ddColor}">${r.max_drawdown_pct.toFixed(2)}%</td><td>${statusBadge}</td><td>${actionBtns}</td></tr>`;
+    }).join('');
+  }
+}
+
 async function fetchScanner() {
   try {
     const [recRes, t1Res, t2Res] = await Promise.all([
@@ -1754,13 +1879,13 @@ function renderScanner(rec, t1, t2) {
 }
 
 async function init() {
-  await Promise.all([fetchStatus(), fetchHistory(), fetchTrades(), ...(IS_SPOT ? [] : [fetchScanner()])]);
+  await Promise.all([fetchStatus(), fetchHistory(), fetchTrades(), ...(IS_SPOT ? [fetchSpotScanner()] : [fetchScanner()])]);
   if (!IS_SPOT) renderCharts();
 }
 init();
 
 setInterval(async () => { await fetchStatus(); await fetchTrades(); countdownVal = 15; }, 15000);
-setInterval(() => { if (!IS_SPOT) fetchScanner(); }, 300000);
+setInterval(() => { if (IS_SPOT) fetchSpotScanner(); else fetchScanner(); }, 300000);
 setInterval(() => { historyCountdown--; if(historyCountdown <= 0) { fetchHistory().then(renderCharts); historyCountdown = 300; } }, 1000);
 setInterval(() => { countdownVal = Math.max(0, countdownVal - 1); $('countdown').textContent = countdownVal; }, 1000);
 setInterval(() => { if(status?.start_time) $('bUptime').textContent = durStr(Date.now() - new Date(status.start_time).getTime()); }, 1000);
