@@ -460,57 +460,38 @@ section { padding: 100px 0; }
   transform: rotate(-90deg);
 }
 
-/* Dashboard Mock Cards */
+/* Dashboard Mock — Real Dashboard Preview */
 .dashboard-section { padding-top: 100px; }
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
-  margin-top: 32px;
-}
-.dashboard-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 24px;
-}
-.dashboard-card.summary {
-  background: linear-gradient(135deg, rgba(99,102,241,0.1), var(--card));
-  border-color: var(--accent);
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-.card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-.card-badge {
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.badge-low { background: rgba(34,197,94,0.2); color: var(--green); }
-.badge-medium { background: rgba(245,158,11,0.2); color: var(--amber); }
-.badge-high { background: rgba(239,68,68,0.2); color: var(--red); }
-.badge-total { background: rgba(99,102,241,0.2); color: var(--accent2); }
-.card-stat {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-}
-.card-stat:last-child { border: none; }
-.stat-name { color: var(--text2); }
-.stat-number { font-weight: 600; }
+.dash-mock { max-width: 960px; margin: 32px auto 0; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
+.dash-topbar { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.dash-pill { padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: default; border: 1px solid var(--border); background: var(--card); color: var(--text2); }
+.dash-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.dash-body { padding: 24px 20px; display: flex; flex-direction: column; gap: 20px; }
+.dash-row { display: grid; gap: 16px; }
+.dash-row.top { grid-template-columns: 200px 1fr; }
+.dash-row.positions { grid-template-columns: repeat(3, 1fr); }
+.dash-row.bottom { grid-template-columns: 1fr 1fr; }
+.dash-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+.dash-card-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text2); margin-bottom: 12px; font-weight: 600; }
+.dash-gauge-wrap { display: flex; flex-direction: column; align-items: center; }
+.dash-macro-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.dash-macro-item { display: flex; flex-direction: column; gap: 2px; }
+.dash-macro-label { font-size: 0.68rem; color: var(--text2); }
+.dash-macro-val { font-size: 0.85rem; font-weight: 600; }
+.dash-pos-symbol { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+.dash-pos-state { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--amber); margin-bottom: 10px; }
+.dash-pos-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 3px 0; }
+.dash-pos-row .label { color: var(--text2); }
+.dash-layer-bar { height: 6px; border-radius: 3px; background: var(--border); margin-top: 8px; overflow: hidden; }
+.dash-layer-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+.dash-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+.dash-table th { text-align: left; color: var(--text2); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.dash-table td { padding: 8px; border-bottom: 1px solid var(--border); }
 .stat-positive { color: var(--green); }
 .stat-negative { color: var(--red); }
+@media (max-width: 768px) {
+  .dash-row.top, .dash-row.positions, .dash-row.bottom { grid-template-columns: 1fr; }
+}
 
 /* Safety Guardrails */
 .guardrails-section { background: #0d0d15; }
@@ -1346,114 +1327,162 @@ section { padding: 100px 0; }
   </div>
 </section>
 
-<!-- Mock Dashboard Cards -->
+<!-- Real-Time Intelligence Dashboard Preview -->
 <section class="dashboard-section">
   <div class="container">
     <div class="section-label">Dashboard Preview</div>
-    <h2 class="section-title fade-in">What Your Multi-Profile Dashboard Will Look Like</h2>
-    <p class="section-subtitle fade-in">Each profile runs independently with its own performance tracking and deal management.</p>
-    
-    <div class="dashboard-grid">
-      <!-- Combined Portfolio Summary -->
-      <div class="dashboard-card summary fade-in">
-        <div class="card-header">
-          <div class="card-title">Portfolio Summary</div>
-          <div class="card-badge badge-total">Total</div>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Total Capital</span>
-          <span class="stat-number">$10,000</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Active Deals</span>
-          <span class="stat-number">6</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Today's P&L</span>
-          <span class="stat-number stat-positive">+$42.30</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Current Drawdown</span>
-          <span class="stat-number stat-negative">-2.3%</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">30-Day ROI</span>
-          <span class="stat-number stat-positive">+11.4%</span>
-        </div>
+    <h2 class="section-title fade-in">Real-Time Intelligence Dashboard</h2>
+    <p class="section-subtitle fade-in">Live conviction scoring, macro analysis, and position tracking — all in one view.</p>
+
+    <div class="dash-mock fade-in">
+      <!-- Top bar: account switcher pills -->
+      <div class="dash-topbar">
+        <span style="font-size:0.78rem;color:var(--text2);margin-right:4px;">Account:</span>
+        <span class="dash-pill active">Aster Spot (Live)</span>
+        <span class="dash-pill">Binance Main</span>
+        <span class="dash-pill">Paper Trading</span>
       </div>
-      
-      <!-- Low Risk Profile -->
-      <div class="dashboard-card fade-in">
-        <div class="card-header">
-          <div class="card-title">🟢 Low Risk Profile</div>
-          <div class="card-badge badge-low">Foundation</div>
+
+      <div class="dash-body">
+        <!-- Row 1: Conviction Gauge + Macro Bar -->
+        <div class="dash-row top">
+          <!-- Conviction Gauge -->
+          <div class="dash-card dash-gauge-wrap">
+            <div class="dash-card-title">Conviction Score</div>
+            <svg viewBox="0 0 120 80" width="140" style="margin:-4px 0 4px">
+              <!-- background arc -->
+              <path d="M15 70 A50 50 0 0 1 105 70" fill="none" stroke="var(--border)" stroke-width="10" stroke-linecap="round"/>
+              <!-- filled arc ~62% of 180° ≈ 111.6° -->
+              <path d="M15 70 A50 50 0 0 1 105 70" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round"
+                stroke-dasharray="157" stroke-dashoffset="60"/>
+              <text x="60" y="62" text-anchor="middle" fill="#fff" font-size="22" font-weight="700">62</text>
+              <text x="60" y="76" text-anchor="middle" fill="var(--accent2)" font-size="8" font-weight="600">ACCUMULATE</text>
+            </svg>
+          </div>
+          <!-- Macro Indicators -->
+          <div class="dash-card">
+            <div class="dash-card-title">Macro Indicators</div>
+            <div class="dash-macro-bar">
+              <div class="dash-macro-item">
+                <span class="dash-macro-label">Fear &amp; Greed</span>
+                <span class="dash-macro-val" style="color:var(--red);">8 — Extreme Fear</span>
+                <div style="height:4px;border-radius:2px;width:120px;background:linear-gradient(90deg,var(--red),var(--amber),var(--green));margin-top:4px;position:relative;">
+                  <div style="position:absolute;left:8%;top:-3px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--red);"></div>
+                </div>
+              </div>
+              <div class="dash-macro-item">
+                <span class="dash-macro-label">BTC vs SMA200</span>
+                <span class="dash-macro-val" style="color:var(--red);">-14.2%</span>
+              </div>
+              <div class="dash-macro-item">
+                <span class="dash-macro-label">Pi Cycle Gap</span>
+                <span class="dash-macro-val" style="color:var(--green);">38.6%</span>
+              </div>
+              <div class="dash-macro-item">
+                <span class="dash-macro-label">SSR</span>
+                <span class="dash-macro-val">0.042</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="card-stat">
-          <span class="stat-name">Allocated Capital</span>
-          <span class="stat-number">$6,000</span>
+
+        <!-- Row 2: Position Cards -->
+        <div class="dash-row positions">
+          <!-- ETH -->
+          <div class="dash-card">
+            <div class="dash-pos-symbol">ETH/USDT</div>
+            <div class="dash-pos-state">⟳ Accumulating</div>
+            <div class="dash-pos-row"><span class="label">Layers</span><span>3 / 8</span></div>
+            <div class="dash-layer-bar"><div class="dash-layer-fill" style="width:37.5%"></div></div>
+            <div class="dash-pos-row" style="margin-top:8px"><span class="label">Avg Entry</span><span>$1,842.10</span></div>
+            <div class="dash-pos-row"><span class="label">Current</span><span>$1,781.33</span></div>
+            <div class="dash-pos-row"><span class="label">Unreal. PnL</span><span class="stat-negative">-$38.20 (-3.3%)</span></div>
+            <div class="dash-pos-row"><span class="label">TP Target</span><span style="color:var(--green);">$1,934.21</span></div>
+            <div class="dash-pos-row"><span class="label">Next SO</span><span style="color:var(--text2);">$1,728.50</span></div>
+          </div>
+          <!-- ASTER -->
+          <div class="dash-card">
+            <div class="dash-pos-symbol">ASTER/USDT</div>
+            <div class="dash-pos-state">⟳ Accumulating</div>
+            <div class="dash-pos-row"><span class="label">Layers</span><span>5 / 8</span></div>
+            <div class="dash-layer-bar"><div class="dash-layer-fill" style="width:62.5%"></div></div>
+            <div class="dash-pos-row" style="margin-top:8px"><span class="label">Avg Entry</span><span>$0.0732</span></div>
+            <div class="dash-pos-row"><span class="label">Current</span><span>$0.0681</span></div>
+            <div class="dash-pos-row"><span class="label">Unreal. PnL</span><span class="stat-negative">-$61.40 (-7.0%)</span></div>
+            <div class="dash-pos-row"><span class="label">TP Target</span><span style="color:var(--green);">$0.0769</span></div>
+            <div class="dash-pos-row"><span class="label">Next SO</span><span style="color:var(--text2);">$0.0644</span></div>
+          </div>
+          <!-- BNB -->
+          <div class="dash-card">
+            <div class="dash-pos-symbol">BNB/USDT</div>
+            <div class="dash-pos-state">⟳ Accumulating</div>
+            <div class="dash-pos-row"><span class="label">Layers</span><span>1 / 8</span></div>
+            <div class="dash-layer-bar"><div class="dash-layer-fill" style="width:12.5%"></div></div>
+            <div class="dash-pos-row" style="margin-top:8px"><span class="label">Avg Entry</span><span>$312.40</span></div>
+            <div class="dash-pos-row"><span class="label">Current</span><span>$308.15</span></div>
+            <div class="dash-pos-row"><span class="label">Unreal. PnL</span><span class="stat-negative">-$5.10 (-1.4%)</span></div>
+            <div class="dash-pos-row"><span class="label">TP Target</span><span style="color:var(--green);">$328.02</span></div>
+            <div class="dash-pos-row"><span class="label">Next SO</span><span style="color:var(--text2);">$296.28</span></div>
+          </div>
         </div>
-        <div class="card-stat">
-          <span class="stat-name">Active Deals</span>
-          <span class="stat-number">3</span>
+
+        <!-- Row 3: Risk Profile + Allocation Donut | Trade History -->
+        <div class="dash-row bottom">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;">
+            <!-- Risk Profile Card -->
+            <div class="dash-card" style="flex:1;min-width:180px;">
+              <div class="dash-card-title">Risk Profile</div>
+              <div style="font-size:1.1rem;font-weight:700;color:var(--amber);margin-bottom:10px;">🟡 Medium</div>
+              <div class="dash-pos-row"><span class="label">Safety Orders</span><span>8</span></div>
+              <div class="dash-pos-row"><span class="label">Base Dev</span><span>1.8%</span></div>
+              <div class="dash-pos-row"><span class="label">TP Target</span><span>5.0%</span></div>
+              <div class="dash-pos-row"><span class="label">Reserve</span><span>25%</span></div>
+            </div>
+            <!-- Allocation Donut -->
+            <div class="dash-card" style="flex:1;min-width:180px;display:flex;flex-direction:column;align-items:center;">
+              <div class="dash-card-title" style="align-self:flex-start;">Allocation</div>
+              <svg viewBox="0 0 100 100" width="110" style="margin:4px 0;">
+                <circle cx="50" cy="50" r="38" fill="none" stroke="var(--border)" stroke-width="12"/>
+                <!-- ETH 40% -->
+                <circle cx="50" cy="50" r="38" fill="none" stroke="var(--accent)" stroke-width="12"
+                  stroke-dasharray="95.5 143.3" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+                <!-- ASTER 35% -->
+                <circle cx="50" cy="50" r="38" fill="none" stroke="var(--amber)" stroke-width="12"
+                  stroke-dasharray="83.6 155.2" stroke-dashoffset="-95.5" transform="rotate(-90 50 50)"/>
+                <!-- BNB 25% (remainder) -->
+                <circle cx="50" cy="50" r="38" fill="none" stroke="var(--green)" stroke-width="12"
+                  stroke-dasharray="59.7 179.1" stroke-dashoffset="-179.1" transform="rotate(-90 50 50)"/>
+                <text x="50" y="48" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">$10K</text>
+                <text x="50" y="58" text-anchor="middle" fill="var(--text2)" font-size="6">CAPITAL</text>
+              </svg>
+              <div style="display:flex;gap:12px;font-size:0.7rem;margin-top:4px;">
+                <span><span style="color:var(--accent);">●</span> ETH 40%</span>
+                <span><span style="color:var(--amber);">●</span> ASTER 35%</span>
+                <span><span style="color:var(--green);">●</span> BNB 25%</span>
+              </div>
+            </div>
+          </div>
+          <!-- Trade History -->
+          <div class="dash-card">
+            <div class="dash-card-title">Recent Trades</div>
+            <table class="dash-table">
+              <thead><tr><th>Time</th><th>Symbol</th><th>Layers</th><th>Invested</th><th>PnL</th><th>Return</th><th>Duration</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td style="color:var(--text2);">Feb 16</td><td>ETH/USDT</td><td>4/8</td><td>$820</td>
+                  <td class="stat-positive">+$41.00</td><td class="stat-positive">+5.0%</td><td>3d 8h</td>
+                </tr>
+                <tr>
+                  <td style="color:var(--text2);">Feb 12</td><td>ASTER/USDT</td><td>6/8</td><td>$1,140</td>
+                  <td class="stat-positive">+$57.00</td><td class="stat-positive">+5.0%</td><td>5d 14h</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="card-stat">
-          <span class="stat-name">Today's P&L</span>
-          <span class="stat-number stat-positive">+$18.50</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Current Drawdown</span>
-          <span class="stat-number stat-negative">-1.2%</span>
-        </div>
-      </div>
-      
-      <!-- Medium Risk Profile -->
-      <div class="dashboard-card fade-in">
-        <div class="card-header">
-          <div class="card-title">🟡 Medium Risk Profile</div>
-          <div class="card-badge badge-medium">Accelerator</div>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Allocated Capital</span>
-          <span class="stat-number">$3,000</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Active Deals</span>
-          <span class="stat-number">2</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Today's P&L</span>
-          <span class="stat-number stat-positive">+$15.60</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Current Drawdown</span>
-          <span class="stat-number stat-negative">-4.1%</span>
-        </div>
-      </div>
-      
-      <!-- High Risk Profile -->
-      <div class="dashboard-card fade-in">
-        <div class="card-header">
-          <div class="card-title">🔴 High Risk Profile</div>
-          <div class="card-badge badge-high">Maximizer</div>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Allocated Capital</span>
-          <span class="stat-number">$1,000</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Active Deals</span>
-          <span class="stat-number">1</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Today's P&L</span>
-          <span class="stat-number stat-positive">+$8.20</span>
-        </div>
-        <div class="card-stat">
-          <span class="stat-name">Current Drawdown</span>
-          <span class="stat-number stat-negative">-8.7%</span>
-        </div>
-      </div>
-    </div>
+
+      </div><!-- /dash-body -->
+    </div><!-- /dash-mock -->
   </div>
 </section>
 
