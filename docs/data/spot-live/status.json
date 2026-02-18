@@ -13,12 +13,14 @@
       "side": "long",
       "layers": 1,
       "avg_entry": 0.7083,
-      "current_price": 0.7055,
+      "current_price": 0.7054,
       "unrealized_pnl": -0.05,
       "next_so_price": 0.686,
-      "next_tp_price": 0.7161,
+      "next_tp_price": 0.7157,
       "invested": 13.0,
-      "realized_pnl": 0
+      "realized_pnl": 0,
+      "conviction": null,
+      "conviction_band": null
     }
   },
   "deals_completed": 1,
@@ -27,8 +29,8 @@
   "max_drawdown_pct": 0.05,
   "regime": "DISTRIBUTION",
   "trend_direction": "bearish",
-  "last_update": "2026-02-18T21:59:33+00:00",
-  "uptime_hours": 1.3,
+  "last_update": "2026-02-18T22:13:14+00:00",
+  "uptime_hours": 0.0,
   "halted": false,
   "symbols": [
     "ASTER/USDT"
@@ -38,6 +40,31 @@
   "account_paused": false,
   "conviction_overrides": {},
   "max_so_adjustments": {},
+  "macro": {
+    "fear_greed": {
+      "value": 8,
+      "classification": "Extreme Fear"
+    },
+    "btc_dominance": 56.17,
+    "btc_sma": {
+      "price": 66248.48,
+      "sma200": 99879.21,
+      "above_sma200": false,
+      "distance_pct": -33.67
+    },
+    "pi_cycle": {
+      "ma_111": 88495.25,
+      "ma_350x2": 199719.22,
+      "cross_imminent": false,
+      "topped": false,
+      "gap_pct": -55.69
+    },
+    "ssr": {
+      "ssr": 5.06,
+      "zone": "normal"
+    },
+    "_timestamp": 1771452792.357604
+  },
   "controls": {
     "paused_coins": [],
     "account_paused": false,
