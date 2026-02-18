@@ -9,3 +9,403 @@
 2026-02-17 11:18:33,308 [INFO] 📥 DEAL 1 OPENED: HYPE/USDC @ $29.6450 (regime=ACCUMULATION, TP=1.37%)
 2026-02-17 11:18:34,543 [INFO] Equity: $9999.72 (-0.00%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
 2026-02-17 11:18:34,544 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 12:15:15,224 [INFO] ============================================================
+2026-02-17 12:15:15,226 [INFO] Spot Paper Trader starting
+2026-02-17 12:15:15,226 [INFO] Exchange: hyperliquid | Profile: medium | Capital: $10000
+2026-02-17 12:15:15,226 [INFO] Symbols: ['HYPE/USDC'] | Timeframe: 15m | Max coins: 3
+2026-02-17 12:15:15,226 [INFO] ============================================================
+2026-02-17 12:15:15,234 [INFO] Connected to hyperliquid
+2026-02-17 12:15:15,241 [INFO] State loaded: cash=$9600.00, 1 active deals, 0 completed
+2026-02-17 12:15:16,911 [INFO] ── Cycle 1 at 2026-02-17T20:15:16+00:00 ──
+2026-02-17 12:15:30,284 [DEBUG] HYPE/USDC: $29.4260 | regime=ACCUMULATION | ATR%=0.74 | TP=1.19% | Dev=2.00%
+2026-02-17 12:15:30,286 [INFO] Equity: $9996.77 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 12:15:30,286 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 12:30:30,693 [INFO] ── Cycle 2 at 2026-02-17T20:30:30+00:00 ──
+2026-02-17 12:30:33,506 [DEBUG] HYPE/USDC: $29.5250 | regime=ACCUMULATION | ATR%=0.68 | TP=1.09% | Dev=2.00%
+2026-02-17 12:30:33,509 [INFO] Equity: $9998.10 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 12:30:33,512 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 12:45:34,269 [INFO] ── Cycle 3 at 2026-02-17T20:45:34+00:00 ──
+2026-02-17 12:45:38,176 [DEBUG] HYPE/USDC: $29.6250 | regime=ACCUMULATION | ATR%=0.69 | TP=1.10% | Dev=2.00%
+2026-02-17 12:45:38,180 [INFO] Equity: $9999.45 (-0.01%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 12:45:38,182 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 13:00:39,209 [INFO] ── Cycle 4 at 2026-02-17T21:00:39+00:00 ──
+2026-02-17 13:00:41,371 [DEBUG] HYPE/USDC: $29.6930 | regime=ACCUMULATION | ATR%=0.62 | TP=1.00% | Dev=2.00%
+2026-02-17 13:00:41,374 [INFO] Equity: $10000.37 (0.00%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 13:00:41,376 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 13:15:41,736 [INFO] ── Cycle 5 at 2026-02-17T21:15:41+00:00 ──
+2026-02-17 13:15:44,380 [DEBUG] HYPE/USDC: $29.7460 | regime=ACCUMULATION | ATR%=0.63 | TP=1.01% | Dev=2.00%
+2026-02-17 13:15:44,382 [INFO] Equity: $10001.08 (0.01%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 13:15:44,384 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 13:30:44,724 [INFO] ── Cycle 6 at 2026-02-17T21:30:44+00:00 ──
+2026-02-17 13:30:47,316 [DEBUG] HYPE/USDC: $29.6630 | regime=ACCUMULATION | ATR%=0.60 | TP=1.00% | Dev=2.00%
+2026-02-17 13:30:47,318 [INFO] Equity: $9999.96 (-0.00%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 13:30:47,319 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 13:45:47,691 [INFO] ── Cycle 7 at 2026-02-17T21:45:47+00:00 ──
+2026-02-17 13:45:50,287 [DEBUG] HYPE/USDC: $29.8680 | regime=ACCUMULATION | ATR%=0.58 | TP=1.00% | Dev=2.00%
+2026-02-17 13:45:50,287 [INFO] Equity: $10002.73 (0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 13:45:50,292 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:00:51,186 [INFO] ── Cycle 8 at 2026-02-17T22:00:51+00:00 ──
+2026-02-17 14:00:53,642 [DEBUG] HYPE/USDC: $29.8590 | regime=ACCUMULATION | ATR%=0.56 | TP=1.00% | Dev=2.00%
+2026-02-17 14:00:53,642 [INFO] Equity: $10002.61 (0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:00:53,646 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:03:15,125 [INFO] ============================================================
+2026-02-17 14:03:15,125 [INFO] Spot Paper Trader starting
+2026-02-17 14:03:15,126 [INFO] Exchange: hyperliquid | Profile: medium | Capital: $10000
+2026-02-17 14:03:15,126 [INFO] Symbols: ['HYPE/USDC'] | Timeframe: 15m | Max coins: 3
+2026-02-17 14:03:15,126 [INFO] ============================================================
+2026-02-17 14:03:15,132 [INFO] Connected to hyperliquid
+2026-02-17 14:03:15,149 [INFO] State loaded: cash=$9600.00, 1 active deals, 0 completed
+2026-02-17 14:03:16,575 [INFO] ── Cycle 1 at 2026-02-17T22:03:16+00:00 ──
+2026-02-17 14:03:25,284 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+65, exit_pressure=35, mode=none, TP×1.00
+2026-02-17 14:03:39,321 [DEBUG] HYPE/USDC: $29.8560 | regime=ACCUMULATION | ATR%=0.56 | TP=1.00% | Dev=2.00%
+2026-02-17 14:03:39,321 [INFO] Equity: $10002.57 (0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:03:39,321 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:13:37,227 [INFO] ============================================================
+2026-02-17 14:13:37,228 [INFO] Spot Paper Trader starting
+2026-02-17 14:13:37,229 [INFO] Exchange: hyperliquid | Profile: medium | Capital: $10000
+2026-02-17 14:13:37,229 [INFO] Symbols: ['HYPE/USDC'] | Timeframe: 15m | Max coins: 3
+2026-02-17 14:13:37,229 [INFO] ============================================================
+2026-02-17 14:13:37,236 [INFO] Connected to hyperliquid
+2026-02-17 14:13:37,267 [INFO] State loaded: cash=$9600.00, 1 active deals, 0 completed
+2026-02-17 14:13:39,104 [INFO] ── Cycle 1 at 2026-02-17T22:13:39+00:00 ──
+2026-02-17 14:13:54,934 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+55, exit_pressure=25, mode=trend_ride, TP×1.32
+2026-02-17 14:14:09,482 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.32 = 1.32%
+2026-02-17 14:14:09,482 [DEBUG] HYPE/USDC: $29.8830 | regime=ACCUMULATION | ATR%=0.57 | TP=1.32% | Dev=2.00%
+2026-02-17 14:14:09,483 [INFO] Equity: $10002.93 (0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:14:09,485 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:29:09,859 [INFO] ── Cycle 2 at 2026-02-17T22:29:09+00:00 ──
+2026-02-17 14:29:12,873 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.32 = 1.32%
+2026-02-17 14:29:12,873 [DEBUG] HYPE/USDC: $29.8480 | regime=ACCUMULATION | ATR%=0.56 | TP=1.32% | Dev=2.00%
+2026-02-17 14:29:12,900 [INFO] Equity: $10002.46 (0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:29:12,906 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:44:13,750 [INFO] ── Cycle 3 at 2026-02-17T22:44:13+00:00 ──
+2026-02-17 14:44:17,025 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.32 = 1.32%
+2026-02-17 14:44:17,025 [DEBUG] HYPE/USDC: $29.6860 | regime=ACCUMULATION | ATR%=0.58 | TP=1.32% | Dev=2.00%
+2026-02-17 14:44:17,029 [INFO] Equity: $10000.27 (0.00%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:44:17,034 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:59:17,729 [INFO] ── Cycle 4 at 2026-02-17T22:59:17+00:00 ──
+2026-02-17 14:59:20,354 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.32 = 1.32%
+2026-02-17 14:59:20,354 [DEBUG] HYPE/USDC: $29.5640 | regime=ACCUMULATION | ATR%=0.58 | TP=1.32% | Dev=2.00%
+2026-02-17 14:59:20,355 [INFO] Equity: $9998.63 (-0.01%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:59:20,358 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 15:14:20,808 [INFO] ── Cycle 5 at 2026-02-17T23:14:20+00:00 ──
+2026-02-17 15:14:39,681 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+5, exit_pressure=15, mode=none, TP×1.00
+2026-02-17 15:14:41,885 [INFO] 🔄 Regime change for HYPE/USDC: ACCUMULATION → RANGING
+2026-02-17 15:14:43,266 [DEBUG] HYPE/USDC: $29.5020 | regime=RANGING | ATR%=0.57 | TP=1.00% | Dev=2.00%
+2026-02-17 15:14:43,268 [INFO] Equity: $9997.79 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 15:14:43,272 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 15:29:43,645 [INFO] ── Cycle 6 at 2026-02-17T23:29:43+00:00 ──
+2026-02-17 15:29:46,308 [DEBUG] HYPE/USDC: $29.5810 | regime=RANGING | ATR%=0.55 | TP=1.00% | Dev=2.00%
+2026-02-17 15:29:46,311 [INFO] Equity: $9998.86 (-0.01%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 15:29:46,313 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 15:44:46,710 [INFO] ── Cycle 7 at 2026-02-17T23:44:46+00:00 ──
+2026-02-17 15:44:49,056 [DEBUG] HYPE/USDC: $29.5890 | regime=RANGING | ATR%=0.53 | TP=1.00% | Dev=2.00%
+2026-02-17 15:44:49,062 [INFO] Equity: $9998.96 (-0.01%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 15:44:49,065 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 15:59:54,236 [INFO] ── Cycle 8 at 2026-02-17T23:59:54+00:00 ──
+2026-02-17 15:59:56,920 [DEBUG] HYPE/USDC: $29.4930 | regime=RANGING | ATR%=0.51 | TP=1.00% | Dev=2.00%
+2026-02-17 15:59:56,924 [INFO] Equity: $9997.67 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 15:59:56,927 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 16:14:57,349 [INFO] ── Cycle 9 at 2026-02-18T00:14:57+00:00 ──
+2026-02-17 16:15:23,102 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+15, exit_pressure=25, mode=none, TP×1.00
+2026-02-17 16:15:25,839 [INFO] 🔄 Regime change for HYPE/USDC: RANGING → ACCUMULATION
+2026-02-17 16:15:27,054 [DEBUG] HYPE/USDC: $29.4180 | regime=ACCUMULATION | ATR%=0.47 | TP=1.00% | Dev=2.00%
+2026-02-17 16:15:27,056 [INFO] Equity: $9996.66 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 16:15:27,057 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 16:30:27,397 [INFO] ── Cycle 10 at 2026-02-18T00:30:27+00:00 ──
+2026-02-17 16:30:32,309 [DEBUG] HYPE/USDC: $29.3100 | regime=ACCUMULATION | ATR%=0.47 | TP=1.00% | Dev=2.00%
+2026-02-17 16:30:32,314 [INFO] Equity: $9995.20 (-0.05%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 16:30:32,315 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 16:45:32,733 [INFO] ── Cycle 11 at 2026-02-18T00:45:32+00:00 ──
+2026-02-17 16:45:35,306 [INFO] 🔄 Regime change for HYPE/USDC: ACCUMULATION → RANGING
+2026-02-17 16:45:36,494 [DEBUG] HYPE/USDC: $29.2880 | regime=RANGING | ATR%=0.46 | TP=1.00% | Dev=2.00%
+2026-02-17 16:45:36,497 [INFO] Equity: $9994.91 (-0.05%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 16:45:36,499 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 17:00:36,864 [INFO] ── Cycle 12 at 2026-02-18T01:00:36+00:00 ──
+2026-02-17 17:00:39,827 [DEBUG] HYPE/USDC: $29.1230 | regime=RANGING | ATR%=0.47 | TP=1.00% | Dev=2.00%
+2026-02-17 17:00:39,829 [INFO] Equity: $9992.68 (-0.07%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 17:00:39,831 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 17:15:40,202 [INFO] ── Cycle 13 at 2026-02-18T01:15:40+00:00 ──
+2026-02-17 17:15:54,478 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+65, exit_pressure=15, mode=trend_ride, TP×1.38
+2026-02-17 17:15:56,780 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.38 = 1.38%
+2026-02-17 17:15:56,780 [DEBUG] HYPE/USDC: $29.0320 | regime=RANGING | ATR%=0.47 | TP=1.38% | Dev=2.06%
+2026-02-17 17:15:56,781 [INFO] Equity: $9991.45 (-0.09%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 17:15:56,781 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 17:30:57,126 [INFO] ── Cycle 14 at 2026-02-18T01:30:57+00:00 ──
+2026-02-17 17:30:59,660 [INFO] 🔄 Regime change for HYPE/USDC: RANGING → MILD_TREND
+2026-02-17 17:31:00,836 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.38 = 1.38%
+2026-02-17 17:31:00,837 [DEBUG] HYPE/USDC: $28.9910 | regime=MILD_TREND | ATR%=0.48 | TP=1.38% | Dev=2.06%
+2026-02-17 17:31:00,839 [INFO] Equity: $9990.90 (-0.09%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 17:31:00,842 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 17:46:02,441 [INFO] ── Cycle 15 at 2026-02-18T01:46:02+00:00 ──
+2026-02-17 17:46:05,340 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.03% × 1.38 = 1.42%
+2026-02-17 17:46:05,341 [DEBUG] HYPE/USDC: $29.0660 | regime=MILD_TREND | ATR%=0.52 | TP=1.42% | Dev=2.13%
+2026-02-17 17:46:05,344 [INFO] Equity: $9991.91 (-0.08%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 17:46:05,348 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 18:01:05,765 [INFO] ── Cycle 16 at 2026-02-18T02:01:05+00:00 ──
+2026-02-17 18:01:08,243 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.38 = 1.38%
+2026-02-17 18:01:08,243 [DEBUG] HYPE/USDC: $29.0780 | regime=MILD_TREND | ATR%=0.49 | TP=1.38% | Dev=2.06%
+2026-02-17 18:01:08,247 [INFO] Equity: $9992.07 (-0.08%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 18:01:08,247 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 18:16:08,641 [INFO] ── Cycle 17 at 2026-02-18T02:16:08+00:00 ──
+2026-02-17 18:16:25,920 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+55, exit_pressure=15, mode=trend_ride, TP×1.27
+2026-02-17 18:16:28,832 [INFO] 🔄 Regime change for HYPE/USDC: MILD_TREND → TRENDING
+2026-02-17 18:16:30,131 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.09% × 1.27 = 1.39%
+2026-02-17 18:16:30,131 [DEBUG] HYPE/USDC: $29.0740 | regime=TRENDING | ATR%=0.49 | TP=1.39% | Dev=2.09%
+2026-02-17 18:16:30,138 [INFO] Equity: $9992.02 (-0.08%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 18:16:30,140 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 18:31:30,641 [INFO] ── Cycle 18 at 2026-02-18T02:31:30+00:00 ──
+2026-02-17 18:31:34,267 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.06% × 1.27 = 1.35%
+2026-02-17 18:31:34,267 [DEBUG] HYPE/USDC: $29.0760 | regime=TRENDING | ATR%=0.47 | TP=1.35% | Dev=2.02%
+2026-02-17 18:31:34,282 [INFO] Equity: $9992.05 (-0.08%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 18:31:34,284 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 18:46:34,799 [INFO] ── Cycle 19 at 2026-02-18T02:46:34+00:00 ──
+2026-02-17 18:46:37,386 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.06% × 1.27 = 1.35%
+2026-02-17 18:46:37,386 [DEBUG] HYPE/USDC: $29.1870 | regime=TRENDING | ATR%=0.47 | TP=1.35% | Dev=2.02%
+2026-02-17 18:46:37,398 [INFO] Equity: $9993.54 (-0.06%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 18:46:37,399 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 19:01:37,988 [INFO] ── Cycle 20 at 2026-02-18T03:01:37+00:00 ──
+2026-02-17 19:01:40,975 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.05% × 1.27 = 1.34%
+2026-02-17 19:01:40,976 [DEBUG] HYPE/USDC: $29.1860 | regime=TRENDING | ATR%=0.47 | TP=1.34% | Dev=2.01%
+2026-02-17 19:01:40,981 [INFO] Equity: $9993.53 (-0.06%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 19:01:40,983 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 19:16:41,375 [INFO] ── Cycle 21 at 2026-02-18T03:16:41+00:00 ──
+2026-02-17 19:17:00,009 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+15, exit_pressure=20, mode=none, TP×1.00
+2026-02-17 19:17:02,760 [INFO] 🔄 Regime change for HYPE/USDC: TRENDING → ACCUMULATION
+2026-02-17 19:17:03,995 [DEBUG] HYPE/USDC: $29.2360 | regime=ACCUMULATION | ATR%=0.46 | TP=1.00% | Dev=2.00%
+2026-02-17 19:17:03,996 [INFO] Equity: $9994.21 (-0.06%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 19:17:03,998 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 19:32:04,385 [INFO] ── Cycle 22 at 2026-02-18T03:32:04+00:00 ──
+2026-02-17 19:32:06,853 [DEBUG] HYPE/USDC: $29.3320 | regime=ACCUMULATION | ATR%=0.46 | TP=1.00% | Dev=2.00%
+2026-02-17 19:32:06,855 [INFO] Equity: $9995.50 (-0.05%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 19:32:06,857 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 19:47:07,258 [INFO] ── Cycle 23 at 2026-02-18T03:47:07+00:00 ──
+2026-02-17 19:47:09,950 [DEBUG] HYPE/USDC: $29.3520 | regime=ACCUMULATION | ATR%=0.44 | TP=1.00% | Dev=2.00%
+2026-02-17 19:47:09,953 [INFO] Equity: $9995.77 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 19:47:09,954 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 20:02:10,320 [INFO] ── Cycle 24 at 2026-02-18T04:02:10+00:00 ──
+2026-02-17 20:02:13,021 [DEBUG] HYPE/USDC: $29.3140 | regime=ACCUMULATION | ATR%=0.44 | TP=1.00% | Dev=2.00%
+2026-02-17 20:02:13,025 [INFO] Equity: $9995.26 (-0.05%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 20:02:13,027 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 20:17:13,430 [INFO] ── Cycle 25 at 2026-02-18T04:17:13+00:00 ──
+2026-02-17 20:17:26,511 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+45, exit_pressure=25, mode=none, TP×1.00
+2026-02-17 20:17:28,831 [DEBUG] HYPE/USDC: $29.3380 | regime=ACCUMULATION | ATR%=0.41 | TP=1.00% | Dev=2.00%
+2026-02-17 20:17:28,832 [INFO] Equity: $9995.58 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 20:17:28,834 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 20:32:29,266 [INFO] ── Cycle 26 at 2026-02-18T04:32:29+00:00 ──
+2026-02-17 20:32:31,793 [DEBUG] HYPE/USDC: $29.3300 | regime=ACCUMULATION | ATR%=0.39 | TP=1.00% | Dev=2.00%
+2026-02-17 20:32:31,795 [INFO] Equity: $9995.47 (-0.05%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 20:32:31,796 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 20:47:32,202 [INFO] ── Cycle 27 at 2026-02-18T04:47:32+00:00 ──
+2026-02-17 20:47:34,395 [DEBUG] HYPE/USDC: $29.2390 | regime=ACCUMULATION | ATR%=0.40 | TP=1.00% | Dev=2.00%
+2026-02-17 20:47:34,398 [INFO] Equity: $9994.25 (-0.06%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 20:47:34,399 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 21:02:34,780 [INFO] ── Cycle 28 at 2026-02-18T05:02:34+00:00 ──
+2026-02-17 21:02:37,172 [DEBUG] HYPE/USDC: $29.3550 | regime=ACCUMULATION | ATR%=0.37 | TP=1.00% | Dev=2.00%
+2026-02-17 21:02:37,174 [INFO] Equity: $9995.81 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 21:02:37,177 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 21:17:37,597 [INFO] ── Cycle 29 at 2026-02-18T05:17:37+00:00 ──
+2026-02-17 21:17:57,938 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+55, exit_pressure=25, mode=trend_ride, TP×1.38
+2026-02-17 21:18:00,542 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.38 = 1.38%
+2026-02-17 21:18:00,542 [DEBUG] HYPE/USDC: $29.3370 | regime=ACCUMULATION | ATR%=0.36 | TP=1.38% | Dev=2.06%
+2026-02-17 21:18:00,544 [INFO] Equity: $9995.57 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 21:18:00,545 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 21:33:00,939 [INFO] ── Cycle 30 at 2026-02-18T05:33:00+00:00 ──
+2026-02-17 21:33:03,587 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.38 = 1.38%
+2026-02-17 21:33:03,588 [DEBUG] HYPE/USDC: $29.3020 | regime=ACCUMULATION | ATR%=0.36 | TP=1.38% | Dev=2.06%
+2026-02-17 21:33:03,590 [INFO] Equity: $9995.10 (-0.05%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 21:33:03,591 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 21:48:03,999 [INFO] ── Cycle 31 at 2026-02-18T05:48:03+00:00 ──
+2026-02-17 21:48:06,324 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.38 = 1.38%
+2026-02-17 21:48:06,324 [DEBUG] HYPE/USDC: $29.3870 | regime=ACCUMULATION | ATR%=0.37 | TP=1.38% | Dev=2.06%
+2026-02-17 21:48:06,327 [INFO] Equity: $9996.24 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 21:48:06,328 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 22:03:06,709 [INFO] ── Cycle 32 at 2026-02-18T06:03:06+00:00 ──
+2026-02-17 22:03:09,436 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.38 = 1.38%
+2026-02-17 22:03:09,437 [DEBUG] HYPE/USDC: $29.3450 | regime=ACCUMULATION | ATR%=0.34 | TP=1.38% | Dev=2.06%
+2026-02-17 22:03:09,439 [INFO] Equity: $9995.67 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 22:03:09,441 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 22:18:09,817 [INFO] ── Cycle 33 at 2026-02-18T06:18:09+00:00 ──
+2026-02-17 22:18:24,714 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+0, exit_pressure=10, mode=none, TP×1.00
+2026-02-17 22:18:27,162 [DEBUG] HYPE/USDC: $29.3780 | regime=ACCUMULATION | ATR%=0.37 | TP=1.00% | Dev=2.00%
+2026-02-17 22:18:27,163 [INFO] Equity: $9996.12 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 22:18:27,164 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 22:33:27,569 [INFO] ── Cycle 34 at 2026-02-18T06:33:27+00:00 ──
+2026-02-17 22:33:30,068 [DEBUG] HYPE/USDC: $29.4210 | regime=ACCUMULATION | ATR%=0.36 | TP=1.00% | Dev=2.00%
+2026-02-17 22:33:30,070 [INFO] Equity: $9996.70 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 22:33:30,072 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 22:48:30,489 [INFO] ── Cycle 35 at 2026-02-18T06:48:30+00:00 ──
+2026-02-17 22:48:32,920 [DEBUG] HYPE/USDC: $29.4580 | regime=ACCUMULATION | ATR%=0.35 | TP=1.00% | Dev=2.00%
+2026-02-17 22:48:32,922 [INFO] Equity: $9997.20 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 22:48:32,923 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 23:03:33,309 [INFO] ── Cycle 36 at 2026-02-18T07:03:33+00:00 ──
+2026-02-17 23:03:36,157 [INFO] 🔄 Regime change for HYPE/USDC: ACCUMULATION → RANGING
+2026-02-17 23:03:37,369 [DEBUG] HYPE/USDC: $29.4770 | regime=RANGING | ATR%=0.35 | TP=1.00% | Dev=2.00%
+2026-02-17 23:03:37,371 [INFO] Equity: $9997.45 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 23:03:37,372 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 23:18:37,754 [INFO] ── Cycle 37 at 2026-02-18T07:18:37+00:00 ──
+2026-02-17 23:19:02,304 [INFO] 🧠 SENTIMENT HYPE/USDC: score=-15, exit_pressure=50, mode=none, TP×1.00
+2026-02-17 23:19:04,740 [INFO] 🔄 Regime change for HYPE/USDC: RANGING → ACCUMULATION
+2026-02-17 23:19:05,887 [DEBUG] HYPE/USDC: $29.4840 | regime=ACCUMULATION | ATR%=0.33 | TP=1.00% | Dev=2.00%
+2026-02-17 23:19:05,890 [INFO] Equity: $9997.55 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 23:19:05,891 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 23:34:06,258 [INFO] ── Cycle 38 at 2026-02-18T07:34:06+00:00 ──
+2026-02-17 23:34:08,766 [INFO] 🔄 Regime change for HYPE/USDC: ACCUMULATION → BREAKOUT_WARNING
+2026-02-17 23:34:10,023 [DEBUG] HYPE/USDC: $29.4370 | regime=BREAKOUT_WARNING | ATR%=0.32 | TP=1.00% | Dev=2.00%
+2026-02-17 23:34:10,025 [INFO] Equity: $9996.92 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 23:34:10,027 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 23:49:10,423 [INFO] ── Cycle 39 at 2026-02-18T07:49:10+00:00 ──
+2026-02-17 23:49:12,625 [DEBUG] HYPE/USDC: $29.6660 | regime=BREAKOUT_WARNING | ATR%=0.35 | TP=1.00% | Dev=2.00%
+2026-02-17 23:49:12,627 [INFO] Equity: $10000.00 (0.00%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 23:49:12,628 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 00:04:13,012 [INFO] ── Cycle 40 at 2026-02-18T08:04:13+00:00 ──
+2026-02-18 00:04:15,869 [DEBUG] HYPE/USDC: $29.5470 | regime=BREAKOUT_WARNING | ATR%=0.38 | TP=1.00% | Dev=2.00%
+2026-02-18 00:04:15,872 [INFO] Equity: $9998.40 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-18 00:04:15,873 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 00:19:16,238 [INFO] ── Cycle 41 at 2026-02-18T08:19:16+00:00 ──
+2026-02-18 00:19:38,421 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+10, exit_pressure=15, mode=none, TP×1.00
+2026-02-18 00:19:40,794 [DEBUG] HYPE/USDC: $29.7070 | regime=BREAKOUT_WARNING | ATR%=0.39 | TP=1.00% | Dev=2.00%
+2026-02-18 00:19:40,795 [INFO] Equity: $10000.56 (0.01%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-18 00:19:40,797 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 00:34:41,201 [INFO] ── Cycle 42 at 2026-02-18T08:34:41+00:00 ──
+2026-02-18 00:34:43,720 [INFO] 🔄 Regime change for HYPE/USDC: BREAKOUT_WARNING → MILD_TREND
+2026-02-18 00:34:44,917 [DEBUG] HYPE/USDC: $29.6590 | regime=MILD_TREND | ATR%=0.38 | TP=1.00% | Dev=2.00%
+2026-02-18 00:34:44,922 [INFO] Equity: $9999.91 (-0.00%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-18 00:34:44,923 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 00:49:45,315 [INFO] ── Cycle 43 at 2026-02-18T08:49:45+00:00 ──
+2026-02-18 00:49:48,023 [DEBUG] HYPE/USDC: $29.6750 | regime=MILD_TREND | ATR%=0.39 | TP=1.00% | Dev=2.00%
+2026-02-18 00:49:48,025 [INFO] Equity: $10000.12 (0.00%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-18 00:49:48,026 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 01:04:48,456 [INFO] ── Cycle 44 at 2026-02-18T09:04:48+00:00 ──
+2026-02-18 01:04:51,473 [DEBUG] HYPE/USDC: $29.4570 | regime=MILD_TREND | ATR%=0.43 | TP=1.00% | Dev=2.00%
+2026-02-18 01:04:51,476 [INFO] Equity: $9997.19 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 01:04:51,477 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 01:19:51,830 [INFO] ── Cycle 45 at 2026-02-18T09:19:51+00:00 ──
+2026-02-18 01:20:06,745 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+25, exit_pressure=15, mode=none, TP×1.00
+2026-02-18 01:20:09,514 [DEBUG] HYPE/USDC: $29.5620 | regime=MILD_TREND | ATR%=0.45 | TP=1.00% | Dev=2.00%
+2026-02-18 01:20:09,516 [INFO] Equity: $9998.60 (-0.01%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-18 01:20:09,517 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 01:35:09,916 [INFO] ── Cycle 46 at 2026-02-18T09:35:09+00:00 ──
+2026-02-18 01:35:12,478 [INFO] 🔄 Regime change for HYPE/USDC: MILD_TREND → RANGING
+2026-02-18 01:35:13,592 [DEBUG] HYPE/USDC: $29.4630 | regime=RANGING | ATR%=0.45 | TP=1.00% | Dev=2.00%
+2026-02-18 01:35:13,594 [INFO] Equity: $9997.27 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 01:35:13,596 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 01:50:13,990 [INFO] ── Cycle 47 at 2026-02-18T09:50:13+00:00 ──
+2026-02-18 01:50:16,514 [DEBUG] HYPE/USDC: $29.4130 | regime=RANGING | ATR%=0.44 | TP=1.00% | Dev=2.00%
+2026-02-18 01:50:16,517 [INFO] Equity: $9996.59 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 01:50:16,519 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 02:05:16,879 [INFO] ── Cycle 48 at 2026-02-18T10:05:16+00:00 ──
+2026-02-18 02:05:19,960 [DEBUG] HYPE/USDC: $29.3570 | regime=RANGING | ATR%=0.44 | TP=1.00% | Dev=2.00%
+2026-02-18 02:05:19,962 [INFO] Equity: $9995.84 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 02:05:19,965 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 02:20:20,341 [INFO] ── Cycle 49 at 2026-02-18T10:20:20+00:00 ──
+2026-02-18 02:20:49,458 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+25, exit_pressure=25, mode=none, TP×1.00
+2026-02-18 02:20:52,060 [DEBUG] HYPE/USDC: $29.2480 | regime=RANGING | ATR%=0.50 | TP=1.00% | Dev=2.00%
+2026-02-18 02:20:52,061 [INFO] Equity: $9994.37 (-0.06%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 02:20:52,062 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 02:35:52,440 [INFO] ── Cycle 50 at 2026-02-18T10:35:52+00:00 ──
+2026-02-18 02:35:54,850 [INFO] 🔄 Regime change for HYPE/USDC: RANGING → ACCUMULATION
+2026-02-18 02:35:56,040 [DEBUG] HYPE/USDC: $29.1270 | regime=ACCUMULATION | ATR%=0.52 | TP=1.00% | Dev=2.00%
+2026-02-18 02:35:56,042 [INFO] Equity: $9992.74 (-0.07%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 02:35:56,043 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 02:50:56,461 [INFO] ── Cycle 51 at 2026-02-18T10:50:56+00:00 ──
+2026-02-18 02:50:58,818 [INFO] 🔄 Regime change for HYPE/USDC: ACCUMULATION → RANGING
+2026-02-18 02:51:00,088 [DEBUG] HYPE/USDC: $29.0280 | regime=RANGING | ATR%=0.56 | TP=1.00% | Dev=2.00%
+2026-02-18 02:51:00,092 [INFO] Equity: $9991.40 (-0.09%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 02:51:00,093 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 03:06:00,491 [INFO] ── Cycle 52 at 2026-02-18T11:06:00+00:00 ──
+2026-02-18 03:06:03,205 [INFO] 🔄 Regime change for HYPE/USDC: RANGING → MILD_TREND
+2026-02-18 03:06:04,360 [DEBUG] HYPE/USDC: $29.0960 | regime=MILD_TREND | ATR%=0.53 | TP=1.04% | Dev=2.00%
+2026-02-18 03:06:04,362 [INFO] Equity: $9992.32 (-0.08%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 03:06:04,367 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 03:21:04,799 [INFO] ── Cycle 53 at 2026-02-18T11:21:04+00:00 ──
+2026-02-18 03:21:28,739 [INFO] 🧠 SENTIMENT HYPE/USDC: score=-5, exit_pressure=15, mode=none, TP×1.00
+2026-02-18 03:21:31,673 [DEBUG] HYPE/USDC: $28.9900 | regime=MILD_TREND | ATR%=0.58 | TP=1.14% | Dev=2.00%
+2026-02-18 03:21:31,674 [INFO] Equity: $9990.89 (-0.09%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 03:21:31,675 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 03:36:32,035 [INFO] ── Cycle 54 at 2026-02-18T11:36:32+00:00 ──
+2026-02-18 03:36:34,699 [DEBUG] HYPE/USDC: $29.0090 | regime=MILD_TREND | ATR%=0.56 | TP=1.10% | Dev=2.00%
+2026-02-18 03:36:34,702 [INFO] Equity: $9991.14 (-0.09%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 03:36:34,703 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 03:51:35,068 [INFO] ── Cycle 55 at 2026-02-18T11:51:35+00:00 ──
+2026-02-18 03:51:37,573 [DEBUG] HYPE/USDC: $28.9440 | regime=MILD_TREND | ATR%=0.54 | TP=1.07% | Dev=2.00%
+2026-02-18 03:51:37,576 [INFO] Equity: $9990.27 (-0.10%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 03:51:37,577 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 04:06:37,964 [INFO] ── Cycle 56 at 2026-02-18T12:06:37+00:00 ──
+2026-02-18 04:06:40,588 [DEBUG] HYPE/USDC: $29.0340 | regime=MILD_TREND | ATR%=0.57 | TP=1.11% | Dev=2.00%
+2026-02-18 04:06:40,591 [INFO] Equity: $9991.48 (-0.09%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 04:06:40,593 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 04:21:40,963 [INFO] ── Cycle 57 at 2026-02-18T12:21:40+00:00 ──
+2026-02-18 04:22:11,728 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+65, exit_pressure=15, mode=trend_ride, TP×1.38
+2026-02-18 04:22:14,129 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.07% × 1.38 = 1.48%
+2026-02-18 04:22:14,129 [DEBUG] HYPE/USDC: $29.0810 | regime=MILD_TREND | ATR%=0.55 | TP=1.48% | Dev=2.22%
+2026-02-18 04:22:14,132 [INFO] Equity: $9992.12 (-0.08%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 04:22:14,133 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 04:37:15,911 [INFO] ── Cycle 58 at 2026-02-18T12:37:15+00:00 ──
+2026-02-18 04:37:19,386 [INFO] 🔄 Regime change for HYPE/USDC: MILD_TREND → TRENDING
+2026-02-18 04:37:20,756 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.24% × 1.38 = 1.70%
+2026-02-18 04:37:20,756 [DEBUG] HYPE/USDC: $29.0140 | regime=TRENDING | ATR%=0.55 | TP=1.70% | Dev=2.55%
+2026-02-18 04:37:20,763 [INFO] Equity: $9991.21 (-0.09%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 04:37:20,765 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 04:52:21,424 [INFO] ── Cycle 59 at 2026-02-18T12:52:21+00:00 ──
+2026-02-18 04:52:24,101 [INFO] 🔄 Regime change for HYPE/USDC: TRENDING → ACCUMULATION
+2026-02-18 04:52:25,369 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.00% × 1.38 = 1.38%
+2026-02-18 04:52:25,370 [DEBUG] HYPE/USDC: $29.1630 | regime=ACCUMULATION | ATR%=0.55 | TP=1.38% | Dev=2.06%
+2026-02-18 04:52:25,374 [INFO] Equity: $9993.22 (-0.07%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 04:52:25,375 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 05:07:26,122 [INFO] ── Cycle 60 at 2026-02-18T13:07:26+00:00 ──
+2026-02-18 05:07:28,602 [INFO] 🔄 Regime change for HYPE/USDC: ACCUMULATION → TRENDING
+2026-02-18 05:07:29,752 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.31% × 1.38 = 1.80%
+2026-02-18 05:07:29,752 [DEBUG] HYPE/USDC: $29.0500 | regime=TRENDING | ATR%=0.58 | TP=1.80% | Dev=2.70%
+2026-02-18 05:07:29,752 [INFO] Equity: $9991.70 (-0.08%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 05:07:29,752 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 05:22:30,205 [INFO] ── Cycle 61 at 2026-02-18T13:22:30+00:00 ──
+2026-02-18 05:22:58,920 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+65, exit_pressure=25, mode=trend_ride, TP×1.38
+2026-02-18 05:23:01,558 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.33% × 1.38 = 1.82%
+2026-02-18 05:23:01,558 [DEBUG] HYPE/USDC: $28.9710 | regime=TRENDING | ATR%=0.59 | TP=1.82% | Dev=2.73%
+2026-02-18 05:23:01,558 [INFO] Equity: $9990.63 (-0.09%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 05:23:01,560 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 05:38:01,970 [INFO] ── Cycle 62 at 2026-02-18T13:38:01+00:00 ──
+2026-02-18 05:38:04,665 [INFO] 🔄 Regime change for HYPE/USDC: TRENDING → ACCUMULATION
+2026-02-18 05:38:05,851 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.04% × 1.38 = 1.44%
+2026-02-18 05:38:05,852 [DEBUG] HYPE/USDC: $29.2690 | regime=ACCUMULATION | ATR%=0.65 | TP=1.44% | Dev=2.15%
+2026-02-18 05:38:05,854 [INFO] Equity: $9994.65 (-0.05%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 05:38:05,857 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 05:53:06,494 [INFO] ── Cycle 63 at 2026-02-18T13:53:06+00:00 ──
+2026-02-18 05:53:09,193 [INFO] 🔄 Regime change for HYPE/USDC: ACCUMULATION → TRENDING
+2026-02-18 05:53:10,421 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.53% × 1.38 = 2.11%
+2026-02-18 05:53:10,421 [DEBUG] HYPE/USDC: $29.1560 | regime=TRENDING | ATR%=0.68 | TP=2.11% | Dev=3.00%
+2026-02-18 05:53:10,427 [INFO] Equity: $9993.13 (-0.07%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 05:53:10,430 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 06:08:10,834 [INFO] ── Cycle 64 at 2026-02-18T14:08:10+00:00 ──
+2026-02-18 06:08:13,388 [INFO] 🔄 Regime change for HYPE/USDC: TRENDING → ACCUMULATION
+2026-02-18 06:08:14,500 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.03% × 1.38 = 1.42%
+2026-02-18 06:08:14,500 [DEBUG] HYPE/USDC: $29.1830 | regime=ACCUMULATION | ATR%=0.65 | TP=1.42% | Dev=2.13%
+2026-02-18 06:08:14,500 [INFO] Equity: $9993.49 (-0.07%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 06:08:14,500 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 06:23:14,871 [INFO] ── Cycle 65 at 2026-02-18T14:23:14+00:00 ──
+2026-02-18 06:23:38,642 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+85, exit_pressure=15, mode=trend_ride, TP×1.45
+2026-02-18 06:23:40,918 [INFO] 🔄 Regime change for HYPE/USDC: ACCUMULATION → TRENDING
+2026-02-18 06:23:42,037 [DEBUG] HYPE/USDC: Sentiment TP adjust: 1.51% × 1.45 = 2.19%
+2026-02-18 06:23:42,037 [DEBUG] HYPE/USDC: $29.0310 | regime=TRENDING | ATR%=0.67 | TP=2.19% | Dev=3.00%
+2026-02-18 06:23:42,039 [INFO] Equity: $9991.44 (-0.09%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 06:23:42,040 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 06:30:48,026 [INFO] ============================================================
+2026-02-18 06:30:48,028 [INFO] Spot Paper Trader starting
+2026-02-18 06:30:48,028 [INFO] Exchange: hyperliquid | Profile: medium | Capital: $10000
+2026-02-18 06:30:48,028 [INFO] Symbols: ['HYPE/USDC'] | Timeframe: 15m | Max coins: 3
+2026-02-18 06:30:48,028 [INFO] ============================================================
+2026-02-18 06:30:48,062 [INFO] Connected to hyperliquid
+2026-02-18 06:30:48,090 [INFO] State loaded: cash=$9600.00, 1 active deals, 0 completed
+2026-02-18 06:30:49,855 [INFO] ── Cycle 1 at 2026-02-18T14:30:49+00:00 ──
+2026-02-18 06:31:15,363 [INFO] 🧠 SENTIMENT HYPE/USDC: score=+25, exit_pressure=15, mode=none, TP×1.00
+2026-02-18 06:31:35,245 [INFO] 📊 Macro refresh: F&G=8
+2026-02-18 06:31:54,549 [INFO] 🧠 HYPE/USDC CONVICTION: 53 [moderate] F&G=8 | TP=1.86% Dev=3.10% SO×1.11 MaxSO+0
+2026-02-18 06:31:54,601 [DEBUG] HYPE/USDC: $28.9680 | regime=TRENDING | ATR%=0.66 | TP=1.86% | Dev=3.10%
+2026-02-18 06:31:54,607 [INFO] Equity: $9990.59 (-0.09%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 06:31:54,610 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 06:46:55,080 [INFO] ── Cycle 2 at 2026-02-18T14:46:55+00:00 ──
+2026-02-18 06:46:58,763 [INFO] 🧠 HYPE/USDC CONVICTION: 53 [moderate] F&G=8 | TP=2.03% Dev=3.37% SO×1.10 MaxSO+0
+2026-02-18 06:46:58,763 [DEBUG] HYPE/USDC: $28.7950 | regime=TRENDING | ATR%=0.72 | TP=2.03% | Dev=3.37%
+2026-02-18 06:46:58,769 [INFO] Equity: $9988.26 (-0.12%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-18 06:46:58,771 [DEBUG] Sleeping 900s until next cycle...

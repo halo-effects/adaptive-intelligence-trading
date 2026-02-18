@@ -9,3 +9,381 @@
 2026-02-17 11:18:26,696 [INFO] 📥 DEAL 1 OPENED: ETH/USDT @ $2011.9000 (regime=ACCUMULATION, TP=1.16%)
 2026-02-17 11:18:27,927 [INFO] Equity: $9999.86 (-0.00%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
 2026-02-17 11:18:27,929 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 12:15:15,243 [INFO] ============================================================
+2026-02-17 12:15:15,244 [INFO] Spot Paper Trader starting
+2026-02-17 12:15:15,244 [INFO] Exchange: aster | Profile: medium | Capital: $10000
+2026-02-17 12:15:15,244 [INFO] Symbols: ['ETH/USDT'] | Timeframe: 15m | Max coins: 3
+2026-02-17 12:15:15,244 [INFO] ============================================================
+2026-02-17 12:15:15,252 [INFO] Connected to aster
+2026-02-17 12:15:15,255 [INFO] State loaded: cash=$9600.00, 1 active deals, 0 completed
+2026-02-17 12:15:16,889 [INFO] ── Cycle 1 at 2026-02-17T20:15:16+00:00 ──
+2026-02-17 12:15:24,065 [DEBUG] ETH/USDT: $1994.6900 | regime=ACCUMULATION | ATR%=0.59 | TP=1.00% | Dev=2.00%
+2026-02-17 12:15:24,066 [INFO] Equity: $9996.44 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 12:15:24,067 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 12:30:24,475 [INFO] ── Cycle 2 at 2026-02-17T20:30:24+00:00 ──
+2026-02-17 12:30:27,227 [DEBUG] ETH/USDT: $1996.3700 | regime=ACCUMULATION | ATR%=0.52 | TP=1.00% | Dev=2.00%
+2026-02-17 12:30:27,236 [INFO] Equity: $9996.77 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 12:30:27,236 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 12:45:28,250 [INFO] ── Cycle 3 at 2026-02-17T20:45:28+00:00 ──
+2026-02-17 12:45:31,351 [DEBUG] ETH/USDT: $2000.7100 | regime=ACCUMULATION | ATR%=0.54 | TP=1.00% | Dev=2.00%
+2026-02-17 12:45:31,353 [INFO] Equity: $9997.64 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 12:45:31,355 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 13:00:33,196 [INFO] ── Cycle 4 at 2026-02-17T21:00:33+00:00 ──
+2026-02-17 13:00:35,900 [DEBUG] ETH/USDT: $1995.3700 | regime=ACCUMULATION | ATR%=0.52 | TP=1.00% | Dev=2.00%
+2026-02-17 13:00:35,904 [INFO] Equity: $9996.57 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 13:00:35,904 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 13:15:36,291 [INFO] ── Cycle 5 at 2026-02-17T21:15:36+00:00 ──
+2026-02-17 13:15:39,039 [DEBUG] ETH/USDT: $1998.7400 | regime=ACCUMULATION | ATR%=0.50 | TP=1.00% | Dev=2.00%
+2026-02-17 13:15:39,043 [INFO] Equity: $9997.24 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 13:15:39,045 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 13:30:39,395 [INFO] ── Cycle 6 at 2026-02-17T21:30:39+00:00 ──
+2026-02-17 13:30:41,490 [DEBUG] ETH/USDT: $1994.1600 | regime=ACCUMULATION | ATR%=0.52 | TP=1.00% | Dev=2.00%
+2026-02-17 13:30:41,492 [INFO] Equity: $9996.33 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 13:30:41,492 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 13:45:42,108 [INFO] ── Cycle 7 at 2026-02-17T21:45:42+00:00 ──
+2026-02-17 13:45:45,878 [DEBUG] ETH/USDT: $1996.7300 | regime=ACCUMULATION | ATR%=0.44 | TP=1.00% | Dev=2.00%
+2026-02-17 13:45:45,881 [INFO] Equity: $9996.85 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 13:45:45,882 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:00:46,430 [INFO] ── Cycle 8 at 2026-02-17T22:00:46+00:00 ──
+2026-02-17 14:00:49,284 [DEBUG] ETH/USDT: $1999.4100 | regime=ACCUMULATION | ATR%=0.37 | TP=1.00% | Dev=2.00%
+2026-02-17 14:00:49,290 [INFO] Equity: $9997.38 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:00:49,292 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:03:15,125 [INFO] ============================================================
+2026-02-17 14:03:15,125 [INFO] Spot Paper Trader starting
+2026-02-17 14:03:15,126 [INFO] Exchange: aster | Profile: medium | Capital: $10000
+2026-02-17 14:03:15,126 [INFO] Symbols: ['ETH/USDT'] | Timeframe: 15m | Max coins: 3
+2026-02-17 14:03:15,126 [INFO] ============================================================
+2026-02-17 14:03:15,132 [INFO] Connected to aster
+2026-02-17 14:03:15,151 [INFO] State loaded: cash=$9600.00, 1 active deals, 0 completed
+2026-02-17 14:03:16,643 [INFO] ── Cycle 1 at 2026-02-17T22:03:16+00:00 ──
+2026-02-17 14:03:23,230 [INFO] 🧠 SENTIMENT ETH/USDT: score=+65, exit_pressure=35, mode=none, TP×1.00
+2026-02-17 14:03:29,845 [DEBUG] ETH/USDT: $1998.4000 | regime=ACCUMULATION | ATR%=0.37 | TP=1.00% | Dev=2.00%
+2026-02-17 14:03:29,845 [INFO] Equity: $9997.18 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:03:29,845 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:13:37,237 [INFO] ============================================================
+2026-02-17 14:13:37,237 [INFO] Spot Paper Trader starting
+2026-02-17 14:13:37,238 [INFO] Exchange: aster | Profile: medium | Capital: $10000
+2026-02-17 14:13:37,238 [INFO] Symbols: ['ETH/USDT'] | Timeframe: 15m | Max coins: 3
+2026-02-17 14:13:37,238 [INFO] ============================================================
+2026-02-17 14:13:37,249 [INFO] Connected to aster
+2026-02-17 14:13:37,275 [INFO] State loaded: cash=$9600.00, 1 active deals, 0 completed
+2026-02-17 14:13:39,080 [INFO] ── Cycle 1 at 2026-02-17T22:13:39+00:00 ──
+2026-02-17 14:13:59,589 [INFO] 🧠 SENTIMENT ETH/USDT: score=+25, exit_pressure=30, mode=none, TP×1.00
+2026-02-17 14:14:05,822 [DEBUG] ETH/USDT: $1999.8000 | regime=ACCUMULATION | ATR%=0.38 | TP=1.00% | Dev=2.00%
+2026-02-17 14:14:05,823 [INFO] Equity: $9997.46 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:14:05,825 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:29:06,265 [INFO] ── Cycle 2 at 2026-02-17T22:29:06+00:00 ──
+2026-02-17 14:29:09,024 [DEBUG] ETH/USDT: $2000.5600 | regime=ACCUMULATION | ATR%=0.36 | TP=1.00% | Dev=2.00%
+2026-02-17 14:29:09,037 [INFO] Equity: $9997.61 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:29:09,040 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:44:10,749 [INFO] ── Cycle 3 at 2026-02-17T22:44:10+00:00 ──
+2026-02-17 14:44:14,834 [INFO] 🔄 Regime change for ETH/USDT: ACCUMULATION → DISTRIBUTION
+2026-02-17 14:44:16,133 [DEBUG] ETH/USDT: $2000.3700 | regime=DISTRIBUTION | ATR%=0.33 | TP=1.00% | Dev=2.00%
+2026-02-17 14:44:16,137 [INFO] Equity: $9997.57 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:44:16,138 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 14:59:16,726 [INFO] ── Cycle 4 at 2026-02-17T22:59:16+00:00 ──
+2026-02-17 14:59:19,826 [DEBUG] ETH/USDT: $1993.7400 | regime=DISTRIBUTION | ATR%=0.31 | TP=1.00% | Dev=2.00%
+2026-02-17 14:59:19,830 [INFO] Equity: $9996.25 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 14:59:19,832 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 15:14:20,284 [INFO] ── Cycle 5 at 2026-02-17T23:14:20+00:00 ──
+2026-02-17 15:14:43,331 [INFO] 🧠 SENTIMENT ETH/USDT: score=+35, exit_pressure=25, mode=none, TP×1.00
+2026-02-17 15:14:45,432 [DEBUG] ETH/USDT: $1990.2400 | regime=DISTRIBUTION | ATR%=0.30 | TP=1.00% | Dev=2.00%
+2026-02-17 15:14:45,432 [INFO] Equity: $9995.56 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 15:14:45,436 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 15:29:45,791 [INFO] ── Cycle 6 at 2026-02-17T23:29:45+00:00 ──
+2026-02-17 15:29:48,719 [DEBUG] ETH/USDT: $1993.4200 | regime=DISTRIBUTION | ATR%=0.28 | TP=1.00% | Dev=2.00%
+2026-02-17 15:29:48,722 [INFO] Equity: $9996.19 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 15:29:48,724 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 15:44:49,708 [INFO] ── Cycle 7 at 2026-02-17T23:44:49+00:00 ──
+2026-02-17 15:44:52,312 [DEBUG] ETH/USDT: $1994.6800 | regime=DISTRIBUTION | ATR%=0.27 | TP=1.00% | Dev=2.00%
+2026-02-17 15:44:52,319 [INFO] Equity: $9996.44 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 15:44:52,321 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 15:59:57,226 [INFO] ── Cycle 8 at 2026-02-17T23:59:57+00:00 ──
+2026-02-17 16:00:01,010 [INFO] 🔄 Regime change for ETH/USDT: DISTRIBUTION → RANGING
+2026-02-17 16:00:02,462 [DEBUG] ETH/USDT: $1993.6200 | regime=RANGING | ATR%=0.25 | TP=1.00% | Dev=2.00%
+2026-02-17 16:00:02,467 [INFO] Equity: $9996.23 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 16:00:02,469 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 16:15:02,856 [INFO] ── Cycle 9 at 2026-02-18T00:15:02+00:00 ──
+2026-02-17 16:15:29,459 [INFO] 🧠 SENTIMENT ETH/USDT: score=+25, exit_pressure=25, mode=none, TP×1.00
+2026-02-17 16:15:32,256 [DEBUG] ETH/USDT: $1996.4000 | regime=RANGING | ATR%=0.20 | TP=1.00% | Dev=2.00%
+2026-02-17 16:15:32,259 [INFO] Equity: $9996.78 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 16:15:32,260 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 16:30:32,632 [INFO] ── Cycle 10 at 2026-02-18T00:30:32+00:00 ──
+2026-02-17 16:30:35,600 [DEBUG] ETH/USDT: $1991.9000 | regime=RANGING | ATR%=0.21 | TP=1.00% | Dev=2.00%
+2026-02-17 16:30:35,605 [INFO] Equity: $9995.89 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 16:30:35,608 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 16:45:35,961 [INFO] ── Cycle 11 at 2026-02-18T00:45:35+00:00 ──
+2026-02-17 16:45:38,887 [INFO] 🔄 Regime change for ETH/USDT: RANGING → CHOPPY
+2026-02-17 16:45:40,152 [DEBUG] ETH/USDT: $1990.9600 | regime=CHOPPY | ATR%=0.20 | TP=1.00% | Dev=2.00%
+2026-02-17 16:45:40,155 [INFO] Equity: $9995.70 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 16:45:40,156 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 17:00:40,512 [INFO] ── Cycle 12 at 2026-02-18T01:00:40+00:00 ──
+2026-02-17 17:00:42,763 [DEBUG] ETH/USDT: $1981.6600 | regime=CHOPPY | ATR%=0.23 | TP=1.00% | Dev=2.00%
+2026-02-17 17:00:42,766 [INFO] Equity: $9993.85 (-0.06%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 17:00:42,768 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 17:15:43,141 [INFO] ── Cycle 13 at 2026-02-18T01:15:43+00:00 ──
+2026-02-17 17:16:00,833 [INFO] 🧠 SENTIMENT ETH/USDT: score=+55, exit_pressure=15, mode=trend_ride, TP×1.35
+2026-02-17 17:16:04,217 [INFO] 🔄 Regime change for ETH/USDT: CHOPPY → ACCUMULATION
+2026-02-17 17:16:05,370 [DEBUG] ETH/USDT: Sentiment TP adjust: 1.00% × 1.35 = 1.35%
+2026-02-17 17:16:05,370 [DEBUG] ETH/USDT: $1974.3400 | regime=ACCUMULATION | ATR%=0.25 | TP=1.35% | Dev=2.02%
+2026-02-17 17:16:05,372 [INFO] Equity: $9992.40 (-0.08%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 17:16:05,374 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 17:31:05,724 [INFO] ── Cycle 14 at 2026-02-18T01:31:05+00:00 ──
+2026-02-17 17:31:08,360 [DEBUG] ETH/USDT: Sentiment TP adjust: 1.00% × 1.35 = 1.35%
+2026-02-17 17:31:08,360 [DEBUG] ETH/USDT: $1972.7400 | regime=ACCUMULATION | ATR%=0.27 | TP=1.35% | Dev=2.02%
+2026-02-17 17:31:08,363 [INFO] Equity: $9992.08 (-0.08%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 17:31:08,365 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 17:46:10,448 [INFO] ── Cycle 15 at 2026-02-18T01:46:10+00:00 ──
+2026-02-17 17:46:13,175 [DEBUG] ETH/USDT: Sentiment TP adjust: 1.00% × 1.35 = 1.35%
+2026-02-17 17:46:13,176 [DEBUG] ETH/USDT: $1977.7800 | regime=ACCUMULATION | ATR%=0.27 | TP=1.35% | Dev=2.02%
+2026-02-17 17:46:13,180 [INFO] Equity: $9993.08 (-0.07%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 17:46:13,186 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 18:01:13,637 [INFO] ── Cycle 16 at 2026-02-18T02:01:13+00:00 ──
+2026-02-17 18:01:16,395 [DEBUG] ETH/USDT: Sentiment TP adjust: 1.00% × 1.35 = 1.35%
+2026-02-17 18:01:16,395 [DEBUG] ETH/USDT: $1979.1900 | regime=ACCUMULATION | ATR%=0.27 | TP=1.35% | Dev=2.02%
+2026-02-17 18:01:16,408 [INFO] Equity: $9993.36 (-0.07%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 18:01:16,408 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 18:16:16,764 [INFO] ── Cycle 17 at 2026-02-18T02:16:16+00:00 ──
+2026-02-17 18:16:42,964 [INFO] 🧠 SENTIMENT ETH/USDT: score=-15, exit_pressure=45, mode=none, TP×1.00
+2026-02-17 18:16:46,052 [DEBUG] ETH/USDT: $1985.7700 | regime=ACCUMULATION | ATR%=0.29 | TP=1.00% | Dev=2.00%
+2026-02-17 18:16:46,054 [INFO] Equity: $9994.67 (-0.05%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 18:16:46,058 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 18:31:46,596 [INFO] ── Cycle 18 at 2026-02-18T02:31:46+00:00 ──
+2026-02-17 18:31:49,717 [DEBUG] ETH/USDT: $1984.1300 | regime=ACCUMULATION | ATR%=0.28 | TP=1.00% | Dev=2.00%
+2026-02-17 18:31:49,722 [INFO] Equity: $9994.34 (-0.06%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.1%
+2026-02-17 18:31:49,723 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 18:46:50,255 [INFO] ── Cycle 19 at 2026-02-18T02:46:50+00:00 ──
+2026-02-17 18:46:53,096 [DEBUG] ETH/USDT: $1990.8100 | regime=ACCUMULATION | ATR%=0.29 | TP=1.00% | Dev=2.00%
+2026-02-17 18:46:53,098 [INFO] Equity: $9995.67 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 18:46:53,098 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 19:01:53,488 [INFO] ── Cycle 20 at 2026-02-18T03:01:53+00:00 ──
+2026-02-17 19:01:58,922 [DEBUG] ETH/USDT: $1987.9700 | regime=ACCUMULATION | ATR%=0.29 | TP=1.00% | Dev=2.00%
+2026-02-17 19:01:58,932 [INFO] Equity: $9995.10 (-0.05%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 19:01:58,934 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 19:16:59,311 [INFO] ── Cycle 21 at 2026-02-18T03:16:59+00:00 ──
+2026-02-17 19:17:26,551 [INFO] 🧠 SENTIMENT ETH/USDT: score=-35, exit_pressure=25, mode=none, TP×1.00
+2026-02-17 19:17:29,147 [DEBUG] ETH/USDT: $1989.8300 | regime=ACCUMULATION | ATR%=0.28 | TP=1.00% | Dev=2.00%
+2026-02-17 19:17:29,149 [INFO] Equity: $9995.47 (-0.05%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 19:17:29,150 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 19:32:29,519 [INFO] ── Cycle 22 at 2026-02-18T03:32:29+00:00 ──
+2026-02-17 19:32:32,707 [DEBUG] ETH/USDT: $1994.9200 | regime=ACCUMULATION | ATR%=0.29 | TP=1.00% | Dev=2.00%
+2026-02-17 19:32:32,712 [INFO] Equity: $9996.49 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 19:32:32,714 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 19:47:33,127 [INFO] ── Cycle 23 at 2026-02-18T03:47:33+00:00 ──
+2026-02-17 19:47:35,624 [DEBUG] ETH/USDT: $1996.6100 | regime=ACCUMULATION | ATR%=0.29 | TP=1.00% | Dev=2.00%
+2026-02-17 19:47:35,627 [INFO] Equity: $9996.82 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 19:47:35,628 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 20:02:36,020 [INFO] ── Cycle 24 at 2026-02-18T04:02:36+00:00 ──
+2026-02-17 20:02:39,015 [DEBUG] ETH/USDT: $1995.4800 | regime=ACCUMULATION | ATR%=0.29 | TP=1.00% | Dev=2.00%
+2026-02-17 20:02:39,017 [INFO] Equity: $9996.60 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 20:02:39,019 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 20:17:39,408 [INFO] ── Cycle 25 at 2026-02-18T04:17:39+00:00 ──
+2026-02-17 20:18:01,093 [INFO] 🧠 SENTIMENT ETH/USDT: score=-35, exit_pressure=55, mode=none, TP×1.00
+2026-02-17 20:18:03,849 [DEBUG] ETH/USDT: $1997.7100 | regime=ACCUMULATION | ATR%=0.26 | TP=1.00% | Dev=2.00%
+2026-02-17 20:18:03,851 [INFO] Equity: $9997.04 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 20:18:03,852 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 20:33:04,272 [INFO] ── Cycle 26 at 2026-02-18T04:33:04+00:00 ──
+2026-02-17 20:33:06,555 [DEBUG] ETH/USDT: $1997.2900 | regime=ACCUMULATION | ATR%=0.24 | TP=1.00% | Dev=2.00%
+2026-02-17 20:33:06,557 [INFO] Equity: $9996.96 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 20:33:06,558 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 20:48:06,946 [INFO] ── Cycle 27 at 2026-02-18T04:48:06+00:00 ──
+2026-02-17 20:48:09,765 [DEBUG] ETH/USDT: $1994.6800 | regime=ACCUMULATION | ATR%=0.24 | TP=1.00% | Dev=2.00%
+2026-02-17 20:48:09,767 [INFO] Equity: $9996.44 (-0.04%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 20:48:09,769 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 21:03:10,152 [INFO] ── Cycle 28 at 2026-02-18T05:03:10+00:00 ──
+2026-02-17 21:03:12,872 [DEBUG] ETH/USDT: $1998.4700 | regime=ACCUMULATION | ATR%=0.23 | TP=1.00% | Dev=2.00%
+2026-02-17 21:03:12,874 [INFO] Equity: $9997.19 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 21:03:12,875 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 21:18:13,271 [INFO] ── Cycle 29 at 2026-02-18T05:18:13+00:00 ──
+2026-02-17 21:18:31,897 [INFO] 🧠 SENTIMENT ETH/USDT: score=-35, exit_pressure=55, mode=none, TP×1.00
+2026-02-17 21:18:34,684 [DEBUG] ETH/USDT: $2001.5200 | regime=ACCUMULATION | ATR%=0.23 | TP=1.00% | Dev=2.00%
+2026-02-17 21:18:34,686 [INFO] Equity: $9997.80 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 21:18:34,687 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 21:33:35,089 [INFO] ── Cycle 30 at 2026-02-18T05:33:35+00:00 ──
+2026-02-17 21:33:37,988 [DEBUG] ETH/USDT: $1998.9000 | regime=ACCUMULATION | ATR%=0.21 | TP=1.00% | Dev=2.00%
+2026-02-17 21:33:37,990 [INFO] Equity: $9997.28 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 21:33:37,991 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 21:48:38,409 [INFO] ── Cycle 31 at 2026-02-18T05:48:38+00:00 ──
+2026-02-17 21:48:41,134 [DEBUG] ETH/USDT: $2000.7700 | regime=ACCUMULATION | ATR%=0.21 | TP=1.00% | Dev=2.00%
+2026-02-17 21:48:41,137 [INFO] Equity: $9997.65 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 21:48:41,139 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 22:03:41,507 [INFO] ── Cycle 32 at 2026-02-18T06:03:41+00:00 ──
+2026-02-17 22:03:44,483 [DEBUG] ETH/USDT: $1996.8900 | regime=ACCUMULATION | ATR%=0.19 | TP=1.00% | Dev=2.00%
+2026-02-17 22:03:44,486 [INFO] Equity: $9996.88 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 22:03:44,487 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 22:18:44,873 [INFO] ── Cycle 33 at 2026-02-18T06:18:44+00:00 ──
+2026-02-17 22:19:06,345 [INFO] 🧠 SENTIMENT ETH/USDT: score=-15, exit_pressure=45, mode=none, TP×1.00
+2026-02-17 22:19:08,982 [INFO] 🔄 Regime change for ETH/USDT: ACCUMULATION → TRENDING
+2026-02-17 22:19:10,176 [DEBUG] ETH/USDT: $1999.0000 | regime=TRENDING | ATR%=0.20 | TP=1.00% | Dev=2.00%
+2026-02-17 22:19:10,177 [INFO] Equity: $9997.30 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 22:19:10,178 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 22:34:10,597 [INFO] ── Cycle 34 at 2026-02-18T06:34:10+00:00 ──
+2026-02-17 22:34:12,824 [DEBUG] ETH/USDT: $2004.7400 | regime=TRENDING | ATR%=0.20 | TP=1.00% | Dev=2.00%
+2026-02-17 22:34:12,827 [INFO] Equity: $9998.44 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 22:34:12,828 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 22:49:13,210 [INFO] ── Cycle 35 at 2026-02-18T06:49:13+00:00 ──
+2026-02-17 22:49:15,813 [INFO] 🔄 Regime change for ETH/USDT: TRENDING → ACCUMULATION
+2026-02-17 22:49:16,997 [DEBUG] ETH/USDT: $2005.1100 | regime=ACCUMULATION | ATR%=0.19 | TP=1.00% | Dev=2.00%
+2026-02-17 22:49:16,999 [INFO] Equity: $9998.51 (-0.01%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 22:49:17,002 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 23:04:17,458 [INFO] ── Cycle 36 at 2026-02-18T07:04:17+00:00 ──
+2026-02-17 23:04:21,267 [INFO] 🔄 Regime change for ETH/USDT: ACCUMULATION → TRENDING
+2026-02-17 23:04:23,065 [DEBUG] ETH/USDT: $2004.1400 | regime=TRENDING | ATR%=0.19 | TP=1.00% | Dev=2.00%
+2026-02-17 23:04:23,072 [INFO] Equity: $9998.32 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 23:04:23,073 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 23:19:23,440 [INFO] ── Cycle 37 at 2026-02-18T07:19:23+00:00 ──
+2026-02-17 23:19:49,812 [INFO] 🧠 SENTIMENT ETH/USDT: score=-15, exit_pressure=20, mode=none, TP×1.00
+2026-02-17 23:19:52,509 [DEBUG] ETH/USDT: $1999.0000 | regime=TRENDING | ATR%=0.20 | TP=1.00% | Dev=2.00%
+2026-02-17 23:19:52,510 [INFO] Equity: $9997.30 (-0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 23:19:52,511 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 23:34:52,878 [INFO] ── Cycle 38 at 2026-02-18T07:34:52+00:00 ──
+2026-02-17 23:34:55,643 [DEBUG] ETH/USDT: $2000.3100 | regime=TRENDING | ATR%=0.19 | TP=1.00% | Dev=2.00%
+2026-02-17 23:34:55,650 [INFO] Equity: $9997.56 (-0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 23:34:55,652 [DEBUG] Sleeping 900s until next cycle...
+2026-02-17 23:49:56,057 [INFO] ── Cycle 39 at 2026-02-18T07:49:56+00:00 ──
+2026-02-17 23:49:58,354 [DEBUG] ETH/USDT: $2020.2800 | regime=TRENDING | ATR%=0.26 | TP=1.00% | Dev=2.00%
+2026-02-17 23:49:58,356 [INFO] Equity: $10001.53 (0.02%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-17 23:49:58,357 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 00:04:58,745 [INFO] ── Cycle 40 at 2026-02-18T08:04:58+00:00 ──
+2026-02-18 00:05:00,914 [DEBUG] ETH/USDT: $2019.4400 | regime=TRENDING | ATR%=0.25 | TP=1.00% | Dev=2.00%
+2026-02-18 00:05:00,919 [INFO] Equity: $10001.36 (0.01%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-18 00:05:00,920 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 00:20:01,358 [INFO] ── Cycle 41 at 2026-02-18T08:20:01+00:00 ──
+2026-02-18 00:20:31,636 [INFO] 🧠 SENTIMENT ETH/USDT: score=-35, exit_pressure=25, mode=none, TP×1.00
+2026-02-18 00:20:33,998 [DEBUG] ETH/USDT: $2026.4300 | regime=TRENDING | ATR%=0.28 | TP=1.00% | Dev=2.00%
+2026-02-18 00:20:33,999 [INFO] Equity: $10002.75 (0.03%) | Cash: $9600.00 | Deals: 1 active, 0 completed | DD: 0.0%
+2026-02-18 00:20:34,001 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 00:35:34,364 [INFO] ── Cycle 42 at 2026-02-18T08:35:34+00:00 ──
+2026-02-18 00:35:36,765 [DEBUG] ETH/USDT: $2032.9700 | regime=TRENDING | ATR%=0.30 | TP=1.00% | Dev=2.00%
+2026-02-18 00:35:36,766 [INFO] 📤 DEAL 1 LOT 0 SOLD: ETH/USDT @ $2032.0190, PnL=$3.82
+2026-02-18 00:35:37,901 [INFO] ✅ DEAL 1 COMPLETE: ETH/USDT, PnL=$3.82, Duration=13.3h
+2026-02-18 00:35:39,169 [INFO] Equity: $10003.82 (0.04%) | Cash: $10003.82 | Deals: 0 active, 1 completed | DD: 0.0%
+2026-02-18 00:35:39,172 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 00:50:39,597 [INFO] ── Cycle 43 at 2026-02-18T08:50:39+00:00 ──
+2026-02-18 00:50:41,830 [INFO] 🔄 Regime change for ETH/USDT: TRENDING → DISTRIBUTION
+2026-02-18 00:50:42,993 [DEBUG] ETH/USDT: $2023.8200 | regime=DISTRIBUTION | ATR%=0.33 | TP=1.00% | Dev=2.00%
+2026-02-18 00:50:42,994 [INFO] 📥 DEAL 2 OPENED: ETH/USDT @ $2023.8200 (regime=DISTRIBUTION, TP=1.00%)
+2026-02-18 00:50:44,085 [INFO] Equity: $10003.68 (0.04%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.0%
+2026-02-18 00:50:44,085 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 01:05:44,483 [INFO] ── Cycle 44 at 2026-02-18T09:05:44+00:00 ──
+2026-02-18 01:05:47,195 [INFO] 🔄 Regime change for ETH/USDT: DISTRIBUTION → TRENDING
+2026-02-18 01:05:48,384 [DEBUG] ETH/USDT: $2017.0600 | regime=TRENDING | ATR%=0.34 | TP=1.00% | Dev=2.00%
+2026-02-18 01:05:48,387 [INFO] Equity: $10002.34 (0.02%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.0%
+2026-02-18 01:05:48,389 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 01:20:48,779 [INFO] ── Cycle 45 at 2026-02-18T09:20:48+00:00 ──
+2026-02-18 01:21:09,873 [INFO] 🧠 SENTIMENT ETH/USDT: score=+35, exit_pressure=25, mode=none, TP×1.00
+2026-02-18 01:21:12,494 [DEBUG] ETH/USDT: $2018.3700 | regime=TRENDING | ATR%=0.33 | TP=1.00% | Dev=2.00%
+2026-02-18 01:21:12,495 [INFO] Equity: $10002.60 (0.03%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.0%
+2026-02-18 01:21:12,496 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 01:36:12,876 [INFO] ── Cycle 46 at 2026-02-18T09:36:12+00:00 ──
+2026-02-18 01:36:15,246 [DEBUG] ETH/USDT: $2021.0000 | regime=TRENDING | ATR%=0.33 | TP=1.00% | Dev=2.00%
+2026-02-18 01:36:15,250 [INFO] Equity: $10003.12 (0.03%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.0%
+2026-02-18 01:36:15,251 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 01:51:15,668 [INFO] ── Cycle 47 at 2026-02-18T09:51:15+00:00 ──
+2026-02-18 01:51:18,061 [DEBUG] ETH/USDT: $2019.5800 | regime=TRENDING | ATR%=0.31 | TP=1.00% | Dev=2.00%
+2026-02-18 01:51:18,064 [INFO] Equity: $10002.84 (0.03%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.0%
+2026-02-18 01:51:18,069 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 02:06:18,458 [INFO] ── Cycle 48 at 2026-02-18T10:06:18+00:00 ──
+2026-02-18 02:06:21,282 [INFO] 🔄 Regime change for ETH/USDT: TRENDING → DISTRIBUTION
+2026-02-18 02:06:22,459 [DEBUG] ETH/USDT: $2015.8200 | regime=DISTRIBUTION | ATR%=0.32 | TP=1.00% | Dev=2.00%
+2026-02-18 02:06:22,465 [INFO] Equity: $10002.10 (0.02%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.0%
+2026-02-18 02:06:22,468 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 02:21:22,854 [INFO] ── Cycle 49 at 2026-02-18T10:21:22+00:00 ──
+2026-02-18 02:21:43,471 [INFO] 🧠 SENTIMENT ETH/USDT: score=-45, exit_pressure=15, mode=none, TP×1.00
+2026-02-18 02:21:46,093 [INFO] 🔄 Regime change for ETH/USDT: DISTRIBUTION → TRENDING
+2026-02-18 02:21:47,360 [DEBUG] ETH/USDT: $2010.9000 | regime=TRENDING | ATR%=0.33 | TP=1.00% | Dev=2.00%
+2026-02-18 02:21:47,364 [INFO] Equity: $10001.13 (0.01%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.0%
+2026-02-18 02:21:47,367 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 02:36:47,764 [INFO] ── Cycle 50 at 2026-02-18T10:36:47+00:00 ──
+2026-02-18 02:36:50,406 [DEBUG] ETH/USDT: $2006.0400 | regime=TRENDING | ATR%=0.35 | TP=1.00% | Dev=2.00%
+2026-02-18 02:36:50,410 [INFO] Equity: $10000.17 (0.00%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.0%
+2026-02-18 02:36:50,411 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 02:51:50,778 [INFO] ── Cycle 51 at 2026-02-18T10:51:50+00:00 ──
+2026-02-18 02:51:53,574 [DEBUG] ETH/USDT: $1998.4600 | regime=TRENDING | ATR%=0.36 | TP=1.00% | Dev=2.00%
+2026-02-18 02:51:53,577 [INFO] Equity: $9998.67 (-0.01%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 02:51:53,578 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 03:06:54,017 [INFO] ── Cycle 52 at 2026-02-18T11:06:54+00:00 ──
+2026-02-18 03:06:56,306 [DEBUG] ETH/USDT: $1993.7400 | regime=TRENDING | ATR%=0.32 | TP=1.00% | Dev=2.00%
+2026-02-18 03:06:56,308 [INFO] Equity: $9997.74 (-0.02%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 03:06:56,309 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 03:21:56,703 [INFO] ── Cycle 53 at 2026-02-18T11:21:56+00:00 ──
+2026-02-18 03:22:21,735 [INFO] 🧠 SENTIMENT ETH/USDT: score=-15, exit_pressure=45, mode=none, TP×1.00
+2026-02-18 03:22:23,877 [DEBUG] ETH/USDT: $1981.0300 | regime=TRENDING | ATR%=0.36 | TP=1.00% | Dev=2.00%
+2026-02-18 03:22:23,879 [INFO] Equity: $9995.22 (-0.05%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 03:22:23,880 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 03:37:24,274 [INFO] ── Cycle 54 at 2026-02-18T11:37:24+00:00 ──
+2026-02-18 03:37:27,151 [DEBUG] ETH/USDT: $1983.7800 | regime=TRENDING | ATR%=0.37 | TP=1.00% | Dev=2.00%
+2026-02-18 03:37:27,155 [INFO] Equity: $9995.77 (-0.04%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 03:37:27,156 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 03:52:27,525 [INFO] ── Cycle 55 at 2026-02-18T11:52:27+00:00 ──
+2026-02-18 03:52:29,870 [DEBUG] ETH/USDT: $1987.6700 | regime=TRENDING | ATR%=0.31 | TP=1.00% | Dev=2.00%
+2026-02-18 03:52:29,873 [INFO] Equity: $9996.54 (-0.03%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 03:52:29,874 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 04:07:30,312 [INFO] ── Cycle 56 at 2026-02-18T12:07:30+00:00 ──
+2026-02-18 04:07:33,677 [DEBUG] ETH/USDT: $1987.4000 | regime=TRENDING | ATR%=0.30 | TP=1.00% | Dev=2.00%
+2026-02-18 04:07:33,681 [INFO] Equity: $9996.48 (-0.04%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 04:07:33,682 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 04:22:34,055 [INFO] ── Cycle 57 at 2026-02-18T12:22:34+00:00 ──
+2026-02-18 04:22:58,696 [INFO] 🧠 SENTIMENT ETH/USDT: score=-5, exit_pressure=55, mode=none, TP×1.00
+2026-02-18 04:23:01,489 [DEBUG] ETH/USDT: $1984.2700 | regime=TRENDING | ATR%=0.29 | TP=1.00% | Dev=2.00%
+2026-02-18 04:23:01,490 [INFO] Equity: $9995.86 (-0.04%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 04:23:01,492 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 04:38:02,930 [INFO] ── Cycle 58 at 2026-02-18T12:38:02+00:00 ──
+2026-02-18 04:38:05,544 [DEBUG] ETH/USDT: $1974.9700 | regime=TRENDING | ATR%=0.34 | TP=1.00% | Dev=2.00%
+2026-02-18 04:38:05,548 [INFO] Equity: $9994.03 (-0.06%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 04:38:05,550 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 04:53:06,647 [INFO] ── Cycle 59 at 2026-02-18T12:53:06+00:00 ──
+2026-02-18 04:53:09,897 [INFO] 🔄 Regime change for ETH/USDT: TRENDING → ACCUMULATION
+2026-02-18 04:53:11,131 [DEBUG] ETH/USDT: $1984.8300 | regime=ACCUMULATION | ATR%=0.34 | TP=1.00% | Dev=2.00%
+2026-02-18 04:53:11,141 [INFO] Equity: $9995.97 (-0.04%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 04:53:11,141 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 05:08:11,685 [INFO] ── Cycle 60 at 2026-02-18T13:08:11+00:00 ──
+2026-02-18 05:08:14,579 [DEBUG] ETH/USDT: $1981.5600 | regime=ACCUMULATION | ATR%=0.34 | TP=1.00% | Dev=2.00%
+2026-02-18 05:08:14,579 [INFO] Equity: $9995.33 (-0.05%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 05:08:14,585 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 05:23:15,123 [INFO] ── Cycle 61 at 2026-02-18T13:23:15+00:00 ──
+2026-02-18 05:23:48,329 [INFO] 🧠 SENTIMENT ETH/USDT: score=+35, exit_pressure=15, mode=none, TP×1.00
+2026-02-18 05:23:50,453 [INFO] 🔄 Regime change for ETH/USDT: ACCUMULATION → TRENDING
+2026-02-18 05:23:51,606 [DEBUG] ETH/USDT: $1985.4400 | regime=TRENDING | ATR%=0.37 | TP=1.00% | Dev=2.00%
+2026-02-18 05:23:51,608 [INFO] Equity: $9996.10 (-0.04%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 05:23:51,609 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 05:38:52,064 [INFO] ── Cycle 62 at 2026-02-18T13:38:51+00:00 ──
+2026-02-18 05:38:56,464 [INFO] 🔄 Regime change for ETH/USDT: TRENDING → ACCUMULATION
+2026-02-18 05:38:57,873 [DEBUG] ETH/USDT: $1986.2700 | regime=ACCUMULATION | ATR%=0.37 | TP=1.00% | Dev=2.00%
+2026-02-18 05:38:57,873 [INFO] Equity: $9996.26 (-0.04%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 05:38:57,873 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 05:53:58,413 [INFO] ── Cycle 63 at 2026-02-18T13:53:58+00:00 ──
+2026-02-18 05:54:01,329 [INFO] 🔄 Regime change for ETH/USDT: ACCUMULATION → TRENDING
+2026-02-18 05:54:02,617 [DEBUG] ETH/USDT: $1967.6300 | regime=TRENDING | ATR%=0.42 | TP=1.00% | Dev=2.00%
+2026-02-18 05:54:02,619 [INFO] Equity: $9992.58 (-0.07%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 05:54:02,619 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 06:09:03,030 [INFO] ── Cycle 64 at 2026-02-18T14:09:03+00:00 ──
+2026-02-18 06:09:05,947 [INFO] 🔄 Regime change for ETH/USDT: TRENDING → ACCUMULATION
+2026-02-18 06:09:07,118 [DEBUG] ETH/USDT: $1973.2200 | regime=ACCUMULATION | ATR%=0.39 | TP=1.00% | Dev=2.00%
+2026-02-18 06:09:07,122 [INFO] Equity: $9993.68 (-0.06%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 06:09:07,124 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 06:24:07,496 [INFO] ── Cycle 65 at 2026-02-18T14:24:07+00:00 ──
+2026-02-18 06:24:44,991 [INFO] 🧠 SENTIMENT ETH/USDT: score=-35, exit_pressure=45, mode=none, TP×1.00
+2026-02-18 06:24:47,615 [DEBUG] ETH/USDT: $1969.1300 | regime=ACCUMULATION | ATR%=0.39 | TP=1.00% | Dev=2.00%
+2026-02-18 06:24:47,618 [INFO] Equity: $9992.87 (-0.07%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 06:24:47,619 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 06:30:48,026 [INFO] ============================================================
+2026-02-18 06:30:48,028 [INFO] Spot Paper Trader starting
+2026-02-18 06:30:48,028 [INFO] Exchange: aster | Profile: medium | Capital: $10000
+2026-02-18 06:30:48,028 [INFO] Symbols: ['ETH/USDT'] | Timeframe: 15m | Max coins: 3
+2026-02-18 06:30:48,028 [INFO] ============================================================
+2026-02-18 06:30:48,062 [INFO] Connected to aster
+2026-02-18 06:30:48,088 [INFO] State loaded: cash=$9603.82, 1 active deals, 1 completed
+2026-02-18 06:30:49,828 [INFO] ── Cycle 1 at 2026-02-18T14:30:49+00:00 ──
+2026-02-18 06:31:31,762 [INFO] 🧠 SENTIMENT ETH/USDT: score=+15, exit_pressure=15, mode=none, TP×1.00
+2026-02-18 06:31:56,565 [INFO] 📊 Macro refresh: F&G=8
+2026-02-18 06:32:04,424 [INFO] 🧠 ETH/USDT CONVICTION: 51 [moderate] F&G=8 | TP=1.24% Dev=2.27% SO×1.09 MaxSO+0
+2026-02-18 06:32:04,424 [DEBUG] ETH/USDT: $1971.9900 | regime=TRENDING | ATR%=0.35 | TP=1.24% | Dev=2.27%
+2026-02-18 06:32:04,428 [INFO] Equity: $9993.44 (-0.07%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 06:32:04,431 [DEBUG] Sleeping 900s until next cycle...
+2026-02-18 06:47:04,863 [INFO] ── Cycle 2 at 2026-02-18T14:47:04+00:00 ──
+2026-02-18 06:47:07,277 [INFO] 🔄 Regime change for ETH/USDT: TRENDING → ACCUMULATION
+2026-02-18 06:47:09,049 [INFO] 🧠 ETH/USDT CONVICTION: 58 [moderate] F&G=8 | TP=1.29% Dev=2.38% SO×1.27 MaxSO+2
+2026-02-18 06:47:09,049 [DEBUG] ETH/USDT: $1969.4100 | regime=ACCUMULATION | ATR%=0.33 | TP=1.29% | Dev=2.38%
+2026-02-18 06:47:09,059 [INFO] Equity: $9992.93 (-0.07%) | Cash: $9603.82 | Deals: 1 active, 1 completed | DD: 0.1%
+2026-02-18 06:47:09,061 [DEBUG] Sleeping 900s until next cycle...
