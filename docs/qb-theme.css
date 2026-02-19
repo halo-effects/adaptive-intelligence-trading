@@ -534,20 +534,31 @@ section .problem-card h3 {
 /* ===== FOOTER ===== */
 footer,
 .footer {
-  background: #000000 !important;
+  background: #ffffff !important;
   border-top: none !important;
+  position: relative !important;
+  color: var(--text2) !important;
 }
-.footer-links a,
+/* Gradient divider bar above footer */
+footer::before,
+.footer::before {
+  content: '' !important;
+  display: block !important;
+  height: 6px !important;
+  background: linear-gradient(96deg, #5BEF76 3%, #38E8F6 35%, #38E8F6 65%, #236CFF 92%) !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+}
 footer a {
-  color: rgba(255,255,255,0.6) !important;
+  color: var(--text2) !important;
 }
-.footer-links a:hover,
 footer a:hover {
-  color: var(--cta-green) !important;
+  color: var(--dark-section) !important;
 }
-.footer-copyright,
 footer > div:last-child {
-  color: rgba(255,255,255,0.4) !important;
+  color: var(--text3) !important;
 }
 
 /* ===== FAQ (in dark teal section) ===== */
