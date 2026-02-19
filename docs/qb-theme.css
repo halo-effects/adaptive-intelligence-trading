@@ -206,6 +206,19 @@ section {
   color: var(--cta-green) !important;
 }
 
+/* Re-map CSS variables inside dark sections so var(--text) etc resolve to light colors */
+.comparison-section,
+.capacity-section,
+.faq-section,
+.guardrails-section,
+.cta-section {
+  --text: #ffffff !important;
+  --text2: rgba(255,255,255,0.7) !important;
+  --text3: rgba(255,255,255,0.5) !important;
+  --accent2: #5BEF76 !important;
+  --border: rgba(255,255,255,0.1) !important;
+  --card: rgba(255,255,255,0.06) !important;
+}
 /* Force ALL text in dark sections to be readable */
 .comparison-section h2, .comparison-section h3, .comparison-section p, .comparison-section strong, .comparison-section div,
 .capacity-section h2, .capacity-section h3, .capacity-section p, .capacity-section strong, .capacity-section div,
