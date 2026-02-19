@@ -1538,6 +1538,7 @@ function renderSpotCoins(s) {
         <div class="deal-stat"><div class="deal-stat-label">Avg Entry</div><div class="deal-stat-value">${fmtUsd(c.avg_entry, 2)}</div></div>
         <div class="deal-stat"><div class="deal-stat-label">Invested</div><div class="deal-stat-value">${fmtUsd(c.invested)}</div></div>
         <div class="deal-stat"><div class="deal-stat-label">Layers</div><div class="deal-stat-value">${c.layers} / ${maxLayers}</div></div>
+        <div class="deal-stat"><div class="deal-stat-label">TP Target</div><div class="deal-stat-value" style="color:var(--green)">${fmtUsd(c.next_tp_price, 2)}</div></div>
         <div class="deal-stat"><div class="deal-stat-label">Unrealized PnL</div><div class="deal-stat-value" style="color:${pnlColor}">${fmtUsd(c.unrealized_pnl)}</div></div>
         <div class="deal-stat"><div class="deal-stat-label">Realized PnL</div><div class="deal-stat-value" style="color:${pctColor(c.realized_pnl)}">${fmtUsd(c.realized_pnl)}</div></div>
       </div>
