@@ -26,7 +26,7 @@
   --cta-green: #5BEF76;
   --light-cyan: #EAF6F7;
   --off-white: #EDF2F7;
-  --dark-section: #0D2B1E;
+  --dark-section: #111111;
   --charcoal: #1a1a2e;
 }
 
@@ -59,7 +59,7 @@ h3 {
    ============================================================ */
 .top-header,
 header.top-header {
-  background: rgba(13, 43, 30, 0.95) !important;
+  background: rgba(17, 17, 17, 0.95) !important;
   backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid rgba(255,255,255,0.08) !important;
 }
@@ -214,7 +214,7 @@ section[style*="border-bottom: 1px solid var(--border)"] {
 .capacity-section,
 .faq-section,
 .guardrails-section {
-  background: linear-gradient(180deg, #0D2B1E 0%, #112920 100%) !important;
+  background: linear-gradient(180deg, #111111 0%, #112920 100%) !important;
 }
 
 /* Remap CSS variables inside dark sections */
@@ -292,7 +292,7 @@ section[style*="background: #0d0d15"] span {
    7. SECTION LABELS (Eyebrow text)
    ============================================================ */
 .section-label {
-  background: rgba(13, 43, 30, 0.08) !important;
+  background: rgba(17, 17, 17, 0.08) !important;
   color: var(--dark-section) !important;
   font-size: 0.7rem !important;
   font-weight: 600 !important;
@@ -675,7 +675,7 @@ section .problem-card h3 {
   border-radius: 8px !important;
 }
 .layer-number {
-  color: rgba(13, 43, 30, 0.08) !important;
+  color: rgba(17, 17, 17, 0.08) !important;
 }
 .layer-title {
   color: var(--text) !important;
