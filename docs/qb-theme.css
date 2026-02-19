@@ -29,6 +29,26 @@ body {
   background: var(--bg) !important;
   color: var(--text) !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  font-weight: 400 !important;
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* All h2, h3 — lighter weights globally */
+h2 {
+  font-weight: 300 !important;
+  letter-spacing: -0.02em !important;
+}
+h3 {
+  font-weight: 500 !important;
+}
+
+/* Feature list text — smaller, lighter */
+.feature-list li {
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
   line-height: 1.6 !important;
 }
 
@@ -107,9 +127,15 @@ a.header-btn {
 }
 .hero-stat-value {
   color: var(--cta-green) !important;
+  font-weight: 300 !important;
+  font-size: 2.5rem !important;
 }
 .hero-stat-label {
   color: rgba(255,255,255,0.5) !important;
+  font-weight: 500 !important;
+  font-size: 0.65rem !important;
+  letter-spacing: 1.5px !important;
+  text-transform: uppercase !important;
 }
 
 /* Hero visual circles (risk-profiles page) */
@@ -263,13 +289,20 @@ section[style*="background:#0d0d15"] {
   box-shadow: none !important;
 }
 
-/* Card text */
+/* Card headings — QB gradient text (green→cyan→blue) */
 .problem-card h3,
 .feature-title,
 .step-title,
 .amplifier-title {
-  color: var(--text) !important;
+  background: linear-gradient(96deg, #5BEF76 3%, #38E8F6 40%, #236CFF 92%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 500 !important;
+  font-size: 1.25rem !important;
+  line-height: 1.35 !important;
 }
+/* Card body text — light, clean */
 .problem-card p,
 .feature-desc,
 .step-desc,
@@ -277,6 +310,9 @@ section[style*="background:#0d0d15"] {
 .profile-description,
 .profile-subtitle {
   color: var(--text2) !important;
+  font-weight: 400 !important;
+  font-size: 0.92rem !important;
+  line-height: 1.65 !important;
 }
 
 /* ===== PRICING CARDS ===== */
@@ -300,15 +336,21 @@ section[style*="background:#0d0d15"] {
 }
 .tier-name {
   color: var(--text) !important;
+  font-weight: 300 !important;
+  font-size: 1.5rem !important;
 }
 .tier-price {
   color: var(--dark-teal) !important;
+  font-weight: 300 !important;
 }
 .tier-capital {
   color: var(--text2) !important;
+  font-weight: 400 !important;
 }
 .tier-desc {
   color: var(--text3) !important;
+  font-weight: 400 !important;
+  font-size: 0.88rem !important;
 }
 .feature-list li {
   color: var(--text2) !important;
