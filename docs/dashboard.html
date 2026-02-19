@@ -265,7 +265,8 @@ tr:hover td{background:rgba(88,166,255,.04)}
   .deal-stat-value{font-size:.82rem}
   /* Portfolio donut: even smaller */
   .alloc-chart{width:120px!important;height:120px!important}
-  .alloc-legend{font-size:.68rem}
+  .alloc-table{font-size:.75rem}
+  .alloc-table th,.alloc-table td{padding:4px 6px}
   /* Features */
   .features-grid{grid-template-columns:1fr 1fr;gap:6px}
   .feature-card{padding:10px}
@@ -311,10 +312,8 @@ tr:hover td{background:rgba(88,166,255,.04)}
   .section{padding:8px;margin-bottom:8px}
   .section h2{font-size:.8rem;margin-bottom:8px}
   .alloc-chart{width:100px!important;height:100px!important}
-  .alloc-legend{font-size:.64rem}
-  .alloc-legend-item{gap:4px}
-  .alloc-legend-sym{min-width:32px;font-size:.68rem}
-  .alloc-legend-pct,.alloc-legend-amt,.alloc-legend-pnl{font-size:.62rem;min-width:auto}
+  .alloc-table{font-size:.68rem}
+  .alloc-table th,.alloc-table td{padding:3px 4px}
   .account-pill{padding:3px 8px;font-size:.62rem}
   .account-pill .pill-dot{width:5px;height:5px}
   .bottom-bar{padding:6px 8px;gap:6px}
@@ -1283,20 +1282,26 @@ function renderPortfolioAllocation(s) {
     <text x="${CX}" y="${CY + 10}" text-anchor="middle" fill="var(--text2)" font-size="8">Total Equity</text>
   </svg>`;
 
-  // Legend
-  const legend = segments.map(seg => {
-    const pnlCls = seg.pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
-    const pnlStr = seg.label === 'Cash' ? '—' : `<span class="${pnlCls}">${seg.pnl >= 0 ? '+' : ''}$${fmt(seg.pnl,2)}</span>`;
-    return `<div class="alloc-legend-item">
-      <span class="alloc-dot" style="background:${seg.color}"></span>
-      <span class="alloc-legend-sym">${seg.label}</span>
-      <span class="alloc-legend-pct">${seg.pct.toFixed(1)}%</span>
-      <span class="alloc-legend-amt">$${fmt(seg.value,0)}</span>
-      <span class="alloc-legend-pnl">${pnlStr}</span>
-    </div>`;
+  // Table
+  const rows = segments.map(seg => {
+    const pnlCls = seg.pnl > 0 ? 'pnl-pos' : seg.pnl < 0 ? 'pnl-neg' : '';
+    const pnlStr = seg.label === 'Cash' ? '<span style="color:var(--text3)">—</span>' : `<span class="${pnlCls}">${seg.pnl >= 0 ? '+' : ''}$${fmt(seg.pnl,2)}</span>`;
+    const retPct = seg.label !== 'Cash' && seg.value > 0 ? (seg.pnl / seg.value * 100) : 0;
+    const retStr = seg.label === 'Cash' ? '' : `<span class="${pnlCls}" style="font-size:.75rem">(${retPct >= 0 ? '+' : ''}${fmt(retPct,2)}%)</span>`;
+    return `<tr>
+      <td><span class="alloc-dot" style="background:${seg.color}"></span><span class="alloc-sym">${seg.label}</span></td>
+      <td class="alloc-pct">${seg.pct.toFixed(1)}%</td>
+      <td class="alloc-amt">${fmtUsd(seg.value)}</td>
+      <td class="alloc-pnl">${pnlStr} ${retStr}</td>
+    </tr>`;
   }).join('');
 
-  $('portfolioAllocContent').innerHTML = `<div class="alloc-wrap">${svg}<div class="alloc-legend">${legend}</div></div>`;
+  const table = `<table class="alloc-table">
+    <thead><tr><th>Asset</th><th>Alloc</th><th>Value</th><th>PnL</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+
+  $('portfolioAllocContent').innerHTML = `<div class="alloc-wrap">${svg}${table}</div>`;
 }
 
 function renderRiskProfile(s) {
