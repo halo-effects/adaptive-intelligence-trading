@@ -7,21 +7,23 @@
   --bg: #ffffff;
   --card: #ffffff;
   --border: #C3CED5;
-  --accent: #0D333F;
-  --accent2: #0D333F;
+  --accent: #111111;
+  --accent2: #111111;
   --green: #2CA01C;
   --red: #D52B1E;
   --amber: #BA8B00;
   --text: #000000;
   --text2: #393A3D;
   --text3: #6B6C72;
-  --gradient1: #0D333F;
+  --gradient1: #0a0a0a;
   --gradient2: #2CA01C;
   --cta-green: #5BEF76;
-  --off-white: #F4F4EE;
-  --dark-teal: #0D333F;
-  --light-teal: #EAF6F7;
-  --teal-border: #DBEDEE;
+  --off-white: #EDF2F7;
+  --dark-section: #111111;
+  --charcoal: #1a1a2e;
+  --light-blue: #EDF2F7;
+  --light-blue-accent: #E1EBF5;
+  --blue-border: #D0DCE8;
 }
 
 /* Base */
@@ -87,13 +89,13 @@ a.header-btn {
 
 /* ===== HERO ===== */
 .hero {
-  background: linear-gradient(180deg, #000000 0%, #0a1628 40%, #0D333F 70%, #1a4a5c 100%) !important;
+  background: linear-gradient(180deg, #000000 0%, #0a0a1a 30%, #0f1b3d 60%, #1a3a6c 100%) !important;
   min-height: 80vh !important;
 }
 .hero::before {
-  background: radial-gradient(ellipse at 50% 100%, rgba(91,239,118,0.06) 0%, transparent 50%),
+  background: radial-gradient(ellipse at 50% 100%, rgba(56,140,255,0.08) 0%, transparent 50%),
               radial-gradient(ellipse at 20% 80%, rgba(56,232,246,0.04) 0%, transparent 40%),
-              radial-gradient(ellipse at 80% 80%, rgba(35,108,255,0.04) 0%, transparent 40%) !important;
+              radial-gradient(ellipse at 80% 80%, rgba(35,108,255,0.05) 0%, transparent 40%) !important;
 }
 .hero h1 {
   background: none !important;
@@ -169,12 +171,12 @@ section {
   background: var(--off-white) !important;
 }
 
-/* Dark sections — matching QB dark palette */
+/* Dark sections — black/charcoal like QB */
 .comparison-section,
 .capacity-section,
 .faq-section,
 .guardrails-section {
-  background: linear-gradient(180deg, #0a1628 0%, #0D333F 100%) !important;
+  background: linear-gradient(180deg, #111111 0%, #1a1a1a 100%) !important;
 }
 .comparison-section *,
 .capacity-section *,
@@ -211,8 +213,8 @@ section[style*="background:#0d0d15"] {
 
 /* ===== SECTION LABELS (Eyebrow text) ===== */
 .section-label {
-  background: rgba(13,51,63,0.08) !important;
-  color: var(--dark-teal) !important;
+  background: rgba(17,17,17,0.08) !important;
+  color: var(--dark-section) !important;
   font-size: 0.7rem !important;
   font-weight: 600 !important;
   letter-spacing: 2px !important;
@@ -266,7 +268,7 @@ section[style*="background:#0d0d15"] {
 .pricing-card:hover,
 .amplifier-item:hover {
   transform: translateY(-2px) !important;
-  border-color: var(--dark-teal) !important;
+  border-color: var(--dark-section) !important;
   box-shadow: none !important;
 }
 
@@ -322,7 +324,7 @@ section .problem-card h3 {
   padding: 36px 28px !important;
 }
 .pricing-card.featured {
-  border-color: var(--dark-teal) !important;
+  border-color: var(--dark-section) !important;
   border-width: 2px !important;
   box-shadow: none !important;
   transform: translateY(-8px) scale(1.01) !important;
@@ -332,7 +334,7 @@ section .problem-card h3 {
   box-shadow: none !important;
 }
 .popular-badge {
-  background: var(--dark-teal) !important;
+  background: var(--dark-section) !important;
   color: #ffffff !important;
   border-radius: 4px !important;
 }
@@ -342,7 +344,7 @@ section .problem-card h3 {
   font-size: 1.5rem !important;
 }
 .tier-price {
-  color: var(--dark-teal) !important;
+  color: var(--dark-section) !important;
   font-weight: 300 !important;
 }
 .tier-capital {
@@ -385,8 +387,8 @@ section .problem-card h3 {
 }
 .cta-btn.secondary {
   background: transparent !important;
-  color: var(--dark-teal) !important;
-  border: 2px solid var(--dark-teal) !important;
+  color: var(--dark-section) !important;
+  border: 2px solid var(--dark-section) !important;
   border-radius: 4px !important;
 }
 
@@ -440,13 +442,13 @@ section .problem-card h3 {
   border-radius: 12px !important;
 }
 .layer-number {
-  color: rgba(13,51,63,0.12) !important;
+  color: rgba(17,17,17,0.12) !important;
 }
 .layer-title {
   color: var(--text) !important;
 }
 .layer-question {
-  color: var(--dark-teal) !important;
+  color: var(--dark-section) !important;
 }
 .layer-text {
   color: var(--text2) !important;
@@ -468,15 +470,15 @@ section .problem-card h3 {
   background: var(--cta-green) !important;
 }
 .breathing-bar.dev {
-  background: var(--dark-teal) !important;
+  background: var(--dark-section) !important;
 }
 
 /* ===== EVOLUTION TIMELINE ===== */
 .evolution-timeline::before {
-  background: linear-gradient(180deg, var(--border), var(--dark-teal), var(--cta-green)) !important;
+  background: linear-gradient(180deg, var(--border), var(--dark-section), var(--cta-green)) !important;
 }
 .evo-item::before {
-  border-color: var(--dark-teal) !important;
+  border-color: var(--dark-section) !important;
   background: var(--bg) !important;
 }
 .evo-item:last-child::before {
@@ -484,7 +486,7 @@ section .problem-card h3 {
   border-color: var(--cta-green) !important;
 }
 .evo-gen {
-  color: var(--dark-teal) !important;
+  color: var(--dark-section) !important;
 }
 .evo-title {
   color: var(--text) !important;
@@ -503,7 +505,7 @@ section .problem-card h3 {
 .cta-section,
 .bottom-cta,
 .bottom-cta-section {
-  background: linear-gradient(180deg, #0D333F 0%, #000000 100%) !important;
+  background: #111111 !important;
 }
 .cta-section::before,
 .bottom-cta::before,
@@ -683,13 +685,13 @@ footer > div:last-child {
 
 /* ===== STEP NUMBERS ===== */
 .step-number {
-  background: var(--dark-teal) !important;
+  background: var(--dark-section) !important;
   color: #ffffff !important;
 }
 
 /* ===== AMPLIFIER RANKS ===== */
 .amplifier-rank {
-  background: var(--dark-teal) !important;
+  background: var(--dark-section) !important;
 }
 .amplifier-impact {
   color: var(--text3) !important;
@@ -703,7 +705,7 @@ footer > div:last-child {
   color: var(--text) !important;
 }
 .breakeven-price {
-  color: var(--dark-teal) !important;
+  color: var(--dark-section) !important;
 }
 .breakeven-daily {
   color: #2CA01C !important;
@@ -732,9 +734,9 @@ footer > div:last-child {
 }
 .preset-btn:hover,
 .preset-btn.active {
-  border-color: var(--dark-teal) !important;
-  background: rgba(13,51,63,0.05) !important;
-  color: var(--dark-teal) !important;
+  border-color: var(--dark-section) !important;
+  background: rgba(17,17,17,0.05) !important;
+  color: var(--dark-section) !important;
 }
 .slider-name {
   color: var(--text) !important;
@@ -749,11 +751,11 @@ footer > div:last-child {
   color: #2CA01C !important;
 }
 .allocation-slider::-webkit-slider-thumb {
-  background: var(--dark-teal) !important;
+  background: var(--dark-section) !important;
   box-shadow: none !important;
 }
 .allocation-slider::-moz-range-thumb {
-  background: var(--dark-teal) !important;
+  background: var(--dark-section) !important;
   box-shadow: none !important;
 }
 
@@ -771,9 +773,9 @@ footer > div:last-child {
   color: var(--text2) !important;
 }
 .dash-pill.active {
-  background: var(--dark-teal) !important;
+  background: var(--dark-section) !important;
   color: #ffffff !important;
-  border-color: var(--dark-teal) !important;
+  border-color: var(--dark-section) !important;
 }
 .dash-card {
   background: #ffffff !important;
@@ -798,7 +800,7 @@ footer > div:last-child {
   background: #eee !important;
 }
 .dash-layer-fill {
-  background: var(--dark-teal) !important;
+  background: var(--dark-section) !important;
 }
 .dash-table th {
   color: var(--text3) !important;
@@ -852,7 +854,7 @@ footer > div:last-child {
 }
 [style*="background: rgba(99,102,241,0.08)"],
 [style*="background:rgba(99,102,241,0.08)"] {
-  background: rgba(13,51,63,0.04) !important;
+  background: rgba(17,17,17,0.04) !important;
 }
 
 /* Profile icons keep their gradient colors */
@@ -873,7 +875,7 @@ footer > div:last-child {
 
 /* ===== SVG LOGO — brighten for light bg ===== */
 .top-header svg rect {
-  fill: rgba(13,51,63,0.08) !important;
+  fill: rgba(17,17,17,0.08) !important;
   stroke: var(--border) !important;
 }
 .top-header svg line {
