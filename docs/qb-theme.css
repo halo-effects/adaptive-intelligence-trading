@@ -242,6 +242,24 @@ section {
   background: rgba(255,255,255,0.08) !important;
   border-color: rgba(255,255,255,0.15) !important;
 }
+
+/* White cards inside dark sections need dark text */
+.comparison-section .problem-card,
+.comparison-section .feature-card,
+.comparison-section [style*="background:#fff"],
+.comparison-section [style*="background: #fff"],
+.comparison-section [style*="background:var(--card)"],
+.comparison-section [style*="background: var(--card)"] {
+  --text: #000000 !important;
+  --text2: #393A3D !important;
+  --text3: #6B6C72 !important;
+  --accent2: #111111 !important;
+  color: #000000 !important;
+}
+.comparison-section .problem-card *,
+.comparison-section .feature-card * {
+  color: inherit !important;
+}
 /* Compare table in dark sections */
 .comparison-section .compare-table,
 .comparison-section table {
