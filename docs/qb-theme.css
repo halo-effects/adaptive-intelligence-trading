@@ -279,31 +279,35 @@ section[style*="border-bottom: 1px solid var(--border)"] {
   color: rgba(255,255,255,0.7) !important;
 }
 
-/* Performance stat cards in dark section — white bg, dark text */
+/* Performance stat cards & white-bg elements in dark sections — restore dark text */
 .comparison-section [style*="background: var(--card)"],
-.comparison-section [style*="background:var(--card)"] {
+.comparison-section [style*="background:var(--card)"],
+.comparison-section [style*="background:#fff"],
+.comparison-section [style*="background: #fff"] {
   background: #ffffff !important;
   border-color: rgba(255,255,255,0.15) !important;
+  --text: #1a1a1a;
+  --text2: #4a4a4a;
+  --text3: #6B6C72;
+  --green: #2CA01C;
+  --red: #D52B1E;
+  --accent2: #111111;
 }
-.comparison-section [style*="background: var(--card)"] div,
-.comparison-section [style*="background:var(--card)"] div {
-  color: inherit !important;
+.comparison-section [style*="background: var(--card)"] *,
+.comparison-section [style*="background:var(--card)"] * {
+  color: #1a1a1a !important;
 }
-.comparison-section [style*="background: var(--card)"] [style*="color: var(--green)"],
-.comparison-section [style*="background: var(--card)"] [style*="color:var(--green)"] {
+.comparison-section [style*="background: var(--card)"] [style*="color: var(--green)"] {
   color: #2CA01C !important;
 }
-.comparison-section [style*="background: var(--card)"] [style*="color: var(--text2)"],
-.comparison-section [style*="background: var(--card)"] [style*="color:var(--text2)"] {
+.comparison-section [style*="background: var(--card)"] [style*="color: var(--red)"] {
+  color: #D52B1E !important;
+}
+.comparison-section [style*="background: var(--card)"] [style*="color: var(--text2)"] {
   color: #4a4a4a !important;
 }
-.comparison-section [style*="background: var(--card)"] [style*="color: var(--text3)"],
-.comparison-section [style*="background: var(--card)"] [style*="color:var(--text3)"] {
+.comparison-section [style*="background: var(--card)"] [style*="color: var(--text3)"] {
   color: #6B6C72 !important;
-}
-.comparison-section [style*="background: var(--card)"] [style*="color: var(--red)"],
-.comparison-section [style*="background: var(--card)"] [style*="color:var(--red)"] {
-  color: #D52B1E !important;
 }
 
 /* "How It Works" section on pricing page — it's inside style="#0d0d15" */
