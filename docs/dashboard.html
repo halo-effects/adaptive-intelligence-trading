@@ -1011,10 +1011,17 @@ function renderLifecycle(s) {
 
     const stages = ['discover','accumulate','compound','exit','rotate'];
     const labels = ['Discover','Accumulate','Compound','Exit','Rotate'];
+    const tips = {
+      discover: 'Smart Entry scans 275+ coins for fundamentals, technicals & sentiment to find the best opportunities',
+      accumulate: 'DCA layers are being placed — buying dips at calculated deviation levels to build a position',
+      compound: 'Profits from completed deals are reinvested — equity grows exponentially over successive cycles',
+      exit: 'Smart Exit detected distribution signals — position is being scaled out for profit protection',
+      rotate: 'Scanner found a stronger coin — capital is rotating from this position to a higher-scoring opportunity'
+    };
     html += `<div style="margin-bottom:10px"><div style="font-size:.8rem;font-weight:600;margin-bottom:6px">${sym}</div><div class="lifecycle-pipeline">`;
     stages.forEach((st, i) => {
       if (i > 0) html += '<span class="lifecycle-arrow">▸</span>';
-      html += `<div class="lifecycle-stage ${st}${st === stage ? ' active' : ''}">${labels[i]}</div>`;
+      html += `<div class="lifecycle-stage ${st}${st === stage ? ' active' : ''}" title="${tips[st]}">${labels[i]}</div>`;
     });
     html += '</div></div>';
   });
