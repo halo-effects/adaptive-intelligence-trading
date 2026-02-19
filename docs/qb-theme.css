@@ -1,34 +1,40 @@
-/* QuickBooks-Inspired Light Theme — AIT Product Pages
-   Overrides the dark theme variables and styles */
+/* ============================================================
+   QuickBooks-Inspired Theme — AIT Product Pages
+   CSS-only overlay. Overrides dark theme with !important.
+   v10 — Full rewrite based on QB design language
+   ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap');
 
+/* ============================================================
+   1. CSS CUSTOM PROPERTIES
+   ============================================================ */
 :root {
   --bg: #ffffff;
   --card: #ffffff;
-  --border: #C3CED5;
+  --border: #e2e8f0;
   --accent: #111111;
   --accent2: #111111;
   --green: #2CA01C;
   --red: #D52B1E;
   --amber: #BA8B00;
-  --text: #000000;
-  --text2: #393A3D;
+  --text: #1a1a1a;
+  --text2: #4a4a4a;
   --text3: #6B6C72;
   --gradient1: #0a0a0a;
   --gradient2: #2CA01C;
   --cta-green: #5BEF76;
+  --light-cyan: #EAF6F7;
   --off-white: #EDF2F7;
-  --dark-section: #111111;
+  --dark-section: #0D2B1E;
   --charcoal: #1a1a2e;
-  --light-blue: #EDF2F7;
-  --light-blue-accent: #E1EBF5;
-  --blue-border: #D0DCE8;
 }
 
-/* Base */
+/* ============================================================
+   2. BASE / TYPOGRAPHY
+   ============================================================ */
 body {
-  background: var(--bg) !important;
+  background: #ffffff !important;
   color: var(--text) !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
   font-weight: 400 !important;
@@ -38,7 +44,6 @@ body {
   -moz-osx-font-smoothing: grayscale !important;
 }
 
-/* All h2, h3 — lighter weights globally */
 h2 {
   font-weight: 300 !important;
   font-size: clamp(1.5rem, 3vw, 2.25rem) !important;
@@ -49,17 +54,12 @@ h3 {
   font-size: 1.1rem !important;
 }
 
-/* Feature list text — smaller, lighter */
-.feature-list li {
-  font-size: 0.9rem !important;
-  font-weight: 400 !important;
-  line-height: 1.6 !important;
-}
-
-/* ===== HEADER ===== */
+/* ============================================================
+   3. HEADER
+   ============================================================ */
 .top-header,
 header.top-header {
-  background: rgba(0,0,0,0.85) !important;
+  background: rgba(13, 43, 30, 0.95) !important;
   backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid rgba(255,255,255,0.08) !important;
 }
@@ -75,21 +75,34 @@ a.header-nav {
 a.header-nav:hover {
   color: #ffffff !important;
 }
-/* Active nav link styling — uses accent2 color in original */
+/* Active nav link */
 a.header-nav[style*="color:var(--accent2)"],
 a.header-nav[style*="color: var(--accent2)"] {
   color: #ffffff !important;
   font-weight: 600 !important;
 }
+/* Header CTA — compact QB green button */
 .header-btn,
 a.header-btn {
   background: var(--cta-green) !important;
-  color: #000 !important;
+  color: #000000 !important;
   border-radius: 4px !important;
   font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  padding: 6px 16px !important;
+}
+/* SVG logo in header */
+.top-header svg rect {
+  fill: rgba(255,255,255,0.06) !important;
+  stroke: rgba(255,255,255,0.15) !important;
+}
+.top-header svg line {
+  stroke: rgba(255,255,255,0.12) !important;
 }
 
-/* ===== HERO ===== */
+/* ============================================================
+   4. HERO SECTION (stays dark — all pages)
+   ============================================================ */
 .hero {
   background: linear-gradient(180deg, #000000 0%, #0a0a1a 30%, #0f1b3d 60%, #1a3a6c 100%) !important;
   min-height: 80vh !important;
@@ -123,6 +136,7 @@ a.header-btn {
   font-size: 0.75rem !important;
   letter-spacing: 1.5px !important;
 }
+/* Pricing page hero badges */
 .hero-badges .hero-badge {
   background: rgba(255,255,255,0.1) !important;
   color: rgba(255,255,255,0.9) !important;
@@ -142,7 +156,7 @@ a.header-btn {
   text-transform: uppercase !important;
 }
 
-/* Hero visual circles (risk-profiles page) */
+/* Hero risk circles (risk-profiles page) */
 .risk-circle {
   box-shadow: none !important;
 }
@@ -159,45 +173,96 @@ a.header-btn {
   color: rgba(255,255,255,0.8) !important;
 }
 
-/* ===== SECTIONS — Alternating Backgrounds ===== */
+/* ============================================================
+   5. SECTION BACKGROUNDS — Alternating white / light cyan
+   ============================================================ */
 section {
   padding: 80px 0 !important;
 }
 
-/* Off-white sections */
+/* Light cyan sections */
 .problem-section,
 .pricing-section,
 .profiles-section,
 .roi-section,
 .allocation-section {
-  background: var(--light-blue) !important;
+  background: var(--light-cyan) !important;
 }
 
-/* Dark sections — black/charcoal like QB */
+/* Override inline gradient backgrounds to white or light cyan */
+section[style*="background: linear-gradient(135deg, rgba(99,102,241"],
+section[style*="background: linear-gradient(135deg, rgba(34,197,94"] {
+  background: #ffffff !important;
+}
+section[style*="background: linear-gradient(180deg, var(--bg)"] {
+  background: var(--light-cyan) !important;
+}
+section[style*="background: #0d0d15"],
+section[style*="background:#0d0d15"] {
+  background: #ffffff !important;
+}
+/* Inline border overrides */
+section[style*="border-top: 1px solid var(--border)"],
+section[style*="border-bottom: 1px solid var(--border)"] {
+  border-color: var(--border) !important;
+}
+
+/* ============================================================
+   6. DARK SECTIONS — keep dark bg, ensure readable text
+   ============================================================ */
 .comparison-section,
 .capacity-section,
 .faq-section,
 .guardrails-section {
-  background: linear-gradient(180deg, #111111 0%, #1a1a1a 100%) !important;
+  background: linear-gradient(180deg, #0D2B1E 0%, #112920 100%) !important;
 }
-.comparison-section *,
-.capacity-section *,
-.faq-section *,
-.guardrails-section * {
-  /* Let specific overrides handle colors */
+
+/* Remap CSS variables inside dark sections */
+.comparison-section,
+.capacity-section,
+.faq-section,
+.guardrails-section,
+.cta-section {
+  --text: #ffffff;
+  --text2: rgba(255,255,255,0.75);
+  --text3: rgba(255,255,255,0.5);
+  --accent2: #5BEF76;
+  --border: rgba(255,255,255,0.1);
+  --card: rgba(255,255,255,0.06);
 }
-.comparison-section .section-title,
-.capacity-section .section-title,
-.faq-section .section-title,
-.guardrails-section .section-title {
+
+/* Force ALL text elements in dark sections to be visible */
+.comparison-section h2, .comparison-section h3, .comparison-section h4,
+.comparison-section p, .comparison-section span, .comparison-section div,
+.comparison-section strong, .comparison-section li, .comparison-section td,
+.comparison-section th, .comparison-section button,
+.capacity-section h2, .capacity-section h3, .capacity-section h4,
+.capacity-section p, .capacity-section span, .capacity-section div,
+.capacity-section strong, .capacity-section li,
+.faq-section h2, .faq-section h3, .faq-section h4,
+.faq-section p, .faq-section span, .faq-section div,
+.faq-section strong, .faq-section li, .faq-section button,
+.guardrails-section h2, .guardrails-section h3, .guardrails-section h4,
+.guardrails-section p, .guardrails-section span, .guardrails-section div,
+.guardrails-section strong, .guardrails-section li {
+  color: rgba(255,255,255,0.85) !important;
+}
+
+/* Headings brighter */
+.comparison-section h2, .comparison-section h3,
+.capacity-section h2, .capacity-section h3,
+.faq-section h2, .faq-section h3,
+.guardrails-section h2, .guardrails-section h3 {
   color: #ffffff !important;
 }
-.comparison-section .section-subtitle,
-.capacity-section .section-subtitle,
-.faq-section .section-subtitle,
-.guardrails-section .section-subtitle {
-  color: rgba(255,255,255,0.7) !important;
+
+/* Strong/bold text in dark sections — green accent */
+.comparison-section strong, .capacity-section strong,
+.faq-section strong, .guardrails-section strong {
+  color: var(--cta-green) !important;
 }
+
+/* Section labels in dark sections */
 .comparison-section .section-label,
 .capacity-section .section-label,
 .faq-section .section-label,
@@ -206,80 +271,28 @@ section {
   color: var(--cta-green) !important;
 }
 
-/* Re-map CSS variables inside dark sections so var(--text) etc resolve to light colors */
-.comparison-section,
-.capacity-section,
-.faq-section,
-.guardrails-section,
-.cta-section {
-  --text: #ffffff !important;
-  --text2: rgba(255,255,255,0.7) !important;
-  --text3: rgba(255,255,255,0.5) !important;
-  --accent2: #5BEF76 !important;
-  --border: rgba(255,255,255,0.1) !important;
-  --card: rgba(255,255,255,0.06) !important;
-}
-/* Force ALL text in dark sections to be readable */
-.comparison-section h2, .comparison-section h3, .comparison-section p, .comparison-section strong, .comparison-section div,
-.capacity-section h2, .capacity-section h3, .capacity-section p, .capacity-section strong, .capacity-section div,
-.faq-section h2, .faq-section h3, .faq-section p, .faq-section strong, .faq-section div,
-.guardrails-section h2, .guardrails-section h3, .guardrails-section p, .guardrails-section strong, .guardrails-section div {
-  color: rgba(255,255,255,0.85) !important;
-}
-.comparison-section h2, .comparison-section h3,
-.capacity-section h2, .capacity-section h3,
-.faq-section h2, .faq-section h3,
-.guardrails-section h2, .guardrails-section h3 {
-  color: #ffffff !important;
-}
-.comparison-section strong, .capacity-section strong,
-.faq-section strong, .guardrails-section strong {
-  color: var(--cta-green) !important;
-}
-/* Stat highlight boxes in dark sections */
-.comparison-section [style*="background: rgba(99,102,241"],
-.comparison-section [style*="background:rgba(99,102,241"] {
-  background: rgba(255,255,255,0.08) !important;
-  border-color: rgba(255,255,255,0.15) !important;
+/* Section subtitles in dark sections */
+.comparison-section .section-subtitle,
+.capacity-section .section-subtitle,
+.faq-section .section-subtitle,
+.guardrails-section .section-subtitle {
+  color: rgba(255,255,255,0.7) !important;
 }
 
-/* White cards inside dark sections need dark text */
-.comparison-section .problem-card,
-.comparison-section .feature-card,
-.comparison-section [style*="background:#fff"],
-.comparison-section [style*="background: #fff"],
-.comparison-section [style*="background:var(--card)"],
-.comparison-section [style*="background: var(--card)"] {
-  --text: #000000 !important;
-  --text2: #393A3D !important;
-  --text3: #6B6C72 !important;
-  --accent2: #111111 !important;
-  color: #000000 !important;
-}
-.comparison-section .problem-card *,
-.comparison-section .feature-card * {
-  color: inherit !important;
-}
-/* Compare table in dark sections */
-.comparison-section .compare-table,
-.comparison-section table {
-  color: rgba(255,255,255,0.85) !important;
-}
-.comparison-section td, .comparison-section th {
-  color: rgba(255,255,255,0.85) !important;
-  border-color: rgba(255,255,255,0.1) !important;
+/* "How It Works" section on pricing page — it's inside style="#0d0d15" */
+section[style*="background: #0d0d15"] h2,
+section[style*="background: #0d0d15"] h3,
+section[style*="background: #0d0d15"] p,
+section[style*="background: #0d0d15"] div,
+section[style*="background: #0d0d15"] span {
+  color: var(--text) !important;
 }
 
-/* Sections with inline style backgrounds — override via specificity */
-section[style*="background: linear-gradient"],
-section[style*="background: #0d0d15"],
-section[style*="background:#0d0d15"] {
-  background: var(--light-blue) !important;
-}
-
-/* ===== SECTION LABELS (Eyebrow text) ===== */
+/* ============================================================
+   7. SECTION LABELS (Eyebrow text)
+   ============================================================ */
 .section-label {
-  background: rgba(17,17,17,0.08) !important;
+  background: rgba(13, 43, 30, 0.08) !important;
   color: var(--dark-section) !important;
   font-size: 0.7rem !important;
   font-weight: 600 !important;
@@ -289,7 +302,9 @@ section[style*="background:#0d0d15"] {
   padding: 6px 14px !important;
 }
 
-/* ===== SECTION TITLES ===== */
+/* ============================================================
+   8. SECTION TITLES
+   ============================================================ */
 .section-title {
   color: var(--text) !important;
   font-weight: 300 !important;
@@ -304,15 +319,9 @@ section[style*="background:#0d0d15"] {
   line-height: 1.7 !important;
 }
 
-/* Dark section titles — white, same light weight */
-.comparison-section .section-title,
-.capacity-section .section-title,
-.faq-section .section-title,
-.guardrails-section .section-title {
-  font-weight: 300 !important;
-}
-
-/* ===== CARDS ===== */
+/* ============================================================
+   9. CARDS — QB style: light cyan bg, no borders, no shadows
+   ============================================================ */
 .problem-card,
 .feature-card,
 .pricing-card,
@@ -323,56 +332,42 @@ section[style*="background:#0d0d15"] {
 .breakeven-card,
 .check-item,
 .amplifier-item {
-  background: #ffffff !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
+  background: var(--light-cyan) !important;
+  border: none !important;
+  border-radius: 8px !important;
   box-shadow: none !important;
-  transition: transform 0.2s, border-color 0.2s !important;
+  transition: transform 0.2s !important;
 }
 .problem-card:hover,
 .feature-card:hover,
 .pricing-card:hover,
 .amplifier-item:hover {
   transform: translateY(-2px) !important;
-  border-color: var(--dark-section) !important;
   box-shadow: none !important;
 }
 
-/* Profile cards — keep colored borders */
-.profile-card.low {
-  border-color: #2CA01C !important;
-  background: #ffffff !important;
-}
-.profile-card.medium {
-  border-color: var(--amber) !important;
-  background: #ffffff !important;
-}
-.profile-card.high {
-  border-color: var(--red) !important;
-  background: #ffffff !important;
-}
-.profile-card.low:hover,
-.profile-card.medium:hover,
-.profile-card.high:hover {
-  box-shadow: none !important;
+/* Hide emoji icons on problem cards */
+.problem-icon {
+  display: none !important;
 }
 
-/* Card headings — QB gradient text (green→cyan→blue) */
+/* Card headings — clean dark text, NO gradient */
 .problem-card h3,
 .feature-card .feature-title,
 .step-card .step-title,
 .amplifier-item .amplifier-title,
 section .problem-card h3 {
-  background: linear-gradient(96deg, #5BEF76 3%, #38E8F6 40%, #236CFF 92%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-  color: transparent !important;
-  font-weight: 500 !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: var(--text) !important;
+  background-clip: unset !important;
+  color: var(--text) !important;
+  font-weight: 600 !important;
   font-size: 1.05rem !important;
   line-height: 1.35 !important;
 }
-/* Card body text — light, clean */
+
+/* Card body text */
 .problem-card p,
 .feature-desc,
 .step-desc,
@@ -385,13 +380,63 @@ section .problem-card h3 {
   line-height: 1.65 !important;
 }
 
-/* ===== PRICING CARDS ===== */
+/* Hide emoji icons on feature cards */
+.feature-icon {
+  display: none !important;
+}
+
+/* Feature list text */
+.feature-list li {
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+  line-height: 1.6 !important;
+  color: var(--text2) !important;
+}
+.feature-list li::before {
+  color: #2CA01C !important;
+}
+
+/* ============================================================
+   10. PROFILE CARDS — colored left border only
+   ============================================================ */
+.profile-card.low {
+  border: none !important;
+  border-left: 4px solid #2CA01C !important;
+  background: var(--light-cyan) !important;
+}
+.profile-card.medium {
+  border: none !important;
+  border-left: 4px solid var(--amber) !important;
+  background: var(--light-cyan) !important;
+}
+.profile-card.high {
+  border: none !important;
+  border-left: 4px solid var(--red) !important;
+  background: var(--light-cyan) !important;
+}
+.profile-card.low:hover,
+.profile-card.medium:hover,
+.profile-card.high:hover {
+  box-shadow: none !important;
+}
+/* Profile icons */
+.profile-icon {
+  display: none !important;
+}
+.profile-icon.low { background: #2CA01C !important; }
+.profile-icon.medium { background: var(--amber) !important; }
+.profile-icon.high { background: var(--red) !important; }
+
+/* ============================================================
+   11. PRICING CARDS
+   ============================================================ */
 .pricing-card {
   padding: 36px 28px !important;
+  background: #ffffff !important;
+  border: none !important;
 }
 .pricing-card.featured {
-  border-color: var(--dark-section) !important;
-  border-width: 2px !important;
+  border: 2px solid var(--dark-section) !important;
   box-shadow: none !important;
   transform: translateY(-8px) scale(1.01) !important;
 }
@@ -422,17 +467,15 @@ section .problem-card h3 {
   font-weight: 400 !important;
   font-size: 0.88rem !important;
 }
-.feature-list li {
-  color: var(--text2) !important;
-}
-.feature-list li::before {
-  color: #2CA01C !important;
-}
+
+/* Select/Buy buttons — QB compact green */
 .select-btn {
   background: var(--cta-green) !important;
   color: #000000 !important;
   border-radius: 4px !important;
   font-weight: 600 !important;
+  font-size: 16px !important;
+  padding: 8px 20px !important;
   border: none !important;
 }
 .select-btn:hover {
@@ -443,56 +486,154 @@ section .problem-card h3 {
   color: #000000 !important;
 }
 
-/* ===== BUTTONS (General) ===== */
+/* ============================================================
+   12. CTA BUTTONS — Compact QB style
+   ============================================================ */
 .cta-btn.primary,
 .bottom-cta-btn {
   background: var(--cta-green) !important;
   color: #000000 !important;
   border-radius: 4px !important;
   font-weight: 600 !important;
+  font-size: 16px !important;
+  padding: 8px 20px !important;
 }
 .cta-btn.secondary {
   background: transparent !important;
   color: var(--dark-section) !important;
   border: 2px solid var(--dark-section) !important;
   border-radius: 4px !important;
+  padding: 8px 20px !important;
+  font-size: 16px !important;
 }
 
-/* ===== TABLES ===== */
+/* ============================================================
+   13. HIGHLIGHT BOXES — blue tones, NO warm/beige
+   ============================================================ */
+
+/* "The Hard Truth" box and similar red-tinted boxes */
+[style*="background: rgba(239,68,68,0.08)"],
+[style*="background:rgba(239,68,68,0.08)"],
+[style*="background: rgba(239,68,68,0.05)"],
+[style*="background:rgba(239,68,68,0.05)"],
+[style*="background: rgba(239,68,68,0.1)"],
+[style*="background:rgba(239,68,68,0.1)"] {
+  background: var(--light-cyan) !important;
+  border-color: #d0e8ea !important;
+}
+
+/* Green-tinted boxes */
+[style*="background: rgba(34,197,94,0.08)"],
+[style*="background:rgba(34,197,94,0.08)"],
+[style*="background: rgba(34,197,94,0.06)"],
+[style*="background:rgba(34,197,94,0.06)"] {
+  background: var(--light-cyan) !important;
+}
+
+/* Purple/indigo-tinted boxes */
+[style*="background: rgba(99,102,241,0.08)"],
+[style*="background:rgba(99,102,241,0.08)"],
+[style*="background: rgba(99,102,241,0.1)"],
+[style*="background:rgba(99,102,241,0.1)"],
+[style*="background: rgba(99,102,241,0.05)"],
+[style*="background:rgba(99,102,241,0.05)"] {
+  background: var(--light-cyan) !important;
+}
+
+/* Amber-tinted boxes */
+[style*="background: rgba(245,158,11,0.08)"],
+[style*="background:rgba(245,158,11,0.08)"],
+[style*="background: rgba(245,158,11,0.12)"],
+[style*="background:rgba(245,158,11,0.12)"],
+[style*="background: rgba(245,158,11,0.15)"],
+[style*="background:rgba(245,158,11,0.15)"] {
+  background: var(--light-cyan) !important;
+}
+
+/* Red-tinted exit threshold boxes */
+[style*="background: rgba(239,68,68,0.12)"],
+[style*="background:rgba(239,68,68,0.12)"] {
+  background: var(--light-cyan) !important;
+}
+
+/* Green-tinted info boxes inside layer visuals */
+[style*="background:rgba(34,197,94,0.08)"],
+[style*="background: rgba(34,197,94,0.08)"] {
+  background: var(--light-cyan) !important;
+}
+
+/* Inline cards using var(--card) */
+[style*="background:var(--card)"],
+[style*="background: var(--card)"] {
+  background: var(--light-cyan) !important;
+  border: none !important;
+}
+
+/* "Complete Lifecycle" flow cards with inline borders */
+[style*="border: 1px solid rgba(34,197,94,0.3)"],
+[style*="border: 1px solid rgba(99,102,241,0.3)"],
+[style*="border: 1px solid rgba(245,158,11,0.3)"] {
+  border: none !important;
+  background: var(--light-cyan) !important;
+}
+
+/* Compound risk effects box */
+[style*="background: rgba(99,102,241,0.08); border-radius: 16px; border: 1px solid rgba(99,102,241,0.15)"] {
+  background: var(--light-cyan) !important;
+  border-color: #d0e8ea !important;
+}
+
+/* ============================================================
+   14. TABLES — Light theme
+   ============================================================ */
+
+/* Risk profiles comparison table (in dark section) */
+.comparison-section .comparison-table {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+.comparison-section .comparison-table th {
+  color: rgba(255,255,255,0.6) !important;
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+  background: rgba(255,255,255,0.03) !important;
+}
+.comparison-section .comparison-table th.low { background: rgba(91,239,118,0.08) !important; color: rgba(255,255,255,0.7) !important; }
+.comparison-section .comparison-table th.medium { background: rgba(186,139,0,0.08) !important; color: rgba(255,255,255,0.7) !important; }
+.comparison-section .comparison-table th.high { background: rgba(213,43,30,0.08) !important; color: rgba(255,255,255,0.7) !important; }
+.comparison-section .comparison-table td {
+  color: rgba(255,255,255,0.8) !important;
+  border-bottom-color: rgba(255,255,255,0.06) !important;
+}
+.comparison-section .comparison-table td:first-child {
+  color: rgba(255,255,255,0.9) !important;
+}
+.comparison-section .comparison-table td.low { color: var(--cta-green) !important; }
+.comparison-section .comparison-table td.medium { color: #FFD700 !important; }
+.comparison-section .comparison-table td.high { color: #FF6B6B !important; }
+
+/* Light-section tables */
 .comparison-table {
   background: #ffffff !important;
   border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
 }
 .comparison-table th {
   color: var(--text3) !important;
   border-bottom: 1px solid var(--border) !important;
-  background: var(--light-blue) !important;
+  background: var(--light-cyan) !important;
 }
-.comparison-table th.low { background: rgba(44,160,28,0.06) !important; }
-.comparison-table th.medium { background: rgba(186,139,0,0.06) !important; }
-.comparison-table th.high { background: rgba(213,43,30,0.06) !important; }
 .comparison-table td {
   border-bottom: 1px solid #eee !important;
   color: var(--text) !important;
-}
-.comparison-table td:first-child {
-  color: var(--text) !important;
-}
-.comparison-table td.low { color: #2CA01C !important; }
-.comparison-table td.medium { color: var(--amber) !important; }
-.comparison-table td.high { color: var(--red) !important; }
-.comparison-table td:last-child {
-  color: #2CA01C !important;
 }
 
 .roi-table {
   background: #ffffff !important;
   border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
 }
 .roi-table th {
-  background: var(--light-blue) !important;
+  background: var(--light-cyan) !important;
   color: var(--text3) !important;
   border-bottom: 1px solid var(--border) !important;
 }
@@ -501,14 +642,40 @@ section .problem-card h3 {
   color: var(--text) !important;
 }
 
-/* ===== LAYER VISUALS ===== */
+/* Compare table (competitive edge) */
+.compare-table {
+  border-color: var(--border) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+.compare-header-cell.others {
+  background: rgba(213,43,30,0.06) !important;
+  color: var(--red) !important;
+}
+.compare-header-cell.ait {
+  background: rgba(44,160,28,0.06) !important;
+  color: #2CA01C !important;
+}
+.compare-row {
+  border-top-color: var(--border) !important;
+}
+.compare-cell.others {
+  color: var(--text3) !important;
+}
+.compare-cell.ait {
+  color: var(--text) !important;
+}
+
+/* ============================================================
+   15. LAYER VISUALS (How It Works)
+   ============================================================ */
 .layer-visual {
-  background: var(--light-blue-accent) !important;
-  border: 1px solid var(--blue-border) !important;
-  border-radius: 12px !important;
+  background: var(--light-cyan) !important;
+  border: none !important;
+  border-radius: 8px !important;
 }
 .layer-number {
-  color: rgba(17,17,17,0.12) !important;
+  color: rgba(13, 43, 30, 0.08) !important;
 }
 .layer-title {
   color: var(--text) !important;
@@ -531,7 +698,7 @@ section .problem-card h3 {
   color: var(--text2) !important;
 }
 
-/* ===== BREATHING BARS ===== */
+/* Breathing bars */
 .breathing-bar.tp {
   background: var(--cta-green) !important;
 }
@@ -539,13 +706,15 @@ section .problem-card h3 {
   background: var(--dark-section) !important;
 }
 
-/* ===== EVOLUTION TIMELINE ===== */
+/* ============================================================
+   16. EVOLUTION TIMELINE
+   ============================================================ */
 .evolution-timeline::before {
   background: linear-gradient(180deg, var(--border), var(--dark-section), var(--cta-green)) !important;
 }
 .evo-item::before {
   border-color: var(--dark-section) !important;
-  background: var(--bg) !important;
+  background: #ffffff !important;
 }
 .evo-item:last-child::before {
   background: var(--cta-green) !important;
@@ -567,11 +736,13 @@ section .problem-card h3 {
   color: var(--text3) !important;
 }
 
-/* ===== CTA SECTION ===== */
+/* ============================================================
+   17. CTA / BOTTOM CTA SECTION
+   ============================================================ */
 .cta-section,
 .bottom-cta,
 .bottom-cta-section {
-  background: #111111 !important;
+  background: var(--dark-section) !important;
 }
 .cta-section::before,
 .bottom-cta::before,
@@ -595,41 +766,13 @@ section .problem-card h3 {
   color: rgba(255,255,255,0.7) !important;
 }
 
-/* ===== FOOTER ===== */
-footer,
-.footer {
-  background: #ffffff !important;
-  border-top: none !important;
-  position: relative !important;
-  color: var(--text2) !important;
-}
-/* Gradient divider bar above footer */
-footer::before,
-.footer::before {
-  content: '' !important;
-  display: block !important;
-  height: 6px !important;
-  background: linear-gradient(96deg, #5BEF76 3%, #38E8F6 35%, #38E8F6 65%, #236CFF 92%) !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-}
-footer a {
-  color: var(--text2) !important;
-}
-footer a:hover {
-  color: var(--dark-section) !important;
-}
-footer > div:last-child {
-  color: var(--text3) !important;
-}
-
-/* ===== FAQ (in dark teal section) ===== */
+/* ============================================================
+   18. FAQ (in dark section)
+   ============================================================ */
 .faq-section .faq-item,
 .comparison-section .faq-item {
   background: rgba(255,255,255,0.06) !important;
-  border-color: rgba(255,255,255,0.1) !important;
+  border: none !important;
 }
 .faq-section .faq-question {
   color: #ffffff !important;
@@ -644,10 +787,12 @@ footer > div:last-child {
   color: var(--cta-green) !important;
 }
 
-/* ===== CAPACITY SECTION (dark teal) ===== */
+/* ============================================================
+   19. CAPACITY SECTION (dark)
+   ============================================================ */
 .capacity-visual {
   background: rgba(255,255,255,0.06) !important;
-  border-color: rgba(255,255,255,0.1) !important;
+  border: none !important;
 }
 .capacity-title {
   color: #ffffff !important;
@@ -665,10 +810,12 @@ footer > div:last-child {
   color: rgba(255,255,255,0.7) !important;
 }
 
-/* ===== GUARDRAILS (dark teal) ===== */
+/* ============================================================
+   20. GUARDRAILS (dark)
+   ============================================================ */
 .guardrails-visual {
   background: rgba(255,255,255,0.06) !important;
-  border-color: rgba(255,255,255,0.1) !important;
+  border: none !important;
 }
 .guardrails-visual h3 {
   color: var(--cta-green) !important;
@@ -683,7 +830,7 @@ footer > div:last-child {
   color: rgba(255,255,255,0.4) !important;
 }
 .waterfall-box {
-  border-radius: 12px !important;
+  border-radius: 8px !important;
 }
 .waterfall-box.low {
   background: #2CA01C !important;
@@ -698,75 +845,37 @@ footer > div:last-child {
   box-shadow: none !important;
 }
 
-/* ===== COMPARISON TABLE (risk-profiles — in dark teal) ===== */
-.comparison-section .comparison-table {
-  background: rgba(255,255,255,0.04) !important;
-  border-color: rgba(255,255,255,0.1) !important;
-}
-.comparison-section .comparison-table th {
-  color: rgba(255,255,255,0.5) !important;
-  border-bottom-color: rgba(255,255,255,0.1) !important;
-  background: rgba(255,255,255,0.03) !important;
-}
-.comparison-section .comparison-table th.low { background: rgba(91,239,118,0.08) !important; }
-.comparison-section .comparison-table th.medium { background: rgba(186,139,0,0.08) !important; }
-.comparison-section .comparison-table th.high { background: rgba(213,43,30,0.08) !important; }
-.comparison-section .comparison-table td {
-  color: rgba(255,255,255,0.8) !important;
-  border-bottom-color: rgba(255,255,255,0.06) !important;
-}
-.comparison-section .comparison-table td:first-child {
-  color: rgba(255,255,255,0.9) !important;
-}
-.comparison-section .comparison-table td.low { color: var(--cta-green) !important; }
-.comparison-section .comparison-table td.medium { color: #FFD700 !important; }
-.comparison-section .comparison-table td.high { color: #FF6B6B !important; }
-
-/* ===== COMPARE TABLE (competitive edge) ===== */
-.compare-table {
-  border-color: var(--border) !important;
-  border-radius: 12px !important;
-  overflow: hidden !important;
-}
-.compare-header-cell.others {
-  background: rgba(213,43,30,0.06) !important;
-  color: var(--red) !important;
-}
-.compare-header-cell.ait {
-  background: rgba(44,160,28,0.06) !important;
-  color: #2CA01C !important;
-}
-.compare-row {
-  border-top-color: var(--border) !important;
-}
-.compare-cell.others {
-  color: var(--text3) !important;
-}
-.compare-cell.ait {
-  color: var(--text) !important;
-}
-
-/* ===== NOT ITEMS ===== */
+/* ============================================================
+   21. NOT ITEMS & DISCLAIMERS
+   ============================================================ */
 .not-item {
-  background: rgba(213,43,30,0.04) !important;
-  border-color: rgba(213,43,30,0.12) !important;
+  background: var(--light-cyan) !important;
+  border: none !important;
+  color: var(--text2) !important;
+}
+.disclaimer,
+.roi-disclaimer {
+  background: var(--light-cyan) !important;
+  border: none !important;
   color: var(--text2) !important;
 }
 
-/* ===== CHECKLIST ITEMS ===== */
+/* ============================================================
+   22. CHECKLIST & STEP NUMBERS
+   ============================================================ */
 .check-item {
-  background: var(--light-blue-accent) !important;
-  border-color: var(--blue-border) !important;
+  background: var(--light-cyan) !important;
+  border: none !important;
   color: var(--text) !important;
 }
-
-/* ===== STEP NUMBERS ===== */
 .step-number {
   background: var(--dark-section) !important;
   color: #ffffff !important;
 }
 
-/* ===== AMPLIFIER RANKS ===== */
+/* ============================================================
+   23. AMPLIFIER RANKS
+   ============================================================ */
 .amplifier-rank {
   background: var(--dark-section) !important;
 }
@@ -774,9 +883,12 @@ footer > div:last-child {
   color: var(--text3) !important;
 }
 
-/* ===== BREAKEVEN CARDS ===== */
+/* ============================================================
+   24. BREAKEVEN CARDS
+   ============================================================ */
 .breakeven-card {
-  background: #ffffff !important;
+  background: var(--light-cyan) !important;
+  border: none !important;
 }
 .breakeven-tier {
   color: var(--text) !important;
@@ -791,35 +903,29 @@ footer > div:last-child {
   color: var(--text3) !important;
 }
 
-/* ===== DISCLAIMERS ===== */
-.disclaimer,
-.roi-disclaimer {
-  background: rgba(213,43,30,0.05) !important;
-  border-color: rgba(213,43,30,0.15) !important;
-  color: var(--text2) !important;
-}
-
-/* ===== ALLOCATION UI ===== */
+/* ============================================================
+   25. ALLOCATION UI
+   ============================================================ */
 .allocation-ui {
   background: #ffffff !important;
-  border-color: var(--border) !important;
+  border: 1px solid var(--border) !important;
 }
 .preset-btn {
   background: #ffffff !important;
-  border-color: var(--border) !important;
+  border: 1px solid var(--border) !important;
   color: var(--text) !important;
 }
 .preset-btn:hover,
 .preset-btn.active {
   border-color: var(--dark-section) !important;
-  background: rgba(17,17,17,0.05) !important;
+  background: var(--light-cyan) !important;
   color: var(--dark-section) !important;
 }
 .slider-name {
   color: var(--text) !important;
 }
 .stat-item {
-  background: var(--light-blue-accent) !important;
+  background: var(--light-cyan) !important;
 }
 .stat-label {
   color: var(--text2) !important;
@@ -836,10 +942,12 @@ footer > div:last-child {
   box-shadow: none !important;
 }
 
-/* ===== DASHBOARD MOCK ===== */
+/* ============================================================
+   26. DASHBOARD MOCK
+   ============================================================ */
 .dash-mock {
-  background: var(--light-blue) !important;
-  border-color: var(--border) !important;
+  background: var(--light-cyan) !important;
+  border: 1px solid var(--border) !important;
 }
 .dash-topbar {
   border-bottom-color: var(--border) !important;
@@ -897,49 +1005,9 @@ footer > div:last-child {
   color: var(--text3) !important;
 }
 
-/* ===== INLINE STYLE OVERRIDES ===== */
-/* Cards with inline bg using var(--card) */
-[style*="background:var(--card)"],
-[style*="background: var(--card)"] {
-  background: #ffffff !important;
-  border-color: var(--border) !important;
-}
-
-/* Inline gradient backgrounds on sections */
-[style*="background: linear-gradient(135deg, rgba(99,102,241"] {
-  background: var(--light-blue) !important;
-}
-[style*="background: linear-gradient(135deg, rgba(34,197,94"] {
-  background: var(--light-blue) !important;
-}
-[style*="border-top: 1px solid var(--border)"],
-[style*="border-bottom: 1px solid var(--border)"] {
-  border-color: var(--border) !important;
-}
-
-/* Inline red/green/accent colored backgrounds */
-[style*="background: rgba(239,68,68,0.08)"],
-[style*="background: rgba(239,68,68,0.05)"],
-[style*="background:rgba(239,68,68,0.08)"],
-[style*="background:rgba(239,68,68,0.05)"] {
-  background: rgba(213,43,30,0.04) !important;
-  border-color: rgba(213,43,30,0.12) !important;
-}
-[style*="background: rgba(34,197,94,0.08)"],
-[style*="background:rgba(34,197,94,0.08)"] {
-  background: rgba(44,160,28,0.04) !important;
-}
-[style*="background: rgba(99,102,241,0.08)"],
-[style*="background:rgba(99,102,241,0.08)"] {
-  background: rgba(17,17,17,0.04) !important;
-}
-
-/* Profile icons keep their gradient colors */
-.profile-icon.low { background: #2CA01C !important; }
-.profile-icon.medium { background: var(--amber) !important; }
-.profile-icon.high { background: var(--red) !important; }
-
-/* ===== SPEC ITEMS ===== */
+/* ============================================================
+   27. SPEC ITEMS
+   ============================================================ */
 .spec-item {
   border-bottom-color: #eee !important;
 }
@@ -950,16 +1018,40 @@ footer > div:last-child {
   color: var(--text2) !important;
 }
 
-/* ===== SVG LOGO — brighten for light bg ===== */
-.top-header svg rect {
-  fill: rgba(17,17,17,0.08) !important;
-  stroke: var(--border) !important;
+/* ============================================================
+   28. FOOTER — white bg with gradient divider
+   ============================================================ */
+footer,
+.footer {
+  background: #ffffff !important;
+  border-top: none !important;
+  position: relative !important;
+  color: var(--text2) !important;
 }
-.top-header svg line {
-  stroke: var(--border) !important;
+footer::before,
+.footer::before {
+  content: '' !important;
+  display: block !important;
+  height: 4px !important;
+  background: linear-gradient(96deg, #5BEF76 3%, #38E8F6 35%, #38E8F6 65%, #236CFF 92%) !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+footer a {
+  color: var(--text2) !important;
+}
+footer a:hover {
+  color: var(--dark-section) !important;
+}
+footer > div:last-child {
+  color: var(--text3) !important;
 }
 
-/* ===== SCROLL ANIMATIONS ===== */
+/* ============================================================
+   29. SCROLL ANIMATIONS
+   ============================================================ */
 .fade-in {
   opacity: 0;
   transform: translateY(24px);
@@ -970,7 +1062,9 @@ footer > div:last-child {
   transform: none;
 }
 
-/* ===== RESPONSIVE ADJUSTMENTS ===== */
+/* ============================================================
+   30. RESPONSIVE
+   ============================================================ */
 @media (max-width: 600px) {
   section {
     padding: 48px 0 !important;
