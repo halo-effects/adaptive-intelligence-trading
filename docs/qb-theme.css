@@ -168,7 +168,7 @@ section {
 .profiles-section,
 .roi-section,
 .allocation-section {
-  background: var(--off-white) !important;
+  background: var(--light-blue) !important;
 }
 
 /* Dark sections — black/charcoal like QB */
@@ -208,7 +208,7 @@ section {
 section[style*="background: linear-gradient"],
 section[style*="background: #0d0d15"],
 section[style*="background:#0d0d15"] {
-  background: var(--off-white) !important;
+  background: var(--light-blue) !important;
 }
 
 /* ===== SECTION LABELS (Eyebrow text) ===== */
@@ -401,7 +401,7 @@ section .problem-card h3 {
 .comparison-table th {
   color: var(--text3) !important;
   border-bottom: 1px solid var(--border) !important;
-  background: var(--off-white) !important;
+  background: var(--light-blue) !important;
 }
 .comparison-table th.low { background: rgba(44,160,28,0.06) !important; }
 .comparison-table th.medium { background: rgba(186,139,0,0.06) !important; }
@@ -426,7 +426,7 @@ section .problem-card h3 {
   border-radius: 12px !important;
 }
 .roi-table th {
-  background: var(--off-white) !important;
+  background: var(--light-blue) !important;
   color: var(--text3) !important;
   border-bottom: 1px solid var(--border) !important;
 }
@@ -437,8 +437,8 @@ section .problem-card h3 {
 
 /* ===== LAYER VISUALS ===== */
 .layer-visual {
-  background: var(--light-teal) !important;
-  border: 1px solid var(--teal-border) !important;
+  background: var(--light-blue-accent) !important;
+  border: 1px solid var(--blue-border) !important;
   border-radius: 12px !important;
 }
 .layer-number {
@@ -678,8 +678,8 @@ footer > div:last-child {
 
 /* ===== CHECKLIST ITEMS ===== */
 .check-item {
-  background: var(--light-teal) !important;
-  border-color: var(--teal-border) !important;
+  background: var(--light-blue-accent) !important;
+  border-color: var(--blue-border) !important;
   color: var(--text) !important;
 }
 
@@ -742,7 +742,7 @@ footer > div:last-child {
   color: var(--text) !important;
 }
 .stat-item {
-  background: var(--light-teal) !important;
+  background: var(--light-blue-accent) !important;
 }
 .stat-label {
   color: var(--text2) !important;
@@ -761,7 +761,7 @@ footer > div:last-child {
 
 /* ===== DASHBOARD MOCK ===== */
 .dash-mock {
-  background: var(--off-white) !important;
+  background: var(--light-blue) !important;
   border-color: var(--border) !important;
 }
 .dash-topbar {
@@ -830,10 +830,10 @@ footer > div:last-child {
 
 /* Inline gradient backgrounds on sections */
 [style*="background: linear-gradient(135deg, rgba(99,102,241"] {
-  background: var(--off-white) !important;
+  background: var(--light-blue) !important;
 }
 [style*="background: linear-gradient(135deg, rgba(34,197,94"] {
-  background: var(--off-white) !important;
+  background: var(--light-blue) !important;
 }
 [style*="border-top: 1px solid var(--border)"],
 [style*="border-bottom: 1px solid var(--border)"] {
