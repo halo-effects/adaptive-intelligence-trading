@@ -4,33 +4,33 @@
   "profile": "medium",
   "exchange": "aster",
   "capital": 325.0,
-  "equity": 324.79,
-  "cash": 312.06,
-  "pnl_pct": -0.07,
+  "equity": 325.08,
+  "cash": 312.36,
+  "pnl_pct": 0.03,
   "coins": {
     "ASTER/USDT": {
       "state": "ACCUMULATING",
       "side": "long",
       "layers": 1,
-      "avg_entry": 0.7083,
-      "current_price": 0.6931,
+      "avg_entry": 0.7176,
+      "current_price": 0.702,
       "unrealized_pnl": -0.28,
-      "next_so_price": 0.6786,
-      "next_tp_price": 0.7154,
+      "next_so_price": 0.6963,
+      "next_tp_price": 0.7248,
       "invested": 13.0,
       "realized_pnl": 0,
-      "conviction": 53.2,
+      "conviction": 59.5,
       "conviction_band": "moderate"
     }
   },
-  "deals_completed": 1,
+  "deals_completed": 4,
   "win_rate": 100.0,
-  "total_realized_pnl": 0.23,
-  "max_drawdown_pct": 0.11,
-  "regime": "TRENDING",
+  "total_realized_pnl": 0.54,
+  "max_drawdown_pct": 3.95,
+  "regime": "ACCUMULATION",
   "trend_direction": "bearish",
-  "last_update": "2026-02-19T11:57:00+00:00",
-  "uptime_hours": 13.7,
+  "last_update": "2026-02-20T11:52:38+00:00",
+  "uptime_hours": 20.0,
   "halted": false,
   "symbols": [
     "ASTER/USDT"
@@ -42,28 +42,28 @@
   "max_so_adjustments": {},
   "macro": {
     "fear_greed": {
-      "value": 9,
+      "value": 7,
       "classification": "Extreme Fear"
     },
-    "btc_dominance": 56.33,
+    "btc_dominance": 56.6,
     "btc_sma": {
-      "price": 66896.13,
-      "sma200": 99643.7,
+      "price": 67951.51,
+      "sma200": 99408.72,
       "above_sma200": false,
-      "distance_pct": -32.86
+      "distance_pct": -31.64
     },
     "pi_cycle": {
-      "ma_111": 88112.35,
-      "ma_350x2": 199588.79,
+      "ma_111": 87733.62,
+      "ma_350x2": 199481.69,
       "cross_imminent": false,
       "topped": false,
-      "gap_pct": -55.85
+      "gap_pct": -56.02
     },
     "ssr": {
-      "ssr": 5.1,
+      "ssr": 5.18,
       "zone": "normal"
     },
-    "_timestamp": 1771500397.497852
+    "_timestamp": 1771585641.0736585
   },
   "controls": {
     "paused_coins": [],
