@@ -3,479 +3,486 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AIT — Full Wyckoff Cycle Strategy</title>
+<title>V12d Wyckoff Lifecycle — Adaptive Intelligence Trading</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #0a0a1a; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-
-.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-
-h1 { text-align: center; font-size: 2em; margin: 20px 0 5px; color: #fff; }
-.subtitle { text-align: center; color: #888; font-size: 1.1em; margin-bottom: 30px; }
-
-/* Chart container */
-.chart-wrapper {
-    background: #111125;
-    border-radius: 12px;
-    padding: 30px 20px 20px;
-    margin-bottom: 30px;
-    border: 1px solid #222;
-    overflow-x: auto;
+:root {
+  --bg: #0a0a0f;
+  --card: #12121a;
+  --border: #1e1e2e;
+  --accent: #6366f1;
+  --accent2: #818cf8;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --teal: #14b8a6;
+  --blue: #3b82f6;
+  --orange: #f97316;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
 }
-.chart-title {
-    font-size: 1.3em;
-    font-weight: 600;
-    margin-bottom: 15px;
-    color: #fff;
-}
-
-/* SVG chart */
-svg { display: block; margin: 0 auto; }
-.price-line { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
-.phase-bg { opacity: 0.08; }
-.phase-label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
-.price-label { font-size: 10px; fill: #666; }
-.date-label { font-size: 10px; fill: #666; }
-.annotation { font-size: 10px; fill: #ccc; }
-.annotation-bold { font-size: 11px; fill: #fff; font-weight: 600; }
-.signal-dot { stroke-width: 2; }
-.equity-line { fill: none; stroke-width: 2; stroke-dasharray: 6 3; }
-.grid-line { stroke: #1a1a2e; stroke-width: 1; }
-
-/* Legend */
-.legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
-    margin: 15px 0;
-}
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85em;
-    color: #aaa;
-}
-.legend-color {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-}
-.legend-line {
-    width: 24px;
-    height: 3px;
-    border-radius: 2px;
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
 }
 
-/* Phase cards */
+/* Header */
+.header {
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.logo { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.5px; }
+.logo span { color: var(--accent); }
+.header-links a { color: var(--text2); text-decoration: none; font-size: 0.85rem; margin-left: 24px; transition: color 0.2s; }
+.header-links a:hover { color: var(--accent2); }
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 60px 24px 40px;
+}
+.hero h1 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 12px;
+}
+.hero p { color: var(--text2); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+
+/* Diagram Container */
+.diagram-section {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 24px;
+}
+.diagram-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  position: relative;
+}
+
+/* SVG Diagram */
+svg.lifecycle { width: 100%; height: auto; }
+svg.lifecycle text { font-family: 'Inter', sans-serif; }
+
+/* Phase detail cards */
 .phases-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-    margin: 30px 0;
+  max-width: 1100px;
+  margin: 48px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
 }
 .phase-card {
-    background: #111125;
-    border-radius: 10px;
-    padding: 20px;
-    border-left: 4px solid;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: border-color 0.2s;
 }
-.phase-card h3 {
-    font-size: 1.1em;
-    margin-bottom: 8px;
-}
-.phase-card .wyckoff { font-size: 0.8em; color: #888; margin-bottom: 10px; }
-.phase-card .signals { margin: 10px 0; }
-.phase-card .signal-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 0;
-    font-size: 0.9em;
-    color: #bbb;
-}
-.phase-card .signal-icon { font-size: 1.1em; }
-.phase-card .action {
-    background: rgba(255,255,255,0.05);
-    border-radius: 6px;
-    padding: 10px;
-    margin-top: 10px;
-    font-size: 0.85em;
-}
-.phase-card .action-label { font-weight: 600; color: #fff; margin-bottom: 4px; }
-.phase-card .pnl { font-size: 1.3em; font-weight: 700; margin-top: 8px; }
+.phase-card:hover { border-color: var(--accent); }
+.phase-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.phase-card .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.phase-card p { color: var(--text2); font-size: 0.85rem; margin-bottom: 10px; }
+.phase-card .transitions { font-size: 0.78rem; color: var(--text3); }
+.phase-card .transitions strong { color: var(--text2); }
 
-/* Colors */
-.c-accumulation { border-color: #4ade80; }
-.c-accumulation h3 { color: #4ade80; }
-.c-markup { border-color: #22d3ee; }
-.c-markup h3 { color: #22d3ee; }
-.c-distribution { border-color: #f59e0b; }
-.c-distribution h3 { color: #f59e0b; }
-.c-markdown { border-color: #ef4444; }
-.c-markdown h3 { color: #ef4444; }
-.c-spring { border-color: #a855f7; }
-.c-spring h3 { color: #a855f7; }
+/* Signal section */
+.signals-section {
+  max-width: 1100px;
+  margin: 48px auto;
+  padding: 0 24px;
+}
+.signals-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.signal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.signal-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.signal-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--accent2); }
+.signal-card ul { list-style: none; font-size: 0.8rem; color: var(--text2); }
+.signal-card ul li { padding: 3px 0; }
+.signal-card ul li::before { content: '→ '; color: var(--text3); }
 
-/* Improvement box */
-.improvement {
-    background: linear-gradient(135deg, #111125 0%, #1a1a3a 100%);
-    border-radius: 12px;
-    padding: 25px;
-    margin: 30px 0;
-    border: 1px solid #333;
-    text-align: center;
+/* Profile section */
+.profile-section {
+  max-width: 700px;
+  margin: 48px auto;
+  padding: 0 24px;
 }
-.improvement h2 { color: #fff; margin-bottom: 15px; }
-.improvement-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-top: 15px;
+.profile-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; text-align: center; }
+.profile-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
 }
-.improvement-item .label { font-size: 0.8em; color: #888; }
-.improvement-item .value { font-size: 1.8em; font-weight: 700; }
-.improvement-item .detail { font-size: 0.75em; color: #666; margin-top: 4px; }
-.green { color: #4ade80; }
-.red { color: #ef4444; }
-.yellow { color: #f59e0b; }
-.blue { color: #22d3ee; }
-.purple { color: #a855f7; }
+.profile-table th, .profile-table td {
+  padding: 14px 20px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.profile-table th { color: var(--text3); font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.5px; }
+.profile-table td { color: var(--text); }
+.profile-table tr:last-child td { border-bottom: none; }
 
-/* Missing piece callout */
-.missing {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 10px;
-    padding: 20px;
-    margin: 20px 0;
+/* Results section */
+.results-section {
+  max-width: 800px;
+  margin: 48px auto 60px;
+  padding: 0 24px;
 }
-.missing h3 { color: #ef4444; margin-bottom: 10px; }
-.missing ul { padding-left: 20px; }
-.missing li { padding: 4px 0; color: #ccc; font-size: 0.9em; }
+.results-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; text-align: center; }
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.results-table th, .results-table td {
+  padding: 14px 20px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.results-table th { color: var(--text3); font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.5px; }
+.results-table tr:last-child td { border-bottom: none; }
+.val-green { color: var(--green); font-weight: 600; }
+.val-amber { color: var(--amber); font-weight: 600; }
 
-.built {
-    background: rgba(74, 222, 128, 0.1);
-    border: 1px solid rgba(74, 222, 128, 0.3);
-    border-radius: 10px;
-    padding: 20px;
-    margin: 20px 0;
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text3);
+  font-size: 0.8rem;
 }
-.built h3 { color: #4ade80; margin-bottom: 10px; }
-.built li { padding: 4px 0; color: #ccc; font-size: 0.9em; }
+
+/* Tooltip */
+.arrow-label { cursor: pointer; }
+.arrow-label:hover { opacity: 0.8; }
+
+/* Interactive hover on nodes */
+.node-group { cursor: pointer; transition: transform 0.15s; }
+.node-group:hover { transform: scale(1.04); }
 </style>
 </head>
 <body>
-<div class="container">
 
-<h1>🔄 Full Wyckoff Cycle Strategy</h1>
-<p class="subtitle">Adaptive Intelligence Trading — ETH/USDT Jun 2022 → Feb 2025</p>
+<div class="header">
+  <div class="logo"><span>AIT</span> Adaptive Intelligence Trading</div>
+  <div class="header-links">
+    <a href="index.html">Product</a>
+    <a href="wyckoff-lifecycle.html" style="color: var(--accent2);">V12d Lifecycle</a>
+  </div>
+</div>
 
-<!-- Main Chart -->
-<div class="chart-wrapper">
-    <div class="chart-title">ETH Price × Bot Strategy Phases × Equity Curve</div>
+<div class="hero">
+  <h1>V12d Wyckoff Lifecycle</h1>
+  <p>Six-phase market cycle engine — accumulate, ride, distribute, short, spring, repeat.</p>
+</div>
 
-    <svg viewBox="0 0 1100 420" xmlns="http://www.w3.org/2000/svg">
-        <!-- Grid lines -->
-        <line x1="60" y1="50" x2="60" y2="370" class="grid-line"/>
-        <line x1="60" y1="370" x2="1060" y2="370" class="grid-line"/>
+<div class="diagram-section">
+  <div class="diagram-wrap">
+    <svg class="lifecycle" viewBox="0 0 800 700" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#94a3b8" />
+        </marker>
+        <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#22c55e" />
+        </marker>
+        <marker id="arrow-orange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#f97316" />
+        </marker>
+        <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#ef4444" />
+        </marker>
+        <marker id="arrow-teal" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#14b8a6" />
+        </marker>
+        <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#3b82f6" />
+        </marker>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
 
-        <!-- Price gridlines -->
-        <line x1="60" y1="80" x2="1060" y2="80" class="grid-line"/>
-        <line x1="60" y1="140" x2="1060" y2="140" class="grid-line"/>
-        <line x1="60" y1="200" x2="1060" y2="200" class="grid-line"/>
-        <line x1="60" y1="260" x2="1060" y2="260" class="grid-line"/>
-        <line x1="60" y1="320" x2="1060" y2="320" class="grid-line"/>
+      <!-- Layout: hexagonal cycle, DCA at top center, clockwise -->
+      <!-- DCA (top center): 400, 80 -->
+      <!-- MARKUP (right): 680, 230 -->
+      <!-- EXIT-top (bottom-right): 680, 470 -->
+      <!-- MARKDOWN (bottom center): 400, 620 -->
+      <!-- SPRING (bottom-left): 120, 470 -->
+      <!-- EXIT-dist (left): 120, 230 -->
 
-        <!-- Price labels (Y axis) -->
-        <text x="10" y="84" class="price-label">$4,000</text>
-        <text x="10" y="144" class="price-label">$3,200</text>
-        <text x="10" y="204" class="price-label">$2,400</text>
-        <text x="10" y="264" class="price-label">$1,600</text>
-        <text x="10" y="324" class="price-label">$800</text>
+      <!-- Connection arrows -->
+      <!-- DCA → EXIT(distribution) - left side -->
+      <path d="M 350,105 Q 200,130 160,210" fill="none" stroke="#f97316" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-orange)" />
+      <text x="210" y="145" fill="#f97316" font-size="10" font-weight="500" text-anchor="middle">TA Score ≥50</text>
+      <text x="210" y="158" fill="#f97316" font-size="9" text-anchor="middle">+ F&amp;G ≥80 + ATH gate</text>
 
-        <!-- Phase background bands -->
-        <!-- Markdown: Jun-Nov 2022 (x=60 to x=280) -->
-        <rect x="60" y="50" width="220" height="320" fill="#ef4444" class="phase-bg"/>
-        <!-- Accumulation: Nov 2022 - Oct 2023 (x=280 to x=640) -->
-        <rect x="280" y="50" width="360" height="320" fill="#4ade80" class="phase-bg"/>
-        <!-- Markup: Oct 2023 - Mar 2024 (x=640 to x=810) -->
-        <rect x="640" y="50" width="170" height="320" fill="#22d3ee" class="phase-bg"/>
-        <!-- Distribution: Mar-Dec 2024 (x=810 to x=1000) -->
-        <rect x="810" y="50" width="190" height="320" fill="#f59e0b" class="phase-bg"/>
-        <!-- Markdown 2: Dec 2024 - Feb 2025 (x=1000 to x=1060) -->
-        <rect x="1000" y="50" width="60" height="320" fill="#ef4444" class="phase-bg"/>
+      <!-- DCA → MARKUP - right side -->
+      <path d="M 450,105 Q 600,130 640,210" fill="none" stroke="#22c55e" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-green)" />
+      <text x="590" y="145" fill="#22c55e" font-size="10" font-weight="500" text-anchor="middle">Breakout</text>
+      <text x="590" y="158" fill="#22c55e" font-size="9" text-anchor="middle">TRENDING + ADX &gt;25</text>
 
-        <!-- Phase labels (top) -->
-        <text x="170" y="42" class="phase-label" fill="#ef4444" text-anchor="middle">MARKDOWN</text>
-        <text x="460" y="42" class="phase-label" fill="#4ade80" text-anchor="middle">ACCUMULATION</text>
-        <text x="725" y="42" class="phase-label" fill="#22d3ee" text-anchor="middle">MARKUP</text>
-        <text x="905" y="42" class="phase-label" fill="#f59e0b" text-anchor="middle">DISTRIBUTION</text>
-        <text x="1030" y="42" class="phase-label" fill="#ef4444" text-anchor="middle">MD</text>
+      <!-- MARKUP → EXIT(top) -->
+      <path d="M 680,280 L 680,420" fill="none" stroke="#f97316" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-orange)" />
+      <text x="718" y="350" fill="#f97316" font-size="10" font-weight="500" text-anchor="start">Score ≥50</text>
+      <text x="718" y="363" fill="#f97316" font-size="9" text-anchor="start">Distribution</text>
 
-        <!-- Wyckoff sub-labels -->
-        <text x="170" y="390" class="date-label" text-anchor="middle">Jun-Nov 2022</text>
-        <text x="460" y="390" class="date-label" text-anchor="middle">Nov 2022 - Oct 2023</text>
-        <text x="725" y="390" class="date-label" text-anchor="middle">Oct 2023 - Mar 2024</text>
-        <text x="905" y="390" class="date-label" text-anchor="middle">Mar - Dec 2024</text>
-        <text x="1030" y="390" class="date-label" text-anchor="middle">2025</text>
+      <!-- EXIT(top) → MARKDOWN -->
+      <path d="M 640,510 Q 560,590 450,620" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-red)" />
+      <text x="580" y="575" fill="#ef4444" font-size="10" font-weight="500" text-anchor="middle">All lots unwound</text>
+      <text x="580" y="588" fill="#ef4444" font-size="9" text-anchor="middle">→ deploy shorts</text>
 
-        <!-- ETH Price line (simplified monthly closes) -->
-        <!-- Scale: $800=320, $4100=75. y = 320 - (price-800)*245/3300 -->
-        <!-- Jun22:1937 Jul:1678 Aug:1554 Sep:1329 Oct:1573 Nov:1294 Dec:1196 -->
-        <!-- Jan23:1585 Feb:1605 Mar:1822 Apr:1870 May:1874 Jun:1934 Jul:1856 Aug:1646 Sep:1671 Oct:1815 Nov:2052 Dec:2282 -->
-        <!-- Jan24:2283 Feb:3340 Mar:3645 Apr:3014 May:3762 Jun:3438 Jul:3233 Aug:2513 Sep:2602 Oct:2519 Nov:3704 Dec:3338 -->
-        <!-- Jan25:3301 Feb:2672 -->
-        <polyline class="price-line" stroke="#6366f1" points="
-            60,236   97,255   134,264   170,281   207,263   244,284   280,291
-            317,271   334,268   354,246   374,243   394,242   414,237   434,244
-            454,257   474,255   494,245   520,227   554,210
-            594,210   624,132   654,109   694,156   724,100   754,120   784,136
-            814,190   844,183   874,187   914,105   954,127
-            1000,130   1060,181
-        "/>
+      <!-- MARKDOWN → SPRING -->
+      <path d="M 350,620 Q 220,600 160,510" fill="none" stroke="#14b8a6" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-teal)" />
+      <text x="220" y="575" fill="#14b8a6" font-size="10" font-weight="500" text-anchor="middle">Price -25%</text>
+      <text x="220" y="588" fill="#14b8a6" font-size="9" text-anchor="middle">from exit price</text>
 
-        <!-- Equity curve (V8 bot) - dashed -->
-        <!-- Scale equity: $9000=310, $12500=130. Rough mapping -->
-        <!-- Chunk equity: 10000,9338,10454,10758,10903,11239,12252,12268,12392,12306 -->
-        <!-- y = 340 - (eq-9000)*210/3500 -->
-        <polyline class="equity-line" stroke="#4ade80" points="
-            60,280   170,320   280,253   380,235   480,226   640,206   810,145   870,144   1000,137   1060,142
-        "/>
+      <!-- MARKDOWN → DCA (false exit recovery) -->
+      <path d="M 400,595 Q 400,400 400,130" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrow-blue)" opacity="0.5" />
+      <text x="415" y="370" fill="#3b82f6" font-size="9" font-weight="500" text-anchor="start" opacity="0.7">False exit</text>
+      <text x="415" y="382" fill="#3b82f6" font-size="8" text-anchor="start" opacity="0.7">price recovers</text>
 
-        <!-- Signal indicators -->
-        <!-- Markdown entry: F&G < 10, Vol climax, Stoch oversold -->
-        <circle cx="170" cy="281" r="6" fill="none" stroke="#ef4444" stroke-width="2" class="signal-dot"/>
-        <text x="175" y="298" class="annotation" fill="#ef4444">F&amp;G: 6</text>
+      <!-- SPRING → MARKUP -->
+      <path d="M 165,440 Q 300,300 640,250" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrow-green)" opacity="0.6" />
+      <text x="370" y="310" fill="#22c55e" font-size="9" font-weight="500" text-anchor="middle" opacity="0.7">+25% recovery + TRENDING</text>
 
-        <!-- Spring signals at bottom (Jun 2022 crash) -->
-        <circle cx="110" cy="315" r="5" fill="#a855f7" stroke="#a855f7" class="signal-dot" opacity="0.8"/>
-        <text x="115" y="310" class="annotation" fill="#a855f7">Spring!</text>
+      <!-- SPRING → DCA (timeout) -->
+      <path d="M 120,430 Q 80,250 350,95" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrow-blue)" opacity="0.5" />
+      <text x="130" y="310" fill="#3b82f6" font-size="9" font-weight="500" text-anchor="start" opacity="0.7">60-day timeout</text>
 
-        <!-- Accumulation: steady grid profits -->
-        <text x="400" y="220" class="annotation-bold" fill="#4ade80">Grid: 12 deals ✓</text>
-        <text x="400" y="234" class="annotation" fill="#4ade80">100% win rate</text>
+      <!-- EXIT(dist) → MARKDOWN (left side exit to markdown shortcut) -->
+      <path d="M 120,280 Q 80,420 120,430" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrow-red)" opacity="0.5" />
 
-        <!-- Markup: rapid TP hits -->
-        <text x="700" y="135" class="annotation-bold" fill="#22d3ee">17 deals in 4mo</text>
-        <text x="700" y="149" class="annotation" fill="#22d3ee">TPs hit on pullbacks</text>
+      <!-- Phase Nodes -->
+      <!-- DCA -->
+      <g class="node-group">
+        <circle cx="400" cy="80" r="42" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2.5" filter="url(#glow)" />
+        <text x="400" y="76" fill="#3b82f6" font-size="15" font-weight="700" text-anchor="middle">DCA</text>
+        <text x="400" y="93" fill="#94a3b8" font-size="9" text-anchor="middle">Grid Trading</text>
+      </g>
 
-        <!-- Distribution warning signals -->
-        <circle cx="870" cy="144" r="6" fill="none" stroke="#f59e0b" stroke-width="2" class="signal-dot"/>
-        <text x="875" y="132" class="annotation" fill="#f59e0b">F&amp;G: 84</text>
-        <text x="875" y="144" class="annotation" fill="#f59e0b">Pi Cycle ⚠️</text>
+      <!-- EXIT (distribution - left) -->
+      <g class="node-group">
+        <circle cx="120" cy="230" r="38" fill="#3d2200" stroke="#f97316" stroke-width="2.5" filter="url(#glow)" />
+        <text x="120" y="226" fill="#f97316" font-size="14" font-weight="700" text-anchor="middle">EXIT</text>
+        <text x="120" y="243" fill="#94a3b8" font-size="8" text-anchor="middle">Lot Unwind</text>
+      </g>
 
-        <!-- Missing: Distribution exit -->
-        <rect x="810" y="155" width="130" height="25" rx="4" fill="rgba(239,68,68,0.2)" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 2"/>
-        <text x="875" y="172" class="annotation-bold" fill="#ef4444" text-anchor="middle">EXIT → CASH?</text>
+      <!-- MARKUP (right) -->
+      <g class="node-group">
+        <circle cx="680" cy="230" r="42" fill="#0a3020" stroke="#22c55e" stroke-width="2.5" filter="url(#glow)" />
+        <text x="680" y="226" fill="#22c55e" font-size="14" font-weight="700" text-anchor="middle">MARKUP</text>
+        <text x="680" y="243" fill="#94a3b8" font-size="8" text-anchor="middle">Ride Uptrend</text>
+      </g>
 
-        <!-- Missing: Short rotation -->
-        <rect x="1000" y="155" width="55" height="25" rx="4" fill="rgba(239,68,68,0.2)" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 2"/>
-        <text x="1028" y="172" class="annotation-bold" fill="#ef4444" text-anchor="middle">SHORT?</text>
+      <!-- EXIT (top-right, distribution from markup) -->
+      <g class="node-group">
+        <circle cx="680" cy="470" r="38" fill="#3d2200" stroke="#f97316" stroke-width="2.5" filter="url(#glow)" />
+        <text x="680" y="466" fill="#f97316" font-size="14" font-weight="700" text-anchor="middle">EXIT</text>
+        <text x="680" y="483" fill="#94a3b8" font-size="8" text-anchor="middle">Distribution</text>
+      </g>
 
-        <!-- V8 Phase 2 indicator -->
-        <text x="1020" y="200" class="annotation" fill="#a855f7">V8: SO Freeze</text>
+      <!-- MARKDOWN (bottom) -->
+      <g class="node-group">
+        <circle cx="400" cy="620" r="42" fill="#3d0a0a" stroke="#ef4444" stroke-width="2.5" filter="url(#glow)" />
+        <text x="400" y="616" fill="#ef4444" font-size="13" font-weight="700" text-anchor="middle">MARKDOWN</text>
+        <text x="400" y="633" fill="#94a3b8" font-size="8" text-anchor="middle">Short Decline</text>
+      </g>
 
-        <!-- Equity labels -->
-        <text x="65" y="275" class="annotation" fill="#4ade80">$10K start</text>
-        <text x="1062" y="148" class="annotation" fill="#4ade80">$12.3K</text>
+      <!-- SPRING (bottom-left) -->
+      <g class="node-group">
+        <circle cx="120" cy="470" r="42" fill="#0a2e2a" stroke="#14b8a6" stroke-width="2.5" filter="url(#glow)" />
+        <text x="120" y="466" fill="#14b8a6" font-size="14" font-weight="700" text-anchor="middle">SPRING</text>
+        <text x="120" y="483" fill="#94a3b8" font-size="8" text-anchor="middle">Buy Bottom</text>
+      </g>
 
-        <!-- Price label -->
-        <text x="1062" y="185" class="annotation" fill="#6366f1">$2,672</text>
+      <!-- Cycle direction indicator -->
+      <text x="400" y="360" fill="#64748b" font-size="11" text-anchor="middle" font-weight="500">⟳ Market Cycle</text>
     </svg>
-
-    <div class="legend">
-        <div class="legend-item">
-            <div class="legend-line" style="background:#6366f1"></div>
-            <span>ETH Price</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-line" style="background:#4ade80; border-style: dashed; border-width: 1.5px; border-color: #4ade80; background: none;"></div>
-            <span>V8 Bot Equity</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background:rgba(239,68,68,0.3)"></div>
-            <span>Markdown</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background:rgba(74,222,128,0.3)"></div>
-            <span>Accumulation</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background:rgba(34,211,238,0.3)"></div>
-            <span>Markup</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background:rgba(245,158,11,0.3)"></div>
-            <span>Distribution</span>
-        </div>
-    </div>
+  </div>
 </div>
 
-<!-- Phase Strategy Cards -->
+<!-- Phase Details -->
 <div class="phases-grid">
-
-    <div class="phase-card c-markdown">
-        <h3>📉 Phase 1: Markdown</h3>
-        <div class="wyckoff">Wyckoff: Selling Climax → Automatic Rally → Secondary Test</div>
-        <div class="signals">
-            <div class="signal-item"><span class="signal-icon">🔴</span> F&G drops below 20 (Extreme Fear)</div>
-            <div class="signal-item"><span class="signal-icon">📊</span> ADX &gt; 25 + bearish SMA cross</div>
-            <div class="signal-item"><span class="signal-icon">📈</span> Volume climax on sell-offs</div>
-            <div class="signal-item"><span class="signal-icon">🎯</span> Regime: TRENDING bearish</div>
-        </div>
-        <div class="action">
-            <div class="action-label">🤖 Current V8 Bot Action:</div>
-            Phase 2 SO Freeze → preserves cash, no new grid buys.<br>
-            Spring signals fire at volume climax bottoms.
-        </div>
-        <div class="action" style="border: 1px dashed #ef4444; background: rgba(239,68,68,0.1);">
-            <div class="action-label" style="color:#ef4444">🔮 Missing: Futures Short Rotation</div>
-            Deploy reserved cash into short grid, profit from decline.
-            Estimated: +15-30% additional return during markdown.
-        </div>
-        <div class="pnl red">V8: -6.6% → recovered</div>
+  <div class="phase-card">
+    <h3><span class="dot" style="background:#3b82f6;"></span> DCA — Accumulation</h3>
+    <p>Grid trading in ranging/accumulation markets. Small take-profit captures on each grid level. Default starting phase.</p>
+    <div class="transitions">
+      <strong>→ EXIT:</strong> TA Score ≥50 + F&amp;G ≥80 + ATH gate (no weekly veto)<br>
+      <strong>→ MARKUP:</strong> Regime TRENDING + price &gt; 50d high + ADX &gt;25 + volume (weekly confirmed)
     </div>
-
-    <div class="phase-card c-spring">
-        <h3>🌱 Phase 2: Spring (Bottom)</h3>
-        <div class="wyckoff">Wyckoff: Spring / Shakeout → Test of Spring → SOS</div>
-        <div class="signals">
-            <div class="signal-item"><span class="signal-icon">🟢</span> Spring score ≥ 60 (vol climax + stoch oversold + F&G &lt; 10)</div>
-            <div class="signal-item"><span class="signal-icon">📉</span> ADX declining from spike (selling exhaustion)</div>
-            <div class="signal-item"><span class="signal-icon">💰</span> BBW contracting after expansion</div>
-        </div>
-        <div class="action">
-            <div class="action-label">🤖 V8 Bot Action:</div>
-            Phase 3 Spring buys: 3× normal sizing, 5-8× wider TPs.<br>
-            Deploy preserved cash at maximum fear.
-        </div>
-        <div class="pnl purple">V8: 2-5 spring buys, $1.5K-$3.5K deployed</div>
+  </div>
+  <div class="phase-card">
+    <h3><span class="dot" style="background:#22c55e;"></span> MARKUP — Ride Uptrend</h3>
+    <p>Large position riding the uptrend. Deploy 50/70/90% of capital (by profile). Hold until distribution signals fire.</p>
+    <div class="transitions">
+      <strong>→ EXIT:</strong> TA Score ≥50 fires during markup → close position, begin lot unwind
     </div>
-
-    <div class="phase-card c-accumulation">
-        <h3>📦 Phase 3: Accumulation</h3>
-        <div class="wyckoff">Wyckoff: Creek / Back-up to Creek → LPS → SOS</div>
-        <div class="signals">
-            <div class="signal-item"><span class="signal-icon">🟡</span> Regime: RANGING / CHOPPY</div>
-            <div class="signal-item"><span class="signal-icon">📊</span> Donchian channel tight (&lt;15%)</div>
-            <div class="signal-item"><span class="signal-icon">⏱️</span> Dwell compression kicks in (grid tightens)</div>
-            <div class="signal-item"><span class="signal-icon">✅</span> Conviction 40-60 (neutral, good for grid)</div>
-        </div>
-        <div class="action">
-            <div class="action-label">🤖 V8 Bot Action:</div>
-            Normal grid with dwell compression. Tight range = faster deal cycling.<br>
-            This is where the grid strategy THRIVES.
-        </div>
-        <div class="pnl green">V8: +14.5% over 12 months, 12 deals, 100% WR</div>
+  </div>
+  <div class="phase-card">
+    <h3><span class="dot" style="background:#f97316;"></span> EXIT — Lot Unwind</h3>
+    <p>Methodical position unwind. Rally selling, trailing stops, time-based urgency escalation. Used after both DCA top signals and MARKUP distribution.</p>
+    <div class="transitions">
+      <strong>→ MARKDOWN:</strong> All lots fully unwound → deploy shorts
     </div>
-
-    <div class="phase-card c-markup">
-        <h3>🚀 Phase 4: Markup</h3>
-        <div class="wyckoff">Wyckoff: Sign of Strength → Back-up → Major Markup</div>
-        <div class="signals">
-            <div class="signal-item"><span class="signal-icon">🟢</span> Regime: TRENDING bullish</div>
-            <div class="signal-item"><span class="signal-icon">📈</span> Price above SMA50 + SMA200</div>
-            <div class="signal-item"><span class="signal-icon">💪</span> ADX &gt; 25 + bullish direction</div>
-            <div class="signal-item"><span class="signal-icon">🎯</span> Conviction 60+ (strong)</div>
-        </div>
-        <div class="action">
-            <div class="action-label">🤖 V8 Bot Action:</div>
-            Wide TP grid (ATR-adaptive). Each pullback fills SOs, rally hits TPs.<br>
-            Rapid deal cycling: 17 deals in 4 months.
-        </div>
-        <div class="pnl green">V8: +8.5% in 5 months, peak deal throughput</div>
+  </div>
+  <div class="phase-card">
+    <h3><span class="dot" style="background:#ef4444;"></span> MARKDOWN — Short Decline</h3>
+    <p>Aggressive shorts riding the decline. Tiered 50/70/90% deployment by profile. Capture downside momentum.</p>
+    <div class="transitions">
+      <strong>→ SPRING:</strong> Price drops 25%+ from exit price → close shorts, deploy longs<br>
+      <strong>→ DCA:</strong> Price recovers above entry (false exit) → return to grid
     </div>
-
-    <div class="phase-card c-distribution">
-        <h3>⚠️ Phase 5: Distribution</h3>
-        <div class="wyckoff">Wyckoff: PSY → BC → AR → UT / UTAD → SOW</div>
-        <div class="signals">
-            <div class="signal-item"><span class="signal-icon">🔴</span> F&G sustained &gt; 75 (Extreme Greed)</div>
-            <div class="signal-item"><span class="signal-icon">📊</span> Pi Cycle Top crossover warning</div>
-            <div class="signal-item"><span class="signal-icon">📉</span> Regime: DISTRIBUTION (volume divergence)</div>
-            <div class="signal-item"><span class="signal-icon">⬇️</span> Lower highs forming on weekly</div>
-        </div>
-        <div class="action">
-            <div class="action-label">🤖 Current V8: Grid continues (no top detection)</div>
-            Bot keeps deploying capital into positions near ATH.<br>
-            When crash comes, these positions eat the drawdown.
-        </div>
-        <div class="action" style="border: 1px dashed #f59e0b; background: rgba(245,158,11,0.1);">
-            <div class="action-label" style="color:#f59e0b">🔮 Missing: Distribution Exit</div>
-            Detect top signals → tighten TPs to 0.5% → stop new deals →<br>
-            let positions close → accumulate cash → prepare for short rotation.
-        </div>
-        <div class="pnl yellow">V8: +1.1% (capital trapped in losing positions)</div>
+  </div>
+  <div class="phase-card">
+    <h3><span class="dot" style="background:#14b8a6;"></span> SPRING — Buy the Bottom</h3>
+    <p>Tiered long deployment at 25/28/35% discount from exit price. Catch the capitulation bounce.</p>
+    <div class="transitions">
+      <strong>→ MARKUP:</strong> Price recovers 25%+ from spring entry + regime TRENDING<br>
+      <strong>→ DCA:</strong> 60-day timeout with no recovery signal
     </div>
-
-    <div class="phase-card" style="border-color: #6366f1;">
-        <h3 style="color:#6366f1">🔄 Full Cycle Result</h3>
-        <div class="wyckoff">ETH/USDT | Jun 2022 → Feb 2025 | $10,000 start</div>
-        <div class="signals">
-            <div class="signal-item"><span class="signal-icon">📊</span> 64 deals completed, 100% win rate</div>
-            <div class="signal-item"><span class="signal-icon">💰</span> Final equity: $12,306 (+23.06%)</div>
-            <div class="signal-item"><span class="signal-icon">📉</span> Max drawdown: 36.1%</div>
-            <div class="signal-item"><span class="signal-icon">🌱</span> 2 spring buys at market bottom</div>
-        </div>
-        <div class="action">
-            <div class="action-label">What's Next:</div>
-            Distribution Exit module → could save 10-20% in drawdown<br>
-            Futures Short rotation → could add 15-30% during markdown<br>
-            <strong>Estimated full-cycle potential: +50-80%</strong>
-        </div>
-        <div class="pnl blue">Current: +23.06% → Target: +50-80%</div>
+  </div>
+  <div class="phase-card" style="border-color: var(--accent); background: linear-gradient(135deg, #12121a 0%, #1a1a2e 100%);">
+    <h3><span class="dot" style="background:var(--accent);"></span> The Full Cycle</h3>
+    <p>DCA accumulates → breakout triggers MARKUP → distribution signals EXIT → lots unwind into MARKDOWN → price drops trigger SPRING → recovery returns to MARKUP or timeout falls back to DCA.</p>
+    <div class="transitions" style="color: var(--accent2);">
+      Every bear market ends. Every bull market ends. The engine adapts.
     </div>
+  </div>
 </div>
 
-<!-- Improvement Comparison -->
-<div class="improvement">
-    <h2>V8 Spring-Only vs V5-V7 (NEAR Catastrophic Stress Test)</h2>
-    <p style="color:#888; margin-bottom: 15px;">Worst-case dataset: NEAR/USDT Oct 2025 → Feb 2026 (-75% price decline)</p>
-    <div class="improvement-grid">
-        <div class="improvement-item">
-            <div class="label">V5-V7 (No SO Freeze)</div>
-            <div class="value red">-60.43%</div>
-            <div class="detail">0 springs, $0 cash at bottom</div>
-        </div>
-        <div class="improvement-item">
-            <div class="label">V8 (25% Reserve)</div>
-            <div class="value yellow">-22.07%</div>
-            <div class="detail">5 springs, $2,500 preserved</div>
-        </div>
-        <div class="improvement-item">
-            <div class="label">V8 + Distribution Exit + Shorts</div>
-            <div class="value green">??? (est. +5-15%)</div>
-            <div class="detail">Exit near top → short decline → spring buy</div>
-        </div>
+<!-- Signal Components -->
+<div class="signals-section">
+  <h2>Signal Components</h2>
+  <div class="signal-grid">
+    <div class="signal-card">
+      <h4>TA Scorer (100pts max)</h4>
+      <ul>
+        <li>RSI bearish divergence — 25pts</li>
+        <li>Volume divergence — 25pts</li>
+        <li>Wick rejection (long upper) — 25pts</li>
+        <li>Momentum stall (ROC fade) — 25pts</li>
+      </ul>
     </div>
+    <div class="signal-card">
+      <h4>Pi Cycle Indicator</h4>
+      <ul>
+        <li>111-SMA crosses 2×350-SMA — 25pts</li>
+        <li>Gap &lt; 2% (near cross) — 15pts</li>
+        <li>Gap &lt; 5% (approaching) — 5pts</li>
+      </ul>
+    </div>
+    <div class="signal-card">
+      <h4>Fear &amp; Greed Index</h4>
+      <ul>
+        <li>F&amp;G ≥ 90 (extreme greed) — +25pts</li>
+        <li>F&amp;G ≥ 80 (greed) — +15pts</li>
+        <li>F&amp;G ≤ 20 (fear) — -10pts</li>
+        <li>F&amp;G ≤ 10 (extreme fear) — -20pts</li>
+      </ul>
+    </div>
+    <div class="signal-card">
+      <h4>Gates &amp; Thresholds</h4>
+      <ul>
+        <li>Exit threshold: 50 points</li>
+        <li>ATH gate: price within 25% of ATH</li>
+        <li>Weekly veto: markup needs weekly confirm</li>
+        <li>No weekly veto on exit signals</li>
+      </ul>
+    </div>
+  </div>
 </div>
 
-<!-- Missing pieces -->
-<div class="built">
-    <h3>✅ Built & Validated</h3>
-    <ul>
-        <li><strong>Regime Detection</strong> — classify_regime_v2: Accumulation, Distribution, Trending, Ranging, Extreme, Breakout Warning</li>
-        <li><strong>Conviction Scorer</strong> — F&G, macro signals, Pi Cycle, BTC dominance, SSR</li>
-        <li><strong>Spring Detection</strong> — Volume climax + stochastic oversold + ADX decline + BBW contraction</li>
-        <li><strong>V8 SO Freeze</strong> — Phase 2 stops all new buys, preserves capital for springs</li>
-        <li><strong>Dwell Compression</strong> — Donchian-based range detection, tightens grid in consolidation</li>
-        <li><strong>Adaptive TP/Deviation</strong> — ATR-based + regime multipliers</li>
-        <li><strong>Per-lot exits</strong> — Individual TP for each safety order layer</li>
-    </ul>
+<!-- Profile Scaling -->
+<div class="profile-section">
+  <h2>Profile Scaling</h2>
+  <table class="profile-table">
+    <thead>
+      <tr><th>Profile</th><th>Markup Deploy</th><th>Short Deploy</th><th>Spring Deploy</th><th>Risk Level</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Low</td><td>50%</td><td>50%</td><td>50%</td><td style="color:var(--green);">Conservative</td></tr>
+      <tr><td>Medium</td><td>70%</td><td>70%</td><td>70%</td><td style="color:var(--amber);">Balanced</td></tr>
+      <tr><td>High</td><td>90%</td><td>90%</td><td>90%</td><td style="color:var(--red);">Aggressive</td></tr>
+    </tbody>
+  </table>
 </div>
 
-<div class="missing">
-    <h3>🔴 Missing — To Build Next</h3>
-    <ul>
-        <li><strong>Distribution Exit Module</strong> — Detect cycle top via F&G >75 sustained + Pi Cycle cross + regime DISTRIBUTION → tighten TPs → stop new deals → go to cash</li>
-        <li><strong>Futures Short Rotation</strong> — When markdown confirmed, deploy cash into short DCA grid → profit from decline instead of sitting idle</li>
-        <li><strong>Capital Rotation Manager</strong> — Orchestrate Spot → Cash → Short → Cash → Spring → Spot transitions with safeguards and cooldowns</li>
-        <li><strong>Unified Signal Bus</strong> — Single intelligence layer feeding both spot and futures engines the same regime/conviction/spring signals</li>
-    </ul>
+<!-- V12d Backtest Results -->
+<div class="results-section">
+  <h2>V12d ETH/USDT Backtest Results</h2>
+  <p style="text-align:center; color:var(--text3); font-size:0.85rem; margin-bottom:16px;">Oct 2021 → Feb 2026 · $10,000 starting capital · 1h candles</p>
+  <table class="results-table" id="results-table">
+    <thead>
+      <tr><th>Profile</th><th>Return</th><th>Max Drawdown</th><th>Sharpe</th><th>Final Equity</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Low (50%)</td>
+        <td class="val-green">+181.3%</td>
+        <td class="val-amber">25.8%</td>
+        <td>1.43</td>
+        <td>$28,130</td>
+      </tr>
+      <tr>
+        <td>Medium (70%)</td>
+        <td class="val-green">+237.3%</td>
+        <td class="val-amber">24.0%</td>
+        <td>1.29</td>
+        <td>$33,730</td>
+      </tr>
+      <tr id="high-row">
+        <td>High (90%)</td>
+        <td id="high-return" class="val-green">+314.2%</td>
+        <td id="high-dd" class="val-amber">35.6%</td>
+        <td id="high-sharpe">1.37</td>
+        <td id="high-equity">$41,418</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
+<div class="footer">
+  <p>Adaptive Intelligence Trading · V12d Wyckoff Lifecycle Engine · 2024–2026</p>
 </div>
+
 </body>
 </html>
