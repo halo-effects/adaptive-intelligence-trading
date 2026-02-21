@@ -13,7 +13,7 @@
       "side": "long",
       "layers": 1,
       "avg_entry": 1985.22,
-      "current_price": 1977.2,
+      "current_price": 1977.3,
       "unrealized_pnl": -0.06,
       "next_so_price": 1941.5452,
       "next_tp_price": 2001.1018,
@@ -34,8 +34,8 @@
   "max_drawdown_pct": 4.83,
   "regime": "MILD_TREND",
   "trend_direction": "bullish",
-  "last_update": "2026-02-21T22:29:20+00:00",
-  "uptime_hours": 5.0,
+  "last_update": "2026-02-21T23:29:46+00:00",
+  "uptime_hours": 6.1,
   "halted": false,
   "symbols": [
     "ETH/USDT"
@@ -50,25 +50,25 @@
       "value": 8,
       "classification": "Extreme Fear"
     },
-    "btc_dominance": 56.51,
+    "btc_dominance": 56.46,
     "btc_sma": {
-      "price": 68305.99,
-      "sma200": 99179.95,
+      "price": 68075.78,
+      "sma200": 99178.8,
       "above_sma200": false,
-      "distance_pct": -31.13
+      "distance_pct": -31.36
     },
     "pi_cycle": {
-      "ma_111": 87353.75,
-      "ma_350x2": 199379.7,
+      "ma_111": 87351.67,
+      "ma_350x2": 199378.38,
       "cross_imminent": false,
       "topped": false,
       "gap_pct": -56.19
     },
     "ssr": {
-      "ssr": 5.19,
+      "ssr": 5.18,
       "zone": "normal"
     },
-    "_timestamp": 1771712956.1702657
+    "_timestamp": 1771716583.0631385
   },
   "lifecycle_enabled": true,
   "lifecycle_phases": {
