@@ -231,27 +231,31 @@ body {
 </div>
 
 <!-- WYCKOFF CHART -->
-<div style="max-width:1140px; margin: 40px auto; padding: 0 24px;">
-<div style="background:#000; border-radius:24px; padding: 48px 48px 32px; margin: 0 -8px;">
+<div style="max-width:1200px; margin: 40px auto; padding: 0 24px;">
+<div style="background:#0A1628; border-radius:24px; padding: 48px 48px 32px; margin: 0 -8px;">
   <div style="padding: 0;">
-    <h2 style="font-size:20px; font-weight:600; text-align:center; color:#FFF; margin-bottom:4px; font-family:'Poppins',sans-serif;">The Wyckoff Cycle &#8212; What AIT Does at Every Phase</h2>
-    <p style="text-align:center; font-size:13px; color:rgba(255,255,255,0.3); margin-bottom:20px;">Idealized price action with AIT strategy overlay</p>
-    <canvas id="wyckoffChart" width="1050" height="520" style="width:100%;height:auto;"></canvas>
+    <h2 style="font-size:24px; font-weight:600; text-align:center; color:#FFF; margin-bottom:4px; font-family:'Poppins',sans-serif;">The Wyckoff Cycle &#8212; What AIT Does at Every Phase</h2>
+    <p style="text-align:center; font-size:14px; color:rgba(255,255,255,0.3); margin-bottom:24px;">Idealized price action with AIT spot strategy overlay</p>
+    <canvas id="wyckoffChart" width="1200" height="600" style="width:100%;height:auto;"></canvas>
   </div>
 </div>
 </div>
 
 <script>
 (function(){
-var c=document.getElementById('wyckoffChart');
-var ctx=c.getContext('2d');
-var W=c.width, H=c.height;
-var PAD={t:55,b:65,l:50,r:30};
-var cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
+const c=document.getElementById('wyckoffChart'),ctx=c.getContext('2d');
+const W=c.width,H=c.height;
+const PAD={t:70,b:80,l:110,r:40};
+const cW=W-PAD.l-PAD.r,cH=H-PAD.t-PAD.b;
 
-var COL={dca:'#2269FC',markup:'#00D68F',exit:'#FFAA00',markdown:'#FF4D4F',spring:'#14b8a6',bg:'#1A1D2C',grid:'#2F2F2F',text:'rgba(255,255,255,0.5)',text2:'rgba(255,255,255,0.3)',white:'#FFFFFF'};
+const COL={
+  dca:'#2269FC',markup:'#00D68F',exit:'#FFAA00',markdown:'#FF4D4F',spring:'#14b8a6',
+  bg:'#0A1628',card:'#1A1D2C',grid:'rgba(255,255,255,0.06)',white:'#FFFFFF',
+  buy:'#00E676',sell:'#FF4D4F'
+};
 
-var pts=[
+// Price curve points [x%, y% from top]
+const pts=[
   [0,.72],[.02,.75],[.04,.71],[.06,.74],[.08,.70],[.10,.73],[.12,.69],[.14,.72],[.16,.68],[.18,.71],
   [.20,.65],[.22,.58],[.24,.50],[.26,.42],[.28,.36],[.30,.30],[.32,.24],[.34,.19],[.36,.15],[.38,.12],
   [.40,.10],[.42,.08],[.44,.11],[.46,.07],[.48,.10],[.50,.08],[.52,.12],[.54,.09],[.56,.11],[.58,.10],
@@ -262,111 +266,186 @@ var pts=[
 
 function tx(x){return PAD.l+x*cW;}
 function ty(y){return PAD.t+y*cH;}
+function yAtX(xPct){
+  for(let i=0;i<pts.length-1;i++){
+    if(pts[i][0]<=xPct&&pts[i+1][0]>=xPct){
+      let t=(xPct-pts[i][0])/(pts[i+1][0]-pts[i][0]);
+      return pts[i][1]+(pts[i+1][1]-pts[i][1])*t;
+    }
+  }
+  return pts[pts.length-1][1];
+}
 
+// Background
 ctx.fillStyle=COL.bg;
 ctx.fillRect(0,0,W,H);
 
+// Phase zones
+const zones=[
+  {x1:0,x2:.19,col:COL.dca,label:'DCA',sub:'Accumulation',desc:'Buy the dips, sell the recoveries'},
+  {x1:.19,x2:.39,col:COL.markup,label:'MARKUP',sub:'Uptrend',desc:'Ride the trend upward'},
+  {x1:.39,x2:.59,col:COL.exit,label:'EXIT',sub:'Distribution',desc:'Take profits, move to cash'},
+  {x1:.59,x2:.76,col:COL.markdown,label:'MARKDOWN',sub:'Decline',desc:'Capital rotates to better opportunities'},
+  {x1:.76,x2:.87,col:COL.spring,label:'SPRING',sub:'Capitulation',desc:'Buy the discount — tiered entry'},
+  {x1:.87,x2:1,col:COL.dca,label:'DCA',sub:'Re-accumulate',desc:'Cycle repeats'}
+];
+
+zones.forEach(z=>{
+  const x1=tx(z.x1),x2=tx(z.x2),w=x2-x1;
+  // Zone band
+  ctx.fillStyle=z.col+'12';
+  ctx.fillRect(x1,PAD.t,w,cH);
+  // Zone separator
+  ctx.strokeStyle=z.col+'30';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(x1,PAD.t);ctx.lineTo(x1,PAD.t+cH);ctx.stroke();
+
+  // Top labels — LARGE
+  const cx=(x1+x2)/2;
+  ctx.fillStyle=z.col;ctx.font='bold 16px Poppins,sans-serif';ctx.textAlign='center';
+  ctx.fillText(z.label,cx,PAD.t-30);
+  ctx.fillStyle=z.col+'bb';ctx.font='500 12px Poppins,sans-serif';
+  ctx.fillText(z.sub,cx,PAD.t-14);
+
+  // Bottom descriptions — readable
+  ctx.fillStyle=z.col;ctx.font='500 11px Poppins,sans-serif';
+  // Wrap long text
+  const maxW=w-10;
+  const words=z.desc.split(' ');
+  let line='',ly=H-PAD.b+20;
+  words.forEach((word,wi)=>{
+    const test=line+(line?' ':'')+word;
+    if(ctx.measureText(test).width>maxW&&line){
+      ctx.fillText(line,cx,ly);ly+=14;line=word;
+    }else{line=test;}
+  });
+  ctx.fillText(line,cx,ly);
+});
+
+// Horizontal grid lines
 ctx.strokeStyle=COL.grid;ctx.lineWidth=1;
-for(var i=0;i<=4;i++){
-  var y=PAD.t+i*(cH/4);
+for(let i=0;i<=4;i++){
+  const y=PAD.t+i*(cH/4);
   ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(W-PAD.r,y);ctx.stroke();
 }
 
-var zones=[
-  {x1:0,x2:.19,col:COL.dca,label:'DCA',sub:'Accumulation'},
-  {x1:.19,x2:.39,col:COL.markup,label:'MARKUP',sub:'Uptrend'},
-  {x1:.39,x2:.59,col:COL.exit,label:'EXIT',sub:'Distribution'},
-  {x1:.59,x2:.76,col:COL.markdown,label:'MARKDOWN',sub:'Decline'},
-  {x1:.76,x2:.87,col:COL.spring,label:'SPRING',sub:'Capitulation'},
-  {x1:.87,x2:1,col:COL.dca,label:'DCA',sub:'Re-accumulate'}
-];
-
-zones.forEach(function(z){
-  ctx.fillStyle=z.col+'15';
-  ctx.fillRect(tx(z.x1),PAD.t,tx(z.x2)-tx(z.x1),cH);
-  ctx.strokeStyle=z.col+'40';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(tx(z.x1),PAD.t);ctx.lineTo(tx(z.x1),PAD.t+cH);ctx.stroke();
-  ctx.fillStyle=z.col;ctx.font='bold 12px Poppins,sans-serif';ctx.textAlign='center';
-  var cx=(tx(z.x1)+tx(z.x2))/2;
-  ctx.fillText(z.label,cx,PAD.t-22);
-  ctx.fillStyle=z.col+'aa';ctx.font='10px Poppins,sans-serif';
-  ctx.fillText(z.sub,cx,PAD.t-10);
-});
-
-ctx.fillStyle=COL.markup+'18';
-ctx.beginPath();
-var mkS=0; for(var i=0;i<pts.length;i++){if(pts[i][0]>=.20){mkS=i;break;}}
-var mkE=0; for(var i=0;i<pts.length;i++){if(pts[i][0]>=.40){mkE=i;break;}}
-ctx.moveTo(tx(pts[mkS][0]),ty(.65));
-for(var i=mkS;i<=mkE;i++) ctx.lineTo(tx(pts[i][0]),ty(pts[i][1]));
-ctx.lineTo(tx(pts[mkE][0]),ty(.65));ctx.closePath();ctx.fill();
-
-ctx.fillStyle=COL.markdown+'18';
-ctx.beginPath();
-var mdS=0; for(var i=0;i<pts.length;i++){if(pts[i][0]>=.60){mdS=i;break;}}
-var mdE=0; for(var i=0;i<pts.length;i++){if(pts[i][0]>=.76){mdE=i;break;}}
-ctx.moveTo(tx(pts[mdS][0]),ty(.14));
-for(var i=mdS;i<=mdE;i++) ctx.lineTo(tx(pts[i][0]),ty(pts[i][1]));
-ctx.lineTo(tx(pts[mdE][0]),ty(.14));ctx.closePath();ctx.fill();
-
-ctx.strokeStyle='#FFFFFF';ctx.lineWidth=2.5;
-ctx.shadowColor='#2269FC80';ctx.shadowBlur=6;
-ctx.beginPath();
-for(var i=0;i<pts.length;i++){i===0?ctx.moveTo(tx(pts[i][0]),ty(pts[i][1])):ctx.lineTo(tx(pts[i][0]),ty(pts[i][1]));}
-ctx.stroke();
-ctx.shadowBlur=0;
-
-var levels=[{y:.08,label:'ATH Zone'},{y:.35,label:'75% of ATH'},{y:.65,label:'Entry / Breakout'},{y:.72,label:'Accumulation Range'},{y:.90,label:'Spring Bottom'}];
-levels.forEach(function(l){
-  var yy=ty(l.y);
-  ctx.setLineDash([3,3]);ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=0.5;
+// Price levels
+const levels=[{y:.08,label:'ATH Zone'},{y:.35,label:'75% of ATH'},{y:.65,label:'Breakout Level'},{y:.72,label:'Accumulation Range'},{y:.90,label:'Spring Bottom'}];
+levels.forEach(l=>{
+  const yy=ty(l.y);
+  ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.5;
   ctx.beginPath();ctx.moveTo(PAD.l,yy);ctx.lineTo(W-PAD.r,yy);ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='9px Poppins,sans-serif';ctx.textAlign='right';
-  ctx.fillText(l.label,PAD.l-5,yy+3);
+  ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='11px Poppins,sans-serif';ctx.textAlign='right';
+  ctx.fillText(l.label,PAD.l-8,yy+4);
 });
 
-function marker(x,y,color,l1,l2,above){
-  var px=tx(x),py=ty(y);
+// Price line with glow
+ctx.save();
+ctx.shadowColor='#2269FC60';ctx.shadowBlur=8;
+ctx.strokeStyle=COL.white;ctx.lineWidth=2.5;
+ctx.beginPath();
+pts.forEach((p,i)=>{i===0?ctx.moveTo(tx(p[0]),ty(p[1])):ctx.lineTo(tx(p[0]),ty(p[1]));});
+ctx.stroke();
+ctx.restore();
+
+// Trade markers
+function triangle(x,y,size,up,color){
+  const px=tx(x),py=ty(y);
   ctx.fillStyle=color;
-  ctx.beginPath();ctx.moveTo(px,py-7);ctx.lineTo(px+5,py);ctx.lineTo(px,py+7);ctx.lineTo(px-5,py);ctx.closePath();ctx.fill();
-  ctx.fillStyle=color;ctx.font='bold 10px Poppins,sans-serif';ctx.textAlign='center';
-  var ly=above?py-18:py+20;
-  ctx.fillText(l1,px,ly);
-  if(l2){ctx.font='9px Poppins,sans-serif';ctx.fillStyle=color+'cc';ctx.fillText(l2,px,ly+12);}
-}
-
-marker(.19,.67,COL.markup,'\u25B2 BREAKOUT','Trend confirmed',true);
-marker(.40,.10,COL.exit,'\u25BC EXIT SIGNAL','Distribution detected',false);
-marker(.81,.90,COL.spring,'\u25B2 SPRING BUY','Tiered discount entry',false);
-
-ctx.textAlign='center';
-var ann=[
-  {x:.09,col:COL.dca,t1:'Grid Trading',t2:'Small TP, 100% win rate'},
-  {x:.30,col:COL.markup,t1:'Ride the trend',t2:'Deploy capital'},
-  {x:.49,col:COL.exit,t1:'Rally selling',t2:'Trail stops, unwind'},
-  {x:.68,col:COL.markdown,t1:'Tiered shorts',t2:'Ride decline'},
-  {x:.82,col:COL.spring,t1:'Buy discount',t2:'3-tier entry'},
-  {x:.94,col:COL.dca,t1:'Back to grid',t2:'Cycle repeats'}
-];
-ann.forEach(function(a){
-  ctx.fillStyle=a.col;ctx.font='bold 10px Poppins,sans-serif';
-  ctx.fillText(a.t1,tx(a.x),H-PAD.b+20);
-  ctx.fillStyle=a.col+'aa';ctx.font='9px Poppins,sans-serif';
-  ctx.fillText(a.t2,tx(a.x),H-PAD.b+33);
-});
-
-function gridArrow(x,y,up){
-  var px=tx(x),py=ty(y);
-  ctx.fillStyle=up?COL.markup:COL.exit;
   ctx.beginPath();
-  if(up){ctx.moveTo(px,py-5);ctx.lineTo(px+3,py+2);ctx.lineTo(px-3,py+2);}
-  else{ctx.moveTo(px,py+5);ctx.lineTo(px+3,py-2);ctx.lineTo(px-3,py-2);}
+  if(up){ctx.moveTo(px,py-size);ctx.lineTo(px+size*.7,py+size*.4);ctx.lineTo(px-size*.7,py+size*.4);}
+  else{ctx.moveTo(px,py+size);ctx.lineTo(px+size*.7,py-size*.4);ctx.lineTo(px-size*.7,py-size*.4);}
   ctx.closePath();ctx.fill();
 }
-for(var i=0;i<8;i++){var x=.02+i*.02;gridArrow(x,.68,true);gridArrow(x+.01,.74,false);}
-for(var i=0;i<4;i++){var x=.62+i*.035;gridArrow(x,.20+i*.10,false);}
-for(var i=0;i<3;i++){var x=.79+i*.025;gridArrow(x,.85-i*.04,true);}
+
+// DCA zone: buy (green up) and sell (small red down) triangles
+const dcaBuys=[.03,.07,.11,.15];
+const dcaSells=[.05,.09,.13,.17];
+dcaBuys.forEach(x=>triangle(x,yAtX(x)+.04,6,true,COL.buy));
+dcaSells.forEach(x=>triangle(x,yAtX(x)-.04,5,false,COL.sell));
+
+// Re-accumulate DCA zone
+const dca2Buys=[.89,.93,.97];
+const dca2Sells=[.91,.95,.99];
+dca2Buys.forEach(x=>triangle(x,yAtX(x)+.04,6,true,COL.buy));
+dca2Sells.forEach(x=>triangle(x,yAtX(x)-.04,5,false,COL.sell));
+
+// MARKUP zone: no markers — clean line
+
+// EXIT zone: sell markers as positions unwind
+for(let i=0;i<4;i++){
+  const x=.42+i*.04;
+  triangle(x,yAtX(x)-.03,7,false,COL.sell);
+}
+
+// MARKDOWN zone: NO TRADE DOTS — bot is in cash
+// (intentionally empty)
+
+// SPRING zone: tiered buy entries
+const springBuys=[.78,.81,.84];
+springBuys.forEach((x,i)=>triangle(x,yAtX(x)+.03,8,true,COL.buy));
+
+// Annotation callouts — positioned in open space away from price line
+function callout(px_abs,py_abs,label,sublabel,color){
+  // Label bg pill
+  ctx.font='bold 13px Poppins,sans-serif';
+  const tw=ctx.measureText(label).width+20;
+  const pillH=24;
+  ctx.fillStyle=color+'25';
+  ctx.strokeStyle=color+'60';ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.roundRect(px_abs-tw/2,py_abs-pillH/2,tw,pillH,8);
+  ctx.fill();ctx.stroke();
+
+  // Label text
+  ctx.fillStyle=color;ctx.textAlign='center';
+  ctx.fillText(label,px_abs,py_abs+5);
+
+  // Sublabel below
+  if(sublabel){
+    ctx.font='11px Poppins,sans-serif';ctx.fillStyle=color+'bb';
+    ctx.fillText(sublabel,px_abs,py_abs+pillH/2+14);
+  }
+}
+
+// Thin connector lines from callouts to the relevant point on the price line
+function connector(fromX,fromY,toXpct,toYpct,color){
+  const ex=tx(toXpct),ey=ty(toYpct);
+  ctx.strokeStyle=color+'40';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(fromX,fromY+12);ctx.lineTo(ex,ey);ctx.stroke();
+  ctx.setLineDash([]);
+  // Small dot at price line
+  ctx.fillStyle=color;ctx.beginPath();ctx.arc(ex,ey,3,0,Math.PI*2);ctx.fill();
+}
+
+// BREAKOUT — line is low here (~.67), put label HIGH in the open space above
+const bkX=tx(.14),bkY=ty(.45);
+callout(bkX,bkY,'▲ BREAKOUT','Trend confirmed',COL.markup);
+connector(bkX,bkY,.19,.67,COL.markup);
+
+// EXIT SIGNAL — line is at top (~.08), put label far BELOW in open space
+const exX=tx(.50),exY=ty(.28);
+callout(exX,exY,'▼ EXIT SIGNAL','Distribution detected',COL.exit);
+connector(exX,exY,.48,.10,COL.exit);
+
+// ROTATE — line drops through middle (~.44-.70), put label in upper open space
+const rotX=tx(.68),rotY=ty(.08);
+callout(rotX,rotY,'🔄 ROTATE CAPITAL','→ Coins in DCA or Spring',COL.markdown);
+// Curved arrow icon below label
+(function(){
+  const cx=rotX,cy=rotY+38;
+  ctx.strokeStyle=COL.markdown+'70';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(cx,cy,14,Math.PI*1.2,Math.PI*0.1);ctx.stroke();
+  const ax=cx+14*Math.cos(Math.PI*0.1),ay=cy+14*Math.sin(Math.PI*0.1);
+  ctx.fillStyle=COL.markdown+'70';
+  ctx.beginPath();ctx.moveTo(ax+5,ay-2);ctx.lineTo(ax-2,ay-5);ctx.lineTo(ax-1,ay+4);ctx.closePath();ctx.fill();
+})();
+
+// SPRING BUY — line is at bottom (~.88), put label HIGH in the open space above
+const spX=tx(.81),spY=ty(.65);
+callout(spX,spY,'▲ SPRING BUY','Tiered discount entry',COL.spring);
+connector(spX,spY,.81,.88,COL.spring);
+
 })();
 </script>
 
@@ -394,7 +473,7 @@ for(var i=0;i<3;i++){var x=.79+i*.025;gridArrow(x,.85-i*.04,true);}
     </div>
     <div class="phase-card">
       <h3><span class="phase-dot" style="background:#FF4D4F;"></span> MARKDOWN &#8212; Decline</h3>
-      <p>Short positions ride the decline. Deployment scales with your risk profile to capture downside momentum while the market corrects.</p>
+      <p>Capital rotates to coins in earlier lifecycle phases (DCA or Spring). No idle cash &#8212; your portfolio stays productive while this coin&#8217;s market corrects.</p>
       <div class="transitions"><strong>&#8594; SPRING:</strong> Significant price drop from exit &#8594; close shorts, prepare for reversal<br><strong>&#8594; DCA:</strong> Price recovers (false exit) &#8594; return to grid</div>
     </div>
     <div class="phase-card">
