@@ -619,9 +619,16 @@ function renderStats(){
   $('vUPnl').innerHTML='<span style="color:'+pC(totalUpnl)+'">'+(totalUpnl>=0?'+':'')+fUsd(totalUpnl)+'</span>';
   $('vUPnlSub').textContent=fmt(upnlPct,2)+'% on '+fUsd(totalInv)+' invested';
 
-  // Win / Loss
+  // Win / Loss — use trades if loaded, otherwise derive from status.json
   var wins=0, losses=0;
-  trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);if(p>0)wins++;else if(p!==0)losses++});
+  if(trades.length>0){
+    trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);if(p>0)wins++;else if(p!==0)losses++});
+  } else {
+    // Fallback: derive from status.json deals_completed and win_rate
+    var dc=S.deals_completed||0, wr0=S.win_rate||0;
+    wins=Math.round(dc*wr0/100);
+    losses=dc-wins;
+  }
   var totalTrades=wins+losses;
   $('vWL').innerHTML='<span style="color:var(--green)">'+wins+'W</span> / <span style="color:var(--red)">'+losses+'L</span>';
   $('vWLSub').textContent=totalTrades+' total';
