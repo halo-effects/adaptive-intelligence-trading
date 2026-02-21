@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIT V12e Lifecycle Engine — Paper Trading</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;
+  --accent:#6366f1;--accent2:#818cf8;
+  --green:#22c55e;--red:#ef4444;--amber:#f59e0b;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --phase-dca:#4A90D9;--phase-exit:#F5A623;--phase-markdown:#D0021B;
+  --phase-spring:#7ED321;--phase-markup:#F8E71C;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:20px;line-height:1.5}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:var(--card);border:1px solid var(--border);border-radius:16px;margin-bottom:20px}
+.header h1{font-size:1.3rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-right{display:flex;align-items:center;gap:16px;font-size:.8rem;color:var(--text2)}
+.status-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.status-dot.running{background:var(--green);box-shadow:0 0 8px var(--green)}
+.status-dot.stopped{background:var(--red);box-shadow:0 0 8px var(--red)}
+
+/* Summary cards */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden}
+.summary-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.summary-card.equity::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.summary-card.pnl::before{background:var(--green)}
+.summary-card.cash::before{background:var(--amber)}
+.sc-label{font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.sc-value{font-size:1.8rem;font-weight:700}
+.sc-sub{font-size:.75rem;color:var(--text2);margin-top:4px}
+
+/* Coin cards */
+.coins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:20px}
+.coin-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:border-color .2s}
+.coin-card:hover{border-color:var(--accent)}
+.coin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.coin-symbol{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:10px}
+.coin-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff}
+.coin-icon.eth{background:linear-gradient(135deg,#627eea,#8b9ff0)}
+.coin-icon.sol{background:linear-gradient(135deg,#9945ff,#14f195)}
+.coin-icon.btc{background:linear-gradient(135deg,#f7931a,#ffb74d)}
+
+/* Phase badge */
+.phase-badge{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:700;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.phase-DCA{background:rgba(74,144,217,.15);color:var(--phase-dca);border:1px solid rgba(74,144,217,.3)}
+.phase-EXIT{background:rgba(245,166,35,.15);color:var(--phase-exit);border:1px solid rgba(245,166,35,.3)}
+.phase-MARKDOWN{background:rgba(208,2,27,.15);color:var(--phase-markdown);border:1px solid rgba(208,2,27,.3)}
+.phase-SPRING{background:rgba(126,211,33,.15);color:var(--phase-spring);border:1px solid rgba(126,211,33,.3)}
+.phase-MARKUP{background:rgba(248,231,28,.15);color:var(--phase-markup);border:1px solid rgba(248,231,28,.3)}
+
+.phase-dot{width:8px;height:8px;border-radius:50%}
+.phase-dot.DCA{background:var(--phase-dca)}
+.phase-dot.EXIT{background:var(--phase-exit)}
+.phase-dot.MARKDOWN{background:var(--phase-markdown)}
+.phase-dot.SPRING{background:var(--phase-spring)}
+.phase-dot.MARKUP{background:var(--phase-markup)}
+
+/* Coin stats grid */
+.coin-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.coin-stat{padding:8px 0}
+.coin-stat-label{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.coin-stat-value{font-size:.95rem;font-weight:600;margin-top:2px}
+
+/* Lifecycle metrics */
+.lifecycle-metrics{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.lm-item{display:flex;align-items:center;gap:4px;font-size:.68rem;color:var(--text2);background:rgba(255,255,255,.03);padding:3px 8px;border-radius:6px}
+.lm-count{font-weight:700;color:var(--text)}
+
+/* PnL breakdown */
+.pnl-breakdown{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+.pnl-item{font-size:.7rem;color:var(--text2)}
+.pnl-item span{font-weight:600}
+
+/* Deal info */
+.deal-info{margin-top:12px;padding:10px;background:rgba(74,144,217,.06);border:1px solid rgba(74,144,217,.15);border-radius:10px}
+.deal-info-title{font-size:.7rem;color:var(--phase-dca);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.deal-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.deal-info-stat{font-size:.7rem;color:var(--text2)}
+.deal-info-stat strong{color:var(--text);font-weight:600}
+
+/* Chart section */
+.chart-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px}
+.chart-section h2{font-size:1rem;font-weight:600;margin-bottom:16px;color:var(--text2)}
+.chart-wrap{position:relative;height:300px}
+
+/* Trade log */
+.trade-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px}
+.trade-section h2{font-size:1rem;font-weight:600;margin-bottom:16px;color:var(--text2)}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+th{text-align:left;color:var(--text3);font-weight:500;padding:10px 8px;border-bottom:1px solid var(--border);font-size:.68rem;text-transform:uppercase;letter-spacing:.5px}
+td{padding:9px 8px;border-bottom:1px solid rgba(30,30,46,.5)}
+tr:hover td{background:rgba(99,102,241,.04)}
+.pnl-pos{color:var(--green);font-weight:600}
+.pnl-neg{color:var(--red);font-weight:600}
+
+/* Footer */
+.footer{text-align:center;padding:16px;font-size:.72rem;color:var(--text3)}
+
+/* Responsive */
+@media(max-width:768px){
+  body{padding:10px}
+  .header{flex-direction:column;gap:10px;padding:14px;text-align:center}
+  .header h1{font-size:1.1rem}
+  .summary{grid-template-columns:1fr 1fr}
+  .coins-grid{grid-template-columns:1fr}
+  .chart-wrap{height:220px}
+  .coin-stats{grid-template-columns:1fr}
+  .deal-info-grid{grid-template-columns:1fr}
+  table{display:block;overflow-x:auto}
+}
+@media(max-width:480px){
+  .summary{grid-template-columns:1fr}
+  .header h1{font-size:.95rem}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ AIT V12e Lifecycle Engine — Paper Trading</h1>
+  <div class="header-right">
+    <span id="updateTime">--</span>
+    <span><span id="statusDot" class="status-dot stopped"></span> <span id="statusLabel">Loading...</span></span>
+  </div>
+</div>
+
+<div class="summary" id="summaryCards">
+  <div class="summary-card equity">
+    <div class="sc-label">Total Equity</div>
+    <div class="sc-value" id="totalEquity">--</div>
+    <div class="sc-sub" id="equitySub">--</div>
+  </div>
+  <div class="summary-card pnl">
+    <div class="sc-label">Total PnL</div>
+    <div class="sc-value" id="totalPnl">--</div>
+    <div class="sc-sub" id="pnlSub">--</div>
+  </div>
+  <div class="summary-card cash">
+    <div class="sc-label">Cash Available</div>
+    <div class="sc-value" id="totalCash">--</div>
+    <div class="sc-sub" id="cashSub">--</div>
+  </div>
+</div>
+
+<div class="coins-grid" id="coinsGrid"></div>
+
+<div class="chart-section">
+  <h2>📈 Equity Over Time</h2>
+  <div class="chart-wrap"><canvas id="equityChart"></canvas></div>
+</div>
+
+<div class="trade-section">
+  <h2>📋 Trade Log <span id="tradeCount" style="font-size:.8rem;color:var(--text3);font-weight:400"></span></h2>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>PnL</th><th>Phase</th></tr></thead>
+      <tbody id="tradeBody"><tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">No trades yet</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">Auto-refreshes every 60s · Next refresh in <span id="countdown">60</span>s · AIT V12e Dashboard v1.0</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG — change data URLs here
+// ═══════════════════════════════════════════
+const CONFIG = {
+  // For local development / direct file serving:
+  statusUrl: 'data/v12e/status.json',
+  tradesUrl: 'data/v12e/trades.csv',
+  refreshInterval: 60, // seconds
+};
+
+// If running from file:// or localhost with relative paths to trading dir:
+// CONFIG.statusUrl = '../trading/spot/paper/v12e/status.json';
+// CONFIG.tradesUrl = '../trading/spot/paper/v12e/trades.csv';
+
+// ═══════════════════════════════════════════
+
+const $ = id => document.getElementById(id);
+const fmt = (n, d=2) => n == null ? '--' : Number(n).toFixed(d);
+const fmtUsd = (n, d=2) => n == null ? '--' : '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:d, maximumFractionDigits:d});
+const pctColor = v => v > 0 ? 'var(--green)' : v < 0 ? 'var(--red)' : 'var(--text)';
+
+const PHASE_COLORS = {DCA:'#4A90D9',EXIT:'#F5A623',MARKDOWN:'#D0021B',SPRING:'#7ED321',MARKUP:'#F8E71C'};
+
+const COIN_META = {
+  'ETH/USDT': {icon:'eth',label:'ETH',name:'Ethereum'},
+  'SOL/USDT': {icon:'sol',label:'SOL',name:'Solana'},
+  'BTC/USDT': {icon:'btc',label:'BTC',name:'Bitcoin'},
+};
+
+let statusData = null, tradesData = [], equityChart = null, countdownVal = CONFIG.refreshInterval;
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const hdr = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(l => {
+    const vals = l.split(',');
+    const obj = {};
+    hdr.forEach((h, i) => obj[h] = vals[i]?.trim() || '');
+    return obj;
+  });
+}
+
+async function fetchData() {
+  try {
+    const r = await fetch(CONFIG.statusUrl + '?t=' + Date.now());
+    if (r.ok) { statusData = await r.json(); renderStatus(); }
+  } catch(e) { console.warn('status fetch failed', e); }
+
+  try {
+    const r = await fetch(CONFIG.tradesUrl + '?t=' + Date.now());
+    if (r.ok) { tradesData = parseCSV(await r.text()); renderTrades(); renderEquityChart(); }
+  } catch(e) { /* trades.csv may not exist yet */ }
+}
+
+function renderStatus() {
+  const s = statusData;
+  if (!s) return;
+
+  // Header status
+  const dot = $('statusDot');
+  dot.className = 'status-dot ' + (s.running ? 'running' : 'stopped');
+  $('statusLabel').textContent = s.running ? 'Running' : 'Stopped';
+  $('updateTime').textContent = s.last_update ? new Date(s.last_update).toLocaleString() : (s.timestamp || '--');
+
+  // Summary cards
+  $('totalEquity').textContent = fmtUsd(s.equity);
+  $('equitySub').textContent = `Capital: ${fmtUsd(s.capital)} · Max DD: ${fmt(s.max_drawdown_pct || s.max_dd || 0, 2)}%`;
+  
+  const pnlPct = s.pnl_pct || 0;
+  const pnlUsd = s.equity - s.capital;
+  $('totalPnl').innerHTML = `<span style="color:${pctColor(pnlPct)}">${pnlPct >= 0 ? '+' : ''}${fmt(pnlPct)}%</span>`;
+  $('pnlSub').innerHTML = `<span style="color:${pctColor(pnlUsd)}">${pnlUsd >= 0 ? '+' : ''}${fmtUsd(pnlUsd)}</span> · ${s.deals_completed || 0} deals completed`;
+
+  $('totalCash').textContent = fmtUsd(s.cash);
+  const invested = s.equity - s.cash;
+  const utilPct = s.equity > 0 ? (invested / s.equity * 100) : 0;
+  $('cashSub').textContent = `Invested: ${fmtUsd(invested)} · Util: ${fmt(utilPct, 1)}%`;
+
+  // Coin cards
+  renderCoinCards();
+}
+
+function renderCoinCards() {
+  const s = statusData;
+  const symbols = s.symbols || Object.keys(s.coins || {});
+  let html = '';
+
+  symbols.forEach(sym => {
+    const coin = (s.coins || {})[sym] || {};
+    const lc = (s.lifecycle || {})[sym] || {};
+    const meta = COIN_META[sym] || {icon:'btc', label: sym.split('/')[0], name: sym};
+    const phase = lc.phase || coin.state || 'DCA';
+    const metrics = lc.metrics || {};
+
+    html += `<div class="coin-card">
+      <div class="coin-header">
+        <div class="coin-symbol">
+          <div class="coin-icon ${meta.icon}">${meta.label}</div>
+          <div>
+            <div>${meta.name}</div>
+            <div style="font-size:.7rem;color:var(--text3);font-weight:400">${sym}</div>
+          </div>
+        </div>
+        <span class="phase-badge phase-${phase}"><span class="phase-dot ${phase}"></span>${phase}</span>
+      </div>
+
+      <div class="coin-stats">
+        <div class="coin-stat">
+          <div class="coin-stat-label">Current Price</div>
+          <div class="coin-stat-value">${fmtUsd(coin.current_price, coin.current_price > 1000 ? 2 : 4)}</div>
+        </div>
+        <div class="coin-stat">
+          <div class="coin-stat-label">Unrealized PnL</div>
+          <div class="coin-stat-value" style="color:${pctColor(coin.unrealized_pnl || 0)}">${fmtUsd(coin.unrealized_pnl || 0)}</div>
+        </div>
+        <div class="coin-stat">
+          <div class="coin-stat-label">Daily Score</div>
+          <div class="coin-stat-value">${fmt(lc.daily_score || 0, 1)}</div>
+        </div>
+        <div class="coin-stat">
+          <div class="coin-stat-label">Invested</div>
+          <div class="coin-stat-value">${fmtUsd(coin.invested || 0)}</div>
+        </div>
+      </div>`;
+
+    // Active deal info (DCA phase)
+    if ((phase === 'DCA' || coin.state === 'ACCUMULATING') && coin.layers > 0) {
+      html += `<div class="deal-info">
+        <div class="deal-info-title">Active DCA Deal</div>
+        <div class="deal-info-grid">
+          <div class="deal-info-stat">Layers: <strong>${coin.layers}</strong></div>
+          <div class="deal-info-stat">Avg Entry: <strong>${fmtUsd(coin.avg_entry, coin.avg_entry > 1000 ? 2 : 4)}</strong></div>
+          <div class="deal-info-stat">Next SO: <strong>${fmtUsd(coin.next_so_price, coin.next_so_price > 1000 ? 2 : 4)}</strong></div>
+        </div>
+      </div>`;
+    }
+
+    // Lifecycle metrics
+    html += `<div class="lifecycle-metrics">
+      <div class="lm-item"><span class="phase-dot EXIT" style="width:6px;height:6px"></span>Exit <span class="lm-count">${metrics.exit_phases || 0}</span></div>
+      <div class="lm-item"><span class="phase-dot SPRING" style="width:6px;height:6px"></span>Spring <span class="lm-count">${metrics.spring_phases || 0}</span></div>
+      <div class="lm-item"><span class="phase-dot MARKDOWN" style="width:6px;height:6px"></span>Markdown <span class="lm-count">${metrics.markdown_phases || 0}</span></div>
+      <div class="lm-item"><span class="phase-dot MARKUP" style="width:6px;height:6px"></span>Markup <span class="lm-count">${metrics.markup_phases || 0}</span></div>
+    </div>`;
+
+    // PnL breakdown
+    html += `<div class="pnl-breakdown">
+      <div class="pnl-item">Short PnL: <span style="color:${pctColor(metrics.short_pnl || 0)}">${fmtUsd(metrics.short_pnl || 0)}</span></div>
+      <div class="pnl-item">Spring PnL: <span style="color:${pctColor(metrics.spring_pnl || 0)}">${fmtUsd(metrics.spring_pnl || 0)}</span></div>
+      <div class="pnl-item">Markup PnL: <span style="color:${pctColor(metrics.markup_pnl || 0)}">${fmtUsd(metrics.markup_pnl || 0)}</span></div>
+    </div>`;
+
+    html += '</div>';
+  });
+
+  $('coinsGrid').innerHTML = html || '<div style="color:var(--text3);text-align:center;padding:40px">No coin data available</div>';
+}
+
+function renderTrades() {
+  const tbody = $('tradeBody');
+  if (!tradesData.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">No trades yet</td></tr>';
+    $('tradeCount').textContent = '';
+    return;
+  }
+  const recent = tradesData.slice(-50).reverse();
+  $('tradeCount').textContent = `(${tradesData.length} total)`;
+  tbody.innerHTML = recent.map(t => {
+    const pnl = parseFloat(t.pnl || t.PnL || 0);
+    const pnlClass = pnl > 0 ? 'pnl-pos' : pnl < 0 ? 'pnl-neg' : '';
+    const time = t.timestamp || t.time || t.Time || '--';
+    const sym = t.symbol || t.Symbol || '--';
+    const side = t.side || t.Side || t.action || '--';
+    const qty = t.qty || t.Qty || t.quantity || '--';
+    const price = t.price || t.Price || '--';
+    const phase = t.phase || t.Phase || '--';
+    return `<tr>
+      <td>${time ? new Date(time).toLocaleString() : time}</td>
+      <td><strong>${sym}</strong></td>
+      <td>${side}</td>
+      <td>${qty}</td>
+      <td>${isNaN(price) ? price : fmtUsd(parseFloat(price), 2)}</td>
+      <td class="${pnlClass}">${pnl !== 0 ? (pnl > 0 ? '+' : '') + fmtUsd(pnl) : '--'}</td>
+      <td>${phase !== '--' ? `<span class="phase-badge phase-${phase}" style="font-size:.6rem;padding:2px 8px">${phase}</span>` : '--'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderEquityChart() {
+  if (!tradesData.length) return;
+  
+  // Build equity timeline from trades
+  const capital = statusData?.capital || 10000;
+  let equity = capital;
+  const points = [{x: tradesData[0]?.timestamp ? new Date(tradesData[0].timestamp) : new Date(), y: capital}];
+  
+  tradesData.forEach(t => {
+    const pnl = parseFloat(t.pnl || t.PnL || 0);
+    if (pnl) {
+      equity += pnl;
+      const time = t.timestamp || t.time;
+      if (time) points.push({x: new Date(time), y: equity});
+    }
+  });
+
+  // Add current equity
+  if (statusData) {
+    points.push({x: new Date(), y: statusData.equity});
+  }
+
+  const ctx = $('equityChart').getContext('2d');
+  if (equityChart) equityChart.destroy();
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+  gradient.addColorStop(0, 'rgba(99,102,241,.3)');
+  gradient.addColorStop(1, 'rgba(99,102,241,.0)');
+
+  equityChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'Equity',
+        data: points,
+        borderColor: '#6366f1',
+        backgroundColor: gradient,
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHitRadius: 10,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {display: false},
+        tooltip: {
+          backgroundColor: '#12121a',
+          borderColor: '#1e1e2e',
+          borderWidth: 1,
+          titleColor: '#94a3b8',
+          bodyColor: '#e2e8f0',
+          callbacks: {
+            label: ctx => '$' + ctx.parsed.y.toFixed(2)
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          grid: {color: 'rgba(30,30,46,.5)'},
+          ticks: {color: '#64748b', font: {size: 10}}
+        },
+        y: {
+          grid: {color: 'rgba(30,30,46,.5)'},
+          ticks: {color: '#64748b', font: {size: 10}, callback: v => '$' + v.toLocaleString()}
+        }
+      }
+    }
+  });
+}
+
+// Countdown & refresh
+let timer = setInterval(() => {
+  countdownVal--;
+  $('countdown').textContent = countdownVal;
+  if (countdownVal <= 0) {
+    countdownVal = CONFIG.refreshInterval;
+    fetchData();
+  }
+}, 1000);
+
+// Initial load
+fetchData();
+</script>
+</body>
+</html>
