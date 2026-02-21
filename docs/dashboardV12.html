@@ -48,13 +48,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 /* ── Summary Cards ── */
 .summary{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:16px}
 .scard{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden}
-.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
-.scard.sc-eq::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
-.scard.sc-rpnl::before{background:var(--green)}
-.scard.sc-upnl::before{background:var(--amber)}
-.scard.sc-wl::before{background:var(--red)}
-.scard.sc-wr::before{background:var(--accent2)}
-.scard.sc-roi::before{background:linear-gradient(90deg,var(--green),var(--accent))}
+.scard::before{display:none}
 .sc-label{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
 .sc-value{font-size:1.7rem;font-weight:700}
 .sc-sub{font-size:.73rem;color:var(--text2);margin-top:4px}
