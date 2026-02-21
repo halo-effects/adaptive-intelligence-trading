@@ -4,7 +4,7 @@
   "profile": "high",
   "exchange": "aster",
   "capital": 325.0,
-  "equity": 325.39,
+  "equity": 325.38,
   "cash": 309.36,
   "pnl_pct": 0.12,
   "coins": {
@@ -13,13 +13,13 @@
       "side": "long",
       "layers": 1,
       "avg_entry": 1985.22,
-      "current_price": 1979.33,
-      "unrealized_pnl": -0.05,
-      "next_so_price": 1935.5895,
+      "current_price": 1977.2,
+      "unrealized_pnl": -0.06,
+      "next_so_price": 1941.5452,
       "next_tp_price": 2001.1018,
       "invested": 16.08,
       "realized_pnl": 0,
-      "conviction": 54.2,
+      "conviction": 56.0,
       "conviction_band": "moderate",
       "lifecycle_phase": "DCA",
       "exit_lots_remaining": 0,
@@ -32,10 +32,10 @@
   "win_rate": 0.0,
   "total_realized_pnl": 0,
   "max_drawdown_pct": 4.83,
-  "regime": "TRENDING",
+  "regime": "MILD_TREND",
   "trend_direction": "bullish",
-  "last_update": "2026-02-21T21:28:55+00:00",
-  "uptime_hours": 4.0,
+  "last_update": "2026-02-21T22:29:20+00:00",
+  "uptime_hours": 5.0,
   "halted": false,
   "symbols": [
     "ETH/USDT"
@@ -50,25 +50,25 @@
       "value": 8,
       "classification": "Extreme Fear"
     },
-    "btc_dominance": 56.54,
+    "btc_dominance": 56.51,
     "btc_sma": {
-      "price": 68365.44,
-      "sma200": 99180.25,
+      "price": 68305.99,
+      "sma200": 99179.95,
       "above_sma200": false,
-      "distance_pct": -31.07
+      "distance_pct": -31.13
     },
     "pi_cycle": {
-      "ma_111": 87354.28,
-      "ma_350x2": 199380.04,
+      "ma_111": 87353.75,
+      "ma_350x2": 199379.7,
       "cross_imminent": false,
       "topped": false,
       "gap_pct": -56.19
     },
     "ssr": {
-      "ssr": 5.2,
+      "ssr": 5.19,
       "zone": "normal"
     },
-    "_timestamp": 1771709330.5316942
+    "_timestamp": 1771712956.1702657
   },
   "lifecycle_enabled": true,
   "lifecycle_phases": {
