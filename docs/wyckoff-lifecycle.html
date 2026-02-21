@@ -3,269 +3,250 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>V12d Wyckoff Lifecycle — Adaptive Intelligence Trading</title>
+<title>Wyckoff Lifecycle Engine &#8212; Adaptive Intelligence Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-* { margin: 0; padding: 0; box-sizing: border-box; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
-  --bg: #0a0a0f;
-  --card: #12121a;
-  --border: #1e1e2e;
-  --accent: #6366f1;
-  --accent2: #818cf8;
-  --green: #22c55e;
-  --red: #ef4444;
-  --amber: #f59e0b;
-  --teal: #14b8a6;
-  --blue: #3b82f6;
-  --orange: #f97316;
-  --text: #e2e8f0;
-  --text2: #94a3b8;
-  --text3: #64748b;
+  --ait-blue: #2269FC;
+  --ait-blue-hover: #1B56D4;
+  --ait-blue-light-end: #D7F5FF;
+  --ait-blue-10: rgba(34, 105, 252, 0.1);
+  --bg-white: #FFFFFF;
+  --bg-black: #000000;
+  --bg-card-dark: #1A1D2C;
+  --bg-charcoal: #191919;
+  --bg-slate: #2F2F2F;
+  --text-heading: #03071C;
+  --text-body: rgba(3, 7, 28, 0.5);
+  --text-heading-dark: #FFFFFF;
+  --text-body-dark: rgba(255, 255, 255, 0.5);
+  --text-tertiary-dark: rgba(255, 255, 255, 0.3);
+  --text-subtle-dark: rgba(255, 255, 255, 0.2);
+  --border-light: #E5E7EB;
+  --border-glass: rgba(255, 255, 255, 0.2);
+  --grad-cta-dark: linear-gradient(90deg, #223576, #1A285A 40%, #121C3E 50%, #0A1025 60%, #000001 80%, #000);
+  --grad-cta-light: linear-gradient(270deg, #D7F5FF, #2269FC 55%);
+  --profit: #00D68F;
+  --loss: #FF4D4F;
+  --warning: #FFAA00;
+  --font: 'Poppins', sans-serif;
+  --radius-card: 10px;
+  --radius-section: 24px;
+  --radius-pill: 25px;
 }
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  line-height: 1.6;
+  background: var(--bg-white);
+  color: var(--text-heading);
+  font-family: var(--font);
+  line-height: 1.7;
   overflow-x: hidden;
 }
 
-/* Header */
-.header {
-  padding: 20px 40px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
+/* NAV */
+.nav {
+  position: fixed; top: 16px; left: 16px; right: 16px; z-index: 100;
+  height: 100px;
+  background: var(--bg-white);
+  border-radius: var(--radius-pill);
+  display: flex; align-items: center;
+  padding: 0 24px;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.06);
 }
-.logo { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.5px; }
-.logo span { color: var(--accent); }
-.header-links a { color: var(--text2); text-decoration: none; font-size: 0.85rem; margin-left: 24px; transition: color 0.2s; }
-.header-links a:hover { color: var(--accent2); }
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text-heading); flex-shrink: 0; }
+.nav-logo img { height: 40px; }
+.nav-logo span { font-size: 18px; font-weight: 600; white-space: nowrap; }
+.nav-links { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.nav-links a {
+  font-size: 18px; font-weight: 500; color: #000; text-decoration: none;
+  padding: 6px 14px; border-radius: 8px; transition: all 0.2s; white-space: nowrap;
+}
+.nav-links a:hover { text-decoration: underline; }
+.nav-links a.active { color: var(--ait-blue); }
+.nav-links a.btn-blue { color: #FFF !important; }
+.btn-blue {
+  background: var(--grad-cta-dark); color: #FFF; border: none; border-radius: var(--radius-pill);
+  padding: 8px 16px; font-size: 18px; font-weight: 600; font-family: var(--font);
+  cursor: pointer; text-decoration: none; display: inline-block; transition: transform 0.3s;
+}
+.btn-blue:hover { transform: translateY(-2px); }
 
-/* Hero */
+.container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+.dark-section {
+  background: var(--bg-black); border-radius: var(--radius-section);
+  padding: 64px 48px; color: var(--text-heading-dark);
+  margin-left: 16px; margin-right: 16px;
+}
+.card-dark { background: var(--bg-card-dark); border-radius: var(--radius-card); padding: 24px; }
+
+.light-section { padding: 80px 0; }
+.light-section h2 { font-size: 36px; font-weight: 500; color: var(--text-heading); margin-bottom: 16px; }
+.light-section .sub { font-size: 18px; color: var(--text-body); margin-bottom: 40px; max-width: 700px; }
+
 .hero {
-  text-align: center;
-  padding: 60px 24px 40px;
+  display: flex; flex-direction: column; justify-content: center;
+  align-items: center; text-align: center; padding: 160px 24px 40px;
 }
-.hero h1 {
-  font-size: 2.8rem;
-  font-weight: 800;
-  letter-spacing: -1.5px;
-  background: linear-gradient(135deg, #6366f1, #06b6d4);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 12px;
-}
-.hero p { color: var(--text2); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+.hero h1 { font-size: 48px; font-weight: 600; line-height: 56px; color: var(--text-heading); margin-bottom: 20px; max-width: 800px; }
+.hero p { font-size: 20px; color: var(--text-body); max-width: 620px; }
 
-/* Diagram Container */
-.diagram-section {
-  max-width: 900px;
-  margin: 40px auto;
-  padding: 0 24px;
-}
-.diagram-wrap {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 40px;
-  position: relative;
-}
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 
-/* SVG Diagram */
-svg.lifecycle { width: 100%; height: auto; }
-svg.lifecycle text { font-family: 'Inter', sans-serif; }
-
-/* Phase detail cards */
-.phases-grid {
-  max-width: 1100px;
-  margin: 48px auto;
-  padding: 0 24px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-}
 .phase-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  transition: border-color 0.2s;
+  background: var(--bg-card-dark); border-radius: var(--radius-card); padding: 28px; transition: transform 0.2s;
 }
-.phase-card:hover { border-color: var(--accent); }
-.phase-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-.phase-card .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.phase-card p { color: var(--text2); font-size: 0.85rem; margin-bottom: 10px; }
-.phase-card .transitions { font-size: 0.78rem; color: var(--text3); }
-.phase-card .transitions strong { color: var(--text2); }
+.phase-card:hover { transform: translateY(-2px); }
+.phase-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+.phase-card h3 { font-size: 18px; font-weight: 600; color: #FFF; margin-bottom: 10px; display: flex; align-items: center; }
+.phase-card p { font-size: 14px; color: var(--text-body-dark); line-height: 1.6; margin-bottom: 12px; }
+.phase-card .transitions { font-size: 13px; color: var(--text-tertiary-dark); line-height: 1.6; }
+.phase-card .transitions strong { color: var(--text-body-dark); }
 
-/* Signal section */
-.signals-section {
-  max-width: 1100px;
-  margin: 48px auto;
-  padding: 0 24px;
+.cycle-card {
+  background: linear-gradient(135deg, var(--bg-card-dark), #1e2240); border-radius: var(--radius-card);
+  padding: 28px; border: 1px solid var(--ait-blue);
 }
-.signals-section h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 24px;
-  text-align: center;
-}
-.signal-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-}
-.signal-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
-}
-.signal-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--accent2); }
-.signal-card ul { list-style: none; font-size: 0.8rem; color: var(--text2); }
-.signal-card ul li { padding: 3px 0; }
-.signal-card ul li::before { content: '→ '; color: var(--text3); }
+.cycle-card h3 { font-size: 18px; font-weight: 600; color: #FFF; margin-bottom: 10px; display: flex; align-items: center; }
+.cycle-card p { font-size: 14px; color: var(--text-body-dark); line-height: 1.6; margin-bottom: 12px; }
+.cycle-card .tagline { color: var(--ait-blue); font-size: 14px; font-style: italic; }
 
-/* Profile section */
-.profile-section {
-  max-width: 700px;
-  margin: 48px auto;
-  padding: 0 24px;
-}
-.profile-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; text-align: center; }
-.profile-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--card);
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-.profile-table th, .profile-table td {
-  padding: 14px 20px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.85rem;
-}
-.profile-table th { color: var(--text3); font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.5px; }
-.profile-table td { color: var(--text); }
-.profile-table tr:last-child td { border-bottom: none; }
+.feature-box { background: var(--bg-card-dark); border-radius: var(--radius-card); padding: 32px; }
+.feature-box .feat-icon { font-size: 2rem; margin-bottom: 12px; }
+.feature-box h3 { font-size: 20px; font-weight: 600; color: #FFF; margin-bottom: 6px; }
+.feature-box .feat-tagline { color: var(--ait-blue); font-size: 14px; font-style: italic; margin-bottom: 16px; }
+.feature-box ul { list-style: none; }
+.feature-box ul li { font-size: 14px; color: var(--text-body-dark); padding: 4px 0; }
+.feature-box ul li::before { content: "\2713  "; color: var(--profit); font-weight: 700; }
 
-/* Results section */
-.results-section {
-  max-width: 800px;
-  margin: 48px auto 60px;
-  padding: 0 24px;
-}
-.results-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; text-align: center; }
 .results-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--card);
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid var(--border);
+  width: 100%; border-collapse: collapse;
+  background: var(--bg-card-dark); border-radius: var(--radius-card); overflow: hidden;
 }
 .results-table th, .results-table td {
-  padding: 14px 20px;
-  text-align: center;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.85rem;
+  padding: 14px 16px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px;
 }
-.results-table th { color: var(--text3); font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.5px; }
+.results-table th { color: var(--text-tertiary-dark); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+.results-table td { color: #FFF; }
 .results-table tr:last-child td { border-bottom: none; }
-.val-green { color: var(--green); font-weight: 600; }
-.val-amber { color: var(--amber); font-weight: 600; }
+.val-green { color: var(--profit); font-weight: 600; }
+.val-amber { color: var(--warning); font-weight: 600; }
+.val-red { color: var(--loss); font-weight: 600; }
 
-/* Footer */
+.dash-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--bg-card-dark); border-radius: var(--radius-card); overflow: hidden;
+}
+.dash-table th, .dash-table td {
+  padding: 14px 18px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px;
+}
+.dash-table th { color: var(--text-tertiary-dark); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+.dash-table td { color: #FFF; }
+.dash-table tr:last-child td { border-bottom: none; }
+.opp-best { color: #14b8a6; font-weight: 600; }
+.opp-good { color: var(--ait-blue); font-weight: 600; }
+.opp-mod { color: var(--profit); font-weight: 600; }
+.opp-wait { color: var(--warning); font-weight: 600; }
+
+.profile-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--bg-card-dark); border-radius: var(--radius-card); overflow: hidden;
+}
+.profile-table th, .profile-table td {
+  padding: 14px 20px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px;
+}
+.profile-table th { color: var(--text-tertiary-dark); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+.profile-table td { color: #FFF; }
+.profile-table tr:last-child td { border-bottom: none; }
+
 .footer {
-  text-align: center;
-  padding: 40px 24px;
-  border-top: 1px solid var(--border);
-  color: var(--text3);
-  font-size: 0.8rem;
+  text-align: center; padding: 48px 24px; color: var(--text-body); font-size: 14px;
+  border-top: 1px solid var(--border-light); margin-top: 80px;
 }
 
-/* Tooltip */
-.arrow-label { cursor: pointer; }
-.arrow-label:hover { opacity: 0.8; }
+.results-block { margin-bottom: 48px; }
+.results-block h3 { font-size: 24px; font-weight: 500; color: #FFF; text-align: center; margin-bottom: 8px; }
+.results-block .results-sub { text-align: center; color: var(--text-tertiary-dark); font-size: 13px; margin-bottom: 20px; }
+.results-block .results-note { text-align: center; color: var(--text-tertiary-dark); font-size: 12px; margin-top: 12px; max-width: 700px; margin-left: auto; margin-right: auto; }
 
-/* Interactive hover on nodes */
-.node-group { cursor: pointer; transition: transform 0.15s; }
-.node-group:hover { transform: scale(1.04); }
+@media (max-width: 768px) {
+  .nav { height: 75px; padding: 0 16px; }
+  .nav-links a { font-size: 14px; padding: 4px 8px; }
+  .hero h1 { font-size: 32px; line-height: 38px; }
+  .hero { padding-top: 120px; }
+  .dark-section { padding: 40px 20px; margin-left: 8px; margin-right: 8px; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .results-table th, .results-table td { padding: 10px 8px; font-size: 12px; }
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="logo"><span>AIT</span> Adaptive Intelligence Trading</div>
-  <div class="header-links">
+<!-- NAV -->
+<nav class="nav">
+  <a href="index.html" class="nav-logo">
+    <img src="AIT-logo.png" alt="AIT" onerror="this.style.display='none'">
+    <span>Adaptive Intelligence Trading</span>
+  </a>
+  <div class="nav-links">
     <a href="index.html">Product</a>
-    <a href="wyckoff-lifecycle.html" style="color: var(--accent2);">V12d Lifecycle</a>
+    <a href="wyckoff-lifecycle.html" class="active">Wyckoff Lifecycle</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="dashboardV12.html" class="btn-blue">Live Dashboard</a>
   </div>
-</div>
+</nav>
 
+<!-- HERO -->
 <div class="hero">
-  <h1>V12d Wyckoff Lifecycle</h1>
-  <p>Six-phase market cycle engine — accumulate, ride, distribute, short, spring, repeat.</p>
+  <h1>Wyckoff Lifecycle Engine</h1>
+  <p>Five-phase market cycle engine &#8212; accumulate, ride, distribute, protect, spring, repeat.</p>
 </div>
 
-<!-- Wyckoff Price Chart Hero -->
-<div class="diagram-section" style="max-width:1100px;">
-  <div class="diagram-wrap" style="padding:32px 24px 24px;">
-    <h2 style="text-align:center;font-size:1.3rem;font-weight:700;margin-bottom:4px;color:var(--text);">The Wyckoff Cycle — What AIT Does at Every Phase</h2>
-    <p style="text-align:center;font-size:0.82rem;color:var(--text3);margin-bottom:20px;">Idealized price action with AIT strategy overlay</p>
+<!-- WYCKOFF CHART -->
+<div style="max-width:1140px; margin: 40px auto; padding: 0 24px;">
+<div style="background:#000; border-radius:24px; padding: 48px 48px 32px; margin: 0 -8px;">
+  <div style="padding: 0;">
+    <h2 style="font-size:20px; font-weight:600; text-align:center; color:#FFF; margin-bottom:4px; font-family:'Poppins',sans-serif;">The Wyckoff Cycle &#8212; What AIT Does at Every Phase</h2>
+    <p style="text-align:center; font-size:13px; color:rgba(255,255,255,0.3); margin-bottom:20px;">Idealized price action with AIT strategy overlay</p>
     <canvas id="wyckoffChart" width="1050" height="520" style="width:100%;height:auto;"></canvas>
   </div>
+</div>
 </div>
 
 <script>
 (function(){
-const c=document.getElementById('wyckoffChart');
-const ctx=c.getContext('2d');
-const W=c.width, H=c.height;
-const PAD={t:55,b:65,l:50,r:30};
-const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
+var c=document.getElementById('wyckoffChart');
+var ctx=c.getContext('2d');
+var W=c.width, H=c.height;
+var PAD={t:55,b:65,l:50,r:30};
+var cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
 
-// Colors
-const COL={dca:'#3b82f6',markup:'#22c55e',exit:'#f97316',markdown:'#ef4444',spring:'#14b8a6',bg:'#12121a',grid:'#1e1e2e',text:'#94a3b8',text2:'#64748b',white:'#e2e8f0'};
+var COL={dca:'#2269FC',markup:'#00D68F',exit:'#FFAA00',markdown:'#FF4D4F',spring:'#14b8a6',bg:'#1A1D2C',grid:'#2F2F2F',text:'rgba(255,255,255,0.5)',text2:'rgba(255,255,255,0.3)',white:'#FFFFFF'};
 
-// Price curve points (x: 0-1 normalized, y: 0-1 where 0=top)
-// Accumulation(DCA) → Markup → Distribution(EXIT) → Markdown → Spring → back to Accumulation
-const pts=[
-  // Accumulation / DCA zone (flat bottom ranging)
+var pts=[
   [0,.72],[.02,.75],[.04,.71],[.06,.74],[.08,.70],[.10,.73],[.12,.69],[.14,.72],[.16,.68],[.18,.71],
-  // Breakout + Markup
   [.20,.65],[.22,.58],[.24,.50],[.26,.42],[.28,.36],[.30,.30],[.32,.24],[.34,.19],[.36,.15],[.38,.12],
-  // Distribution / EXIT zone (flat top ranging)
   [.40,.10],[.42,.08],[.44,.11],[.46,.07],[.48,.10],[.50,.08],[.52,.12],[.54,.09],[.56,.11],[.58,.10],
-  // Markdown
   [.60,.14],[.62,.20],[.64,.28],[.66,.36],[.68,.44],[.70,.52],[.72,.58],[.74,.64],
-  // Spring (capitulation spike then reversal)
   [.76,.70],[.78,.78],[.80,.86],[.81,.90],[.82,.88],[.83,.82],[.84,.76],[.86,.72],
-  // Back to Accumulation/DCA
   [.88,.73],[.90,.71],[.92,.74],[.94,.70],[.96,.73],[.98,.71],[1,.72]
 ];
 
 function tx(x){return PAD.l+x*cW;}
 function ty(y){return PAD.t+y*cH;}
 
-// Background
 ctx.fillStyle=COL.bg;
 ctx.fillRect(0,0,W,H);
 
-// Grid lines
 ctx.strokeStyle=COL.grid;ctx.lineWidth=1;
-for(let i=0;i<=4;i++){
-  let y=PAD.t+i*(cH/4);
+for(var i=0;i<=4;i++){
+  var y=PAD.t+i*(cH/4);
   ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(W-PAD.r,y);ctx.stroke();
 }
 
-// Phase zones (shaded backgrounds)
-const zones=[
+var zones=[
   {x1:0,x2:.19,col:COL.dca,label:'DCA',sub:'Accumulation'},
   {x1:.19,x2:.39,col:COL.markup,label:'MARKUP',sub:'Uptrend'},
   {x1:.39,x2:.59,col:COL.exit,label:'EXIT',sub:'Distribution'},
@@ -274,635 +255,280 @@ const zones=[
   {x1:.87,x2:1,col:COL.dca,label:'DCA',sub:'Re-accumulate'}
 ];
 
-zones.forEach(z=>{
+zones.forEach(function(z){
   ctx.fillStyle=z.col+'15';
   ctx.fillRect(tx(z.x1),PAD.t,tx(z.x2)-tx(z.x1),cH);
-  // Zone top border
   ctx.strokeStyle=z.col+'40';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(tx(z.x1),PAD.t);ctx.lineTo(tx(z.x1),PAD.t+cH);ctx.stroke();
-  // Zone label at top
-  ctx.fillStyle=z.col;ctx.font='bold 12px Inter,sans-serif';ctx.textAlign='center';
-  let cx=(tx(z.x1)+tx(z.x2))/2;
+  ctx.fillStyle=z.col;ctx.font='bold 12px Poppins,sans-serif';ctx.textAlign='center';
+  var cx=(tx(z.x1)+tx(z.x2))/2;
   ctx.fillText(z.label,cx,PAD.t-22);
-  ctx.fillStyle=z.col+'aa';ctx.font='10px Inter,sans-serif';
+  ctx.fillStyle=z.col+'aa';ctx.font='10px Poppins,sans-serif';
   ctx.fillText(z.sub,cx,PAD.t-10);
 });
 
-// Profit shading — markup long profit (green)
 ctx.fillStyle=COL.markup+'18';
 ctx.beginPath();
-let mkStart=pts.findIndex(p=>p[0]>=.20);
-let mkEnd=pts.findIndex(p=>p[0]>=.40);
-ctx.moveTo(tx(pts[mkStart][0]),ty(.65));
-for(let i=mkStart;i<=mkEnd;i++) ctx.lineTo(tx(pts[i][0]),ty(pts[i][1]));
-ctx.lineTo(tx(pts[mkEnd][0]),ty(.65));ctx.closePath();ctx.fill();
+var mkS=0; for(var i=0;i<pts.length;i++){if(pts[i][0]>=.20){mkS=i;break;}}
+var mkE=0; for(var i=0;i<pts.length;i++){if(pts[i][0]>=.40){mkE=i;break;}}
+ctx.moveTo(tx(pts[mkS][0]),ty(.65));
+for(var i=mkS;i<=mkE;i++) ctx.lineTo(tx(pts[i][0]),ty(pts[i][1]));
+ctx.lineTo(tx(pts[mkE][0]),ty(.65));ctx.closePath();ctx.fill();
 
-// Short profit shading (red)
 ctx.fillStyle=COL.markdown+'18';
 ctx.beginPath();
-let mdStart=pts.findIndex(p=>p[0]>=.60);
-let mdEnd=pts.findIndex(p=>p[0]>=.76);
-ctx.moveTo(tx(pts[mdStart][0]),ty(.14));
-for(let i=mdStart;i<=mdEnd;i++) ctx.lineTo(tx(pts[i][0]),ty(pts[i][1]));
-ctx.lineTo(tx(pts[mdEnd][0]),ty(.14));ctx.closePath();ctx.fill();
+var mdS=0; for(var i=0;i<pts.length;i++){if(pts[i][0]>=.60){mdS=i;break;}}
+var mdE=0; for(var i=0;i<pts.length;i++){if(pts[i][0]>=.76){mdE=i;break;}}
+ctx.moveTo(tx(pts[mdS][0]),ty(.14));
+for(var i=mdS;i<=mdE;i++) ctx.lineTo(tx(pts[i][0]),ty(pts[i][1]));
+ctx.lineTo(tx(pts[mdE][0]),ty(.14));ctx.closePath();ctx.fill();
 
-// Draw price curve
-ctx.strokeStyle='#e2e8f0';ctx.lineWidth=2.5;
-ctx.shadowColor='#6366f180';ctx.shadowBlur=6;
+ctx.strokeStyle='#FFFFFF';ctx.lineWidth=2.5;
+ctx.shadowColor='#2269FC80';ctx.shadowBlur=6;
 ctx.beginPath();
-pts.forEach((p,i)=>{i===0?ctx.moveTo(tx(p[0]),ty(p[1])):ctx.lineTo(tx(p[0]),ty(p[1]));});
+for(var i=0;i<pts.length;i++){i===0?ctx.moveTo(tx(pts[i][0]),ty(pts[i][1])):ctx.lineTo(tx(pts[i][0]),ty(pts[i][1]));}
 ctx.stroke();
 ctx.shadowBlur=0;
 
-// Price level labels (right side Y axis)
-ctx.fillStyle=COL.text2;ctx.font='10px Inter,sans-serif';ctx.textAlign='left';
-const levels=[{y:.08,label:'ATH Zone'},{y:.35,label:'75% of ATH'},{y:.65,label:'Entry / Breakout'},{y:.72,label:'Accumulation Range'},{y:.90,label:'Spring Bottom (-35%)'}];
-levels.forEach(l=>{
-  let yy=ty(l.y);
-  ctx.fillStyle=COL.text2+'88';
-  ctx.setLineDash([3,3]);ctx.strokeStyle=COL.text2+'44';ctx.lineWidth=0.5;
+var levels=[{y:.08,label:'ATH Zone'},{y:.35,label:'75% of ATH'},{y:.65,label:'Entry / Breakout'},{y:.72,label:'Accumulation Range'},{y:.90,label:'Spring Bottom'}];
+levels.forEach(function(l){
+  var yy=ty(l.y);
+  ctx.setLineDash([3,3]);ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=0.5;
   ctx.beginPath();ctx.moveTo(PAD.l,yy);ctx.lineTo(W-PAD.r,yy);ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle=COL.text2;ctx.font='9px Inter,sans-serif';ctx.textAlign='right';
+  ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='9px Poppins,sans-serif';ctx.textAlign='right';
   ctx.fillText(l.label,PAD.l-5,yy+3);
 });
 
-// Signal markers
-function marker(x,y,color,label1,label2,above){
-  let px=tx(x),py=ty(y);
-  // Diamond marker
+function marker(x,y,color,l1,l2,above){
+  var px=tx(x),py=ty(y);
   ctx.fillStyle=color;
   ctx.beginPath();ctx.moveTo(px,py-7);ctx.lineTo(px+5,py);ctx.lineTo(px,py+7);ctx.lineTo(px-5,py);ctx.closePath();ctx.fill();
-  // Label
-  ctx.fillStyle=color;ctx.font='bold 10px Inter,sans-serif';ctx.textAlign='center';
-  let ly=above?py-18:py+20;
-  ctx.fillText(label1,px,ly);
-  if(label2){ctx.font='9px Inter,sans-serif';ctx.fillStyle=color+'cc';ctx.fillText(label2,px,ly+12);}
+  ctx.fillStyle=color;ctx.font='bold 10px Poppins,sans-serif';ctx.textAlign='center';
+  var ly=above?py-18:py+20;
+  ctx.fillText(l1,px,ly);
+  if(l2){ctx.font='9px Poppins,sans-serif';ctx.fillStyle=color+'cc';ctx.fillText(l2,px,ly+12);}
 }
 
-marker(.19,.67,COL.markup,'▲ BREAKOUT','TRENDING + ADX >25',true);
-marker(.40,.10,COL.exit,'▼ EXIT SIGNAL','TA ≥50 + F&G ≥80',false);
-marker(.81,.90,COL.spring,'▲ SPRING BUY','25-35% discount',false);
+marker(.19,.67,COL.markup,'\u25B2 BREAKOUT','Trend confirmed',true);
+marker(.40,.10,COL.exit,'\u25BC EXIT SIGNAL','Distribution detected',false);
+marker(.81,.90,COL.spring,'\u25B2 SPRING BUY','Tiered discount entry',false);
 
-// Action annotations at bottom
 ctx.textAlign='center';
-const annotations=[
+var ann=[
   {x:.09,col:COL.dca,t1:'Grid Trading',t2:'Small TP, 100% win rate'},
-  {x:.30,col:COL.markup,t1:'Deploy 50-90%',t2:'Ride the trend'},
-  {x:.49,col:COL.exit,t1:'Rally selling',t2:'Trail stops, unwind lots'},
-  {x:.68,col:COL.markdown,t1:'Tiered shorts 50-90%',t2:'Ride decline'},
-  {x:.82,col:COL.spring,t1:'Buy discount',t2:'Tiered longs at -25/-35%'},
+  {x:.30,col:COL.markup,t1:'Ride the trend',t2:'Deploy capital'},
+  {x:.49,col:COL.exit,t1:'Rally selling',t2:'Trail stops, unwind'},
+  {x:.68,col:COL.markdown,t1:'Tiered shorts',t2:'Ride decline'},
+  {x:.82,col:COL.spring,t1:'Buy discount',t2:'3-tier entry'},
   {x:.94,col:COL.dca,t1:'Back to grid',t2:'Cycle repeats'}
 ];
-annotations.forEach(a=>{
-  ctx.fillStyle=a.col;ctx.font='bold 10px Inter,sans-serif';
+ann.forEach(function(a){
+  ctx.fillStyle=a.col;ctx.font='bold 10px Poppins,sans-serif';
   ctx.fillText(a.t1,tx(a.x),H-PAD.b+20);
-  ctx.fillStyle=a.col+'aa';ctx.font='9px Inter,sans-serif';
+  ctx.fillStyle=a.col+'aa';ctx.font='9px Poppins,sans-serif';
   ctx.fillText(a.t2,tx(a.x),H-PAD.b+33);
 });
 
-// Small arrows for DCA zone (buy/sell grid)
 function gridArrow(x,y,up){
-  let px=tx(x),py=ty(y);
+  var px=tx(x),py=ty(y);
   ctx.fillStyle=up?COL.markup:COL.exit;
   ctx.beginPath();
   if(up){ctx.moveTo(px,py-5);ctx.lineTo(px+3,py+2);ctx.lineTo(px-3,py+2);}
   else{ctx.moveTo(px,py+5);ctx.lineTo(px+3,py-2);ctx.lineTo(px-3,py-2);}
   ctx.closePath();ctx.fill();
 }
-for(let i=0;i<8;i++){
-  let x=.02+i*.02;
-  gridArrow(x,.68,true);gridArrow(x+.01,.74,false);
-}
-
-// Markup big arrow
-ctx.fillStyle=COL.markup+'88';ctx.beginPath();
-ctx.moveTo(tx(.28),ty(.50));ctx.lineTo(tx(.32),ty(.40));ctx.lineTo(tx(.30),ty(.42));ctx.lineTo(tx(.34),ty(.32));
-ctx.stroke();
-
-// Short arrows in markdown zone
-for(let i=0;i<4;i++){
-  let x=.62+i*.035;
-  gridArrow(x,.20+i*.10,false);
-}
-
-// Spring buy arrows
-for(let i=0;i<3;i++){
-  let x=.79+i*.025;
-  gridArrow(x,.85-i*.04,true);
-}
-
+for(var i=0;i<8;i++){var x=.02+i*.02;gridArrow(x,.68,true);gridArrow(x+.01,.74,false);}
+for(var i=0;i<4;i++){var x=.62+i*.035;gridArrow(x,.20+i*.10,false);}
+for(var i=0;i<3;i++){var x=.79+i*.025;gridArrow(x,.85-i*.04,true);}
 })();
 </script>
 
-<!-- Circular diagram removed — redundant with price chart above -->
+<!-- PHASES -->
+<div style="padding: 80px 0 0;">
+<div class="dark-section">
+  <h2 style="font-size:36px; font-weight:500; color:#FFF; margin-bottom:8px; text-align:center;">Five Phases of the Wyckoff Lifecycle</h2>
+  <p style="text-align:center; color:var(--text-body-dark); font-size:16px; margin-bottom:40px;">Each phase has a clear objective, entry criteria, and exit triggers.</p>
 
-<!-- Phase Details -->
-<div class="phases-grid">
-  <div class="phase-card">
-    <h3><span class="dot" style="background:#3b82f6;"></span> DCA — Accumulation</h3>
-    <p>Grid trading in ranging/accumulation markets. Small take-profit captures on each grid level. Default starting phase.</p>
-    <div class="transitions">
-      <strong>→ EXIT:</strong> TA Score ≥50 + F&amp;G ≥80 + ATH gate (no weekly veto)<br>
-      <strong>→ MARKUP:</strong> Regime TRENDING + price &gt; 50d high + ADX &gt;25 + volume (weekly confirmed)
+  <div class="grid-3">
+    <div class="phase-card">
+      <h3><span class="phase-dot" style="background:#2269FC;"></span> DCA &#8212; Accumulation</h3>
+      <p>Grid trading in ranging markets. Small take-profit captures on each grid level. The default starting phase &#8212; always earning, even in sideways markets.</p>
+      <div class="transitions"><strong>&#8594; MARKUP:</strong> Breakout detected with trend confirmation<br><strong>&#8594; EXIT:</strong> Distribution signals fire at cycle top</div>
     </div>
-  </div>
-  <div class="phase-card">
-    <h3><span class="dot" style="background:#22c55e;"></span> MARKUP — Ride Uptrend</h3>
-    <p>Large position riding the uptrend. Deploy 50/70/90% of capital (by profile). Hold until distribution signals fire.</p>
-    <div class="transitions">
-      <strong>→ EXIT:</strong> TA Score ≥50 fires during markup → close position, begin lot unwind
+    <div class="phase-card">
+      <h3><span class="phase-dot" style="background:#00D68F;"></span> MARKUP &#8212; Ride Uptrend</h3>
+      <p>Capital deployed to ride the uptrend. Position size scales with your risk profile. Hold until the engine detects distribution.</p>
+      <div class="transitions"><strong>&#8594; EXIT:</strong> Distribution signals detected &#8594; begin position unwind</div>
     </div>
-  </div>
-  <div class="phase-card">
-    <h3><span class="dot" style="background:#f97316;"></span> EXIT — Lot Unwind</h3>
-    <p>Methodical position unwind. Rally selling, trailing stops, time-based urgency escalation. Used after both DCA top signals and MARKUP distribution.</p>
-    <div class="transitions">
-      <strong>→ MARKDOWN:</strong> All lots fully unwound → deploy shorts
+    <div class="phase-card">
+      <h3><span class="phase-dot" style="background:#FFAA00;"></span> EXIT &#8212; Distribution</h3>
+      <p>Methodical position unwind. Rally selling, trailing stops, and time-based urgency escalation protect your gains.</p>
+      <div class="transitions"><strong>&#8594; MARKDOWN:</strong> All positions unwound &#8594; deploy downside protection</div>
     </div>
-  </div>
-  <div class="phase-card">
-    <h3><span class="dot" style="background:#ef4444;"></span> MARKDOWN — Short Decline</h3>
-    <p>Aggressive shorts riding the decline. Tiered 50/70/90% deployment by profile. Capture downside momentum.</p>
-    <div class="transitions">
-      <strong>→ SPRING:</strong> Price drops 25%+ from exit price → close shorts, deploy longs<br>
-      <strong>→ DCA:</strong> Price recovers above entry (false exit) → return to grid
+    <div class="phase-card">
+      <h3><span class="phase-dot" style="background:#FF4D4F;"></span> MARKDOWN &#8212; Decline</h3>
+      <p>Short positions ride the decline. Deployment scales with your risk profile to capture downside momentum while the market corrects.</p>
+      <div class="transitions"><strong>&#8594; SPRING:</strong> Significant price drop from exit &#8594; close shorts, prepare for reversal<br><strong>&#8594; DCA:</strong> Price recovers (false exit) &#8594; return to grid</div>
     </div>
-  </div>
-  <div class="phase-card">
-    <h3><span class="dot" style="background:#14b8a6;"></span> SPRING — Buy the Bottom</h3>
-    <p>Tiered long deployment at 25/28/35% discount from exit price. Catch the capitulation bounce.</p>
-    <div class="transitions">
-      <strong>→ MARKUP:</strong> Price recovers 25%+ from spring entry + regime TRENDING<br>
-      <strong>→ DCA:</strong> 60-day timeout with no recovery signal
+    <div class="phase-card">
+      <h3><span class="phase-dot" style="background:#14b8a6;"></span> SPRING &#8212; Buy the Bottom</h3>
+      <p>Tiered long deployment at 3 increasing discount levels from exit price. Each tier buys deeper into the capitulation, maximizing entry quality.</p>
+      <div class="transitions"><strong>&#8594; MARKUP:</strong> Price recovers with trend confirmation<br><strong>&#8594; DCA:</strong> Timeout with no recovery &#8594; fall back to grid</div>
     </div>
-  </div>
-  <div class="phase-card" style="border-color: var(--accent); background: linear-gradient(135deg, #12121a 0%, #1a1a2e 100%);">
-    <h3><span class="dot" style="background:var(--accent);"></span> The Full Cycle</h3>
-    <p>DCA accumulates → breakout triggers MARKUP → distribution signals EXIT → lots unwind into MARKDOWN → price drops trigger SPRING → recovery returns to MARKUP or timeout falls back to DCA.</p>
-    <div class="transitions" style="color: var(--accent2);">
-      Every bear market ends. Every bull market ends. The engine adapts.
+    <div class="cycle-card">
+      <h3><span class="phase-dot" style="background:var(--ait-blue);"></span> The Full Cycle</h3>
+      <p>DCA accumulates &#8594; breakout triggers MARKUP &#8594; distribution signals EXIT &#8594; lots unwind into MARKDOWN &#8594; price drops trigger SPRING &#8594; recovery returns to MARKUP or timeout falls back to DCA.</p>
+      <div class="tagline">Every bear market ends. Every bull market ends. The engine adapts.</div>
     </div>
   </div>
 </div>
-
-<!-- Signal Components -->
-<div class="signals-section">
-  <h2>Signal Components</h2>
-  <div class="signal-grid">
-    <div class="signal-card">
-      <h4>TA Scorer (100pts max)</h4>
-      <ul>
-        <li>RSI bearish divergence — 25pts</li>
-        <li>Volume divergence — 25pts</li>
-        <li>Wick rejection (long upper) — 25pts</li>
-        <li>Momentum stall (ROC fade) — 25pts</li>
-      </ul>
-    </div>
-    <div class="signal-card">
-      <h4>Pi Cycle Indicator</h4>
-      <ul>
-        <li>111-SMA crosses 2×350-SMA — 25pts</li>
-        <li>Gap &lt; 2% (near cross) — 15pts</li>
-        <li>Gap &lt; 5% (approaching) — 5pts</li>
-      </ul>
-    </div>
-    <div class="signal-card">
-      <h4>Fear &amp; Greed Index</h4>
-      <ul>
-        <li>F&amp;G ≥ 90 (extreme greed) — +25pts</li>
-        <li>F&amp;G ≥ 80 (greed) — +15pts</li>
-        <li>F&amp;G ≤ 20 (fear) — -10pts</li>
-        <li>F&amp;G ≤ 10 (extreme fear) — -20pts</li>
-      </ul>
-    </div>
-    <div class="signal-card">
-      <h4>Gates &amp; Thresholds</h4>
-      <ul>
-        <li>Exit threshold: 50 points</li>
-        <li>ATH gate: price within 25% of ATH</li>
-        <li>Weekly veto: markup needs weekly confirm</li>
-        <li>No weekly veto on exit signals</li>
-      </ul>
-    </div>
-  </div>
 </div>
 
-<!-- Profile Scaling -->
-<div class="profile-section">
-  <h2>Profile Scaling</h2>
+<!-- PROFILE SCALING -->
+<div class="light-section">
+<div class="container" style="max-width:700px;">
+  <h2 style="text-align:center;">Risk Profiles</h2>
+  <p class="sub" style="text-align:center; margin-left:auto; margin-right:auto;">Three profiles control how aggressively the engine deploys capital in each phase.</p>
   <table class="profile-table">
-    <thead>
-      <tr><th>Profile</th><th>Markup Deploy</th><th>Short Deploy</th><th>Spring Deploy</th><th>Risk Level</th></tr>
-    </thead>
+    <thead><tr><th>Profile</th><th>Position Sizing</th><th>Style</th><th>Best For</th></tr></thead>
     <tbody>
-      <tr><td>Low</td><td>50%</td><td>50%</td><td>50%</td><td style="color:var(--green);">Conservative</td></tr>
-      <tr><td>Medium</td><td>70%</td><td>70%</td><td>70%</td><td style="color:var(--amber);">Balanced</td></tr>
-      <tr><td>High</td><td>90%</td><td>90%</td><td>90%</td><td style="color:var(--red);">Aggressive</td></tr>
+      <tr><td style="font-weight:600;">Low</td><td>Conservative</td><td style="color:var(--profit);">Smaller positions, lower volatility</td><td>Capital preservation</td></tr>
+      <tr><td style="font-weight:600;">Medium</td><td>Balanced</td><td style="color:var(--warning);">Moderate positions, balanced risk</td><td>Most investors</td></tr>
+      <tr><td style="font-weight:600;">High</td><td>Aggressive</td><td style="color:var(--loss);">Larger positions, higher volatility</td><td>Maximum returns</td></tr>
     </tbody>
   </table>
 </div>
+</div>
 
-<!-- Product Features -->
-<style>
-.features-section {
-  max-width: 1100px;
-  margin: 60px auto 48px;
-  padding: 0 24px;
-}
-.features-section h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 8px;
-}
-.features-section .section-sub {
-  text-align: center;
-  color: var(--text3);
-  font-size: 0.85rem;
-  margin-bottom: 32px;
-}
-.feature-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
-  gap: 24px;
-}
-.feature-box {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 32px;
-  transition: border-color 0.2s;
-}
-.feature-box:hover { border-color: var(--accent); }
-.feature-box .feat-icon {
-  font-size: 2rem;
-  margin-bottom: 12px;
-}
-.feature-box h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-.feature-box .feat-tagline {
-  color: var(--accent2);
-  font-size: 0.82rem;
-  font-style: italic;
-  margin-bottom: 14px;
-}
-.feature-box ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.feature-box ul li {
-  font-size: 0.84rem;
-  color: var(--text2);
-  padding: 4px 0;
-}
-.feature-box ul li::before {
-  content: '✓ ';
-  color: var(--green);
-  font-weight: 700;
-}
-.feature-box ul li.feat-sub::before {
-  content: '  · ';
-  color: var(--text3);
-  font-weight: 400;
-}
+<!-- BUILT-IN INTELLIGENCE -->
+<div class="dark-section">
+  <h2 style="font-size:36px; font-weight:500; color:#FFF; text-align:center; margin-bottom:8px;">Built-In Intelligence</h2>
+  <p style="text-align:center; color:var(--text-body-dark); font-size:16px; margin-bottom:40px;">Every coin is validated. Every phase is tracked. You always know where to deploy.</p>
 
-/* Dashboard mock table */
-.dashboard-section {
-  max-width: 800px;
-  margin: 36px auto 0;
-}
-.dashboard-section h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 14px;
-  color: var(--text2);
-}
-.dash-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--card);
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-.dash-table th, .dash-table td {
-  padding: 12px 18px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.84rem;
-}
-.dash-table th {
-  color: var(--text3);
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.5px;
-}
-.dash-table tr:last-child td { border-bottom: none; }
-.opp-best { color: var(--teal); font-weight: 600; }
-.opp-good { color: var(--blue); font-weight: 600; }
-.opp-mod { color: var(--green); font-weight: 600; }
-.opp-wait { color: var(--orange); font-weight: 600; }
-</style>
-
-<div class="features-section">
-  <h2>Built-In Intelligence</h2>
-  <p class="section-sub">Every coin is validated. Every phase is tracked. You always know where to deploy.</p>
-
-  <div class="feature-cards">
-    <!-- Feature 1: Pre-Trade Coin Certification -->
+  <div class="grid-2">
     <div class="feature-box">
-      <div class="feat-icon">🛡️</div>
+      <div class="feat-icon">&#x1F6E1;&#xFE0F;</div>
       <h3>Pre-Trade Coin Certification</h3>
-      <div class="feat-tagline">"Battle-tested across a full market cycle before you trade it"</div>
+      <div class="feat-tagline">&#8220;Battle-tested across a full market cycle before you trade it&#8221;</div>
       <ul>
-        <li>Every coin must pass a <strong>3–4 year full cycle backtest</strong> before it's tradeable on AIT</li>
-        <li>Validation criteria:</li>
-        <li class="feat-sub">Positive PnL on medium profile</li>
-        <li class="feat-sub">At least 1 complete Wyckoff cycle (exit → markdown → spring)</li>
-        <li class="feat-sub">No catastrophic unprotected drawdowns</li>
-        <li class="feat-sub">Exit signals fire at historical tops</li>
-        <li>Failures are analyzed to improve the scoring engine — the system gets smarter with every coin evaluated</li>
+        <li>Every coin must pass a <strong>3&#8211;4 year full cycle backtest</strong> before it&#8217;s tradeable</li>
+        <li>Must show positive returns and complete at least one full Wyckoff cycle</li>
+        <li>Exit signals must fire at historical tops &#8212; no unprotected drawdowns</li>
+        <li>Failed coins improve the scoring engine &#8212; the system gets smarter over time</li>
       </ul>
     </div>
-
-    <!-- Feature 2: Real-Time Phase Detection Dashboard -->
     <div class="feature-box">
-      <div class="feat-icon">📡</div>
-      <h3>Real-Time Phase Detection Dashboard</h3>
-      <div class="feat-tagline">"Know exactly where every coin is in its cycle — in real time"</div>
+      <div class="feat-icon">&#x1F4E1;</div>
+      <h3>Real-Time Phase Dashboard</h3>
+      <div class="feat-tagline">&#8220;Know exactly where every coin is in its cycle &#8212; in real time&#8221;</div>
       <ul>
-        <li>1h candles stored in real-time for all certified coins</li>
-        <li>System knows the <strong>current Wyckoff phase</strong> for every coin, updated hourly</li>
-        <li>Dashboard displays current phase per coin with visual indicators</li>
-        <li><strong>Coin Opportunity Ranking</strong> — ranks by entry quality:</li>
-        <li class="feat-sub">SPRING = Best entry (buying the bottom)</li>
-        <li class="feat-sub">DCA/Accumulation = Good entry (grid trading range)</li>
-        <li class="feat-sub">MARKUP = Moderate (trend running, still profitable)</li>
-        <li class="feat-sub">EXIT/MARKDOWN = Wait (distribution or decline)</li>
-        <li>Helps new investors or fresh capital <strong>time the market</strong> — deploy where the cycle says to deploy</li>
+        <li>Hourly candle data for all certified coins, updated continuously</li>
+        <li>Current Wyckoff phase displayed per coin with visual indicators</li>
+        <li><strong>Opportunity Ranking</strong> &#8212; ranks coins by entry quality</li>
+        <li>Helps new investors <strong>time their entry</strong> based on cycle position</li>
       </ul>
     </div>
   </div>
 
-  <!-- Mock Dashboard -->
-  <div class="dashboard-section">
-    <h3>📊 Live Opportunity Dashboard (Preview)</h3>
+  <!-- MOCK DASHBOARD -->
+  <div style="max-width:800px; margin:40px auto 0;">
+    <h3 style="font-size:16px; font-weight:500; color:var(--text-body-dark); text-align:center; margin-bottom:16px;">&#x1F4CA; Live Opportunity Dashboard (Preview)</h3>
     <table class="dash-table">
-      <thead>
-        <tr><th>Coin</th><th>Phase</th><th>Signal</th><th>Opportunity</th></tr>
-      </thead>
+      <thead><tr><th>Coin</th><th>Phase</th><th>Signal</th><th>Opportunity</th></tr></thead>
       <tbody>
-        <tr>
-          <td><strong>SOL</strong></td>
-          <td>🔵 SPRING</td>
-          <td>28% below exit price</td>
-          <td class="opp-best">Best entry — buying bottom</td>
-        </tr>
-        <tr>
-          <td><strong>BTC</strong></td>
-          <td>🔷 DCA</td>
-          <td>Ranging</td>
-          <td class="opp-good">Good — accumulating</td>
-        </tr>
-        <tr>
-          <td><strong>ETH</strong></td>
-          <td>🟢 MARKUP</td>
-          <td>Breakout confirmed</td>
-          <td class="opp-mod">Moderate — trend running</td>
-        </tr>
-        <tr>
-          <td><strong>HYPE</strong></td>
-          <td>🟠 EXIT</td>
-          <td>F&amp;G 85, score 52</td>
-          <td class="opp-wait">Wait — distribution</td>
-        </tr>
+        <tr><td><strong>SOL</strong></td><td>&#x1F535; SPRING</td><td>Deep discount from exit</td><td class="opp-best">Best entry &#8212; buying bottom</td></tr>
+        <tr><td><strong>BTC</strong></td><td>&#x1F537; DCA</td><td>Ranging</td><td class="opp-good">Good &#8212; accumulating</td></tr>
+        <tr><td><strong>ETH</strong></td><td>&#x1F7E2; MARKUP</td><td>Breakout confirmed</td><td class="opp-mod">Moderate &#8212; trend running</td></tr>
+        <tr><td><strong>HYPE</strong></td><td>&#x1F7E0; EXIT</td><td>Distribution detected</td><td class="opp-wait">Wait &#8212; distribution</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
-<!-- V12d Backtest Results -->
-<div class="results-section">
-  <h2>ETH/USDT Backtest Results</h2>
-  <p style="text-align:center; color:var(--text3); font-size:0.85rem; margin-bottom:16px;">Oct 2020 → Feb 2026 · $10,000 starting capital · 1h candles</p>
-  <table class="results-table" id="results-table">
-    <thead>
-      <tr><th>Profile</th><th>Return</th><th>Max Drawdown</th><th>Final Equity</th><th>Monthly ROI</th><th>Daily ROI</th><th>CAGR</th><th>Win Rate</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Low (50%)</td>
-        <td class="val-green">+325.1%</td>
-        <td class="val-amber">66.2%</td>
-        <td>$42,515</td>
-        <td>5.03%</td>
-        <td>0.165%</td>
-        <td>30.8%</td>
-        <td class="val-green">100%</td>
-      </tr>
-      <tr>
-        <td>Medium (70%)</td>
-        <td class="val-green">+539.2%</td>
-        <td class="val-amber">57.7%</td>
-        <td>$63,924</td>
-        <td>8.33%</td>
-        <td>0.274%</td>
-        <td>41.1%</td>
-        <td class="val-green">100%</td>
-      </tr>
-      <tr>
-        <td>High (90%)</td>
-        <td class="val-green">+1,115.6%</td>
-        <td class="val-amber">69.4%</td>
-        <td>$121,562</td>
-        <td>17.24%</td>
-        <td>0.566%</td>
-        <td>59.0%</td>
-        <td class="val-green">100%</td>
-      </tr>
-    </tbody>
-  </table>
+<!-- BACKTEST RESULTS -->
+<div style="padding: 80px 0 0;">
+<div class="dark-section">
+  <h2 style="font-size:36px; font-weight:500; color:#FFF; text-align:center; margin-bottom:8px;">Backtest Results</h2>
+  <p style="text-align:center; color:var(--text-body-dark); font-size:16px; margin-bottom:48px;">Oct 2020 &#8594; Feb 2026 &#183; $10,000 starting capital &#183; 1h candles</p>
+
+  <!-- ETH -->
+  <div class="results-block">
+    <h3>ETH/USDT</h3>
+    <p class="results-sub">Buy &amp; Hold max drawdown: ~82%</p>
+    <table class="results-table">
+      <thead><tr><th>Profile</th><th>Return</th><th>AIT Max DD</th><th>B&amp;H Max DD</th><th>Final Equity</th><th>Monthly ROI</th><th>Daily ROI</th><th>CAGR</th><th>Win Rate</th></tr></thead>
+      <tbody>
+        <tr><td>Low</td><td class="val-green">+325.1%</td><td class="val-amber">66.2%</td><td class="val-red">~82%</td><td>$42,515</td><td>5.03%</td><td>0.165%</td><td>30.8%</td><td class="val-green">100%</td></tr>
+        <tr><td>Medium</td><td class="val-green">+539.2%</td><td class="val-amber">57.7%</td><td class="val-red">~82%</td><td>$63,924</td><td>8.33%</td><td>0.274%</td><td>41.1%</td><td class="val-green">100%</td></tr>
+        <tr><td>High</td><td class="val-green">+1,115.6%</td><td class="val-amber">69.4%</td><td class="val-red">~82%</td><td>$121,562</td><td>17.24%</td><td>0.566%</td><td>59.0%</td><td class="val-green">100%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SOL -->
+  <div class="results-block">
+    <h3>SOL/USDT</h3>
+    <p class="results-sub">Buy &amp; Hold max drawdown: ~96%</p>
+    <table class="results-table">
+      <thead><tr><th>Profile</th><th>Return</th><th>AIT Max DD</th><th>B&amp;H Max DD</th><th>Final Equity</th><th>Monthly ROI</th><th>Daily ROI</th><th>CAGR</th><th>Win Rate</th></tr></thead>
+      <tbody>
+        <tr><td>Low</td><td class="val-green">+15,145%</td><td class="val-amber">61.0%</td><td class="val-red">~96%</td><td>$1,524,487</td><td>234.1%</td><td>7.69%</td><td>154.1%</td><td class="val-green">100%</td></tr>
+        <tr><td>Medium</td><td class="val-green">+27,461%</td><td class="val-amber">62.6%</td><td class="val-red">~96%</td><td>$2,756,140</td><td>424.4%</td><td>13.94%</td><td>183.6%</td><td class="val-green">100%</td></tr>
+        <tr><td>High</td><td class="val-green">+49,690%</td><td class="val-amber">64.6%</td><td class="val-red">~96%</td><td>$4,979,005</td><td>768.0%</td><td>25.22%</td><td>216.5%</td><td class="val-green">100%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- BTC -->
+  <div class="results-block">
+    <h3>BTC/USDT</h3>
+    <p class="results-sub">Buy &amp; Hold max drawdown: ~77%</p>
+    <table class="results-table">
+      <thead><tr><th>Profile</th><th>Return</th><th>AIT Max DD</th><th>B&amp;H Max DD</th><th>Final Equity</th><th>Monthly ROI</th><th>Daily ROI</th><th>CAGR</th><th>Win Rate</th></tr></thead>
+      <tbody>
+        <tr><td>Low</td><td class="val-green">+166.0%</td><td class="val-amber">57.2%</td><td class="val-red">~77%</td><td>$26,598</td><td>2.57%</td><td>0.084%</td><td>19.9%</td><td class="val-green">100%</td></tr>
+        <tr><td>Medium</td><td class="val-green">+120.3%</td><td class="val-amber">68.4%</td><td class="val-red">~77%</td><td>$22,031</td><td>1.86%</td><td>0.061%</td><td>15.8%</td><td class="val-green">100%</td></tr>
+        <tr><td>High</td><td class="val-green">+298.5%</td><td class="val-amber">72.8%</td><td class="val-red">~77%</td><td>$39,854</td><td>4.61%</td><td>0.152%</td><td>29.2%</td><td class="val-green">100%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- COMPLETED TRADES -->
+  <div class="results-block">
+    <h3>Completed Trades by Coin</h3>
+    <p class="results-sub">Total completed DCA cycles per coin and profile</p>
+    <table class="results-table" style="max-width:500px; margin:0 auto;">
+      <thead><tr><th></th><th>Low</th><th>Medium</th><th>High</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:500;">ETH</td><td>92</td><td>84</td><td>110</td></tr>
+        <tr><td style="font-weight:500;">SOL</td><td>18</td><td>4</td><td>7</td></tr>
+        <tr><td style="font-weight:500;">BTC</td><td>30</td><td>15</td><td>5</td></tr>
+      </tbody>
+    </table>
+    <p class="results-note">SOL and BTC show fewer DCA deals because the lifecycle engine holds through major markup phases rather than cycling small trades. The bulk of returns come from lifecycle plays.</p>
+  </div>
+
+  <!-- ESTIMATED TRANSACTIONS -->
+  <div class="results-block" style="margin-bottom:0;">
+    <h3>Estimated Transactions by Coin</h3>
+    <p class="results-sub">Medium profile &#183; Each DCA deal averages ~7&#8211;9 individual orders</p>
+    <table class="results-table" style="max-width:700px; margin:0 auto;">
+      <thead><tr><th></th><th>DCA Deals</th><th>~DCA Txns</th><th>Lifecycle Buys</th><th>Lifecycle Sells</th><th>Est. Total</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:500;">ETH</td><td>84</td><td>~630</td><td>18</td><td>6</td><td style="font-weight:600;">~650</td></tr>
+        <tr><td style="font-weight:500;">SOL</td><td>4</td><td>~30</td><td>15</td><td>12</td><td style="font-weight:600;">~60</td></tr>
+        <tr><td style="font-weight:500;">BTC</td><td>15</td><td>~110</td><td>20</td><td>29</td><td style="font-weight:600;">~160</td></tr>
+      </tbody>
+    </table>
+    <p class="results-note">SOL&#8217;s massive returns come from surprisingly few transactions &#8212; the lifecycle engine makes big, well-timed plays rather than high-frequency cycling. Quality over quantity.</p>
+  </div>
+</div>
 </div>
 
-<div class="results-section" style="margin-top: 48px;">
-  <h2>SOL/USDT Backtest Results</h2>
-  <p class="results-subtitle">Oct 2020 → Feb 2026 · $10,000 starting capital · 1h candles</p>
-  <table class="results-table">
-    <thead>
-      <tr>
-        <th>Profile</th>
-        <th>Return</th>
-        <th>Max Drawdown</th>
-        <th>Final Equity</th>
-        <th>Monthly ROI</th>
-        <th>Daily ROI</th>
-        <th>CAGR</th>
-        <th>Win Rate</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Low (50%)</td>
-        <td class="val-green">+15,145%</td>
-        <td class="val-amber">61.0%</td>
-        <td>$1,524,487</td>
-        <td>234.1%</td>
-        <td>7.69%</td>
-        <td>154.1%</td>
-        <td class="val-green">100%</td>
-      </tr>
-      <tr>
-        <td>Medium (70%)</td>
-        <td class="val-green">+27,461%</td>
-        <td class="val-amber">62.6%</td>
-        <td>$2,756,140</td>
-        <td>424.4%</td>
-        <td>13.94%</td>
-        <td>183.6%</td>
-        <td class="val-green">100%</td>
-      </tr>
-      <tr>
-        <td>High (90%)</td>
-        <td class="val-green">+49,690%</td>
-        <td class="val-amber">64.6%</td>
-        <td>$4,979,005</td>
-        <td>768.0%</td>
-        <td>25.22%</td>
-        <td>216.5%</td>
-        <td class="val-green">100%</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="results-section" style="margin-top: 48px;">
-  <h2>BTC/USDT Backtest Results</h2>
-  <p class="results-subtitle">Oct 2020 → Feb 2026 · $10,000 starting capital · 1h candles</p>
-  <table class="results-table">
-    <thead>
-      <tr>
-        <th>Profile</th>
-        <th>Return</th>
-        <th>Max Drawdown</th>
-        <th>Final Equity</th>
-        <th>Monthly ROI</th>
-        <th>Daily ROI</th>
-        <th>CAGR</th>
-        <th>Win Rate</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Low (50%)</td>
-        <td class="val-green">+166.0%</td>
-        <td class="val-amber">57.2%</td>
-        <td>$26,598</td>
-        <td>2.57%</td>
-        <td>0.084%</td>
-        <td>19.9%</td>
-        <td class="val-green">100%</td>
-      </tr>
-      <tr>
-        <td>Medium (70%)</td>
-        <td class="val-green">+120.3%</td>
-        <td class="val-amber">68.4%</td>
-        <td>$22,031</td>
-        <td>1.86%</td>
-        <td>0.061%</td>
-        <td>15.8%</td>
-        <td class="val-green">100%</td>
-      </tr>
-      <tr>
-        <td>High (90%)</td>
-        <td class="val-green">+298.5%</td>
-        <td class="val-amber">72.8%</td>
-        <td>$39,854</td>
-        <td>4.61%</td>
-        <td>0.152%</td>
-        <td>29.2%</td>
-        <td class="val-green">100%</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="results-section" style="margin-top: 48px;">
-  <h2>Completed Trades by Coin</h2>
-  <p class="results-subtitle">Oct 2020 → Feb 2026 · Total completed DCA cycles per coin and profile</p>
-  <table class="results-table">
-    <thead>
-      <tr><th></th><th>Low</th><th>Medium</th><th>High</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="font-weight:500;">ETH</td>
-        <td>92</td>
-        <td>84</td>
-        <td>110</td>
-      </tr>
-      <tr>
-        <td style="font-weight:500;">SOL</td>
-        <td>18</td>
-        <td>4</td>
-        <td>7</td>
-      </tr>
-      <tr>
-        <td style="font-weight:500;">BTC</td>
-        <td>30</td>
-        <td>15</td>
-        <td>5</td>
-      </tr>
-    </tbody>
-  </table>
-  <p style="text-align:center; color:var(--text3); font-size:0.8rem; margin-top:12px;">SOL and BTC show fewer DCA deals because the lifecycle engine holds through major markup phases rather than cycling small trades. The bulk of returns come from lifecycle plays — exits, springs, and markup — not individual deal completions.</p>
-</div>
-
-<div class="results-section" style="margin-top: 48px;">
-  <h2>Estimated Transactions by Coin</h2>
-  <p class="results-subtitle">Oct 2020 → Feb 2026 · Medium profile · Each DCA deal averages ~7-9 individual orders</p>
-  <table class="results-table">
-    <thead>
-      <tr><th></th><th>DCA Deals</th><th>~DCA Txns</th><th>Lifecycle Buys</th><th>Lifecycle Sells</th><th>Est. Total</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="font-weight:500;">ETH</td>
-        <td>84</td>
-        <td>~630</td>
-        <td>18</td>
-        <td>6</td>
-        <td style="font-weight:600;">~650</td>
-      </tr>
-      <tr>
-        <td style="font-weight:500;">SOL</td>
-        <td>4</td>
-        <td>~30</td>
-        <td>15</td>
-        <td>12</td>
-        <td style="font-weight:600;">~60</td>
-      </tr>
-      <tr>
-        <td style="font-weight:500;">BTC</td>
-        <td>15</td>
-        <td>~110</td>
-        <td>20</td>
-        <td>29</td>
-        <td style="font-weight:600;">~160</td>
-      </tr>
-    </tbody>
-  </table>
-  <p style="text-align:center; color:var(--text3); font-size:0.8rem; margin-top:12px;">SOL's massive returns come from surprisingly few transactions — the lifecycle engine makes big, well-timed plays rather than high-frequency cycling. Quality over quantity.</p>
-</div>
-
+<!-- FOOTER -->
 <div class="footer">
-  <p>Adaptive Intelligence Trading · Wyckoff Lifecycle Engine · 2024–2026</p>
+  <p>Adaptive Intelligence Trading &#183; Wyckoff Lifecycle Engine &#183; 2024&#8211;2026</p>
 </div>
 
 </body>
