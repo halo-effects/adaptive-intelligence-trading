@@ -4,55 +4,58 @@
   "profile": "medium",
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 10054.41,
+  "equity": 10056.0,
   "cash": 8858.4,
-  "pnl_pct": 0.54,
+  "pnl_pct": 0.56,
   "coins": {
     "ETH/USDC": {
       "state": "EXITING",
       "side": "long",
       "layers": 2,
       "avg_entry": 1983.2,
-      "current_price": 1974.4,
-      "unrealized_pnl": -1.77,
-      "next_so_price": 1898.914,
+      "current_price": 1976.6,
+      "unrealized_pnl": -1.33,
+      "next_so_price": 1864.208,
       "next_tp_price": 2003.032,
       "invested": 1200.0,
-      "realized_pnl": 7.11
+      "realized_pnl": 7.11,
+      "cfgi": 42.0
     },
     "SOL/USDC": {
       "state": "ACCUMULATING",
       "side": "long",
       "layers": 1,
       "avg_entry": 84.606,
-      "current_price": 85.243,
-      "unrealized_pnl": 3.01,
-      "next_so_price": 82.8081,
+      "current_price": 85.45,
+      "unrealized_pnl": 3.99,
+      "next_so_price": 82.0678,
       "next_tp_price": 85.4521,
       "invested": 400.0,
-      "realized_pnl": 0
+      "realized_pnl": 0,
+      "cfgi": 41.5
     },
     "HYPE/USDC": {
       "state": "ACCUMULATING",
       "side": "long",
       "layers": 1,
       "avg_entry": 30.248,
-      "current_price": 29.916,
-      "unrealized_pnl": -4.39,
-      "next_so_price": 29.3481,
+      "current_price": 29.929,
+      "unrealized_pnl": -4.22,
+      "next_so_price": 28.9776,
       "next_tp_price": 30.5505,
       "invested": 400.0,
-      "realized_pnl": 0
+      "realized_pnl": 0,
+      "cfgi": 44.0
     }
   },
   "deals_completed": 4,
   "win_rate": 100.0,
   "total_realized_pnl": 51.29,
   "max_drawdown_pct": 11.89,
-  "regime": "ACCUMULATION",
+  "regime": "TRENDING",
   "trend_direction": "bearish",
-  "last_update": "2026-02-21T13:18:01+00:00",
-  "uptime_hours": 0.0,
+  "last_update": "2026-02-21T13:33:11+00:00",
+  "uptime_hours": 0.3,
   "halted": false,
   "symbols": [
     "HYPE/USDC",
@@ -71,5 +74,6 @@
     "max_so_adjustments": {},
     "skip_next_so": []
   },
-  "lifecycle_enabled": false
+  "lifecycle_enabled": false,
+  "fear_greed_index": 48.5
 }
