@@ -3,9 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
 <title>Plans & Pricing — Adaptive Intelligence Trading</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+
+/* Force light mode — prevent Android/iOS dark mode from inverting */
+:root { color-scheme: light only; }
+@media (prefers-color-scheme: dark) {
+  body { background: #FFFFFF !important; color: #03071C !important; }
+}
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
   --ait-blue: #2269FC;
