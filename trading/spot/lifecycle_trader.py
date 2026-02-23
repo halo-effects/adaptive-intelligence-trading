@@ -356,9 +356,14 @@ class LifecycleTrader:
             return 0.0
 
     def _get_spot_position(self, symbol: str) -> float:
-        """Get current holdings of base asset (e.g. ETH from ETH/USDT)."""
+        """Get current holdings of base asset (e.g. ETH from ETH/USDT), including coins locked in open orders."""
         base = symbol.split('/')[0]
-        return self._get_balance(base)
+        try:
+            bal = self.client.fetch_balance(base)
+            return float(bal.get("total", 0) or 0)
+        except Exception as e:
+            logger.error("Failed to fetch total balance for %s: %s", base, e)
+            return 0.0
 
     def _get_min_order(self, symbol: str) -> dict:
         """Get minimum order constraints for a symbol."""
