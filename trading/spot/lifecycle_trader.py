@@ -2456,15 +2456,10 @@ class LifecycleTrader:
             regime, atr_pct_val, is_bullish = self._compute_regime_and_atr(df)
             regime_info[symbol] = (regime, is_bullish)
 
-            # Detect regime change
+            # Detect regime change (log only, no Telegram — too noisy)
             prev_regime = self._last_regime.get(symbol)
             if prev_regime and prev_regime != regime:
                 logger.info("🔄 Regime change for %s: %s → %s", symbol, prev_regime, regime)
-                send_telegram(
-                    f"🔄 <b>Regime Change</b>\n"
-                    f"Coin: {symbol}\n{prev_regime} → {regime}\n"
-                    f"Trend: {'Bullish' if is_bullish else 'Bearish'}"
-                )
             self._last_regime[symbol] = regime
 
             tp_pct = self._adaptive_tp(regime, atr_pct_val)
