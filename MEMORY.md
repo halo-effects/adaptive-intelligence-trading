@@ -21,7 +21,7 @@
 
 ### Aster Spot Live (ASTER/USDT) — V12e
 - **Live** on Aster DEX, Medium profile, 1h timeframe, lifecycle enabled
-- Task: `AsterSpotLive` (needs admin update from 15m → 1h; currently started manually)
+- Task: `AsterSpotLive` (updated to 1h trigger by Brett 2026-02-23)
 - Files: `trading/spot/lifecycle_trader.py` (class: `LifecycleTrader`), `trading/spot/run_live.py`
 - State/status: `trading/spot/live/aster/`
 - Dashboard: `docs/data/live-aster/` → private `d-474521b7c3545633.html`
