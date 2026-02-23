@@ -1057,10 +1057,34 @@ function renderMacro(){
   });
   if(!hasCfgi)cfgiHtml='<div class="mc-val" style="color:var(--text3)">--</div><div style="font-size:.7rem;color:var(--text3)">Not yet available</div>';
 
+  // Sentiment Momentum — aggregated gate health (no proprietary indicators exposed)
+  var gateHtml='';
+  var symsGate=S.symbols||[];
+  var hasGateData=false;
+  symsGate.forEach(function(sym){
+    var lc=(S.lifecycle||{})[sym]||{};
+    var gd=lc.gate_decisions||{};
+    var blocked=(gd.exit_blocked||0)+(gd.markdown_blocked||0)+(gd.markup_blocked||0);
+    var passed=(gd.exit_passed||0)+(gd.markdown_passed||0)+(gd.markup_passed||0);
+    var total=blocked+passed;
+    if(total>0){
+      hasGateData=true;
+      var base=sym.split('/')[0];
+      var health=passed>0?Math.round(passed/(total)*100):0;
+      var hCol=health>=70?'var(--green)':health>=40?'var(--amber)':'var(--red)';
+      var statusText=blocked===0?'All clear':'<span style="color:var(--amber)">'+blocked+' protected</span>';
+      gateHtml+='<div style="margin:6px 0"><span style="font-weight:600">'+base+':</span> <span style="color:'+hCol+';font-weight:700">'+health+'%</span> signal clarity <span style="font-size:.7rem;color:var(--text3);margin-left:4px">('+total+' checks, '+statusText+')</span></div>';
+    }else{
+      var base2=sym.split('/')[0];
+      gateHtml+='<div style="margin:6px 0"><span style="font-weight:600">'+base2+':</span> <span style="color:var(--text3)">Monitoring</span></div>';
+    }
+  });
+  if(!hasGateData)gateHtml='<div class="mc-val" style="color:var(--text3)">Monitoring</div><div style="font-size:.7rem;color:var(--text3)">Sentiment gates active — no transitions yet</div>';
+
   $('macroGrid').innerHTML=
     '<div class="macro-card"><div class="mc-title">Fear &amp; Greed Index</div><div class="mc-val" style="color:'+fgiCol+'">'+fgiVal+'</div><div class="mc-label" style="color:'+fgiCol+'">'+fgiLabel+'</div><div class="fg-bar">'+(fgi!=null?'<div class="fg-dot" style="left:'+fgi+'%"></div>':'')+'</div><div class="fg-labels"><span>Extreme Fear</span><span>Neutral</span><span>Extreme Greed</span></div></div>'+
-    '<div class="macro-card"><div class="mc-title">CFGI Per-Coin</div>'+cfgiHtml+'</div>'+
-    '<div class="macro-card"><div class="mc-title">Pi Cycle Gap</div><div class="mc-val" style="color:var(--text3);font-size:.9rem">Coming in V2</div><div style="font-size:.7rem;color:var(--text3)">BTC 111/350 DMA cross indicator</div></div>';
+    '<div class="macro-card"><div class="mc-title">Coin Sentiment</div>'+cfgiHtml+'</div>'+
+    '<div class="macro-card"><div class="mc-title">Sentiment Gates</div>'+gateHtml+'</div>';
 }
 
 // CAPITAL UTILIZATION DONUT
