@@ -482,38 +482,6 @@ tr:hover td{background:rgba(99,102,241,.04)}
   <h2>Portfolio Allocation</h2>
   <div class="alloc-inner" id="allocInner"></div>
 
-<!-- 3.5. CAPITAL MANAGEMENT COCKPIT -->
-<div class="cm-section" id="capitalManagementSection">
-  <h2>💰 Capital Management</h2>
-  <div class="cm-panel" id="capitalManagementPanel">
-    <!-- Row 1: Controls -->
-    <div class="cm-controls">
-      <div class="cm-control">
-        <div class="cm-speed-selector" id="cmSpeedSelector">
-          <div class="cmss-option cmss-conservative" id="cmssConservative">Conservative</div>
-          <div class="cmss-option cmss-balanced" id="cmssBalanced">Balanced</div>
-          <div class="cmss-option cmss-aggressive" id="cmssAggressive">Aggressive</div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Row 2: Status Cards -->
-    <div class="cm-status-cards">
-      <div class="cm-status-card">
-        <div class="cmsc-label">Idle Capital</div>
-        <div class="cmsc-value" id="cmIdleCapital">--</div>
-        <div class="cmsc-bar" id="cmIdleBar"></div>
-      </div>
-    </div>
-
-    <!-- Row 3: Phase Allocation Priority -->
-    <div class="cm-phase-priority" id="cmPhasePriority">
-      <div class="cmsc-label" style="margin-bottom:8px;">Allocation Priority</div>
-      <div id="cmPhaseWeights" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
-    </div>
-  </div>
-</div>
-
 </div>
 
 <!-- 4. POSITIONS -->
@@ -740,7 +708,7 @@ function render(){
   $('hdrCoins').textContent=syms.join(', ')+' \u00B7 '+(S.timeframe||'1h');
 
   // Stats row — each wrapped so one failure doesn't kill the rest
-  var fns=[renderStats,renderRiskProfile,renderPortfolioAlloc,renderCapitalManagement,renderPositions,renderAIPanel,renderCoinCards,renderCompounding,renderMacro,renderCapDonut,renderFlowDiagram,renderBottomBar];
+  var fns=[renderStats,renderRiskProfile,renderPortfolioAlloc,renderPositions,renderAIPanel,renderCoinCards,renderCompounding,renderMacro,renderCapDonut,renderFlowDiagram,renderBottomBar];
   fns.forEach(function(fn){try{fn()}catch(e){console.warn(fn.name,e)}});
 }
 
