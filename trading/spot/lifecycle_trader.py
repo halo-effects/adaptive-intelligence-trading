@@ -2377,7 +2377,7 @@ class LifecycleTrader:
         poll_seconds = TIMEFRAME_SECONDS.get(self.timeframe, 900)
 
         send_telegram(
-            f"🚀 <b>Spot {mode} Trader Started</b>\n"
+            f"🚀 <b>Lifecycle {mode} Trader Started</b>\n"
             f"Exchange: {self.exchange_name}\nProfile: {self.profile.name}\n"
             f"Capital: ${self.initial_capital:.0f}\nCash: ${self.cash:.2f}\n"
             f"Symbols: {', '.join(self.symbols)}\n"
