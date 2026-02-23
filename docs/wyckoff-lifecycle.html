@@ -511,7 +511,7 @@ dca2Trades.forEach(t => drawTradeMarker(t.x, t.y, t.buy, 10));
 
 // Floating callout cards
 function drawCalloutCard(x, y, title, desc, color, targetX, targetY) {
-  const cardW = 180, cardH = 50;
+  const cardW = 200, cardH = 50;
   const px = tx(x) - cardW/2, py = ty(y) - cardH/2;
   
   // Card background with rounded corners
@@ -583,7 +583,7 @@ function drawCalloutCard(x, y, title, desc, color, targetX, targetY) {
 drawCalloutCard(0.10, 0.50, 'Grid Trading', 'Buy dips, sell recoveries', COL.dca, 0.10, 0.72);
 drawCalloutCard(0.29, 0.25, 'Breakout Detected', 'Ride the trend, maximize position', COL.markup, 0.29, 0.35);
 drawCalloutCard(0.49, 0.25, 'Distribution Signal', 'Take profits systematically', COL.exit, 0.49, 0.08);
-drawCalloutCard(0.67, 0.50, 'Short the Decline', 'Profit from downtrend via futures', COL.markdown, 0.67, 0.45);
+drawCalloutCard(0.67, 0.50, 'Short the Decline', 'Profit from the downtrend', COL.markdown, 0.67, 0.45);
 drawCalloutCard(0.81, 0.65, 'Tiered Spring Entry', 'Buy the discount in layers', COL.spring, 0.81, 0.88);
 
 })();
