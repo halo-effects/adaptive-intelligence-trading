@@ -757,7 +757,7 @@ function renderStats(){
   // Avg Daily ROI
   var hours=S.uptime_hours||0;
   var days=Math.max(hours/24,1);
-  var dailyRoi=pnlPct/days;
+  var dailyRoi=growthPct/days;
   $('vROI').innerHTML='<span style="color:'+pC(dailyRoi)+'">'+(dailyRoi>=0?'+':'')+fmt(dailyRoi,4)+'%</span>';
   $('vROISub').textContent='on '+fUsd(cap)+' capital';
 }
