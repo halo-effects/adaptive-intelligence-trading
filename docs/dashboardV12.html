@@ -538,7 +538,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
   <h2 style="text-align:center;font-size:1.15rem;color:var(--text);margin-bottom:4px">&#x1F4CA; Live Opportunity Dashboard</h2>
   <div class="flow-sub" style="text-align:center">Each coin progresses independently through Wyckoff-inspired market cycle phases</div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th>SIGNAL</th><th>OPPORTUNITY</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th>GRADE</th><th>SIGNAL</th><th>OPPORTUNITY</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
 </div>
@@ -1197,15 +1197,36 @@ function renderFlowDiagram(){
       }
     });
 
+    // Score to letter grade (0-105 scale)
+    function scoreGrade(s){
+      if(s==='--'||s==null)return{letter:'--',color:'var(--text3)'};
+      if(s>=95)return{letter:'A+',color:'var(--green)'};
+      if(s>=85)return{letter:'A',color:'var(--green)'};
+      if(s>=75)return{letter:'B+',color:'#22d3ee'};
+      if(s>=60)return{letter:'B',color:'var(--accent2)'};
+      if(s>=45)return{letter:'C',color:'var(--amber)'};
+      if(s>=30)return{letter:'D',color:'var(--amber)'};
+      return{letter:'F',color:'var(--red)'};
+    }
+
     // Build signal description
     var signal='';
     if(!isActive){
-      // Scanner-only coin - show V12f backtest results
-      var parts=['Score: '+(scanScore!=='--'?scanScore.toFixed(0):'--')];
-      if(scanSharpe!=='--') parts.push('Sharpe: '+scanSharpe.toFixed(2));
+      // Scanner-only coin - show user-friendly backtest summary
+      var g=scoreGrade(scanScore);
+      var parts=[];
+      if(scanCoinData){
+        var wr=scanCoinData.win_rate;
+        var profit=scanCoinData.total_profit_pct;
+        var dd=scanCoinData.max_drawdown_pct;
+        var deals=scanCoinData.total_deals;
+        if(wr!=null) parts.push(Math.round(wr)+'% win rate');
+        if(profit!=null) parts.push((profit>=0?'+':'')+profit.toFixed(1)+'% profit');
+        if(dd!=null) parts.push(dd.toFixed(1)+'% max risk');
+      }
       if(scanExchanges.length>0) parts.push(scanExchanges.join('/'));
       else parts.push('no exchange');
-      signal=parts.join(' | ');
+      signal=parts.join(' · ');
       phase='--';
     }else if(phase==='SPRING'){
       var discount=lc.spring_discount||'--';
@@ -1231,14 +1252,27 @@ function renderFlowDiagram(){
 
     var phaseHtml=phase==='--'?'<span style="color:var(--text3)">Monitoring</span>':'<span class="phase-pill"><span class="pd" style="background:'+phaseColors[phase]+'"></span>'+phase+'</span>';
 
+    // Grade column
+    var g=scoreGrade(scanScore);
+    var gradeHtml;
+    if(isActive){
+      // Active coins: show phase-based grade from lifecycle score
+      var activeScore=lc.daily_score||lc.score||0;
+      var ag=scoreGrade(activeScore>0?activeScore*10:50);
+      gradeHtml='<span style="font-weight:800;font-size:1.1rem;color:'+ag.color+'">'+ag.letter+'</span>';
+    }else{
+      gradeHtml='<span style="font-weight:800;font-size:1.1rem;color:'+g.color+'">'+g.letter+'</span>';
+    }
+
     h+='<tr'+(isActive?' style="background:rgba(99,102,241,.06)"':'')+'>';
     h+='<td class="coin-name">'+m.label+(isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'')+'</td>';
     h+='<td>'+phaseHtml+'</td>';
+    h+='<td style="text-align:center">'+gradeHtml+'</td>';
     h+='<td class="signal-text">'+signal+'</td>';
     h+='<td class="opp-text" style="color:'+opp.color+'">'+opp.text+'</td>';
     h+='</tr>';
   });
-  $('oppBody').innerHTML=h||'<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
+  $('oppBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
 }
 
 // TRADES
