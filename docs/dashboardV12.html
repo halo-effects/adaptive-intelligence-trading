@@ -586,7 +586,7 @@ var CONFIG = {
   statusUrl: 'data/v12f/status.json',
   tradesUrl: 'data/v12f/trades.csv',
   refreshInterval: 60,
-  scannerUrl: 'data/scanner_t1.json'
+  scannerUrl: 'data/scanner_t2.json'
 };
 
 // HELPERS
@@ -1154,13 +1154,12 @@ function renderFlowDiagram(){
   var allSyms=[];
   // Start with active coins
   activeSyms.forEach(function(s){ allSyms.push(s) });
-  // Add scanner-certified coins
-  if(scannerData && scannerData.candidates){
-    scannerData.candidates.forEach(function(c){
-      var sym=c.symbol;
-      if(allSyms.indexOf(sym)===-1) allSyms.push(sym);
-    });
-  }
+  // Add scanner-certified coins (V12f format uses 'rankings', legacy uses 'candidates')
+  var scanCoins = scannerData && (scannerData.rankings || scannerData.candidates) || [];
+  scanCoins.forEach(function(c){
+    var sym=c.symbol;
+    if(allSyms.indexOf(sym)===-1) allSyms.push(sym);
+  });
   var syms=allSyms.length>0?allSyms:activeSyms;
   var phaseColors={DCA:'var(--phase-dca)',EXIT:'var(--phase-exit)',MARKDOWN:'var(--phase-markdown)',SPRING:'var(--phase-spring)',MARKUP:'var(--phase-markup)'};
   var oppMap={
@@ -1182,19 +1181,29 @@ function renderFlowDiagram(){
     var cfgi=c.cfgi!=null?c.cfgi:null;
     var regime=S.regime||'--';
 
-    // Scanner score for this coin
+    // Scanner score for this coin (V12f: composite_score, legacy: total_score)
     var scanScore='--';
-    if(scannerData && scannerData.candidates){
-      scannerData.candidates.forEach(function(sc){
-        if(sc.symbol===sym) scanScore=sc.total_score;
-      });
-    }
+    var scanSharpe='--';
+    var scanExchanges=[];
+    var scanCoinData=null;
+    scanCoins.forEach(function(sc){
+      if(sc.symbol===sym){
+        scanScore=sc.composite_score||sc.total_score||'--';
+        scanSharpe=sc.sharpe_ratio||'--';
+        scanExchanges=sc.available_on||[];
+        scanCoinData=sc;
+      }
+    });
 
     // Build signal description
     var signal='';
     if(!isActive){
-      // Scanner-only coin — show scanner score
-      signal='Scanner score: '+(scanScore!=='--'?scanScore.toFixed(0):'--');
+      // Scanner-only coin — show V12f backtest results
+      var parts=['Score: '+(scanScore!=='--'?scanScore.toFixed(0):'--')];
+      if(scanSharpe!=='--') parts.push('Sharpe: '+scanSharpe.toFixed(2));
+      if(scanExchanges.length>0) parts.push(scanExchanges.join('/'));
+      else parts.push('no exchange');
+      signal=parts.join(' | ');
       phase='--';
     }else if(phase==='SPRING'){
       var discount=lc.spring_discount||'--';
