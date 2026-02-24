@@ -538,7 +538,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
   <h2 style="text-align:center;font-size:1.15rem;color:var(--text);margin-bottom:4px">&#x1F4CA; Live Opportunity Dashboard</h2>
   <div class="flow-sub" style="text-align:center">Each coin progresses independently through Wyckoff-inspired market cycle phases</div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th>GRADE</th><th>SIGNAL</th><th>OPPORTUNITY</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th>SIGNAL</th><th>OPPORTUNITY</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
 </div>
@@ -586,7 +586,7 @@ var CONFIG = {
   statusUrl: 'data/live-aster/status.json',
   tradesUrl: 'data/live-aster/trades.csv',
   refreshInterval: 60,
-  scannerUrl: 'data/scanner_t2.json'
+  scannerUrl: 'data/scanner_t1.json'
 };
 
 // HELPERS
@@ -618,11 +618,11 @@ function parseCSV(t){var l=t.trim().split('\n');if(l.length<2)return[];var h=l[0
 // CAPITAL MANAGEMENT COCKPIT
 function renderCapitalManagement(){
   if(!S) return;
-
+  
   // Show section even without V12f data (use defaults)
   var cmSection = $('capitalManagementSection');
   if(cmSection) cmSection.style.display = 'block';
-
+  
   // Speed selector
   var mode = (S.deployment_speed || S.rebalancing_mode || 'balanced').toLowerCase();
   ['conservative', 'balanced', 'aggressive'].forEach(function(m) {
@@ -631,7 +631,7 @@ function renderCapitalManagement(){
       el.className = 'cmss-option cmss-' + m + (mode === m ? ' active' : '');
     }
   });
-
+  
   // Status cards
   // Idle Capital
   var idleCapital = $('cmIdleCapital');
@@ -646,7 +646,7 @@ function renderCapitalManagement(){
     var barClass = idlePct > 25 ? 'high' : idlePct > 15 ? 'moderate' : 'low';
     idleBar.innerHTML = '<div class="cmsc-bar-fill ' + barClass + '" style="width:' + barLevel + '%"></div>';
   }
-
+  
   // Phase Allocation Priority
   var phaseWeightsEl = $('cmPhaseWeights');
   if(phaseWeightsEl) {
@@ -663,7 +663,7 @@ function renderCapitalManagement(){
       var matching = coins.filter(function(c){ return (c.phase||'').toUpperCase() === pw.phase; }).map(function(c){ return c.symbol; });
       html += '<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 12px;min-width:100px;">' +
               '<div style="font-size:12px;color:' + pw.col + ';font-weight:600;">' + pw.phase + ' ' + pw.w + '</div>' +
-              '<div style="font-size:11px;color:var(--text3);margin-top:2px;">' + (matching.length ? matching.join(', ') : '-') + '</div></div>';
+              '<div style="font-size:11px;color:var(--text3);margin-top:2px;">' + (matching.length ? matching.join(', ') : '—') + '</div></div>';
     });
     phaseWeightsEl.innerHTML = html;
   }
@@ -707,7 +707,7 @@ function render(){
   var syms=S.symbols||Object.keys(S.coins||{});
   $('hdrCoins').textContent=syms.join(', ')+' \u00B7 '+(S.timeframe||'1h');
 
-  // Stats row - each wrapped so one failure doesn't kill the rest
+  // Stats row — each wrapped so one failure doesn't kill the rest
   var fns=[renderStats,renderRiskProfile,renderPortfolioAlloc,renderPositions,renderAIPanel,renderCoinCards,renderCompounding,renderMacro,renderCapDonut,renderFlowDiagram,renderBottomBar];
   fns.forEach(function(fn){try{fn()}catch(e){console.warn(fn.name,e)}});
 }
@@ -730,12 +730,12 @@ function renderStats(){
   // Unrealized PnL
   var syms=S.symbols||Object.keys(S.coins||{});
   var totalUpnl=0, totalInv=0;
-  syms.forEach(function(sym){var c=(S.coins||{})[sym]||{};totalUpnl+=(c.unrealized_pnl||0);totalInv+=('capital_deployed' in c?c.capital_deployed:c.invested||0)});
+  syms.forEach(function(sym){var c=(S.coins||{})[sym]||{};totalUpnl+=(c.unrealized_pnl||0);totalInv+=(c.invested||0)});
   var upnlPct=totalInv>0?(totalUpnl/totalInv*100):0;
   $('vUPnl').innerHTML='<span style="color:'+pC(totalUpnl)+'">'+(totalUpnl>=0?'+':'')+fUsd(totalUpnl)+'</span>';
-  $('vUPnlSub').textContent=fmt(upnlPct,2)+'% on '+fUsd(totalInv)+' deployed';
+  $('vUPnlSub').textContent=fmt(upnlPct,2)+'% on '+fUsd(totalInv)+' invested';
 
-  // Win / Loss - use trades if loaded, otherwise derive from status.json
+  // Win / Loss — use trades if loaded, otherwise derive from status.json
   var wins=0, losses=0;
   if(trades.length>0){
     trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);if(p>0)wins++;else if(p!==0)losses++});
@@ -817,7 +817,7 @@ function renderPortfolioAlloc(){
   syms.forEach(function(sym){
     var c=(S.coins||{})[sym]||{};
     var m=cm(sym);
-    var inv='capital_deployed' in c?c.capital_deployed:(c.invested||0);
+    var inv=c.invested||0;
     totalInv+=inv;
     items.push({name:m.label,inv:inv,pnl:c.unrealized_pnl||0,color:m.color});
   });
@@ -869,7 +869,7 @@ function renderPositions(){
     var entry=c.avg_entry||0;
     var tp=c.next_tp_price||0;
     var so=c.next_so_price||0;
-    var inv='capital_deployed' in c?c.capital_deployed:(c.invested||0);
+    var inv=c.invested||0;
     var upnl=c.unrealized_pnl||0;
     var rpnl=c.realized_pnl||0;
 
@@ -887,7 +887,7 @@ function renderPositions(){
     html+='<div class="position-stats">';
     html+='<div class="position-stat"><div class="ps-label">Current Price</div><div class="ps-val">'+fUsd(price,pd_)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Avg Entry</div><div class="ps-val">'+fUsd(entry,pd_)+'</div></div>';
-    html+='<div class="position-stat"><div class="ps-label">Capital Deployed</div><div class="ps-val">'+fUsd(inv)+'</div></div>';
+    html+='<div class="position-stat"><div class="ps-label">Invested</div><div class="ps-val">'+fUsd(inv)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">TP Target</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Unrealized PnL</div><div class="ps-val" style="color:'+pC(upnl)+'">'+(upnl>=0?'+':'')+fUsd(upnl)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Realized PnL</div><div class="ps-val" style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</div></div>';
@@ -1025,7 +1025,7 @@ function renderMacro(){
   });
   if(!hasCfgi)cfgiHtml='<div class="mc-val" style="color:var(--text3)">--</div><div style="font-size:.7rem;color:var(--text3)">Not yet available</div>';
 
-  // Sentiment Momentum - aggregated gate health (no proprietary indicators exposed)
+  // Sentiment Momentum — aggregated gate health (no proprietary indicators exposed)
   var gateHtml='';
   var symsGate=S.symbols||[];
   var hasGateData=false;
@@ -1047,7 +1047,7 @@ function renderMacro(){
       gateHtml+='<div style="margin:6px 0"><span style="font-weight:600">'+base2+':</span> <span style="color:var(--text3)">Monitoring</span></div>';
     }
   });
-  if(!hasGateData)gateHtml='<div class="mc-val" style="color:var(--text3)">Monitoring</div><div style="font-size:.7rem;color:var(--text3)">Sentiment gates active - no transitions yet</div>';
+  if(!hasGateData)gateHtml='<div class="mc-val" style="color:var(--text3)">Monitoring</div><div style="font-size:.7rem;color:var(--text3)">Sentiment gates active — no transitions yet</div>';
 
   $('macroGrid').innerHTML=
     '<div class="macro-card"><div class="mc-title">Fear &amp; Greed Index</div><div class="mc-val" style="color:'+fgiCol+'">'+fgiVal+'</div><div class="mc-label" style="color:'+fgiCol+'">'+fgiLabel+'</div><div class="fg-bar">'+(fgi!=null?'<div class="fg-dot" style="left:'+fgi+'%"></div>':'')+'</div><div class="fg-labels"><span>Extreme Fear</span><span>Neutral</span><span>Extreme Greed</span></div></div>'+
@@ -1062,12 +1062,11 @@ function renderCapUtilDonut(){
   var active=0, pending=0;
   syms.forEach(function(sym){
     var c=(S.coins||{})[sym]||{};
-    active+=('capital_deployed' in c?c.capital_deployed:c.invested||0);
+    active+=(c.invested||0);
     var filled=c.layers||0;
-    var cdep='capital_deployed' in c?c.capital_deployed:(c.invested||0);
     var remaining=maxSO-filled;
-    if(remaining>0&&cdep>0&&filled>0){
-      var avgPerLayer=cdep/filled;
+    if(remaining>0&&c.invested>0&&filled>0){
+      var avgPerLayer=c.invested/filled;
       pending+=remaining*avgPerLayer*1.2;
     }
   });
@@ -1109,12 +1108,11 @@ function renderCapDonut(){
   syms.forEach(function(sym){
     var c=(S.coins||{})[sym]||{}, lc=(S.lifecycle||{})[sym]||{};
     var phase=lc.phase||'DCA';
-    var cd='capital_deployed' in c?c.capital_deployed:(c.invested||0);
-    if(phase==='DCA')dcaInv+=cd;
+    if(phase==='DCA')dcaInv+=(c.invested||0);
     else if(phase==='SPRING')springDep+=(lc.spring_deployed||0);
-    else if(phase==='MARKUP')markupDep+=cd;
-    else if(phase==='MARKDOWN'&&lc.short_active)shortMar+=cd;
-    else dcaInv+=cd;
+    else if(phase==='MARKUP')markupDep+=(c.invested||0);
+    else if(phase==='MARKDOWN'&&lc.short_active)shortMar+=(c.invested||0);
+    else dcaInv+=(c.invested||0);
   });
   var cash=S.cash||0;
   var total=dcaInv+springDep+markupDep+shortMar+cash||1;
@@ -1156,12 +1154,13 @@ function renderFlowDiagram(){
   var allSyms=[];
   // Start with active coins
   activeSyms.forEach(function(s){ allSyms.push(s) });
-  // Add scanner-certified coins (V12f format uses 'rankings', legacy uses 'candidates')
-  var scanCoins = scannerData && (scannerData.rankings || scannerData.candidates) || [];
-  scanCoins.forEach(function(c){
-    var sym=c.symbol;
-    if(allSyms.indexOf(sym)===-1) allSyms.push(sym);
-  });
+  // Add scanner-certified coins
+  if(scannerData && scannerData.candidates){
+    scannerData.candidates.forEach(function(c){
+      var sym=c.symbol;
+      if(allSyms.indexOf(sym)===-1) allSyms.push(sym);
+    });
+  }
   var syms=allSyms.length>0?allSyms:activeSyms;
   var phaseColors={DCA:'var(--phase-dca)',EXIT:'var(--phase-exit)',MARKDOWN:'var(--phase-markdown)',SPRING:'var(--phase-spring)',MARKUP:'var(--phase-markup)'};
   var oppMap={
@@ -1183,50 +1182,19 @@ function renderFlowDiagram(){
     var cfgi=c.cfgi!=null?c.cfgi:null;
     var regime=S.regime||'--';
 
-    // Scanner score for this coin (V12f: composite_score, legacy: total_score)
+    // Scanner score for this coin
     var scanScore='--';
-    var scanSharpe='--';
-    var scanExchanges=[];
-    var scanCoinData=null;
-    scanCoins.forEach(function(sc){
-      if(sc.symbol===sym){
-        scanScore=sc.composite_score||sc.total_score||'--';
-        scanSharpe=sc.sharpe_ratio||'--';
-        scanExchanges=sc.available_on||[];
-        scanCoinData=sc;
-      }
-    });
-
-    // Score to letter grade (0-105 scale)
-    function scoreGrade(s){
-      if(s==='--'||s==null)return{letter:'--',color:'var(--text3)'};
-      if(s>=95)return{letter:'A+',color:'var(--green)'};
-      if(s>=85)return{letter:'A',color:'var(--green)'};
-      if(s>=75)return{letter:'B+',color:'#22d3ee'};
-      if(s>=60)return{letter:'B',color:'var(--accent2)'};
-      if(s>=45)return{letter:'C',color:'var(--amber)'};
-      if(s>=30)return{letter:'D',color:'var(--amber)'};
-      return{letter:'F',color:'var(--red)'};
+    if(scannerData && scannerData.candidates){
+      scannerData.candidates.forEach(function(sc){
+        if(sc.symbol===sym) scanScore=sc.total_score;
+      });
     }
 
     // Build signal description
     var signal='';
     if(!isActive){
-      // Scanner-only coin - show user-friendly backtest summary
-      var g=scoreGrade(scanScore);
-      var parts=[];
-      if(scanCoinData){
-        var wr=scanCoinData.win_rate;
-        var profit=scanCoinData.total_profit_pct;
-        var dd=scanCoinData.max_drawdown_pct;
-        var deals=scanCoinData.total_deals;
-        if(wr!=null) parts.push(Math.round(wr)+'% win rate');
-        if(profit!=null) parts.push((profit>=0?'+':'')+profit.toFixed(1)+'% profit');
-        if(dd!=null) parts.push(dd.toFixed(1)+'% max risk');
-      }
-      if(scanExchanges.length>0) parts.push(scanExchanges.join('/'));
-      else parts.push('no exchange');
-      signal=parts.join(' · ');
+      // Scanner-only coin — show scanner score
+      signal='Scanner score: '+(scanScore!=='--'?scanScore.toFixed(0):'--');
       phase='--';
     }else if(phase==='SPRING'){
       var discount=lc.spring_discount||'--';
@@ -1245,34 +1213,21 @@ function renderFlowDiagram(){
 
     var opp;
     if(!isActive){
-      opp={text:'Certified - available',color:'var(--text2)'};
+      opp={text:'Certified — available',color:'var(--text2)'};
     }else{
       opp=oppMap[phase]||{text:'--',color:'var(--text3)'};
     }
 
     var phaseHtml=phase==='--'?'<span style="color:var(--text3)">Monitoring</span>':'<span class="phase-pill"><span class="pd" style="background:'+phaseColors[phase]+'"></span>'+phase+'</span>';
 
-    // Grade column
-    var g=scoreGrade(scanScore);
-    var gradeHtml;
-    if(isActive){
-      // Active coins: show phase-based grade from lifecycle score
-      var activeScore=lc.daily_score||lc.score||0;
-      var ag=scoreGrade(activeScore>0?activeScore*10:50);
-      gradeHtml='<span style="font-weight:800;font-size:1.1rem;color:'+ag.color+'">'+ag.letter+'</span>';
-    }else{
-      gradeHtml='<span style="font-weight:800;font-size:1.1rem;color:'+g.color+'">'+g.letter+'</span>';
-    }
-
-    h+='<tr'+(isActive?' style="background:rgba(99,102,241,.06)"':'')+'>';
+    h+='<tr'+(isActive?' style="background:rgba(99,102,241,.06)"':'')+'>'; 
     h+='<td class="coin-name">'+m.label+(isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'')+'</td>';
     h+='<td>'+phaseHtml+'</td>';
-    h+='<td style="text-align:center">'+gradeHtml+'</td>';
     h+='<td class="signal-text">'+signal+'</td>';
     h+='<td class="opp-text" style="color:'+opp.color+'">'+opp.text+'</td>';
     h+='</tr>';
   });
-  $('oppBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
+  $('oppBody').innerHTML=h||'<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
 }
 
 // TRADES
