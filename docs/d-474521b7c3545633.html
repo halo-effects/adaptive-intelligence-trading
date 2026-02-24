@@ -538,7 +538,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
   <h2 style="text-align:center;font-size:1.15rem;color:var(--text);margin-bottom:4px">&#x1F4CA; Live Opportunity Dashboard</h2>
   <div class="flow-sub" style="text-align:center">Each coin progresses independently through Wyckoff-inspired market cycle phases</div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th>SIGNAL</th><th>OPPORTUNITY</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th>GRADE</th><th>SIGNAL</th><th>OPPORTUNITY</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
 </div>
@@ -586,7 +586,7 @@ var CONFIG = {
   statusUrl: 'data/live-aster/status.json',
   tradesUrl: 'data/live-aster/trades.csv',
   refreshInterval: 60,
-  scannerUrl: 'data/scanner_t1.json'
+  scannerUrl: 'data/scanner_t2.json'
 };
 
 // HELPERS
@@ -1154,13 +1154,12 @@ function renderFlowDiagram(){
   var allSyms=[];
   // Start with active coins
   activeSyms.forEach(function(s){ allSyms.push(s) });
-  // Add scanner-certified coins
-  if(scannerData && scannerData.candidates){
-    scannerData.candidates.forEach(function(c){
-      var sym=c.symbol;
-      if(allSyms.indexOf(sym)===-1) allSyms.push(sym);
-    });
-  }
+  // Add scanner-certified coins (V12f format uses 'rankings', legacy uses 'candidates')
+  var scanCoins = scannerData && (scannerData.rankings || scannerData.candidates) || [];
+  scanCoins.forEach(function(c){
+    var sym=c.symbol;
+    if(allSyms.indexOf(sym)===-1) allSyms.push(sym);
+  });
   var syms=allSyms.length>0?allSyms:activeSyms;
   var phaseColors={DCA:'var(--phase-dca)',EXIT:'var(--phase-exit)',MARKDOWN:'var(--phase-markdown)',SPRING:'var(--phase-spring)',MARKUP:'var(--phase-markup)'};
   var oppMap={
@@ -1182,19 +1181,48 @@ function renderFlowDiagram(){
     var cfgi=c.cfgi!=null?c.cfgi:null;
     var regime=S.regime||'--';
 
-    // Scanner score for this coin
+    // Scanner score for this coin (V12f: composite_score, legacy: total_score)
     var scanScore='--';
-    if(scannerData && scannerData.candidates){
-      scannerData.candidates.forEach(function(sc){
-        if(sc.symbol===sym) scanScore=sc.total_score;
-      });
+    var scanSharpe='--';
+    var scanExchanges=[];
+    var scanCoinData=null;
+    scanCoins.forEach(function(sc){
+      if(sc.symbol===sym){
+        scanScore=sc.composite_score||sc.total_score||'--';
+        scanSharpe=sc.sharpe_ratio||'--';
+        scanExchanges=sc.available_on||[];
+        scanCoinData=sc;
+      }
+    });
+
+    // Score to letter grade (0-105 scale)
+    function scoreGrade(s){
+      if(s==='--'||s==null)return{letter:'--',color:'var(--text3)'};
+      if(s>=95)return{letter:'A+',color:'var(--green)'};
+      if(s>=85)return{letter:'A',color:'var(--green)'};
+      if(s>=75)return{letter:'B+',color:'#22d3ee'};
+      if(s>=60)return{letter:'B',color:'var(--accent2)'};
+      if(s>=45)return{letter:'C',color:'var(--amber)'};
+      if(s>=30)return{letter:'D',color:'var(--amber)'};
+      return{letter:'F',color:'var(--red)'};
     }
 
     // Build signal description
     var signal='';
     if(!isActive){
-      // Scanner-only coin — show scanner score
-      signal='Scanner score: '+(scanScore!=='--'?scanScore.toFixed(0):'--');
+      // Scanner-only coin — user-friendly backtest summary
+      var parts=[];
+      if(scanCoinData){
+        var wr=scanCoinData.win_rate;
+        var profit=scanCoinData.total_profit_pct;
+        var dd=scanCoinData.max_drawdown_pct;
+        if(wr!=null) parts.push(Math.round(wr)+'% win rate');
+        if(profit!=null) parts.push((profit>=0?'+':'')+profit.toFixed(1)+'% profit (90d)');
+        if(dd!=null) parts.push(dd.toFixed(1)+'% max risk');
+      }
+      if(scanExchanges.length>0) parts.push(scanExchanges.join('/'));
+      else parts.push('no exchange');
+      signal=parts.join(' · ');
       phase='--';
     }else if(phase==='SPRING'){
       var discount=lc.spring_discount||'--';
@@ -1220,14 +1248,26 @@ function renderFlowDiagram(){
 
     var phaseHtml=phase==='--'?'<span style="color:var(--text3)">Monitoring</span>':'<span class="phase-pill"><span class="pd" style="background:'+phaseColors[phase]+'"></span>'+phase+'</span>';
 
+    // Grade column — active coins use phase-based grading, scanner coins use composite score
+    var g=scoreGrade(scanScore);
+    var gradeHtml;
+    if(isActive){
+      var phaseGrades={SPRING:{letter:'A+',color:'var(--green)'},DCA:{letter:'B+',color:'#22d3ee'},MARKUP:{letter:'B',color:'var(--accent2)'},EXIT:{letter:'C',color:'var(--amber)'},MARKDOWN:{letter:'D',color:'var(--red)'}};
+      var pg=phaseGrades[phase]||{letter:'B',color:'var(--accent2)'};
+      gradeHtml='<span style="font-weight:800;font-size:1.1rem;color:'+pg.color+'">'+pg.letter+'</span>';
+    }else{
+      gradeHtml='<span style="font-weight:800;font-size:1.1rem;color:'+g.color+'">'+g.letter+'</span>';
+    }
+
     h+='<tr'+(isActive?' style="background:rgba(99,102,241,.06)"':'')+'>'; 
     h+='<td class="coin-name">'+m.label+(isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'')+'</td>';
     h+='<td>'+phaseHtml+'</td>';
+    h+='<td style="text-align:center">'+gradeHtml+'</td>';
     h+='<td class="signal-text">'+signal+'</td>';
     h+='<td class="opp-text" style="color:'+opp.color+'">'+opp.text+'</td>';
     h+='</tr>';
   });
-  $('oppBody').innerHTML=h||'<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
+  $('oppBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
 }
 
 // TRADES
