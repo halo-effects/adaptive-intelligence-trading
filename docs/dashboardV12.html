@@ -730,10 +730,10 @@ function renderStats(){
   // Unrealized PnL
   var syms=S.symbols||Object.keys(S.coins||{});
   var totalUpnl=0, totalInv=0;
-  syms.forEach(function(sym){var c=(S.coins||{})[sym]||{};totalUpnl+=(c.unrealized_pnl||0);totalInv+=(c.invested||0)});
+  syms.forEach(function(sym){var c=(S.coins||{})[sym]||{};totalUpnl+=(c.unrealized_pnl||0);totalInv+=('capital_deployed' in c?c.capital_deployed:c.invested||0)});
   var upnlPct=totalInv>0?(totalUpnl/totalInv*100):0;
   $('vUPnl').innerHTML='<span style="color:'+pC(totalUpnl)+'">'+(totalUpnl>=0?'+':'')+fUsd(totalUpnl)+'</span>';
-  $('vUPnlSub').textContent=fmt(upnlPct,2)+'% on '+fUsd(totalInv)+' invested';
+  $('vUPnlSub').textContent=fmt(upnlPct,2)+'% on '+fUsd(totalInv)+' deployed';
 
   // Win / Loss — use trades if loaded, otherwise derive from status.json
   var wins=0, losses=0;
@@ -817,7 +817,7 @@ function renderPortfolioAlloc(){
   syms.forEach(function(sym){
     var c=(S.coins||{})[sym]||{};
     var m=cm(sym);
-    var inv=c.invested||0;
+    var inv='capital_deployed' in c?c.capital_deployed:(c.invested||0);
     totalInv+=inv;
     items.push({name:m.label,inv:inv,pnl:c.unrealized_pnl||0,color:m.color});
   });
@@ -869,7 +869,7 @@ function renderPositions(){
     var entry=c.avg_entry||0;
     var tp=c.next_tp_price||0;
     var so=c.next_so_price||0;
-    var inv=c.invested||0;
+    var inv='capital_deployed' in c?c.capital_deployed:(c.invested||0);
     var upnl=c.unrealized_pnl||0;
     var rpnl=c.realized_pnl||0;
 
@@ -887,7 +887,7 @@ function renderPositions(){
     html+='<div class="position-stats">';
     html+='<div class="position-stat"><div class="ps-label">Current Price</div><div class="ps-val">'+fUsd(price,pd_)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Avg Entry</div><div class="ps-val">'+fUsd(entry,pd_)+'</div></div>';
-    html+='<div class="position-stat"><div class="ps-label">Invested</div><div class="ps-val">'+fUsd(inv)+'</div></div>';
+    html+='<div class="position-stat"><div class="ps-label">Capital Deployed</div><div class="ps-val">'+fUsd(inv)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">TP Target</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Unrealized PnL</div><div class="ps-val" style="color:'+pC(upnl)+'">'+(upnl>=0?'+':'')+fUsd(upnl)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Realized PnL</div><div class="ps-val" style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</div></div>';
@@ -1062,11 +1062,12 @@ function renderCapUtilDonut(){
   var active=0, pending=0;
   syms.forEach(function(sym){
     var c=(S.coins||{})[sym]||{};
-    active+=(c.invested||0);
+    active+=('capital_deployed' in c?c.capital_deployed:c.invested||0);
     var filled=c.layers||0;
+    var cdep='capital_deployed' in c?c.capital_deployed:(c.invested||0);
     var remaining=maxSO-filled;
-    if(remaining>0&&c.invested>0&&filled>0){
-      var avgPerLayer=c.invested/filled;
+    if(remaining>0&&cdep>0&&filled>0){
+      var avgPerLayer=cdep/filled;
       pending+=remaining*avgPerLayer*1.2;
     }
   });
@@ -1108,11 +1109,12 @@ function renderCapDonut(){
   syms.forEach(function(sym){
     var c=(S.coins||{})[sym]||{}, lc=(S.lifecycle||{})[sym]||{};
     var phase=lc.phase||'DCA';
-    if(phase==='DCA')dcaInv+=(c.invested||0);
+    var cd='capital_deployed' in c?c.capital_deployed:(c.invested||0);
+    if(phase==='DCA')dcaInv+=cd;
     else if(phase==='SPRING')springDep+=(lc.spring_deployed||0);
-    else if(phase==='MARKUP')markupDep+=(c.invested||0);
-    else if(phase==='MARKDOWN'&&lc.short_active)shortMar+=(c.invested||0);
-    else dcaInv+=(c.invested||0);
+    else if(phase==='MARKUP')markupDep+=cd;
+    else if(phase==='MARKDOWN'&&lc.short_active)shortMar+=cd;
+    else dcaInv+=cd;
   });
   var cash=S.cash||0;
   var total=dcaInv+springDep+markupDep+shortMar+cash||1;
