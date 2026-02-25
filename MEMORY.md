@@ -66,6 +66,19 @@
 - Full evening session notes: `memory/2026-02-24-evening.md`
 - Demo script: `trading/spot/backtest_results/demo/run_demo_backtest.py`
 
+### V13 Phase Cycle Architecture (2026-02-25 — Brett directive)
+- **Full cycle**: MARKUP → FLAT → DCA → MARKUP or MARKDOWN → FLAT → DCA → repeat
+- **Both markup and markdown exit through FLAT** — no direct MARKDOWN→DCA jumps
+- **Hold shorts through spring**: Don't cover on bear bounces. Only close when FLAT confirms ranging.
+- **Ranging confirmation = ADX < 20 sustained (14+ days)**: Brief ADX dips don't count
+- **Brett: "Until price reaches meaningful support, we don't sell shorts from markdowns"**
+- **Brett: "Once sideways ranging structure is confirmed, then we wait for conductor for direction"**
+- **FLAT is symmetric**: Same state after both markup sells and markdown short closes
+- **v8 closed trades were excellent** (avg +32% alpha) — problem was premature re-entry after markdown, not signal quality
+- **MARKDOWN→FLAT fix improved results**: ETH -13.9%→+37.8%, SOL -3.7%→+89.0%
+- **ETH ADX during markdown**: averaged 32.4, only 13% of days below 20. Sustained ADX<20 never fires = holds shorts throughout ✓
+- **Next**: Wire ADX<20 sustained into FLAT exit logic, re-run
+
 ### V13 Backtest Results (latest: v7 with COOLDOWN + shorts + cycle gating)
 - **3-coin (BTC/ETH/SOL): +51.6% avg** vs B&H -11.2%, +62.8% alpha over 17 months
 - BTC +32.2%, ETH +55.1%, SOL +67.5% (SOL = +101% alpha!)
