@@ -20,6 +20,14 @@
 - Old task `SpotPaperHyperliquid` is DEPRECATED
 - Old module `run_v12e_paper` is DEPRECATED — replaced by `run_v12f_paper`
 
+### V13 Paper Bot (Hyperliquid — ETH/SOL/LINK/XRP USDC) — LIVE as of 2026-02-25 14:49
+- Check `trading/spot/paper/v13/status.json` for bot health
+- Alert if: process not running or status.json stale (>65 min)
+- Coins: ETH/USDC, SOL/USDC, LINK/USDC, XRP/USDC — 1h timeframe, High profile
+- Backfill complete: $2,056 realized PnL, 271 deals, state persisted, 4-phase lifecycle
+- Entry point: `python -u -m trading.spot.run_v13_paper --capital 10000 --profile high --exchange hyperliquid --skip-backfill`
+- Scheduled Task: V13PaperBot (not yet created — needs elevated PS)
+
 ### Dashboard Sync
 - Task: `AIT_DashboardSync` (every 2 min)
 - Verify `docs/data/v12f/status.json` and `docs/data/live-aster/status.json` are fresh on GitHub Pages
