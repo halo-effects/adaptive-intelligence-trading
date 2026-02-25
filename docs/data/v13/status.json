@@ -4,17 +4,17 @@
   "profile": "high",
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 9404.2,
+  "equity": 9396.23,
   "cash": 8575.43,
-  "pnl_pct": -5.96,
+  "pnl_pct": -6.04,
   "coins": {
     "ETH/USDC": {
       "state": "ACCUMULATING",
       "side": "long",
       "layers": 0,
       "avg_entry": 2293.2,
-      "current_price": 2105.19,
-      "unrealized_pnl": -25.233486023167075,
+      "current_price": 2084.0,
+      "unrealized_pnl": -28.077470751803386,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 307.7784700192905,
@@ -27,8 +27,8 @@
       "side": "long",
       "layers": 0,
       "avg_entry": 158.88,
-      "current_price": 89.97,
-      "unrealized_pnl": -136.29308456624497,
+      "current_price": 89.156,
+      "unrealized_pnl": -137.9030478638349,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 314.2395193133798,
@@ -41,8 +41,8 @@
       "side": "long",
       "layers": 0,
       "avg_entry": 21.88,
-      "current_price": 9.42,
-      "unrealized_pnl": -253.51296178092164,
+      "current_price": 9.421,
+      "unrealized_pnl": -253.49261563631643,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 445.17364396200367,
@@ -55,8 +55,8 @@
       "side": "long",
       "layers": 0,
       "avg_entry": 2.9939,
-      "current_price": 1.4796,
-      "unrealized_pnl": -180.76041079564172,
+      "current_price": 1.45,
+      "unrealized_pnl": -184.2937319074102,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 357.3787188014738,
@@ -72,7 +72,7 @@
       "daily_score": 0.0,
       "metrics": {
         "tier": 0,
-        "days_in_phase": 24.965560792336863
+        "days_in_phase": 24.967251585288732
       },
       "gate_decisions": {}
     },
@@ -82,7 +82,7 @@
       "daily_score": 0.0,
       "metrics": {
         "tier": 0,
-        "days_in_phase": 268.9655607923369
+        "days_in_phase": 268.96725158528875
       },
       "gate_decisions": {}
     },
@@ -92,7 +92,7 @@
       "daily_score": 0.0,
       "metrics": {
         "tier": 0,
-        "days_in_phase": 200.96556079233687
+        "days_in_phase": 200.96725158528872
       },
       "gate_decisions": {}
     },
@@ -102,7 +102,7 @@
       "daily_score": 0.0,
       "metrics": {
         "tier": 0,
-        "days_in_phase": 185.96556079233687
+        "days_in_phase": 185.96725158528872
       },
       "gate_decisions": {}
     }
@@ -119,8 +119,8 @@
   "deals_completed": 9,
   "win_rate": 55.6,
   "max_drawdown_pct": 29.68,
-  "uptime_hours": 0.0,
+  "uptime_hours": 0.02,
   "fear_greed_index": null,
-  "last_update": "2026-02-25T23:10:24.453957+00:00",
+  "last_update": "2026-02-25T23:12:50.536969+00:00",
   "timeframe": "1h"
 }
