@@ -66,6 +66,18 @@
 - Full evening session notes: `memory/2026-02-24-evening.md`
 - Demo script: `trading/spot/backtest_results/demo/run_demo_backtest.py`
 
+### V13 Backtest Results (latest: v7 with COOLDOWN + shorts + cycle gating)
+- **3-coin (BTC/ETH/SOL): +51.6% avg** vs B&H -11.2%, +62.8% alpha over 17 months
+- BTC +32.2%, ETH +55.1%, SOL +67.5% (SOL = +101% alpha!)
+- **5-coin (incl BNB/XRP): +27.2% avg** — BNB/XRP dragged by cold start problem
+- Front-loaded tiers: T1=60%, T2=20%, T3=10%, 10% reserve. Brett: "Put more in at the lowest price."
+- **COOLDOWN state**: top signal → sell everything → flat 4 weeks → conductor decides next phase
+- **Shorts**: 60% of capital during MARKDOWN, only enabled after first confirmed markup cycle
+- DCA→Markdown = HARD EXIT (close all, free capital for shorts). DCA→Markup = graceful (let TPs hit).
+- T2/T3 require price ≥ entry price (prevents falling knife adds).
+- **Cold start is THE remaining problem**: BNB/XRP never got 2W OS signal, missed 500%+ rallies. Need momentum-based markup fallback.
+- DCA throttling tested and reverted — added complexity without benefit.
+
 ### Backtest Engine Consolidation (2026-02-24)
 - **Flattened 11-file inheritance chain** (base → v2 → v3 → v4 → v5 → v6 → v7 → v8 → v9 → v12 → v12f) into single `backtest_engine_consolidated.py` (~6,400 lines, 313KB)
 - Old versioned files replaced with thin compatibility shims (re-exports)
