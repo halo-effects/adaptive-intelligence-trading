@@ -2373,3 +2373,62 @@
 2026-02-25 03:31:53,552 [DEBUG] BTC/USDC: $65355.0000 | regime=DISTRIBUTION | ATR%=0.81 | TP=1.37% | Dev=2.28%
 2026-02-25 03:31:53,611 [INFO] Equity: $10051.35 (0.51%) | Cash: $6531.19 | Deals: 3 active, 4 completed | DD: 0.1%
 2026-02-25 03:31:53,617 [DEBUG] Sleeping 3600s until next cycle...
+2026-02-25 07:04:18,412 [INFO] 🔄 Lifecycle engine created for ETH/USDC (profile=medium, ATH=$4957)
+2026-02-25 07:04:18,438 [INFO] Loaded 2400 candles from DB for ETH/USDC conductor warmup
+2026-02-25 07:04:18,504 [INFO] 🔥 Conductor warmup for ETH/USDC: 2400 candles → ready
+2026-02-25 07:04:18,507 [INFO] 🔄 Lifecycle engine created for SOL/USDC (profile=medium, ATH=$296)
+2026-02-25 07:04:18,514 [INFO] Loaded 2400 candles from DB for SOL/USDC conductor warmup
+2026-02-25 07:04:18,571 [INFO] 🔥 Conductor warmup for SOL/USDC: 2400 candles → ready
+2026-02-25 07:04:18,571 [INFO] 🔄 Lifecycle engine created for BTC/USDC (profile=medium, ATH=$109000)
+2026-02-25 07:04:18,582 [INFO] Loaded 2400 candles from DB for BTC/USDC conductor warmup
+2026-02-25 07:04:18,633 [INFO] 🔥 Conductor warmup for BTC/USDC: 2400 candles → ready
+2026-02-25 07:04:18,633 [INFO] 🔗 Coin pipeline enabled (check every 4.0h)
+2026-02-25 07:04:18,633 [INFO] ============================================================
+2026-02-25 07:04:18,633 [INFO] Spot PAPER Trader starting
+2026-02-25 07:04:18,633 [INFO] Exchange: hyperliquid | Profile: medium | Capital: $10000
+2026-02-25 07:04:18,633 [INFO] Symbols: ['ETH/USDC', 'SOL/USDC', 'BTC/USDC'] | Timeframe: 1h | Max coins: 3
+2026-02-25 07:04:18,633 [INFO] ============================================================
+2026-02-25 07:04:18,642 [INFO] Connected to hyperliquid
+2026-02-25 07:04:18,653 [INFO] State loaded: cash=$6531.19, 3 active deals, 4 completed, symbols=['ETH/USDC', 'SOL/USDC', 'BTC/USDC'], live=False
+2026-02-25 07:04:31,972 [INFO] 🎯 ETH/USDC: Cold-start → MARKUP (500 candles, CFGI=46) — MARKUP (59.5% below ATH, regime=TRENDING, trend=bullish, SMA200=above, CFGI=46)
+2026-02-25 07:04:33,433 [INFO] 🎯 SOL/USDC: Cold-start → SPRING (500 candles, CFGI=41) — SPRING (71.0% below ATH, regime=ACCUMULATION, trend=bullish, SMA200=above, CFGI=41)
+2026-02-25 07:04:34,921 [INFO] 🎯 BTC/USDC: Cold-start → DCA (500 candles, CFGI=36) — DCA (38.3% below ATH, regime=DISTRIBUTION, trend=bullish, SMA200=above, CFGI=36)
+2026-02-25 07:04:34,921 [INFO] [LIFECYCLE] Restored state for ETH/USDC: phase=DCA
+2026-02-25 07:04:34,921 [INFO] [LIFECYCLE] Restored state for SOL/USDC: phase=DCA
+2026-02-25 07:04:34,921 [INFO] [LIFECYCLE] Restored state for BTC/USDC: phase=DCA
+2026-02-25 07:04:36,031 [INFO] ── Cycle 1 at 2026-02-25T15:04:36+00:00 ──
+2026-02-25 07:04:37,440 [DEBUG] ETH/USDC: $2004.4000 | regime=TRENDING | ATR%=0.99 | TP=2.00% | Dev=3.00%
+2026-02-25 07:04:37,528 [INFO] 📤 DEAL 5 LOT 1 SOLD: ETH/USDC @ $1945.4278, PnL=$15.43
+2026-02-25 07:04:39,855 [DEBUG] SOL/USDC: $85.9280 | regime=ACCUMULATION | ATR%=1.01 | TP=1.61% | Dev=2.68%
+2026-02-25 07:04:41,009 [DEBUG] BTC/USDC: $67223.0000 | regime=DISTRIBUTION | ATR%=0.73 | TP=1.23% | Dev=2.06%
+2026-02-25 07:04:41,057 [INFO] Equity: $10154.06 (1.54%) | Cash: $7346.62 | Deals: 3 active, 4 completed | DD: 0.0%
+2026-02-25 07:04:41,073 [DEBUG] Sleeping 3600s until next cycle...
+2026-02-25 08:03:18,764 [INFO] 🔄 Lifecycle engine created for ETH/USDC (profile=medium, ATH=$4957)
+2026-02-25 08:03:18,786 [INFO] Loaded 2400 candles from DB for ETH/USDC conductor warmup
+2026-02-25 08:03:18,853 [INFO] 🔥 Conductor warmup for ETH/USDC: 2400 candles → ready
+2026-02-25 08:03:18,855 [INFO] 🔄 Lifecycle engine created for SOL/USDC (profile=medium, ATH=$296)
+2026-02-25 08:03:18,863 [INFO] Loaded 2400 candles from DB for SOL/USDC conductor warmup
+2026-02-25 08:03:18,922 [INFO] 🔥 Conductor warmup for SOL/USDC: 2400 candles → ready
+2026-02-25 08:03:18,922 [INFO] 🔄 Lifecycle engine created for BTC/USDC (profile=medium, ATH=$109000)
+2026-02-25 08:03:18,930 [INFO] Loaded 2400 candles from DB for BTC/USDC conductor warmup
+2026-02-25 08:03:18,986 [INFO] 🔥 Conductor warmup for BTC/USDC: 2400 candles → ready
+2026-02-25 08:03:18,986 [INFO] 🔗 Coin pipeline enabled (check every 4.0h)
+2026-02-25 08:03:18,986 [INFO] ============================================================
+2026-02-25 08:03:18,986 [INFO] Spot PAPER Trader starting
+2026-02-25 08:03:18,986 [INFO] Exchange: hyperliquid | Profile: medium | Capital: $10000
+2026-02-25 08:03:18,986 [INFO] Symbols: ['ETH/USDC', 'SOL/USDC', 'BTC/USDC'] | Timeframe: 1h | Max coins: 3
+2026-02-25 08:03:18,986 [INFO] ============================================================
+2026-02-25 08:03:18,989 [INFO] Connected to hyperliquid
+2026-02-25 08:03:19,005 [INFO] State loaded: cash=$7346.62, 3 active deals, 4 completed, symbols=['ETH/USDC', 'SOL/USDC', 'BTC/USDC'], live=False
+2026-02-25 08:03:32,194 [INFO] 🎯 ETH/USDC: Cold-start → MARKUP (500 candles, CFGI=46) — MARKUP (59.4% below ATH, regime=TRENDING, trend=bullish, SMA200=above, CFGI=46)
+2026-02-25 08:03:33,731 [INFO] 🎯 SOL/USDC: Cold-start → SPRING (500 candles, CFGI=41) — SPRING (70.9% below ATH, regime=ACCUMULATION, trend=bullish, SMA200=above, CFGI=41)
+2026-02-25 08:03:35,228 [INFO] 🎯 BTC/USDC: Cold-start → DCA (500 candles, CFGI=36) — DCA (38.1% below ATH, regime=DISTRIBUTION, trend=bullish, SMA200=above, CFGI=36)
+2026-02-25 08:03:35,230 [INFO] [LIFECYCLE] Restored state for ETH/USDC: phase=DCA
+2026-02-25 08:03:35,230 [INFO] [LIFECYCLE] Restored state for SOL/USDC: phase=DCA
+2026-02-25 08:03:35,230 [INFO] [LIFECYCLE] Restored state for BTC/USDC: phase=DCA
+2026-02-25 08:03:36,549 [INFO] ── Cycle 1 at 2026-02-25T16:03:36+00:00 ──
+2026-02-25 08:03:37,777 [DEBUG] ETH/USDC: $2013.8000 | regime=TRENDING | ATR%=1.02 | TP=2.00% | Dev=3.00%
+2026-02-25 08:03:39,161 [DEBUG] SOL/USDC: $86.2000 | regime=ACCUMULATION | ATR%=1.02 | TP=1.63% | Dev=2.72%
+2026-02-25 08:03:40,380 [DEBUG] BTC/USDC: $67438.0000 | regime=DISTRIBUTION | ATR%=0.76 | TP=1.27% | Dev=2.12%
+2026-02-25 08:03:40,443 [INFO] Equity: $10163.60 (1.64%) | Cash: $7346.62 | Deals: 3 active, 4 completed | DD: 0.0%
+2026-02-25 08:03:40,443 [DEBUG] Sleeping 3600s until next cycle...

@@ -77,6 +77,20 @@
 - T2/T3 require price ≥ entry price (prevents falling knife adds).
 - **Cold start is THE remaining problem**: BNB/XRP never got 2W OS signal, missed 500%+ rallies. Need momentum-based markup fallback.
 - DCA throttling tested and reverted — added complexity without benefit.
+- **Channel breakout detector built** (`channel_breakout.py`): detects channel consolidation → breakout → retest confirmation
+  - Retest-confirmed breakout = strong signal → enter phase directly
+  - Run without retest = weak signal → orient only, don't chase
+  - Multiple retests = very strong. Re-entering channel = invalidated.
+  - Neither BNB nor XRP had retest-confirmed bullish breakout in backtest window → safe DCA-only fallback
+  - Brett: "If it re-enters the channel the breakout is invalidated. This works in both ways."
+- **DCA Transition Matrix tested** (`v13_dca_transition_matrix.py`): 11 signals × combos across 5 coins
+  - **MARKUP winner**: HH_HL + Fib_support (100% acc, 20% FP, 39d lead, score 94.0) — works for ALL coins incl BNB/XRP
+  - **MARKDOWN winner**: ADX>20 + Fib_break (100% acc, 20% FP, 46d lead, score 94.0)
+  - **Fibonacci is the breakthrough**: Fib_golden = best individual markup signal, Fib_break = best individual markdown signal
+  - **HVF = pre-signal** ("energy building"), not transition signal. Fires before Fib confirms direction.
+  - **2W StochRSI scored 0%** for DCA transitions — confirms wrong signal for this use case
+  - Harmonic_bear + Fib_break = 0% false positives (highest conviction markdown)
+  - Brett: Fibonacci levels are "typically price tops or retest zones"
 
 ### Backtest Engine Consolidation (2026-02-24)
 - **Flattened 11-file inheritance chain** (base → v2 → v3 → v4 → v5 → v6 → v7 → v8 → v9 → v12 → v12f) into single `backtest_engine_consolidated.py` (~6,400 lines, 313KB)
