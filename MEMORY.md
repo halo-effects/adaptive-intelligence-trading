@@ -105,6 +105,37 @@
   - Harmonic_bear + Fib_break = 0% false positives (highest conviction markdown)
   - Brett: Fibonacci levels are "typically price tops or retest zones"
 
+### V13 Phase-Riding Architecture — FINAL (2026-02-25)
+**Session Work**: Built complete phase-riding system with validated signals, ranging confirmation, and safety nets.
+
+**Architecture (4 phases)**:
+1. **MARKUP** (hold longs) → top signal (2W OB93 / 1W OB85 / 1W K<50) OR ranging exit (ADX<20 for 21d) OR failure (-25% DD) → **FLAT**
+2. **FLAT** (post-sell wait): Path A (post-top): check MARKDOWN immediately. Path B (post-ranging): wait 14d, then require ADX<20 for 14d again
+3. **DCA** (accumulate) → HH_HL+Fib_support+SMA200<20% → **MARKUP** OR ADX>20+Fib_break+SMA200<20% → **MARKDOWN**
+4. **MARKDOWN** (hold shorts) → ADX<20 for 21d OR failure (+25% rise) → **FLAT** → DCA
+
+**Key Signals** (Matrix-validated, 94.0 score each):
+- MARKUP entry: HH_HL + Fib_support (100% acc, 20% FP, 39d lead)
+- MARKDOWN entry: ADX>20 + Fib_break (100% acc, 20% FP, 46d lead)
+- Top detection: 2W OB93 (primary), 1W OB85 (fallback), 1W K<50 (failsafe)
+- Ranging confirmation: ADX<20 sustained (14d for FLAT, 21d for phase exits)
+
+**Entry Gates**:
+- MARKUP: SMA200 ≤ 20% (don't buy near ATH)
+- MARKDOWN: SMA200 ≤ 20% (don't short corrections)
+- Failure detectors: 25% DD + ADX>25 (markup), 25% rise + ADX>25 (markdown)
+
+**Results (Oct 2024 - Feb 2026)**:
+- Avg ROI: +111.5% (3-5 coins), Avg Alpha: +40.6%
+- BTC +66.6%, ETH +64.0%, SOL +160.9%, BNB +2.3%, XRP +249.7%
+
+**Known Edge Cases**:
+- **BNB**: ADX naturally low, ranging exit fires early. Need per-coin threshold.
+- **XRP**: Multiple cycles. SMA200 gate fixed false shorts.
+- **Post-top wait**: BTC ranged 5 weeks (natural, not bug)
+
+**Documentation**: `projects/ait-product/V13-FINAL-DESIGN.md`
+
 ### Backtest Engine Consolidation (2026-02-24)
 - **Flattened 11-file inheritance chain** (base → v2 → v3 → v4 → v5 → v6 → v7 → v8 → v9 → v12 → v12f) into single `backtest_engine_consolidated.py` (~6,400 lines, 313KB)
 - Old versioned files replaced with thin compatibility shims (re-exports)
