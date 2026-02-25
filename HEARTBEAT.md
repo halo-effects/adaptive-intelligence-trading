@@ -1,19 +1,51 @@
 # HEARTBEAT.md
 
-## Aster Spot Live Bot (ASTER/USDT)
+## Priority Checks (every heartbeat)
+
+### Aster Spot Live Bot (ASTER/USDT)
 - Check `trading/spot/live/aster/status.json` for bot health
 - Alert if: `running` is false, drawdown > 15%, or regime changes to EXTREME
-- Check status.json `last_update` — stale if >10 min old
-- Restart: `Start-ScheduledTask -TaskName "AsterSpotLive"`
-- Config: ASTER/USDT, Medium profile, 1h timeframe, lifecycle enabled
+- Check status.json `last_update` — stale if >65 min old (1h candle + 5min grace)
+- **Capital: $300** (rebased 2026-02-23). Alert if status.json shows different capital value.
+- Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "AsterSpotLive"` (task alone won't kill running process)
+- Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
+- Config: ASTER/USDT, Medium profile, 1h timeframe, V12f lifecycle + CFGI gates enabled
 
-## V12e Paper Bot (Hyperliquid — ETH/SOL/BTC USDC)
-- Check `trading/spot/paper/hyperliquid/status.json` for bot health
-- Alert if: process not running or status.json stale (>20 min)
+### V12f Paper Bot (Hyperliquid — ETH/SOL/BTC USDC)
+- Check `trading/spot/paper/v12f/status.json` for bot health
+- Alert if: process not running or status.json stale (>65 min, same 1h candle + 5min grace)
 - Coins: ETH/USDC, SOL/USDC, BTC/USDC — 1h timeframe, Medium profile
 - Pipeline enabled (scanner → pipeline → trader)
-- Restart: `Start-ScheduledTask -TaskName "SpotPaperHyperliquid"`
+- Entry point: `python -u -m trading.spot.run_v12f_paper --exchange hyperliquid --pipeline`
+- Old task `SpotPaperHyperliquid` is DEPRECATED
+- Old module `run_v12e_paper` is DEPRECATED — replaced by `run_v12f_paper`
 
-## Dashboard Sync
+### Dashboard Sync
 - Task: `AIT_DashboardSync` (every 2 min)
-- Verify `docs/data/v12e/status.json` and `docs/data/live-aster/status.json` are fresh on GitHub Pages
+- Verify `docs/data/v12f/status.json` and `docs/data/live-aster/status.json` are fresh on GitHub Pages
+
+### Cron Job Health
+- Quick check: have any cron jobs failed in the last cycle? Check `memory/consolidation.log` for nightly consolidation status.
+- If morning briefing or weekly review failed, note it for Brett.
+
+## Periodic Checks (rotate through, 2-3x per day)
+- Are there active project deadlines approaching within 48 hours?
+- Any blocked tasks waiting for input >24 hours?
+- Check `C:\Users\Never\life\projects\_index.md` for stale project statuses.
+
+## When to Alert Brett
+- A trading bot stopped or is stale
+- Drawdown exceeds thresholds
+- A cron job failed and needs intervention
+- A project deadline is <24 hours away with incomplete tasks
+
+## When to Stay Silent (HEARTBEAT_OK)
+- Nothing urgent
+- All bots running normally
+- No approaching deadlines
+- Late evening (after 9 PM) unless truly urgent
+- You just checked <30 minutes ago and nothing changed
+
+## Governance Reminder
+- Before any heartbeat action, verify it falls within Tier 0-1 permissions.
+- Never initiate financial operations, external communications, or system changes from a heartbeat.

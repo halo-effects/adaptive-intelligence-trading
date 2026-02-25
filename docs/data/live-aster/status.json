@@ -4,33 +4,59 @@
   "profile": "medium",
   "exchange": "aster",
   "capital": 300.0,
-  "equity": 274.69,
+<<<<<<< HEAD
+  "equity": 285.42,
+  "cash": 274.11,
+  "pnl_pct": -4.86,
+=======
+  "equity": 274.63,
   "cash": 263.36,
-  "pnl_pct": -8.44,
+  "pnl_pct": -8.46,
+>>>>>>> 11712c3108a7dea429bd7a4762645618fe8bcc56
   "coins": {
     "ASTER/USDT": {
       "state": "ACCUMULATING",
       "side": "long",
       "layers": 1,
+<<<<<<< HEAD
+      "avg_entry": 0.7011,
+      "current_price": 0.6942,
+      "unrealized_pnl": -0.11,
+      "next_so_price": 0.6814,
+      "next_tp_price": 0.7139,
+      "invested": 11.42,
+=======
       "avg_entry": 0.7085,
-      "current_price": 0.7028,
-      "unrealized_pnl": -0.09,
+      "current_price": 0.6989,
+      "unrealized_pnl": -0.16,
       "next_so_price": 0.6935,
-      "next_tp_price": 0.7195,
+      "next_tp_price": 0.7192,
       "invested": 11.43,
+>>>>>>> 11712c3108a7dea429bd7a4762645618fe8bcc56
       "realized_pnl": 0,
       "lifecycle_phase": "DCA",
       "cfgi": 51.5
     }
   },
+<<<<<<< HEAD
+  "deals_completed": 0,
+  "win_rate": 0.0,
+  "total_realized_pnl": 0,
+  "max_drawdown_pct": 4.92,
+  "regime": "RANGING",
+  "trend_direction": "bearish",
+  "last_update": "2026-02-24T15:11:26+00:00",
+  "uptime_hours": 16.0,
+=======
   "deals_completed": 1,
   "win_rate": 100.0,
   "total_realized_pnl": 0.23,
   "max_drawdown_pct": 8.46,
   "regime": "ACCUMULATION",
   "trend_direction": "bullish",
-  "last_update": "2026-02-25T13:09:41+00:00",
-  "uptime_hours": 1.0,
+  "last_update": "2026-02-25T12:09:35+00:00",
+  "uptime_hours": 0.0,
+>>>>>>> 11712c3108a7dea429bd7a4762645618fe8bcc56
   "halted": false,
   "symbols": [
     "ASTER/USDT"
@@ -65,8 +91,8 @@
   "lifecycle": {
     "ASTER/USDT": {
       "phase": "DCA",
-      "score": 0.0,
-      "daily_score": 0.0,
+      "score": 41.7,
+      "daily_score": 41.7,
       "short_active": false,
       "metrics": {
         "exit_phases": 0,
