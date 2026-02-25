@@ -1,54 +1,138 @@
 {
   "running": true,
   "mode": "paper",
-  "profile": "medium",
+  "profile": "high",
   "exchange": "hyperliquid",
-  "capital": 2500.0,
-  "equity": 1301.56,
-  "cash": -293.24,
-  "pnl_pct": -47.94,
+  "capital": 10000.0,
+  "equity": 11015.38,
+  "cash": 7622.3,
+  "pnl_pct": 10.15,
   "coins": {
     "ETH/USDC": {
-      "state": "ACCUMULATING",
-      "side": "long",
-      "layers": 8,
-      "avg_entry": 3631.4125537305436,
+      "state": "SHORTING",
+      "side": "short",
+      "layers": 0,
+      "avg_entry": 0,
       "current_price": 2073.35,
-      "unrealized_pnl": -1198.444589611275,
-      "next_so_price": 2905.130042984435,
-      "next_tp_price": 3685.883742036501,
-      "invested": 2793.242618689808,
-      "realized_pnl": 696.2209377114534,
-      "lifecycle_phase": "DCA",
+      "unrealized_pnl": 669.7498867986682,
+      "next_so_price": null,
+      "next_tp_price": null,
+      "invested": 1454.7766141779955,
+      "realized_pnl": 414.8587989647504,
+      "lifecycle_phase": "MARKDOWN",
+      "cfgi": null
+    },
+    "SOL/USDC": {
+      "state": "WAITING",
+      "side": "none",
+      "layers": 0,
+      "avg_entry": 0,
+      "current_price": 89.71,
+      "unrealized_pnl": 0.0,
+      "next_so_price": null,
+      "next_tp_price": null,
+      "invested": 0.0,
+      "realized_pnl": 43.85647374699954,
+      "lifecycle_phase": "FLAT",
+      "cfgi": null
+    },
+    "LINK/USDC": {
+      "state": "WAITING",
+      "side": "none",
+      "layers": 0,
+      "avg_entry": 0,
+      "current_price": 9.42,
+      "unrealized_pnl": 0.0,
+      "next_so_price": null,
+      "next_tp_price": null,
+      "invested": 0,
+      "realized_pnl": 1519.1357609143747,
+      "lifecycle_phase": "FLAT",
+      "cfgi": null
+    },
+    "XRP/USDC": {
+      "state": "SHORTING",
+      "side": "short",
+      "layers": 0,
+      "avg_entry": 0,
+      "current_price": 1.4648,
+      "unrealized_pnl": 345.63479232171727,
+      "next_so_price": null,
+      "next_tp_price": null,
+      "invested": 922.9276586761658,
+      "realized_pnl": 324.6568956637897,
+      "lifecycle_phase": "MARKDOWN",
       "cfgi": null
     }
   },
   "lifecycle": {
     "ETH/USDC": {
-      "phase": "DCA",
+      "phase": "MARKDOWN",
       "score": 0.7719740203562405,
       "daily_score": 53.58780937701984,
       "metrics": {
-        "exit_phases": 0,
-        "markdown_phases": 0,
-        "markup_phases": 0,
+        "exit_phases": 1,
+        "markdown_phases": 1,
+        "markup_phases": 1,
         "short_pnl": 0.0,
-        "markup_pnl": 0.0
+        "markup_pnl": -228.31081944436824
+      },
+      "gate_decisions": {}
+    },
+    "SOL/USDC": {
+      "phase": "FLAT",
+      "score": 0.5936727581834527,
+      "daily_score": 52.62716266776459,
+      "metrics": {
+        "exit_phases": 2,
+        "markdown_phases": 0,
+        "markup_phases": 2,
+        "short_pnl": 0.0,
+        "markup_pnl": -345.58359160320964
+      },
+      "gate_decisions": {}
+    },
+    "LINK/USDC": {
+      "phase": "FLAT",
+      "score": 0.7138854683851668,
+      "daily_score": 55.610150714746155,
+      "metrics": {
+        "exit_phases": 1,
+        "markdown_phases": 1,
+        "markup_phases": 1,
+        "short_pnl": 101.73357078601555,
+        "markup_pnl": 85.66715436120899
+      },
+      "gate_decisions": {}
+    },
+    "XRP/USDC": {
+      "phase": "MARKDOWN",
+      "score": 0.6694929511243953,
+      "daily_score": 38.171497049147604,
+      "metrics": {
+        "exit_phases": 3,
+        "markdown_phases": 1,
+        "markup_phases": 3,
+        "short_pnl": 0.0,
+        "markup_pnl": 330.4794760378287
       },
       "gate_decisions": {}
     }
   },
   "symbols": [
-    "ETH/USDC"
+    "ETH/USDC",
+    "SOL/USDC",
+    "LINK/USDC",
+    "XRP/USDC"
   ],
-  "regime": "ACCUMULATION",
-  "trend_direction": "bullish",
-  "total_realized_pnl": 696.22,
-  "deals_completed": 67,
-  "win_rate": 100.0,
-  "max_drawdown_pct": 44.32,
-  "uptime_hours": 0.01,
+  "regime": "TRENDING",
+  "trend_direction": "bearish",
+  "total_realized_pnl": 2302.51,
+  "deals_completed": 276,
+  "win_rate": 97.5,
+  "max_drawdown_pct": 44.28,
+  "uptime_hours": 0.04,
   "fear_greed_index": null,
-  "last_update": "2026-02-25T21:48:35.848654+00:00",
+  "last_update": "2026-02-25T21:57:19.879344+00:00",
   "timeframe": "1h"
 }
