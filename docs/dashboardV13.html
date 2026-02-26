@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AIT V13 — Paper Trading Dashboard</title>
+<title>AIT - Paper Trading Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -625,11 +625,11 @@ function parseCSV(t){var l=t.trim().split('\n');if(l.length<2)return[];var h=l[0
 // CAPITAL MANAGEMENT COCKPIT
 function renderCapitalManagement(){
   if(!S) return;
-  
+
   // Show section even without V12f data (use defaults)
   var cmSection = $('capitalManagementSection');
   if(cmSection) cmSection.style.display = 'block';
-  
+
   // Speed selector
   var mode = (S.deployment_speed || S.rebalancing_mode || 'balanced').toLowerCase();
   ['conservative', 'balanced', 'aggressive'].forEach(function(m) {
@@ -638,7 +638,7 @@ function renderCapitalManagement(){
       el.className = 'cmss-option cmss-' + m + (mode === m ? ' active' : '');
     }
   });
-  
+
   // Status cards
   // Idle Capital
   var idleCapital = $('cmIdleCapital');
@@ -653,7 +653,7 @@ function renderCapitalManagement(){
     var barClass = idlePct > 25 ? 'high' : idlePct > 15 ? 'moderate' : 'low';
     idleBar.innerHTML = '<div class="cmsc-bar-fill ' + barClass + '" style="width:' + barLevel + '%"></div>';
   }
-  
+
   // Phase Allocation Priority
   var phaseWeightsEl = $('cmPhaseWeights');
   if(phaseWeightsEl) {
@@ -670,7 +670,7 @@ function renderCapitalManagement(){
       var matching = coins.filter(function(c){ return (c.phase||'').toUpperCase() === pw.phase; }).map(function(c){ return c.symbol; });
       html += '<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 12px;min-width:100px;">' +
               '<div style="font-size:12px;color:' + pw.col + ';font-weight:600;">' + pw.phase + ' ' + pw.w + '</div>' +
-              '<div style="font-size:11px;color:var(--text3);margin-top:2px;">' + (matching.length ? matching.join(', ') : '—') + '</div></div>';
+              '<div style="font-size:11px;color:var(--text3);margin-top:2px;">' + (matching.length ? matching.join(', ') : '-') + '</div></div>';
     });
     phaseWeightsEl.innerHTML = html;
   }
@@ -714,7 +714,7 @@ function render(){
   var syms=S.symbols||Object.keys(S.coins||{});
   $('hdrCoins').textContent=syms.join(', ')+' \u00B7 '+(S.timeframe||'1h');
 
-  // Stats row — each wrapped so one failure doesn't kill the rest
+  // Stats row - each wrapped so one failure doesn't kill the rest
   var fns=[renderStats,renderRiskProfile,renderPortfolioAlloc,renderPositions,renderAIPanel,renderCoinCards,renderCompounding,renderMacro,renderCapDonut,renderFlowDiagram,renderBottomBar];
   fns.forEach(function(fn){try{fn()}catch(e){console.warn(fn.name,e)}});
 }
@@ -742,7 +742,7 @@ function renderStats(){
   $('vUPnl').innerHTML='<span style="color:'+pC(totalUpnl)+'">'+(totalUpnl>=0?'+':'')+fUsd(totalUpnl)+'</span>';
   $('vUPnlSub').textContent=fmt(upnlPct,2)+'% on '+fUsd(totalInv)+' invested';
 
-  // Win / Loss — use trades if loaded, otherwise derive from status.json
+  // Win / Loss - use trades if loaded, otherwise derive from status.json
   var wins=0, losses=0;
   if(trades.length>0){
     trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);if(p>0)wins++;else if(p!==0)losses++});
@@ -761,7 +761,7 @@ function renderStats(){
   $('vWR').textContent=fmt(wr,1)+'%';
   $('vWRSub').textContent=(S.deals_completed||0)+' trades';
 
-  // Avg Daily ROI — use trade date range, not uptime_hours
+  // Avg Daily ROI - use trade date range, not uptime_hours
   var days=1;
   if(trades&&trades.length>1){
     var f0=new Date(trades[0].open_time);
@@ -1046,7 +1046,7 @@ function renderMacro(){
   });
   if(!hasCfgi)cfgiHtml='<div class="mc-val" style="color:var(--text3)">--</div><div style="font-size:.7rem;color:var(--text3)">Not yet available</div>';
 
-  // Sentiment Momentum — aggregated gate health (no proprietary indicators exposed)
+  // Sentiment Momentum - aggregated gate health (no proprietary indicators exposed)
   var gateHtml='';
   var symsGate=S.symbols||[];
   var hasGateData=false;
@@ -1068,7 +1068,7 @@ function renderMacro(){
       gateHtml+='<div style="margin:6px 0"><span style="font-weight:600">'+base2+':</span> <span style="color:var(--text3)">Monitoring</span></div>';
     }
   });
-  if(!hasGateData)gateHtml='<div class="mc-val" style="color:var(--text3)">Monitoring</div><div style="font-size:.7rem;color:var(--text3)">Sentiment gates active — no transitions yet</div>';
+  if(!hasGateData)gateHtml='<div class="mc-val" style="color:var(--text3)">Monitoring</div><div style="font-size:.7rem;color:var(--text3)">Sentiment gates active - no transitions yet</div>';
 
   $('macroGrid').innerHTML=
     '<div class="macro-card"><div class="mc-title">Fear &amp; Greed Index</div><div class="mc-val" style="color:'+fgiCol+'">'+fgiVal+'</div><div class="mc-label" style="color:'+fgiCol+'">'+fgiLabel+'</div><div class="fg-bar">'+(fgi!=null?'<div class="fg-dot" style="left:'+fgi+'%"></div>':'')+'</div><div class="fg-labels"><span>Extreme Fear</span><span>Neutral</span><span>Extreme Greed</span></div></div>'+
@@ -1232,7 +1232,7 @@ function renderFlowDiagram(){
     // Build signal description
     var signal='';
     if(!isActive){
-      // Scanner-only coin — user-friendly backtest summary
+      // Scanner-only coin - user-friendly backtest summary
       var parts=[];
       if(scanCoinData){
         var wr=scanCoinData.win_rate;
@@ -1265,14 +1265,14 @@ function renderFlowDiagram(){
 
     var opp;
     if(!isActive){
-      opp={text:'Certified — available',color:'var(--text2)'};
+      opp={text:'Certified - available',color:'var(--text2)'};
     }else{
       opp=oppMap[phase]||{text:'--',color:'var(--text3)'};
     }
 
     var phaseHtml=phase==='--'?'<span style="color:var(--text3)">Monitoring</span>':'<span class="phase-pill"><span class="pd" style="background:'+phaseColors[phase]+'"></span>'+phase+'</span>';
 
-    // Grade column — active coins use phase-based grading, scanner coins use composite score
+    // Grade column - active coins use phase-based grading, scanner coins use composite score
     var g=scoreGrade(scanScore);
     var gradeHtml;
     if(isActive){
@@ -1283,7 +1283,7 @@ function renderFlowDiagram(){
       gradeHtml='<span style="font-weight:800;font-size:1.1rem;color:'+g.color+'">'+g.letter+'</span>';
     }
 
-    h+='<tr'+(isActive?' style="background:rgba(99,102,241,.06)"':'')+'>'; 
+    h+='<tr'+(isActive?' style="background:rgba(99,102,241,.06)"':'')+'>';
     h+='<td class="coin-name">'+m.label+(isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'')+'</td>';
     h+='<td>'+phaseHtml+'</td>';
     h+='<td style="text-align:center">'+gradeHtml+'</td>';
