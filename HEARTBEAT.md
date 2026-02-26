@@ -29,8 +29,10 @@
 - Scheduled Task: **Not yet created** — needs elevated PS from Brett
 
 ### Dashboard Sync
-- Task: `AIT_DashboardSync` (every 2 min)
-- Verify `docs/data/v12f/status.json` and `docs/data/live-aster/status.json` are fresh on GitHub Pages
+- Task: `AIT_DashboardSync` (every 10 min — changed from 2 min to avoid GitHub Pages rate limit)
+- Verify `docs/data/v13/status.json` is fresh on GitHub Pages
+- `.nojekyll` must exist in `docs/` — sync script ensures this
+- If builds fail, check: broken submodules, rate limiting (max 10 builds/hour), `.nojekyll` present
 
 ### Cron Job Health
 - Quick check: have any cron jobs failed in the last cycle? Check `memory/consolidation.log` for nightly consolidation status.

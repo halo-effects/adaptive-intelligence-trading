@@ -141,6 +141,19 @@
 - **6:00 AM PST** — V13 Daily Scanner (cron ID: ef85844d)
 - Old `AIT_CandleCollector` task broken (script deleted in git rebase) — superseded
 
+### GitHub Pages Deployment — Fixed 2026-02-25
+- **Broken submodule** (`repos/intelligent-accumulation-trading`) caused instant build failures — removed
+- **`.nojekyll`** file required in `docs/` to prevent Jekyll processing
+- **Sync interval** changed from 2 min → 10 min (GitHub Pages rate limit: 10 builds/hour)
+- **Auto-backup conflict**: Workspace auto-backup + sync script both push to `main` — auto-backup was deleting files sync script added. Fixed by ensuring workspace git tracks all `docs/` files.
+- Sync script updated to always ensure `.nojekyll` exists
+
+### V13 Architecture Spec — Updated 2026-02-25
+- `projects/ait-product/v13-architecture-spec.md` — comprehensive migration reference
+- Status: LIVE (fully implemented and operational)
+- Covers: phase model, signals, scanner, analytics DB, dashboard, daily pipeline, incident reports, migration readiness
+- Brett's intent: use as reference for scaling to production infrastructure
+
 ### Legacy Coin Scanner (Two-Tier Architecture) - Built 2026-02-15, SUPERSEDED
 - **Tier 1** (`trading/coin_scanner_t1.py`): ADX, ATR%, Hurst, SMA crosses, volume on all 275 Aster pairs (seconds/coin)
 - **Tier 2** (`trading/coin_scanner_t2.py`): Full 14-day 5m backtest on shortlisted coins (minutes/coin)
