@@ -682,7 +682,7 @@ async function fetchData(){
     try{var r3=await fetch(CONFIG.scannerUrl+'?t='+Date.now());if(r3.ok){scannerData=await r3.json()}}catch(e){console.warn('scanner fetch',e)}
   }
   try{var r=await fetch(CONFIG.statusUrl+'?t='+Date.now());if(r.ok){S=await r.json();render()}}catch(e){console.warn('status fetch',e)}
-  try{var r2=await fetch(CONFIG.tradesUrl+'?t='+Date.now());if(r2.ok){trades=parseCSV(await r2.text());renderTrades();renderEquityChart()}}catch(e){}
+  try{var r2=await fetch(CONFIG.tradesUrl+'?t='+Date.now());if(r2.ok){trades=parseCSV(await r2.text());renderTrades();renderEquityChart();try{renderCompounding()}catch(e){}try{renderStats()}catch(e){}}}catch(e){}
 }
 
 // RENDER MAIN
