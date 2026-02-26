@@ -38,20 +38,25 @@
 - **Wrapper**: `v13_lifecycle_engine_v2.py` - live wrapper around the phase backtest engine
 - **Runner**: `trading/spot/run_v13_paper.py`
 - Coins: ETH/USDC, SOL/USDC, LINK/USDC, XRP/USDC - 1h candles, daily signal ticks at midnight UTC
-- Profile: High (T1=60%, T2=20%, T3=10%, symmetric shorts, DCA 8% BO, 8 layers)
+- Profile: High (T1=60%, T2=20%, T3=10%, symmetric shorts, DCA 5% BO, 12 layers)
 - Capital: $10,000 paper, $2,500/coin
 - State/status: `trading/spot/paper/v13/`
-- **Backtest ROI**: +199.1% portfolio ($10K → $29,910), verified exact match trade-for-trade
-- **Current state (2026-02-25)**: All 4 coins in MARKDOWN, tier 3 shorts, adx_below_20_streak=0, equity $29,499 (+195%)
-- **Single instance running** (PID 2704) - duplicate PID 2284 killed 2026-02-25
+- **Current state (2026-02-26)**: All 4 coins in MARKDOWN, tier 3 shorts, equity $29,795 (+198%)
+- **LH_LL gate active** since 2026-02-26 restart (PID 10752)
 - **Brett directive (2026-02-25)**: "Just focus on V13 - our most valuable asset now"
 - **4 phases**: DCA → MARKUP → FLAT → MARKDOWN
-- **Key signals**: HH_HL+Fib (markup entry), ADX+Fib_break (markdown), 2W StochRSI OB93 (top), ADX ranging (exit), HVF (FLAT routing logged only)
+- **Entry gates (updated 2026-02-26)**:
+  - MARKUP: HH_HL ≥ 2 + Fib_support (original)
+  - MARKDOWN: **LH_LL ≥ 2** + ADX>20 + Fib_break (LH_LL added 2026-02-26)
+  - FLAT→MARKDOWN: **LH_LL ≥ 2** + ADX>20 + Fib_break
+- **Top detection**: 2W StochRSI OB93 (primary) / 1W OB85 (fallback) / 1W K<50 (failsafe)
 - **Front-loaded tiers**: 60/20/10 for both markup AND shorts (symmetric)
 - **Failure detectors**: Markup fail (DD>25%+ADX>25), Markdown fail (rise>25%+ADX>25)
 - **FLAT routing**: 3 paths - from top (check markdown 42d max), from ranging (ADX<20 14d→DCA), from markdown (same)
 - **Min phase hold**: 3 days (not 2 weeks!)
+- **HVF**: Dead code - logged only, not used for routing (confirmed 2026-02-26)
 - Scheduled Task: **Not yet created** - needs elevated PS from Brett
+- **State persistence**: state.json + trades.csv. Bot loads state.json on restart, overwrites disk edits from memory. Cannot easily void historical trades without code changes.
 - **CRITICAL**: Multiple v8 backtest files exist - only `v13_phase_backtest_v8.py` is correct. `v13_backtest_v8.py` produces -15% ROI on same coins.
 
 ### Aster Spot Live Bot - STATUS UNKNOWN (2026-02-25)
@@ -88,6 +93,9 @@
 - **Unit mismatch bugs are silent killers (2026-02-26)**: `price_vs_sma200` stored as percentage (32.55 = +32.55%) but `SMA200_OVEREXTENSION` threshold was 0.20 (decimal). Every MARKUP entry blocked for entire backtest. Fix: threshold = 20. Always verify units match between signal values and thresholds.
 - **Deep warmup essential for 2W StochRSI**: Needs ~784 days of daily data. Without Jan 2019 backfill, Oct 2020 signals were invalid. Backfill 1h candles then rebuild daily (correct approach).
 - **Structure confirmation gates critical (2026-02-26)**: MARKUP required HH_HL ≥ 2 (bullish structure). Adding LH_LL ≥ 2 requirement for MARKDOWN (bearish structure) created perfect symmetry. ETH shorts improved +108% (+$16.2K profit), blocking 5 bad shorts with ADX barely above 20 but zero bearish structure. Gate applies to both DCA→MARKDOWN and FLAT→MARKDOWN paths.
+- **Paper bot state persistence is tricky (2026-02-26)**: Bot loads state.json into memory at startup, then periodically saves from memory. Editing state.json on disk while bot runs gets overwritten. Must: stop bot → edit state.json + trades.csv → restart with --skip-backfill. Even then, engine capital, per_coin_cash, AND total cash must all be edited consistently.
+- **Backfill rebuilds everything (2026-02-26)**: Running without --skip-backfill regenerates all state from scratch, wiping any manual edits to trades.csv or state.json.
+- **All bias trigger approaches tested have flaws (2026-02-26)**: Engine top signals miss new coins (SOL bootstrap). Death cross chatters during consolidation (dozens of daily flips). SMA200 kills bear bottom recovery entries. No universal low-frequency regime trigger found yet.
 
 ### Adaptive TP/Deviation System (Live since 2026-02-14)
 - Dynamic TP: 0.6-2.5% based on 14-period ATR + regime multipliers (baseline 1.5%, ATR_BASELINE=0.8%)
@@ -151,9 +159,15 @@
 - **Auto-backup conflict**: Workspace auto-backup + sync script both push to `main` — auto-backup was deleting files sync script added. Fixed by ensuring workspace git tracks all `docs/` files.
 - Sync script updated to always ensure `.nojekyll` exists
 
-### V13 Architecture Spec — Updated 2026-02-25
-- `projects/ait-product/v13-architecture-spec.md` — comprehensive migration reference
-- Status: LIVE (fully implemented and operational)
+### V13 Documentation Suite — Updated 2026-02-26
+- **Architecture spec**: `projects/ait-product/v13-architecture-spec.md` — comprehensive system reference (updated with LH_LL gate, validation results, signal test archive)
+- **Test setup**: `projects/ait-product/v13-test-setup.md` — complete test infrastructure reference (DB, scripts, data requirements, validation checklist)
+- **Gate test plan**: `projects/ait-product/v13-gate-test-plan.md` — all tests conducted with results, decisions, and lessons learned
+- **Test backlog**: `projects/ait/v13-test-backlog.md` — proposed improvements (two-layer failure detector)
+- **Paper bot update**: `projects/ait-product/v13-paper-bot-update-markdown-fix.md` — LH_LL gate deployment instructions
+
+### V13 Architecture Spec Detail
+- Status: LIVE (fully implemented and operational, updated with LH_LL gate and full validation results)
 - Covers: phase model, signals, scanner, analytics DB, dashboard, daily pipeline, incident reports, migration readiness
 - Brett's intent: use as reference for scaling to production infrastructure
 
