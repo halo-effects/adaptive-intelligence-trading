@@ -4,51 +4,37 @@
   "profile": "high",
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 29498.7,
-  "cash": 6378.54,
-  "pnl_pct": 194.99,
+  "equity": 22181.91,
+  "cash": 4823.38,
+  "pnl_pct": 121.82,
   "coins": {
     "ETH/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 3714.0140953627024,
-      "current_price": 2058.2,
-      "unrealized_pnl": 1039.93,
+      "current_price": 2058.7,
+      "unrealized_pnl": 1039.61,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 2332.57,
-      "realized_pnl": 808.04,
+      "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": null
+      "cfgi": 56.0
     },
     "SOL/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 177.98740959991815,
-      "current_price": 88.029,
-      "unrealized_pnl": 1904.19,
+      "current_price": 88.442,
+      "unrealized_pnl": 1895.44,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 3767.53,
-      "realized_pnl": 2855.44,
+      "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": null
-    },
-    "LINK/USDC": {
-      "state": "SHORTING",
-      "side": "short",
-      "layers": 0,
-      "avg_entry": 18.538420187005713,
-      "current_price": 9.339,
-      "unrealized_pnl": 1907.88,
-      "next_so_price": null,
-      "next_tp_price": null,
-      "invested": 3844.7,
-      "realized_pnl": 2991.75,
-      "lifecycle_phase": "MARKDOWN",
-      "cfgi": null
+      "cfgi": 57.0
     },
     "XRP/USDC": {
       "state": "SHORTING",
@@ -60,9 +46,9 @@
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 5824.37,
-      "realized_pnl": 5756.21,
+      "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": null
+      "cfgi": 53.5
     }
   },
   "lifecycle": {
@@ -76,7 +62,7 @@
         "tier": 3,
         "dca_trades": 5,
         "dca_pnl": 39.48,
-        "total_pnl": 808.04
+        "total_pnl": 0.0
       },
       "gate_decisions": {}
     },
@@ -90,21 +76,7 @@
         "tier": 3,
         "dca_trades": 6,
         "dca_pnl": 84.99,
-        "total_pnl": 2855.44
-      },
-      "gate_decisions": {}
-    },
-    "LINK/USDC": {
-      "phase": "MARKDOWN",
-      "score": 0.0,
-      "daily_score": 0.0,
-      "metrics": {
-        "markup_cycles": 2,
-        "shorts_enabled": true,
-        "tier": 3,
-        "dca_trades": 7,
-        "dca_pnl": 23.92,
-        "total_pnl": 2991.75
+        "total_pnl": 0.0
       },
       "gate_decisions": {}
     },
@@ -118,7 +90,7 @@
         "tier": 3,
         "dca_trades": 7,
         "dca_pnl": 120.41,
-        "total_pnl": 5756.21
+        "total_pnl": 0.0
       },
       "gate_decisions": {}
     }
@@ -131,12 +103,12 @@
   ],
   "regime": "TRENDING",
   "trend_direction": "bearish",
-  "total_realized_pnl": 12411.44,
-  "deals_completed": 36,
-  "win_rate": 58.3,
-  "max_drawdown_pct": 26.29,
-  "uptime_hours": 0.03,
-  "fear_greed_index": null,
-  "last_update": "2026-02-26T00:34:04.056745+00:00",
+  "total_realized_pnl": 0.0,
+  "deals_completed": 0,
+  "win_rate": 0.0,
+  "max_drawdown_pct": 0.87,
+  "uptime_hours": 0.01,
+  "fear_greed_index": 50.8,
+  "last_update": "2026-02-26T02:32:56.193613+00:00",
   "timeframe": "1h"
 }
