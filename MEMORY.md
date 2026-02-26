@@ -87,6 +87,7 @@
 - **candles.db not gitignored = data loss risk**: Git rebase operations can wipe runtime SQLite databases. Restored 72MB candles.db from git history after rebase abort zeroed it.
 - **Unit mismatch bugs are silent killers (2026-02-26)**: `price_vs_sma200` stored as percentage (32.55 = +32.55%) but `SMA200_OVEREXTENSION` threshold was 0.20 (decimal). Every MARKUP entry blocked for entire backtest. Fix: threshold = 20. Always verify units match between signal values and thresholds.
 - **Deep warmup essential for 2W StochRSI**: Needs ~784 days of daily data. Without Jan 2019 backfill, Oct 2020 signals were invalid. Backfill 1h candles then rebuild daily (correct approach).
+- **Structure confirmation gates critical (2026-02-26)**: MARKUP required HH_HL ≥ 2 (bullish structure). Adding LH_LL ≥ 2 requirement for MARKDOWN (bearish structure) created perfect symmetry. ETH shorts improved +108% (+$16.2K profit), blocking 5 bad shorts with ADX barely above 20 but zero bearish structure. Gate applies to both DCA→MARKDOWN and FLAT→MARKDOWN paths.
 
 ### Adaptive TP/Deviation System (Live since 2026-02-14)
 - Dynamic TP: 0.6-2.5% based on 14-period ATR + regime multipliers (baseline 1.5%, ATR_BASELINE=0.8%)
