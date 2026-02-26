@@ -622,7 +622,7 @@ var PHASE_DESC = {
 var PHASES = ['DCA','MARKUP','FLAT','MARKDOWN'];
 var REGIME_CLS = {ACCUMULATION:'rb-ACCUMULATION',ACC:'rb-ACC',TRENDING:'rb-TRENDING',TREND:'rb-TREND',RANGING:'rb-RANGING',EXTREME:'rb-EXTREME',CRASH:'rb-CRASH',CHOPPY:'rb-CHOPPY',DISTRIBUTION:'rb-DISTRIBUTION'};
 
-var S=null, trades=[], eqChart=null, countdownVal=CONFIG.refreshInterval, tradePage=0, scannerData=null;
+var S=null, trades=[], eqChart=null, countdownVal=CONFIG.refreshInterval, tradePage=0, oppPage=0, scannerData=null;
 
 function parseCSV(t){var l=t.trim().split('\n');if(l.length<2)return[];var h=l[0].split(',').map(function(x){return x.trim()});return l.slice(1).map(function(r){var v=r.split(',');var o={};h.forEach(function(k,i){o[k]=v[i]?v[i].trim():''});return o})}
 
@@ -1296,7 +1296,19 @@ function renderFlowDiagram(){
     h+='<td class="opp-text" style="color:'+opp.color+'">'+opp.text+'</td>';
     h+='</tr>';
   });
-  $('oppBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
+  // Pagination
+  var oppRows=h?h.match(/<tr[\s\S]*?<\/tr>/g):[];
+  var ops=parseInt($('oppPageSize').value)||10;
+  var oppMaxPage=Math.max(0,Math.ceil(oppRows.length/ops)-1);
+  oppPage=Math.min(oppPage,oppMaxPage);
+  var oppPageRows=oppRows.slice(oppPage*ops,(oppPage+1)*ops);
+  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
+  if(oppRows.length>ops){
+    $('oppPagBar').style.display='flex';
+    $('oppPagInfo').textContent='Page '+(oppPage+1)+' of '+(oppMaxPage+1);
+    $('oppPagPrev').disabled=oppPage===0;
+    $('oppPagNext').disabled=oppPage>=oppMaxPage;
+  }else{$('oppPagBar').style.display='none'}
 }
 
 // TRADES
@@ -1335,6 +1347,9 @@ document.addEventListener('DOMContentLoaded',function(){
   $('pagPrev').onclick=function(){tradePage--;renderTrades()};
   $('pagNext').onclick=function(){tradePage++;renderTrades()};
   $('pageSize').onchange=function(){tradePage=0;renderTrades()};
+  $('oppPagPrev').onclick=function(){oppPage--;renderFlowDiagram()};
+  $('oppPagNext').onclick=function(){oppPage++;renderFlowDiagram()};
+  $('oppPageSize').onchange=function(){oppPage=0;renderFlowDiagram()};
 });
 
 // EQUITY CHART
