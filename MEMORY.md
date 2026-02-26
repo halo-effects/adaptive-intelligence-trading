@@ -85,6 +85,8 @@
 - **Daily tick timing matters**: First-hour candle price ≠ daily close. Must use `_price(prev_date)` from signal pack for daily ticks, and process at previous day's date. Off-by-one-day shifts cause signal misalignment.
 - **DCA PnL ≠ Total PnL**: The real money in V13 is from markup sells (+32-374%) and short profits (+9-52%), not DCA scalps ($1-4%). Track all closed trade P&L, not just `dca_pnl`.
 - **candles.db not gitignored = data loss risk**: Git rebase operations can wipe runtime SQLite databases. Restored 72MB candles.db from git history after rebase abort zeroed it.
+- **Unit mismatch bugs are silent killers (2026-02-26)**: `price_vs_sma200` stored as percentage (32.55 = +32.55%) but `SMA200_OVEREXTENSION` threshold was 0.20 (decimal). Every MARKUP entry blocked for entire backtest. Fix: threshold = 20. Always verify units match between signal values and thresholds.
+- **Deep warmup essential for 2W StochRSI**: Needs ~784 days of daily data. Without Jan 2019 backfill, Oct 2020 signals were invalid. Backfill 1h candles then rebuild daily (correct approach).
 
 ### Adaptive TP/Deviation System (Live since 2026-02-14)
 - Dynamic TP: 0.6-2.5% based on 14-period ATR + regime multipliers (baseline 1.5%, ATR_BASELINE=0.8%)
