@@ -154,13 +154,13 @@
 - Covers: phase model, signals, scanner, analytics DB, dashboard, daily pipeline, incident reports, migration readiness
 - Brett's intent: use as reference for scaling to production infrastructure
 
-### Legacy Coin Scanner (Two-Tier Architecture) - Built 2026-02-15, SUPERSEDED
+### Legacy Coin Scanner (Two-Tier Architecture) - Built 2026-02-15, SUPERSEDED & DISABLED
 - **Tier 1** (`trading/coin_scanner_t1.py`): ADX, ATR%, Hurst, SMA crosses, volume on all 275 Aster pairs (seconds/coin)
 - **Tier 2** (`trading/coin_scanner_t2.py`): Full 14-day 5m backtest on shortlisted coins (minutes/coin)
 - **Runner**: `trading/run_scanner.py` - ties both tiers, outputs recommendation
 - **Maturity filters**: 60+ day age, <120% price swing, <4x volume spike, $1M volume floor
 - Latest results: HYPE #1 (52.9), ASTER #2 (46.1), DOGE #3 (41.2), SOL #4, ETH #5
-- Cron job: every 4h (ID: b9571b56-5d72-4d25-b125-d834b12ea572)
+- Cron job: DISABLED (old ID: b9571b56). V12f scanner cron (ID: 830c5a2a) also disabled 2026-02-26 — source files deleted in git rebase, V13 scanner replaces it
 - Rotation threshold: 20% improvement required
 - Output: `trading/live/scanner_t1.json`, `scanner_t2.json`, `scanner_recommendation.json`
 
