@@ -227,7 +227,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .flow-arrow{font-size:1rem;color:var(--text3);align-self:center;margin:0 -4px;opacity:.35;flex-shrink:0}
 .flow-coins{display:flex;gap:3px;margin-top:6px;justify-content:center;flex-wrap:wrap}
 .fc-dot{width:18px;height:18px;border-radius:50%;font-size:.5rem;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center}
-.fc-dot.eth{background:#627eea}.fc-dot.sol{background:#9945ff}.fc-dot.btc{background:#f7931a}
+.fc-dot.eth{background:#627eea}.fc-dot.sol{background:#9945ff}.fc-dot.btc{background:#f7931a}.fc-dot.link{background:#2A5ADA}.fc-dot.xrp{background:#23292F}
 
 /* ── Charts Row ── */
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
@@ -588,8 +588,8 @@ tr:hover td{background:rgba(99,102,241,.04)}
 <script>
 // CONFIG
 var CONFIG = {
-  statusUrl: 'data/v12f/status.json',
-  tradesUrl: 'data/v12f/trades.csv',
+  statusUrl: 'data/v13/status.json',
+  tradesUrl: 'data/v13/trades.csv',
   refreshInterval: 60,
   scannerUrl: 'data/scanner_t2.json'
 };
@@ -604,15 +604,17 @@ var pDec = function(p){return p>1000?2:p>1?4:6};
 var COIN_BASE = {
   ETH:{icon:'eth',label:'ETH',name:'Ethereum',color:'#4A90D9'},
   SOL:{icon:'sol',label:'SOL',name:'Solana',color:'#7ED321'},
-  BTC:{icon:'btc',label:'BTC',name:'Bitcoin',color:'#F5A623'}
+  BTC:{icon:'btc',label:'BTC',name:'Bitcoin',color:'#F5A623'},
+  LINK:{icon:'link',label:'LINK',name:'Chainlink',color:'#2A5ADA'},
+  XRP:{icon:'xrp',label:'XRP',name:'XRP',color:'#23292F'}
 };
 function cm(sym){var b=sym.split('/')[0];return COIN_BASE[b]||{icon:'btc',label:b,name:b,color:'#888'}}
 
 var PHASE_DESC = {
   DCA:'Accumulating position via grid',EXIT:'Distribution detected - unwinding',
-  MARKDOWN:'Riding shorts down',SPRING:'Bottom detected - deploying reserves',MARKUP:'Trending up - max position'
+  MARKDOWN:'Riding shorts down',SPRING:'Bottom detected - deploying reserves',MARKUP:'Trending up - max position',FLAT:'Sideways consolidation - waiting for signal'
 };
-var PHASES = ['DCA','EXIT','MARKDOWN','SPRING','MARKUP'];
+var PHASES = ['DCA','MARKUP','FLAT','MARKDOWN'];
 var REGIME_CLS = {ACCUMULATION:'rb-ACCUMULATION',ACC:'rb-ACC',TRENDING:'rb-TRENDING',TREND:'rb-TREND',RANGING:'rb-RANGING',EXTREME:'rb-EXTREME',CRASH:'rb-CRASH',CHOPPY:'rb-CHOPPY',DISTRIBUTION:'rb-DISTRIBUTION'};
 
 var S=null, trades=[], eqChart=null, countdownVal=CONFIG.refreshInterval, tradePage=0, scannerData=null;
@@ -769,7 +771,7 @@ function renderStats(){
 
 // RISK PROFILE & REGIME
 function renderRiskProfile(){
-  var profile=(S.profile||'medium').toLowerCase();
+  var profile=(S.profile||'high').toLowerCase();
   var badgeCls=profile==='low'?'low':profile==='high'?'high':'medium';
   var rg=S.regime||'--';
   var tr=S.trend_direction||'--';
@@ -977,9 +979,9 @@ function renderCoinCards(){
 
     h+='<div class="price-row"><div class="price-main">'+fUsd(c.current_price,pd_)+'</div><div class="pnl-pills"><div class="pp"><span class="ppl">Unrealized</span><span class="ppv" style="color:'+pC(c.unrealized_pnl||0)+'">'+fUsd(c.unrealized_pnl||0)+'</span></div><div class="pp"><span class="ppl">Realized</span><span class="ppv" style="color:'+pC(c.realized_pnl||0)+'">'+fUsd(c.realized_pnl||0)+'</span></div></div></div>';
 
-    // Lifecycle history
-    h+='<div class="lc-row"><div class="lc-b"><span class="pd EXIT" style="width:6px;height:6px"></span>Exits <span class="n">'+(met.exit_phases||0)+'</span></div><div class="lc-b"><span class="pd MARKDOWN" style="width:6px;height:6px"></span>Markdowns <span class="n">'+(met.markdown_phases||0)+'</span></div><div class="lc-b"><span class="pd SPRING" style="width:6px;height:6px"></span>Springs <span class="n">'+(met.spring_phases||0)+'</span></div><div class="lc-b"><span class="pd MARKUP" style="width:6px;height:6px"></span>Markups <span class="n">'+(met.markup_phases||0)+'</span></div></div>';
-    h+='<div class="lc-pnls"><div class="lc-p">Short: <span style="color:'+pC(met.short_pnl||0)+'">'+fUsd(met.short_pnl||0)+'</span></div><div class="lc-p">Spring: <span style="color:'+pC(met.spring_pnl||0)+'">'+fUsd(met.spring_pnl||0)+'</span></div><div class="lc-p">Markup: <span style="color:'+pC(met.markup_pnl||0)+'">'+fUsd(met.markup_pnl||0)+'</span></div></div>';
+    // Lifecycle history (V13 metrics)
+    h+='<div class="lc-row"><div class="lc-b"><span class="pd MARKUP" style="width:6px;height:6px"></span>Markup Cycles <span class="n">'+(met.markup_cycles||0)+'</span></div><div class="lc-b"><span class="pd DCA" style="width:6px;height:6px"></span>DCA Trades <span class="n">'+(met.dca_trades||0)+'</span></div><div class="lc-b"><span class="pd MARKDOWN" style="width:6px;height:6px"></span>Shorts <span class="n">'+(met.shorts_enabled?'ON':'OFF')+'</span></div><div class="lc-b">Tier <span class="n">'+(met.tier||0)+'</span></div></div>';
+    h+='<div class="lc-pnls"><div class="lc-p">DCA PnL: <span style="color:'+pC(met.dca_pnl||0)+'">'+fUsd(met.dca_pnl||0)+'</span></div><div class="lc-p">Total PnL: <span style="color:'+pC(met.total_pnl||0)+'">'+fUsd(met.total_pnl||0)+'</span></div></div>';
 
     h+='</div>';
   });
@@ -1166,13 +1168,14 @@ function renderFlowDiagram(){
     if(allSyms.indexOf(sym)===-1) allSyms.push(sym);
   });
   var syms=allSyms.length>0?allSyms:activeSyms;
-  var phaseColors={DCA:'var(--phase-dca)',EXIT:'var(--phase-exit)',MARKDOWN:'var(--phase-markdown)',SPRING:'var(--phase-spring)',MARKUP:'var(--phase-markup)'};
+  var phaseColors={DCA:'var(--phase-dca)',EXIT:'var(--phase-exit)',MARKDOWN:'var(--phase-markdown)',SPRING:'var(--phase-spring)',MARKUP:'var(--phase-markup)',FLAT:'var(--phase-flat)'};
   var oppMap={
     SPRING:{text:'Best entry \u2014 buying bottom',color:'var(--green)'},
     DCA:{text:'Good \u2014 accumulating',color:'var(--accent2)'},
     MARKUP:{text:'Moderate \u2014 trend running',color:'var(--amber)'},
     EXIT:{text:'Wait \u2014 distribution',color:'var(--red)'},
-    MARKDOWN:{text:'Wait \u2014 shorting down',color:'var(--red)'}
+    MARKDOWN:{text:'Wait \u2014 shorting down',color:'var(--red)'},
+    FLAT:{text:'Sideways \u2014 consolidating',color:'var(--text2)'}
   };
 
   var h='';
@@ -1242,6 +1245,8 @@ function renderFlowDiagram(){
       signal='F&G '+(cfgi!=null?Math.round(cfgi):'--')+', score '+score;
     }else if(phase==='MARKDOWN'){
       signal='Riding shorts down';
+    }else if(phase==='FLAT'){
+      signal='Sideways consolidation';
     }
 
     var opp;
@@ -1257,7 +1262,7 @@ function renderFlowDiagram(){
     var g=scoreGrade(scanScore);
     var gradeHtml;
     if(isActive){
-      var phaseGrades={SPRING:{letter:'A+',color:'var(--green)'},DCA:{letter:'B+',color:'#22d3ee'},MARKUP:{letter:'B',color:'var(--accent2)'},EXIT:{letter:'C',color:'var(--amber)'},MARKDOWN:{letter:'D',color:'var(--red)'}};
+      var phaseGrades={SPRING:{letter:'A+',color:'var(--green)'},DCA:{letter:'B+',color:'#22d3ee'},MARKUP:{letter:'B',color:'var(--accent2)'},EXIT:{letter:'C',color:'var(--amber)'},MARKDOWN:{letter:'D',color:'var(--red)'},FLAT:{letter:'C+',color:'var(--text2)'}};
       var pg=phaseGrades[phase]||{letter:'B',color:'var(--accent2)'};
       gradeHtml='<span style="font-weight:800;font-size:1.1rem;color:'+pg.color+'">'+pg.letter+'</span>';
     }else{
@@ -1353,7 +1358,8 @@ function renderBottomBar(){
   $('bDDBar').style.width=Math.min(dd*4,100)+'%';
   $('bDDBar').style.background=ddCol;
   var profile=S.profile||'--';
-  $('bProfile').innerHTML='<span class="risk-badge medium" style="font-size:.65rem;padding:2px 8px;margin:0">'+profile.toUpperCase()+'</span>';
+  var profileCls=profile==='high'?'high':profile==='low'?'low':'medium';
+  $('bProfile').innerHTML='<span class="risk-badge '+profileCls+'" style="font-size:.65rem;padding:2px 8px;margin:0">'+profile.toUpperCase()+'</span>';
 }
 
 // REFRESH LOOP
