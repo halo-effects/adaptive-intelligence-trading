@@ -43,7 +43,8 @@
 - State/status: `trading/spot/paper/v13/`
 - **Backtest ROI**: +199.1% portfolio ($10K → $29,910), verified exact match trade-for-trade
 - **Current state (2026-02-25)**: All 4 coins in MARKDOWN, tier 3 shorts, adx_below_20_streak=0, equity $29,499 (+195%)
-- **Two instances running** (PIDs 2284, 2704) — potential conflict, needs cleanup
+- **Single instance running** (PID 2704) — duplicate PID 2284 killed 2026-02-25
+- **Brett directive (2026-02-25)**: "Just focus on V13 — our most valuable asset now"
 - **4 phases**: DCA → MARKUP → FLAT → MARKDOWN
 - **Key signals**: HH_HL+Fib (markup entry), ADX+Fib_break (markdown), 2W StochRSI OB93 (top), ADX ranging (exit), HVF (FLAT routing logged only)
 - **Front-loaded tiers**: 60/20/10 for both markup AND shorts (symmetric)
