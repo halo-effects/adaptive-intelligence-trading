@@ -3,9 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>AIT - Paper Trading Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -750,26 +747,24 @@ function renderStats(){
   $('vUPnl').innerHTML='<span style="color:'+pC(totalUpnl)+'">'+(totalUpnl>=0?'+':'')+fUsd(totalUpnl)+'</span>';
   $('vUPnlSub').textContent=fmt(upnlPct,2)+'% on '+fUsd(totalInv)+' invested';
 
-  // Win / Loss - ONLY from trades.csv (no fallback to avoid flash of wrong data)
-  var wins=0, losses=0, totalTrades=0;
+  // Win / Loss - use trades if loaded, otherwise derive from status.json
+  var wins=0, losses=0;
   if(trades.length>0){
     trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);if(p>0)wins++;else if(p!==0)losses++});
-    totalTrades=wins+losses;
-    $('vWL').innerHTML='<span style="color:var(--green)">'+wins+'W</span> / <span style="color:var(--red)">'+losses+'L</span>';
-    $('vWLSub').textContent=totalTrades+' total';
+  } else {
+    // Fallback: derive from status.json deals_completed and win_rate
+    var dc=S.deals_completed||0, wr0=S.win_rate||0;
+    wins=Math.round(dc*wr0/100);
+    losses=dc-wins;
   }
+  var totalTrades=wins+losses;
+  $('vWL').innerHTML='<span style="color:var(--green)">'+wins+'W</span> / <span style="color:var(--red)">'+losses+'L</span>';
+  $('vWLSub').textContent=totalTrades+' total';
 
-  // Win Rate - prefer trades.csv data over status.json
-  var wr=0, tradeCount=0;
-  if(trades.length>0){
-    wr=totalTrades>0?(wins/totalTrades*100):0;
-    tradeCount=totalTrades;
-  }else{
-    wr=S.win_rate||0;
-    tradeCount=S.deals_completed||0;
-  }
+  // Win Rate
+  var wr=S.win_rate||0;
   $('vWR').textContent=fmt(wr,1)+'%';
-  $('vWRSub').textContent=tradeCount+' trades';
+  $('vWRSub').textContent=(S.deals_completed||0)+' trades';
 
   // Avg Daily ROI - use trade date range, not uptime_hours
   var days=1;
