@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 # ── Configuration ──────────────────────────────────────────────────
 
 # Scanner output locations
-SCANNER_DIR = Path(__file__).resolve().parent.parent / "scanner"
+SCANNER_DIR = Path(__file__).resolve().parent.parent / "live"
 SCANNER_RECOMMENDATION = SCANNER_DIR / "scanner_recommendation.json"
 SCANNER_T1 = SCANNER_DIR / "scanner_t1.json"
 

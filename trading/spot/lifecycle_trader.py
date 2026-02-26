@@ -1257,14 +1257,11 @@ class LifecycleTrader:
         """Enable V12e lifecycle engine for all symbols."""
         self.lifecycle_enabled = True
         KNOWN_ATH = {
-            "ETH/USDT": 4957.0, "ETH/USDC": 4957.0,
+            "ETH/USDT": 4878.0, "ETH/USDC": 4878.0,
             "BTC/USDT": 109000.0, "BTC/USDC": 109000.0,
-            "SOL/USDT": 296.0, "SOL/USDC": 296.0,
-            "HYPE/USDC": 59.5, "ZEC/USDT": 724.0,
-            "ASTER/USDT": 2.43,
-            "BNB/USDT": 793.0, "XRP/USDT": 3.66,
-            "DOGE/USDT": 0.74,
-            "PEPE/USDC": 0.00104, "TRUMP/USDC": 75.35,
+            "SOL/USDT": 260.0, "SOL/USDC": 260.0,
+            "HYPE/USDC": 35.0, "ZEC/USDT": 724.0,
+            "ASTER/USDT": 1.50,
         }
         for symbol in self.symbols:
             config = LifecycleConfig(
@@ -1294,14 +1291,11 @@ class LifecycleTrader:
     def _init_lifecycle_for_symbol(self, symbol: str):
         """Initialize lifecycle engine + cold-start phase for a single newly-added coin."""
         KNOWN_ATH = {
-            "ETH/USDT": 4957.0, "ETH/USDC": 4957.0,
+            "ETH/USDT": 4878.0, "ETH/USDC": 4878.0,
             "BTC/USDT": 109000.0, "BTC/USDC": 109000.0,
-            "SOL/USDT": 296.0, "SOL/USDC": 296.0,
-            "HYPE/USDC": 59.5, "ZEC/USDT": 724.0,
-            "ASTER/USDT": 2.43,
-            "BNB/USDT": 793.0, "XRP/USDT": 3.66,
-            "DOGE/USDT": 0.74,
-            "PEPE/USDC": 0.00104, "TRUMP/USDC": 75.35,
+            "SOL/USDT": 260.0, "SOL/USDC": 260.0,
+            "HYPE/USDC": 35.0, "ZEC/USDT": 724.0,
+            "ASTER/USDT": 1.50,
         }
         profile = self.profile.name
         ath = KNOWN_ATH.get(symbol, 0.0)

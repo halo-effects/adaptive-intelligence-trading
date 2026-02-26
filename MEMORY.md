@@ -19,129 +19,52 @@
 
 ## Current Live Bots
 
-### Aster Spot Live (ASTER/USDT) — V12f
+### Aster Spot Live (ASTER/USDT) — V12e
 - **Live** on Aster DEX, Medium profile, 1h timeframe, lifecycle enabled
 - Task: `AsterSpotLive` (updated to 1h trigger by Brett 2026-02-23)
 - Files: `trading/spot/lifecycle_trader.py` (class: `LifecycleTrader`), `trading/spot/run_live.py`
 - State/status: `trading/spot/live/aster/`
 - Dashboard: `docs/data/live-aster/` → private `d-474521b7c3545633.html`
 
-### V12f Paper (Hyperliquid — ETH/SOL/BTC USDC)
-- Hyperliquid, Medium profile, 1h timeframe, lifecycle + pipeline enabled
-- Entry point: `python -u -m trading.spot.run_v12f_paper --exchange hyperliquid --pipeline`
+### V12e Paper (Hyperliquid — ETH/SOL/BTC USDC)
+- Hyperliquid, Medium profile, 1h timeframe, pipeline enabled
+- Task: `SpotPaperHyperliquid`
 - Coins: ETH/USDC, SOL/USDC, BTC/USDC
-- State/status: `trading/spot/paper/v12f/`
-- Old `run_v12e_paper` and task `SpotPaperHyperliquid` (v11 HYPE/USDC 15m) are DEPRECATED
-- Dashboard: `docs/data/v12f/` → public `dashboardV12.html`
+- State/status: `trading/spot/paper/hyperliquid/`
+- Dashboard: `docs/data/v12e/` → public `dashboardV12.html`
 
-### Legacy: Aster Futures Bot (DEPRECATED → ARCHIVED)
+### V13 Paper Bot (Hyperliquid — ETH/SOL/LINK/XRP USDC) — LIVE as of 2026-02-25
+- **Engine**: `v13_phase_backtest_v8.py` (43KB) — the CORRECT v8, NOT `v13_backtest_v8.py` (38KB)
+- **Wrapper**: `v13_lifecycle_engine_v2.py` — live wrapper around the phase backtest engine
+- **Runner**: `trading/spot/run_v13_paper.py`
+- Coins: ETH/USDC, SOL/USDC, LINK/USDC, XRP/USDC — 1h candles, daily signal ticks at midnight UTC
+- Profile: High (T1=60%, T2=20%, T3=10%, symmetric shorts, DCA 8% BO, 8 layers)
+- Capital: $10,000 paper, $2,500/coin
+- State/status: `trading/spot/paper/v13/`
+- **Backtest ROI**: +199.1% portfolio ($10K → $29,910), verified exact match trade-for-trade
+- **Current state (2026-02-25)**: All 4 coins in MARKDOWN, tier 3 shorts, adx_below_20_streak=0, equity $29,499 (+195%)
+- **Two instances running** (PIDs 2284, 2704) — potential conflict, needs cleanup
+- **4 phases**: DCA → MARKUP → FLAT → MARKDOWN
+- **Key signals**: HH_HL+Fib (markup entry), ADX+Fib_break (markdown), 2W StochRSI OB93 (top), ADX ranging (exit), HVF (FLAT routing logged only)
+- **Front-loaded tiers**: 60/20/10 for both markup AND shorts (symmetric)
+- **Failure detectors**: Markup fail (DD>25%+ADX>25), Markdown fail (rise>25%+ADX>25)
+- **FLAT routing**: 3 paths — from top (check markdown 42d max), from ranging (ADX<20 14d→DCA), from markdown (same)
+- **Min phase hold**: 3 days (not 2 weeks!)
+- Scheduled Task: **Not yet created** — needs elevated PS from Brett
+- **CRITICAL**: Multiple v8 backtest files exist — only `v13_phase_backtest_v8.py` is correct. `v13_backtest_v8.py` produces -15% ROI on same coins.
+
+### Aster Spot Live Bot — STATUS UNKNOWN (2026-02-25)
+- `AsterSpotLive` task state=Ready but no LastRunTime, no status.json exists
+- No Python process found running Aster as of 2026-02-25 evening
+- Last known status was 2026-02-17 (9+ days stale before file disappeared)
+
+### V12f Paper Bot — RUNNING BUT BROKEN STATUS (2026-02-25)
+- Process running (PID 10352) but `trading/spot/paper/v12f/` directory doesn't exist
+- Status file not being written — may need path fix in runner
+
+### Legacy: Aster Futures Bot (DEPRECATED)
 - Was HYPE/USDT dual-tracking bidirectional DCA on Aster futures
-- Task `AsterTradingBot` is **Disabled** — superseded by spot V12f
-- All legacy code archived to `_legacy/` directory (2026-02-24)
-
-### System Architecture Doc
-- **Location**: `docs/SYSTEM_ARCHITECTURE.md` (built 2026-02-24)
-- Comprehensive reference for cloud migration: subsystems, dependencies, data flows, security, flagged items
-- Pre-migration cleanup completed: 194 legacy files archived, scanner relocated to `trading/scanner/`, Dockerfile created
-
-### Phase Architecture Direction (2026-02-24, updated evening)
-- **Cold start classifier (`classify_phase()`) is fundamentally flawed** — stateless snapshot whipsaws every 1-2 days (BNB had ~60+ transitions in 4 months)
-- **Plan: eliminate cold start entirely** by persisting engine phase state per coin via `snapshot_state()`/`restore_state()`
-- Engine's `DailyScorerConductor` (stateful, hysteresis) is the correct phase system — not the classifier
-- **V12f gates always True**: Brett: "They should always be true" — no longer optional toggles
-- **ATH distance unreliable** for coins with inflation/unlocks — use price structure (trend + regime) instead
-
-### Architecture Evolution — Two-Timeframe + Simplified Phases (2026-02-24 evening)
-- **Root cause of bad demo results**: 1h Conductor is too sensitive for macro phase decisions. Fires EXIT on minor dips, whipsaws.
-- **Brett: "The pattern is there but we are switching on and off too fast"**
-- **Drop SPRING phase entirely**: "We probably don't need a spring. Once the bottom is in, EXIT back to what conductor says."
-- **Two-timeframe architecture**: Daily+Weekly for strategy (Conductor), 1h for execution (DCA engine)
-- **Simplified phase model**: Conductor reads market daily → MARKUP / DISTRIBUTION / MARKDOWN / ACCUMULATION. Ride phase until confirmed otherwise. EXIT gracefully between phases.
-- **No hardcoded transitions**: Every phase change = Conductor directional check. No fixed Wyckoff sequence.
-- **Brett: "Once we confirm markup, we stay in markup for a long time. Once we exit, we stay in markdown for a long time."**
-- **Brett: "Once we are in a phase we ride the phase until confirmed otherwise then EXIT to next phase as gracefully as possible."**
-- **Accept small losses for bigger wins**: Brett: "It's OK if we take some losing trades as long we make up for them with bigger winners." Positive expectancy > win rate. Close longs fast when direction confirmed, don't hold for days chasing breakeven.
-- **Simplified EXIT**: Instead of 14-day trailing unwind, close at market when Conductor confirms direction change. Small loss exiting = cost of being positioned correctly for next phase. A -2% exit loss is nothing vs a 15-30% phase move.
-- **Current V12f production bot is still valid** — published backtest numbers still hold. This is optimization.
-- Full evening session notes: `memory/2026-02-24-evening.md`
-- Demo script: `trading/spot/backtest_results/demo/run_demo_backtest.py`
-
-### V13 Phase Cycle Architecture (2026-02-25 — Brett directive)
-- **Full cycle**: MARKUP → FLAT → DCA → MARKUP or MARKDOWN → FLAT → DCA → repeat
-- **Both markup and markdown exit through FLAT** — no direct MARKDOWN→DCA jumps
-- **Hold shorts through spring**: Don't cover on bear bounces. Only close when FLAT confirms ranging.
-- **Ranging confirmation = ADX < 20 sustained (14+ days)**: Brief ADX dips don't count
-- **Brett: "Until price reaches meaningful support, we don't sell shorts from markdowns"**
-- **Brett: "Once sideways ranging structure is confirmed, then we wait for conductor for direction"**
-- **FLAT is symmetric**: Same state after both markup sells and markdown short closes
-- **v8 closed trades were excellent** (avg +32% alpha) — problem was premature re-entry after markdown, not signal quality
-- **MARKDOWN→FLAT fix improved results**: ETH -13.9%→+37.8%, SOL -3.7%→+89.0%
-- **ETH ADX during markdown**: averaged 32.4, only 13% of days below 20. Sustained ADX<20 never fires = holds shorts throughout ✓
-- **Next**: Wire ADX<20 sustained into FLAT exit logic, re-run
-
-### V13 Backtest Results (latest: v7 with COOLDOWN + shorts + cycle gating)
-- **3-coin (BTC/ETH/SOL): +51.6% avg** vs B&H -11.2%, +62.8% alpha over 17 months
-- BTC +32.2%, ETH +55.1%, SOL +67.5% (SOL = +101% alpha!)
-- **5-coin (incl BNB/XRP): +27.2% avg** — BNB/XRP dragged by cold start problem
-- Front-loaded tiers: T1=60%, T2=20%, T3=10%, 10% reserve. Brett: "Put more in at the lowest price."
-- **COOLDOWN state**: top signal → sell everything → flat 4 weeks → conductor decides next phase
-- **Shorts**: 60% of capital during MARKDOWN, only enabled after first confirmed markup cycle
-- DCA→Markdown = HARD EXIT (close all, free capital for shorts). DCA→Markup = graceful (let TPs hit).
-- T2/T3 require price ≥ entry price (prevents falling knife adds).
-- **Cold start is THE remaining problem**: BNB/XRP never got 2W OS signal, missed 500%+ rallies. Need momentum-based markup fallback.
-- DCA throttling tested and reverted — added complexity without benefit.
-- **Channel breakout detector built** (`channel_breakout.py`): detects channel consolidation → breakout → retest confirmation
-  - Retest-confirmed breakout = strong signal → enter phase directly
-  - Run without retest = weak signal → orient only, don't chase
-  - Multiple retests = very strong. Re-entering channel = invalidated.
-  - Neither BNB nor XRP had retest-confirmed bullish breakout in backtest window → safe DCA-only fallback
-  - Brett: "If it re-enters the channel the breakout is invalidated. This works in both ways."
-- **DCA Transition Matrix tested** (`v13_dca_transition_matrix.py`): 11 signals × combos across 5 coins
-  - **MARKUP winner**: HH_HL + Fib_support (100% acc, 20% FP, 39d lead, score 94.0) — works for ALL coins incl BNB/XRP
-  - **MARKDOWN winner**: ADX>20 + Fib_break (100% acc, 20% FP, 46d lead, score 94.0)
-  - **Fibonacci is the breakthrough**: Fib_golden = best individual markup signal, Fib_break = best individual markdown signal
-  - **HVF = pre-signal** ("energy building"), not transition signal. Fires before Fib confirms direction.
-  - **2W StochRSI scored 0%** for DCA transitions — confirms wrong signal for this use case
-  - Harmonic_bear + Fib_break = 0% false positives (highest conviction markdown)
-  - Brett: Fibonacci levels are "typically price tops or retest zones"
-
-### V13 Phase-Riding Architecture — FINAL (2026-02-25)
-**Session Work**: Built complete phase-riding system with validated signals, ranging confirmation, and safety nets.
-
-**Architecture (4 phases)**:
-1. **MARKUP** (hold longs) → top signal (2W OB93 / 1W OB85 / 1W K<50) OR ranging exit (ADX<20 for 21d) OR failure (-25% DD) → **FLAT**
-2. **FLAT** (post-sell wait): Path A (post-top): check MARKDOWN immediately. Path B (post-ranging): wait 14d, then require ADX<20 for 14d again
-3. **DCA** (accumulate) → HH_HL+Fib_support+SMA200<20% → **MARKUP** OR ADX>20+Fib_break+SMA200<20% → **MARKDOWN**
-4. **MARKDOWN** (hold shorts) → ADX<20 for 21d OR failure (+25% rise) → **FLAT** → DCA
-
-**Key Signals** (Matrix-validated, 94.0 score each):
-- MARKUP entry: HH_HL + Fib_support (100% acc, 20% FP, 39d lead)
-- MARKDOWN entry: ADX>20 + Fib_break (100% acc, 20% FP, 46d lead)
-- Top detection: 2W OB93 (primary), 1W OB85 (fallback), 1W K<50 (failsafe)
-- Ranging confirmation: ADX<20 sustained (14d for FLAT, 21d for phase exits)
-
-**Entry Gates**:
-- MARKUP: SMA200 ≤ 20% (don't buy near ATH)
-- MARKDOWN: SMA200 ≤ 20% (don't short corrections)
-- Failure detectors: 25% DD + ADX>25 (markup), 25% rise + ADX>25 (markdown)
-
-**Results (Oct 2024 - Feb 2026)**:
-- Avg ROI: +111.5% (3-5 coins), Avg Alpha: +40.6%
-- BTC +66.6%, ETH +64.0%, SOL +160.9%, BNB +2.3%, XRP +249.7%
-
-**Known Edge Cases**:
-- **BNB**: ADX naturally low, ranging exit fires early. Need per-coin threshold.
-- **XRP**: Multiple cycles. SMA200 gate fixed false shorts.
-- **Post-top wait**: BTC ranged 5 weeks (natural, not bug)
-
-**Documentation**: `projects/ait-product/V13-FINAL-DESIGN.md`
-
-### Backtest Engine Consolidation (2026-02-24)
-- **Flattened 11-file inheritance chain** (base → v2 → v3 → v4 → v5 → v6 → v7 → v8 → v9 → v12 → v12f) into single `backtest_engine_consolidated.py` (~6,400 lines, 313KB)
-- Old versioned files replaced with thin compatibility shims (re-exports)
-- Originals backed up to `trading/spot/_originals/`
-- **Verified**: backtest results match baseline exactly (BTC 90d: -6.99% return, 7 deals, Sharpe -1.26, DD 14.15%, 100% win rate)
-- All production imports verified: lifecycle_trader, lifecycle_engine, scanner, v12/v3 data classes
+- Task `AsterTradingBot` is **Disabled** — superseded by spot V12e
 
 ### Key Technical Lessons
 - reduceOnly orders fail in net position mode when opposing side has larger position — don't use reduceOnly
@@ -154,24 +77,13 @@
 - **TP > SOs priority**: always ensure TP can be placed, cancel deep SOs if needed to free margin
 - **Aster fees**: Maker = 0% (free), Taker = 0.04% — limit orders (TP, SO fills) are free
 - **Position drift bug (found 2026-02-17)**: old sync function only checked sign/zero, never compared qty. Orders can accumulate orphaned exposure silently. Fixed with qty drift detection + Telegram alerts.
-- **Spot reconciliation bug (fixed 2026-02-23)**: `_get_spot_position()` used `free` balance, missing coins locked in open TP sell orders → bot thought position gone → duplicate buys on every restart. Fixed to use `total` balance.
 - **Funding fees are the hidden killer**: Aster charges every 4h. Positions held 24h+ with SOs can lose 50-66% of expected TP profit to funding. Must factor into strategy.
 - **Aster API quirks**: `/fapi/v1/income` and `/fapi/v1/userTrades` return 400. Use `/fapi/v1/fundingRate` (public) + `/fapi/v1/premiumIndex` (public) instead. `/fapi/v2/balance` works signed, `/fapi/v2/positionRisk` works signed.
-- **1h candles too noisy for macro phase decisions** — Conductor scoring every hour fires EXIT on minor dips. Daily+Weekly is the right timeframe for Wyckoff phase detection. 1h for execution only.
-- **Spring system was over-engineered** — built gates, Martingale tiering, recovery override, but 0 springs ever fired in testing. The real problem was Conductor sensitivity, not spring detection.
-- **Duplicate code from consolidation is dangerous** — 6,400-line engine had TWO identical DCA→EXIT checks. Guard one, miss the other = hours of debugging.
-- **Don't stack patches on a wrong foundation** — cooldowns, recovery overrides, post-EXIT routing all compensated for the real problem (1h sensitivity). Fix the root cause instead.
 - **Force sync tool**: `trading/force_sync.py` — interactive tool to reconcile exchange vs tracked position
-
-### Wyckoff Volume-Price Research (2026-02-24)
-- Ran 10 isolated tests on Wyckoff volume-price signals for spring/exit timing improvement
-- **8 of 10 volume-based tests failed** — crypto exchange volume is too noisy (wash trading, 24/7 markets, fragmented exchanges)
-- **Test 10 (200-SMA overextension) = STRONG SIGNAL**: GOOD markups avg 11.4% above 200-SMA, BAD markups avg 34.5%. Threshold at 20% blocks 69% of BAD, keeps 71% of GOOD.
-- **Test 1W (weekly buy/sell ratio)** = partial signal: 4/6 springs matched pattern at weekly timeframe
-- Brett insight: "With crypto, sentiment is probably the strongest signal" — CFGI already captures what Wyckoff volume measures in equities
-- **Conclusion**: Volume signals don't transfer to crypto. Price-based mean reversion (200-SMA) + CFGI sentiment = the viable path
-- Full analysis: `projects/ait-product/spring-markdown-comprehensive-analysis.md`
-- Test results: `trading/spot/backtest_results/cfgi_dwell_analysis/TEST{1,1W,4,5,6,8,8W,10}_*.md`
+- **Multiple backtest files with same class name = disaster (2026-02-25)**: `v13_backtest_v8.py` and `v13_phase_backtest_v8.py` both contain `class V13BacktestV8` but are completely different engines. Went through 3 wrong engines before finding the right one. Always verify backfill matches standalone backtest trade-for-trade.
+- **Daily tick timing matters**: First-hour candle price ≠ daily close. Must use `_price(prev_date)` from signal pack for daily ticks, and process at previous day's date. Off-by-one-day shifts cause signal misalignment.
+- **DCA PnL ≠ Total PnL**: The real money in V13 is from markup sells (+32-374%) and short profits (+9-52%), not DCA scalps ($1-4%). Track all closed trade P&L, not just `dca_pnl`.
+- **candles.db not gitignored = data loss risk**: Git rebase operations can wipe runtime SQLite databases. Restored 72MB candles.db from git history after rebase abort zeroed it.
 
 ### Adaptive TP/Deviation System (Live since 2026-02-14)
 - Dynamic TP: 0.6–2.5% based on 14-period ATR + regime multipliers (baseline 1.5%, ATR_BASELINE=0.8%)
@@ -199,7 +111,7 @@
 
 ### Spot Paper Bots — Evolution
 - Originally launched 2026-02-17 as v11 (ETH/USDT 15m Aster, HYPE/USDC 15m Hyperliquid)
-- **Current**: V12f paper on Hyperliquid (ETH/SOL/BTC USDC, 1h, pipeline enabled) — see "Current Live Bots" above
+- **Current**: V12e paper on Hyperliquid (ETH/SOL/BTC USDC, 1h, pipeline enabled) — see "Current Live Bots" above
 - Old tasks `SpotPaperAster` and `SpotPaperHyperliquid` still exist but are from v11 era
 
 ### WhiteHatFX History
@@ -208,23 +120,15 @@
 - Key diff: 4x lot multiplier (vs 2x now), fixed params, no equity protection
 - Evolution: from static hardcoded → dynamic regime-adaptive ("Breathing Grid")
 
-### Coin Scanner (Two-Tier Architecture) — Built 2026-02-15, V12f Rewrite 2026-02-24
-- **Tier 1** (`trading/coin_scanner_t1.py`): CFGI-only mode (default) — scans 7 Aster CFGI pairs in seconds. Legacy full-scan (291 pairs) available via `cfgi_only=False`
-- **Tier 2** (`trading/coin_scanner_t2_v12f.py`): ✅ V12f lifecycle backtest engine + coin CFGI + candle DB. Replaces legacy `coin_scanner_t2.py` (MartingaleBot).
-- **Production scanner spec**: `~/life/projects/ait/production-scanner-spec.md`
-- **Runner**: `trading/run_scanner.py` — imports V12f T2, current coin = ASTER/USDT
-- **Candle DB**: `trading/spot/data/candles.db` (SQLite, 15 coins, up to 47K candles/coin). T2 reads from DB first, API fallback on miss.
-- **Backtest window**: 90 days (lifecycle phases need 50+ daily bars)
-- T1 results (2026-02-24): ASTER #1 (73.7), BNB #2 (52.2), XRP #3 (52.2), BTC #4 (49.6)
-- T2 results (90d, V12f): BTC #1 (105, Sharpe 2.53), ASTER #2 (98, Sharpe 1.57), PEPE #3 (66), TRUMP #4 (51)
-- Cron job: every 4h (ID: b9571b56-5d72-4d25-b125-d834b12ea572) — needs updating to use new pipeline
+### Coin Scanner (Two-Tier Architecture) — Built 2026-02-15
+- **Tier 1** (`trading/coin_scanner_t1.py`): ADX, ATR%, Hurst, SMA crosses, volume on all 275 Aster pairs (seconds/coin)
+- **Tier 2** (`trading/coin_scanner_t2.py`): Full 14-day 5m backtest on shortlisted coins (minutes/coin)
+- **Runner**: `trading/run_scanner.py` — ties both tiers, outputs recommendation
+- **Maturity filters**: 60+ day age, <120% price swing, <4x volume spike, $1M volume floor
+- Latest results: HYPE #1 (52.9), ASTER #2 (46.1), DOGE #3 (41.2), SOL #4, ETH #5
+- Cron job: every 4h (ID: b9571b56-5d72-4d25-b125-d834b12ea572)
 - Rotation threshold: 20% improvement required
 - Output: `trading/live/scanner_t1.json`, `scanner_t2.json`, `scanner_recommendation.json`
-- **Tradeable CFGI tokens (10)**: Aster: BTC, ETH, SOL, BNB, ASTER, DOGE, XRP. Hyperliquid: HYPE, PEPE, TRUMP.
-- **Non-tradeable CFGI tokens**: AAVE, ADA, ARB, AVAX, DOT, INJ, LINK, SUI, TON, UNI (not on either exchange)
-- **CFGI client**: `trading/spot/cfgi_client.py` — cfgi.io API, per-coin + market, cached. Bug fixed: `get_history()` no longer sends `values` with `start`+`end`.
-- **Brett directive**: Only scan/trade coins with coin-specific CFGI. No scanning coins we can't trade. Paper bot = production beta with full pipeline.
-- **Gap**: Hyperliquid-only coins (HYPE, PEPE, TRUMP) not in T1 — needs multi-exchange T1 or separate scan
 
 ### Risk Profile System — Spec'd 2026-02-16, Updated 2026-02-22
 - Spec: `projects/ait-product/risk-profiles-spec.md`

@@ -17,16 +17,16 @@
 - Coins: ETH/USDC, SOL/USDC, BTC/USDC — 1h timeframe, Medium profile
 - Pipeline enabled (scanner → pipeline → trader)
 - Entry point: `python -u -m trading.spot.run_v12f_paper --exchange hyperliquid --pipeline`
-- Old task `SpotPaperHyperliquid` is DEPRECATED
-- Old module `run_v12e_paper` is DEPRECATED — replaced by `run_v12f_paper`
 
-### V13 Paper Bot (Hyperliquid — ETH/SOL/LINK/XRP USDC) — LIVE as of 2026-02-25 14:49
+### V13 Paper Bot (Hyperliquid — ETH/SOL/LINK/XRP USDC) — LIVE as of 2026-02-25
 - Check `trading/spot/paper/v13/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
-- Coins: ETH/USDC, SOL/USDC, LINK/USDC, XRP/USDC — 1h timeframe, High profile
-- Backfill complete: $2,056 realized PnL, 271 deals, state persisted, 4-phase lifecycle
+- **Engine**: `v13_phase_backtest_v8.py` (the correct one — 43KB, NOT v13_backtest_v8.py)
+- Coins: ETH/USDC, SOL/USDC, LINK/USDC, XRP/USDC — 1h candles, daily signal ticks
+- Profile: High (T1=60%, T2=20%, T3=10%, symmetric shorts)
+- Backfill verified: exact trade-for-trade match with standalone backtest (+199% portfolio ROI)
 - Entry point: `python -u -m trading.spot.run_v13_paper --capital 10000 --profile high --exchange hyperliquid --skip-backfill`
-- Scheduled Task: V13PaperBot (not yet created — needs elevated PS)
+- Scheduled Task: **Not yet created** — needs elevated PS from Brett
 
 ### Dashboard Sync
 - Task: `AIT_DashboardSync` (every 2 min)
@@ -39,7 +39,6 @@
 ## Periodic Checks (rotate through, 2-3x per day)
 - Are there active project deadlines approaching within 48 hours?
 - Any blocked tasks waiting for input >24 hours?
-- Check `C:\Users\Never\life\projects\_index.md` for stale project statuses.
 
 ## When to Alert Brett
 - A trading bot stopped or is stale

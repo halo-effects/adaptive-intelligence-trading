@@ -42,13 +42,9 @@ class CFGICreditsExhausted(CFGIError):
 ENDPOINT = "https://cfgi.io/api/api_request_v2.php"
 
 VALID_TOKENS = [
-    "AAVE", "ADA", "ALGO", "ARB", "ASTER", "ATOM", "AVAX", "AXS",
-    "BCH", "BNB", "BONK", "BTC", "CRV", "DOGE", "DOT", "ETH",
-    "FET", "FIL", "FLOKI", "FTM", "GALA", "GRT", "HYPE", "INJ",
-    "JUP", "LINK", "LTC", "MANA", "MATIC", "NEAR", "PEPE", "RUNE",
-    "SAND", "SEI", "SHIB", "SOL", "SUI", "TAO", "TON", "TRUMP",
-    "UNI", "WIF", "XRP", "ZEC",
-    "MARKET",  # General market index
+    "BTC", "ETH", "SOL", "BNB", "HYPE", "ASTER", "DOGE", "PEPE",
+    "AVAX", "ADA", "XRP", "DOT", "LINK", "UNI", "AAVE", "SUI",
+    "TON", "ARB", "INJ", "TRUMP", "MARKET",
 ]
 
 VALID_FIELDS = [
@@ -122,11 +118,7 @@ class CFGIClient:
         return self._parse_multi_token(data, tokens)
 
     def get_history(self, token: str, period: int, start: str, end: str, fields: str = "cfgi") -> list:
-        """Fetch historical range with auto-pagination (max 1200 per request).
-        
-        Note: cfgi.io API does not accept 'values' together with 'start'+'end'.
-        We omit 'values' and paginate by date instead.
-        """
+        """Fetch historical range with auto-pagination (max 1200 per request)."""
         all_data = []
         current_start = start
 
@@ -137,6 +129,7 @@ class CFGIClient:
                 "start": current_start,
                 "end": end,
                 "fields": fields,
+                "values": 1200,
             }
             data = self._request(params)
             rows = self._parse_single_token(data, token)

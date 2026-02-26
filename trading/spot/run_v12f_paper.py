@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""V12f Lifecycle Paper Trading Bot — 3 certified coins on Hyperliquid.
+"""V12f Smart Capital Allocation Paper Trading Bot.
 
-Runs ETH/USDC, SOL/USDC, BTC/USDC with lifecycle engine + pipeline enabled.
-Medium risk profile, 1h timeframe, $10K capital split across 3 coins.
+Same as V12e lifecycle engine but with phase-weighted capital allocation:
+- Cold start: coins in SPRING/MARKUP get larger capital share
+- Fresh capital: freed cash routes to highest-opportunity coin
+- V12e lifecycle logic untouched — only allocation changes
+
+Usage:
+    python trading/spot/run_v12f_paper.py --exchange hyperliquid --capital 10000
+    python trading/spot/run_v12f_paper.py --exchange aster --profile high --capital 500
 """
 import argparse
 import sys
@@ -14,20 +20,11 @@ from trading.spot.lifecycle_trader import LifecycleTrader as SpotPaperTrader
 
 
 def main():
-    parser = argparse.ArgumentParser(description="V12f Lifecycle Paper Trader")
+    parser = argparse.ArgumentParser(description="V12f Smart Capital Allocation Paper Trader")
     parser.add_argument("--profile", default="medium", choices=["low", "medium", "high"])
     parser.add_argument("--capital", type=float, default=10000.0)
     parser.add_argument("--timeframe", default="1h")
-    parser.add_argument("--exchange", default="aster")
-    parser.add_argument("--aggressiveness", default=None,
-                        choices=["conservative", "balanced", "aggressive"],
-                        help="Rebalancing aggressiveness (default: based on profile)")
-    parser.add_argument("--no-auto-rotation", action="store_true",
-                        help="Disable automatic coin rotation")
-    parser.add_argument("--pipeline", action="store_true",
-                        help="Enable scanner-driven coin pipeline")
-    parser.add_argument("--pipeline-interval", type=float, default=4.0,
-                        help="Pipeline check interval in hours (default: 4)")
+    parser.add_argument("--exchange", default="hyperliquid")
     args = parser.parse_args()
 
     # Hyperliquid has all 3 as spot; Aster lacks SOL spot
@@ -36,7 +33,7 @@ def main():
     else:
         symbols = ["ETH/USDT", "BTC/USDT"]  # Aster only has ETH+BTC spot
 
-    # Dedicated output directory for V12f lifecycle paper trading
+    # Dedicated output directory for V12f
     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "paper", "v12f")
 
     trader = SpotPaperTrader(
@@ -46,19 +43,12 @@ def main():
         symbols=symbols,
         timeframe=args.timeframe,
         max_coins=3,
+        smart_allocation=True,  # V12f: phase-weighted capital allocation
     )
     # Override output dir to dedicated V12f directory
     from pathlib import Path
     trader.paper_dir = Path(output_dir)
     trader.paper_dir.mkdir(parents=True, exist_ok=True)
-
-    # Enable V12f lifecycle engine with shorts
-    trader.enable_lifecycle(args.profile)
-
-    # Enable scanner → trader pipeline if requested
-    if args.pipeline:
-        trader.enable_pipeline(args.pipeline_interval)
-
     trader.run()
 
 
