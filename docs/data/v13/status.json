@@ -4,9 +4,9 @@
   "profile": "high",
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 22181.91,
-  "cash": 4823.38,
-  "pnl_pct": 121.82,
+  "equity": 24767.11,
+  "cash": 5871.33,
+  "pnl_pct": 147.67,
   "coins": {
     "ETH/USDC": {
       "state": "SHORTING",
@@ -35,6 +35,20 @@
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
       "cfgi": 57.0
+    },
+    "LINK/USDC": {
+      "state": "RIDING",
+      "side": "long",
+      "layers": 1,
+      "avg_entry": 9.451,
+      "current_price": 9.239,
+      "unrealized_pnl": 56.3,
+      "next_so_price": null,
+      "next_tp_price": 9.592765,
+      "invested": 1480.95,
+      "realized_pnl": 28.9,
+      "lifecycle_phase": "MARKUP",
+      "cfgi": 50.0
     },
     "XRP/USDC": {
       "state": "SHORTING",
@@ -80,6 +94,20 @@
       },
       "gate_decisions": {}
     },
+    "LINK/USDC": {
+      "phase": "MARKUP",
+      "score": 0.0,
+      "daily_score": 0.0,
+      "metrics": {
+        "markup_cycles": 0,
+        "shorts_enabled": false,
+        "tier": 1,
+        "dca_trades": 4,
+        "dca_pnl": 28.9,
+        "total_pnl": 28.9
+      },
+      "gate_decisions": {}
+    },
     "XRP/USDC": {
       "phase": "MARKDOWN",
       "score": 0.0,
@@ -103,12 +131,12 @@
   ],
   "regime": "TRENDING",
   "trend_direction": "bearish",
-  "total_realized_pnl": 0.0,
-  "deals_completed": 0,
-  "win_rate": 0.0,
-  "max_drawdown_pct": 0.87,
-  "uptime_hours": 0.17,
+  "total_realized_pnl": 28.9,
+  "deals_completed": 4,
+  "win_rate": 475.0,
+  "max_drawdown_pct": 5.29,
+  "uptime_hours": 0.02,
   "fear_greed_index": 50.8,
-  "last_update": "2026-02-26T02:42:57.814289+00:00",
+  "last_update": "2026-02-26T02:44:31.707024+00:00",
   "timeframe": "1h"
 }
