@@ -795,8 +795,8 @@ function renderRiskProfile(){
       devPcts.push(Math.abs((c.avg_entry-c.next_so_price)/c.avg_entry*100));
     }
   });
-  var tpRange=tpPrices.length?fmt(Math.min.apply(null,tpPrices),1)+'-'+fmt(Math.max.apply(null,tpPrices),1)+'%':'--';
-  var devRange=devPcts.length?fmt(Math.min.apply(null,devPcts),1)+'-'+fmt(Math.max.apply(null,devPcts),1)+'%':'--';
+  var tpRange=tpPrices.length?fmt(Math.min.apply(null,tpPrices),1)+'-'+fmt(Math.max.apply(null,tpPrices),1)+'%':'1.5%';
+  var devRange=devPcts.length?fmt(Math.min.apply(null,devPcts),1)+'-'+fmt(Math.max.apply(null,devPcts),1)+'%':'2.5%';
 
   $('riskGrid').innerHTML=
     '<div class="risk-col">'+
