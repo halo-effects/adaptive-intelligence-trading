@@ -1163,8 +1163,8 @@ function renderCapDonut(){
 
   var legs=[
     {label:'DCA Invested',val:dcaInv,color:'var(--phase-dca)',hex:'#4A90D9'},
-    {label:'Markup Deployed',val:markupDep,color:'var(--phase-markup)',hex:'#F8E71C'},
-    {label:'Markdown Deployed',val:markdownDep,color:'var(--phase-markdown)',hex:'#D0021B'},
+    {label:'Longs Deployed',val:markupDep,color:'var(--phase-markup)',hex:'#F8E71C'},
+    {label:'Shorts Deployed',val:markdownDep,color:'var(--phase-markdown)',hex:'#D0021B'},
     {label:'Cash Reserve',val:cash,color:'var(--text3)',hex:'#1e1e2e'}
   ];
   $('capLegend').innerHTML='<div style="font-size:.8rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Utilization</div><div style="font-size:2.5rem;font-weight:700;margin-bottom:12px;color:'+(utilPct>80?'var(--green)':utilPct>40?'var(--amber)':'var(--text)')+'">'+fmt(utilPct,1)+'%</div>'+legs.map(function(l){return '<div class="cap-leg-item" style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--text2)"><span class="cap-dot" style="width:14px;height:14px;border-radius:50%;flex-shrink:0;background:'+l.color+'"></span>'+l.label+'<span style="margin-left:auto;font-weight:600;font-size:.95rem;color:var(--text)">'+fUsd(l.val)+'</span></div>'}).join('');
