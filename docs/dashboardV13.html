@@ -733,9 +733,14 @@ function renderStats(){
   $('vEq').textContent=fUsd(eq);
   $('vEqSub').innerHTML='Capital: '+fUsd(cap)+' &middot; '+'<span style="color:'+pC(growthPct)+'">'+(growthPct>=0?'+':'')+fmt(growthPct)+'%</span>';
 
-  // Realized PnL
-  var rpnl=S.total_realized_pnl||0;
-  var deals=S.deals_completed||0;
+  // Realized PnL - use trades.csv if loaded, fallback to status.json
+  var rpnl=0, deals=0;
+  if(trades.length>0){
+    trades.forEach(function(t){rpnl+=parseFloat(t.pnl||t.PnL||0);deals++});
+  } else {
+    rpnl=S.total_realized_pnl||0;
+    deals=S.deals_completed||0;
+  }
   $('vRPnl').innerHTML='<span style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</span>';
   $('vRPnlSub').textContent=deals+' completed deals';
 
@@ -761,10 +766,15 @@ function renderStats(){
   $('vWL').innerHTML='<span style="color:var(--green)">'+wins+'W</span> / <span style="color:var(--red)">'+losses+'L</span>';
   $('vWLSub').textContent=totalTrades+' total';
 
-  // Win Rate
-  var wr=S.win_rate||0;
+  // Win Rate - derive from trades.csv if loaded
+  var wr=0;
+  if(totalTrades>0){
+    wr=(wins/totalTrades*100);
+  } else {
+    wr=S.win_rate||0;
+  }
   $('vWR').textContent=fmt(wr,1)+'%';
-  $('vWRSub').textContent=(S.deals_completed||0)+' trades';
+  $('vWRSub').textContent=totalTrades+' trades';
 
   // Avg Daily ROI - use trade date range, not uptime_hours
   var days=1;
@@ -999,8 +1009,17 @@ function renderCoinCards(){
 
 // COMPOUNDING TRACKER
 function renderCompounding(){
-  var cap=S.capital||10000, eq=S.equity||cap, rpnl=S.total_realized_pnl||0;
-  var deals=S.deals_completed||0, wr=S.win_rate||0;
+  var cap=S.capital||10000, eq=S.equity||cap;
+  // Derive realized PnL and stats from trades.csv if available
+  var rpnl=0, deals=0, wins=0;
+  if(trades.length>0){
+    trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);rpnl+=p;deals++;if(p>0)wins++});
+  } else {
+    rpnl=S.total_realized_pnl||0;
+    deals=S.deals_completed||0;
+    wins=Math.round(deals*(S.win_rate||0)/100);
+  }
+  var wr=deals>0?(wins/deals*100):0;
   var growth=cap>0?((eq-cap)/cap*100):0;
   // Use trade history date range for accurate daily rate (uptime_hours only tracks wall-clock since restart)
   var days=1;
