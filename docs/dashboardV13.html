@@ -761,9 +761,13 @@ function renderStats(){
   $('vWR').textContent=fmt(wr,1)+'%';
   $('vWRSub').textContent=(S.deals_completed||0)+' trades';
 
-  // Avg Daily ROI
-  var hours=S.uptime_hours||0;
-  var days=Math.max(hours/24,1);
+  // Avg Daily ROI — use trade date range, not uptime_hours
+  var days=1;
+  if(trades&&trades.length>1){
+    var f0=new Date(trades[0].open_time);
+    var l0=new Date(trades[trades.length-1].close_time||trades[trades.length-1].open_time);
+    days=Math.max((l0-f0)/(1000*60*60*24),1);
+  } else if(S.uptime_hours>24){ days=S.uptime_hours/24; }
   var dailyRoi=growthPct/days;
   $('vROI').innerHTML='<span style="color:'+pC(dailyRoi)+'">'+(dailyRoi>=0?'+':'')+fmt(dailyRoi,4)+'%</span>';
   $('vROISub').textContent='on '+fUsd(cap)+' capital';
@@ -996,8 +1000,8 @@ function renderCompounding(){
   // Use trade history date range for accurate daily rate (uptime_hours only tracks wall-clock since restart)
   var days=1;
   if(trades&&trades.length>1){
-    var first=new Date(trades[trades.length-1].open_time);
-    var last=new Date(trades[0].close_time||trades[0].open_time);
+    var first=new Date(trades[0].open_time);
+    var last=new Date(trades[trades.length-1].close_time||trades[trades.length-1].open_time);
     days=Math.max((last-first)/(1000*60*60*24),1);
   } else if(S.uptime_hours>24){
     days=S.uptime_hours/24;
