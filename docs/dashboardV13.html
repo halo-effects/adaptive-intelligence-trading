@@ -542,9 +542,11 @@ tr:hover td{background:rgba(99,102,241,.04)}
 <div class="flow-section">
   <h2 style="text-align:center;font-size:1.15rem;color:var(--text);margin-bottom:4px">&#x1F4CA; Live Opportunity Dashboard</h2>
   <div class="flow-sub" style="text-align:center">Each coin progresses independently through Wyckoff-inspired market cycle phases</div>
-  <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-bottom:8px">
-    <span style="font-size:.75rem;color:var(--text2)">Show:</span>
-    <select id="oppPageSize"><option value="10" selected>10</option><option value="25">25</option><option value="50">50</option></select>
+  <div class="pag-bar" style="justify-content:flex-start;margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:.75rem;color:var(--text2)">Show:</span>
+      <select id="oppPageSize"><option value="10" selected>10</option><option value="25">25</option><option value="50">50</option></select>
+    </div>
   </div>
   <table class="opp-table" id="oppTable">
     <thead><tr><th>COIN</th><th>PHASE</th><th>GRADE</th><th>SIGNAL</th><th>OPPORTUNITY</th></tr></thead>
