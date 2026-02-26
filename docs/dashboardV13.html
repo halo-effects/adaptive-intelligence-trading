@@ -1149,25 +1149,22 @@ function renderCapUtilDonut(){
 // CAP DONUT (charts row)
 function renderCapDonut(){
   var syms=S.symbols||Object.keys(S.coins||{});
-  var dcaInv=0, springDep=0, markupDep=0, shortMar=0;
+  var dcaInv=0, markupDep=0, markdownDep=0;
   syms.forEach(function(sym){
     var c=(S.coins||{})[sym]||{}, lc=(S.lifecycle||{})[sym]||{};
     var phase=lc.phase||'DCA';
-    if(phase==='DCA')dcaInv+=(c.invested||0);
-    else if(phase==='SPRING')springDep+=(lc.spring_deployed||0);
-    else if(phase==='MARKUP')markupDep+=(c.invested||0);
-    else if(phase==='MARKDOWN'&&lc.short_active)shortMar+=(c.invested||0);
+    if(phase==='MARKUP')markupDep+=(c.invested||0);
+    else if(phase==='MARKDOWN')markdownDep+=(c.invested||0);
     else dcaInv+=(c.invested||0);
   });
   var cash=S.cash||0;
-  var total=dcaInv+springDep+markupDep+shortMar+cash||1;
+  var total=dcaInv+markupDep+markdownDep+cash||1;
   var utilPct=((total-cash)/total*100);
 
   var legs=[
     {label:'DCA Invested',val:dcaInv,color:'var(--phase-dca)',hex:'#4A90D9'},
     {label:'Markup Deployed',val:markupDep,color:'var(--phase-markup)',hex:'#F8E71C'},
-    {label:'Spring Deployed',val:springDep,color:'var(--phase-spring)',hex:'#7ED321'},
-    {label:'Short Margin',val:shortMar,color:'var(--phase-markdown)',hex:'#D0021B'},
+    {label:'Markdown Deployed',val:markdownDep,color:'var(--phase-markdown)',hex:'#D0021B'},
     {label:'Cash Reserve',val:cash,color:'var(--text3)',hex:'#1e1e2e'}
   ];
   $('capLegend').innerHTML='<div style="font-size:.8rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Utilization</div><div style="font-size:2.5rem;font-weight:700;margin-bottom:12px;color:'+(utilPct>80?'var(--green)':utilPct>40?'var(--amber)':'var(--text)')+'">'+fmt(utilPct,1)+'%</div>'+legs.map(function(l){return '<div class="cap-leg-item" style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--text2)"><span class="cap-dot" style="width:14px;height:14px;border-radius:50%;flex-shrink:0;background:'+l.color+'"></span>'+l.label+'<span style="margin-left:auto;font-weight:600;font-size:.95rem;color:var(--text)">'+fUsd(l.val)+'</span></div>'}).join('');
