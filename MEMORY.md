@@ -44,7 +44,7 @@
 - **Current state (2026-02-26)**: All 4 coins in MARKDOWN, tier 3 shorts, equity $29,795 (+198%)
 - **LH_LL gate active** since 2026-02-26 restart (PID 10752)
 - **Brett directive (2026-02-25)**: "Just focus on V13 - our most valuable asset now"
-- **4 phases**: DCA → MARKUP → FLAT → MARKDOWN
+- **4 phases**: DCA → MARKUP → ROUTER → MARKDOWN (FLAT renamed to ROUTER 2026-02-27)
 - **Entry gates (updated 2026-02-26)**:
   - MARKUP: HH_HL ≥ 2 + Fib_support (original)
   - MARKDOWN: **LH_LL ≥ 2** + ADX>20 + Fib_break (LH_LL added 2026-02-26)
@@ -52,7 +52,7 @@
 - **Top detection**: 2W StochRSI OB93 (primary) / 1W OB85 (fallback) / 1W K<50 (failsafe)
 - **Front-loaded tiers**: 60/20/10 for both markup AND shorts (symmetric)
 - **Failure detectors**: Markup fail (DD>25%+ADX>25), Markdown fail (rise>25%+ADX>25)
-- **FLAT routing**: 3 paths - from top (check markdown 42d max), from ranging (ADX<20 14d→DCA), from markdown (same)
+- **ROUTER (was FLAT) routing**: Central nervous system for ALL phase transitions. Phase cycle: `DCA ↔ ROUTER ↔ MARKUP ↔ ROUTER ↔ MARKDOWN ↔ ROUTER`. No 42-day timeout. 3-day min eval. Confidence scoring evaluates all 3 exit paths simultaneously. Design doc: `projects/ait-product/intelligent-flat-conductor.md`
 - **Min phase hold**: 3 days (not 2 weeks!)
 - **HVF**: Dead code - logged only, not used for routing (confirmed 2026-02-26)
 - Scheduled Task: **Not yet created** - needs elevated PS from Brett
@@ -98,6 +98,12 @@
 - **Structure confirmation gates critical (2026-02-26)**: MARKUP required HH_HL ≥ 2 (bullish structure). Adding LH_LL ≥ 2 requirement for MARKDOWN (bearish structure) created perfect symmetry. ETH shorts improved +108% (+$16.2K profit), blocking 5 bad shorts with ADX barely above 20 but zero bearish structure. Gate applies to both DCA→MARKDOWN and FLAT→MARKDOWN paths.
 - **Paper bot state persistence is tricky (2026-02-26)**: Bot loads state.json into memory at startup, then periodically saves from memory. Editing state.json on disk while bot runs gets overwritten. Must: stop bot → edit state.json + trades.csv → restart with --skip-backfill. Even then, engine capital, per_coin_cash, AND total cash must all be edited consistently.
 - **Backfill rebuilds everything (2026-02-26)**: Running without --skip-backfill regenerates all state from scratch, wiping any manual edits to trades.csv or state.json.
+- **Don't claim outcomes before running the numbers (2026-02-27)**: Told Brett equity wouldn't change on re-backfill. It dropped $1,600 because the CFGI fix changed which trades execute. Brett called it out. Always verify before making claims.
+- **V13 paper bot live loop crashes silently (2026-02-27)**: Exits code 1 after CFGI update with no error logged. Root cause: exception handler calls send_telegram() which itself can fail, causing unhandled exception. Fixed by wrapping all output writes + telegram calls in individual try/excepts. Added debug logging to pinpoint exact failure point. Still investigating.
+- **All bias trigger approaches tested have flaws (2026-02-26)**: Engine top signals miss new coins (SOL bootstrap). Death cross chatters during consolidation (dozens of daily flips). SMA200 kills bear bottom recovery entries. No universal low-frequency regime trigger found yet.
+- **Bear bias system finalized (2026-02-27)**: Bear ON = engine top signal (2W OB93/1W OB85/K<50). Bear OFF = **coin-specific Weekly CFGI RSI(7) < 40**. Upgraded from Daily RSI(14)<35 — weekly timeframe + faster period improved BTC by $4.4K combined. StochRSI tested and rejected (normalizes away signal differences on CFGI). CCU "Bottom Is In" tested and rejected (sentiment leads price — CFGI fires first).
+- **Timeframe > calculation method (2026-02-27)**: Switching Daily→Weekly RSI improved results more than switching RSI→StochRSI. Weekly RSI(7) on CFGI is a novel indicator unique to our system.
+- **Coin-specific CFGI > market average CFGI (2026-02-26)**: BTC Jun 2024 entry correctly allowed by coin-specific CFGI (BTC sentiment had recovered) while market average still showed fear.
 - **All bias trigger approaches tested have flaws (2026-02-26)**: Engine top signals miss new coins (SOL bootstrap). Death cross chatters during consolidation (dozens of daily flips). SMA200 kills bear bottom recovery entries. No universal low-frequency regime trigger found yet.
 - **Bear bias system finalized (2026-02-27)**: Bear ON = engine top signal (2W OB93/1W OB85/K<50). Bear OFF = **coin-specific Weekly CFGI RSI(7) < 40**. Upgraded from Daily RSI(14)<35 — weekly timeframe + faster period improved BTC by $4.4K combined. StochRSI tested and rejected (normalizes away signal differences on CFGI). CCU "Bottom Is In" tested and rejected (sentiment leads price — CFGI fires first).
 - **Timeframe > calculation method (2026-02-27)**: Switching Daily→Weekly RSI improved results more than switching RSI→StochRSI. Weekly RSI(7) on CFGI is a novel indicator unique to our system.
