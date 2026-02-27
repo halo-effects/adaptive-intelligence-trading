@@ -13,40 +13,40 @@
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 1918.2,
+      "current_price": 1923.0,
       "unrealized_pnl": 0.0,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 0,
-      "realized_pnl": 0.0,
+      "realized_pnl": 779.34,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 49.5
+      "cfgi": 47.5
     },
     "SOL/USDC": {
       "state": "SHORTING",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 81.465,
+      "current_price": 81.45,
       "unrealized_pnl": 0.0,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 0,
-      "realized_pnl": 0.0,
+      "realized_pnl": 189.63,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 39.0
+      "cfgi": 41.5
     },
     "LINK/USDC": {
       "state": "SHORTING",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 8.729,
+      "current_price": 8.681,
       "unrealized_pnl": 0.0,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 0,
-      "realized_pnl": 0.0,
+      "realized_pnl": 2393.36,
       "lifecycle_phase": "MARKDOWN",
       "cfgi": 51.0
     },
@@ -55,14 +55,14 @@
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 1.36,
+      "current_price": 1.35,
       "unrealized_pnl": 0.0,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 0,
-      "realized_pnl": 0.0,
+      "realized_pnl": 8430.37,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 44.0
+      "cfgi": 46.5
     }
   },
   "lifecycle": {
@@ -76,7 +76,7 @@
         "tier": 0,
         "dca_trades": 2,
         "dca_pnl": 65.88,
-        "total_pnl": 0.0
+        "total_pnl": 779.34
       },
       "gate_decisions": {}
     },
@@ -90,7 +90,7 @@
         "tier": 0,
         "dca_trades": 21,
         "dca_pnl": 369.97,
-        "total_pnl": 0.0
+        "total_pnl": 189.63
       },
       "gate_decisions": {}
     },
@@ -104,7 +104,7 @@
         "tier": 0,
         "dca_trades": 7,
         "dca_pnl": -51.76,
-        "total_pnl": 0.0
+        "total_pnl": 2393.36
       },
       "gate_decisions": {}
     },
@@ -118,7 +118,7 @@
         "tier": 0,
         "dca_trades": 6,
         "dca_pnl": 30.1,
-        "total_pnl": 0.0
+        "total_pnl": 8430.37
       },
       "gate_decisions": {}
     }
@@ -131,12 +131,12 @@
   ],
   "regime": "TRENDING",
   "trend_direction": "bearish",
-  "total_realized_pnl": 0.0,
-  "deals_completed": 0,
-  "win_rate": 0.0,
-  "max_drawdown_pct": 0.0,
-  "uptime_hours": 0.07,
+  "total_realized_pnl": 11792.7,
+  "deals_completed": 48,
+  "win_rate": 70.8,
+  "max_drawdown_pct": 29.1,
+  "uptime_hours": 0.04,
   "fear_greed_index": 52.75,
-  "last_update": "2026-02-27T19:53:36.982166+00:00",
+  "last_update": "2026-02-27T21:03:21.655383+00:00",
   "timeframe": "1h"
 }
