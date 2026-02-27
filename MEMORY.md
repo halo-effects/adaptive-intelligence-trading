@@ -96,6 +96,9 @@
 - **Paper bot state persistence is tricky (2026-02-26)**: Bot loads state.json into memory at startup, then periodically saves from memory. Editing state.json on disk while bot runs gets overwritten. Must: stop bot → edit state.json + trades.csv → restart with --skip-backfill. Even then, engine capital, per_coin_cash, AND total cash must all be edited consistently.
 - **Backfill rebuilds everything (2026-02-26)**: Running without --skip-backfill regenerates all state from scratch, wiping any manual edits to trades.csv or state.json.
 - **All bias trigger approaches tested have flaws (2026-02-26)**: Engine top signals miss new coins (SOL bootstrap). Death cross chatters during consolidation (dozens of daily flips). SMA200 kills bear bottom recovery entries. No universal low-frequency regime trigger found yet.
+- **CFGI RSI (RSI of CFGI) is the leading bias bottom signal (2026-02-26)**: Apply RSI(14) to coin-specific CFGI values. CFGI_RSI < 35 = sentiment capitulation momentum. ETH: +153% improvement (269%→422%), 4 bad markups blocked, ZERO good trades missed. BTC: mixed (+14% to +35% on Low/High, -2% on Med). SOL excluded (bootstrap). Bear ON = engine top signal, Bear OFF = CFGI_RSI < 35.
+- **Coin-specific CFGI > market average CFGI (2026-02-26)**: BTC Jun 2024 entry correctly allowed by coin-specific CFGI (BTC sentiment had recovered) while market average still showed fear.
+- **LINK/XRP daily data backfilled (2026-02-26)**: LINK/USDC 3040 rows, XRP/USDC 2819 rows from Jan 2019. V13SignalPack fails to load them ("Index 1-dimensional" error) — needs weekly candles and possible structure fix.
 
 ### Adaptive TP/Deviation System (Live since 2026-02-14)
 - Dynamic TP: 0.6-2.5% based on 14-period ATR + regime multipliers (baseline 1.5%, ATR_BASELINE=0.8%)
