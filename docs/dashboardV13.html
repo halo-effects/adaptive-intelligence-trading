@@ -778,12 +778,12 @@ function renderStats(){
   $('vWR').textContent=fmt(wr,1)+'%';
   $('vWRSub').textContent=totalTrades+' trades';
 
-  // Avg Daily ROI - use trade date range, not uptime_hours
+  // Avg Daily ROI - from first trade open to NOW (not last close)
   var days=1;
-  if(trades&&trades.length>1){
+  if(trades&&trades.length>0){
     var f0=new Date(trades[0].open_time);
-    var l0=new Date(trades[trades.length-1].close_time||trades[trades.length-1].open_time);
-    days=Math.max((l0-f0)/(1000*60*60*24),1);
+    var now=new Date();
+    days=Math.max((now-f0)/(1000*60*60*24),1);
   } else if(S.uptime_hours>24){ days=S.uptime_hours/24; }
   var dailyRoi=growthPct/days;
   $('vROI').innerHTML='<span style="color:'+pC(dailyRoi)+'">'+(dailyRoi>=0?'+':'')+fmt(dailyRoi,4)+'%</span>';
