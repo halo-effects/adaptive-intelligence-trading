@@ -735,13 +735,13 @@ function renderStats(){
   $('vEq').textContent=fUsd(eq);
   $('vEqSub').innerHTML='Capital: '+fUsd(cap)+' &middot; '+'<span style="color:'+pC(growthPct)+'">'+(growthPct>=0?'+':'')+fmt(growthPct)+'%</span>';
 
-  // Realized PnL - use trades.csv if loaded, fallback to status.json
-  var rpnl=0, deals=0;
-  if(trades.length>0){
-    trades.forEach(function(t){rpnl+=parseFloat(t.pnl||t.PnL||0);deals++});
-  } else {
-    rpnl=S.total_realized_pnl||0;
-    deals=S.deals_completed||0;
+  // Realized PnL - from status.json (computed as capital+invested - starting_capital)
+  // trades.csv PnL column only captures explicit trade profits, not capital growth
+  var rpnl=S.total_realized_pnl||0;
+  var deals=S.deals_completed||0;
+  if(deals===0 && trades.length>0){
+    // Fallback: count deals from trades.csv
+    deals=trades.length;
   }
   $('vRPnl').innerHTML='<span style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</span>';
   $('vRPnlSub').textContent=deals+' completed deals';
