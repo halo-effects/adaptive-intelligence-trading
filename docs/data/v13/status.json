@@ -4,65 +4,65 @@
   "profile": "high",
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 28437.69,
-  "cash": 28437.69,
-  "pnl_pct": 184.38,
+  "equity": 28598.73,
+  "cash": 6188.51,
+  "pnl_pct": 185.99,
   "coins": {
     "ETH/USDC": {
       "state": "SHORTING",
-      "side": "none",
+      "side": "short",
       "layers": 0,
-      "avg_entry": 0,
-      "current_price": 1923.0,
-      "unrealized_pnl": 0.0,
+      "avg_entry": 3342.747627108792,
+      "current_price": 1921.5,
+      "unrealized_pnl": 979.92,
       "next_so_price": null,
       "next_tp_price": null,
-      "invested": 0,
+      "invested": 2304.75,
       "realized_pnl": 779.34,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 46.0
+      "cfgi": 46.5
     },
     "SOL/USDC": {
       "state": "SHORTING",
-      "side": "none",
+      "side": "short",
       "layers": 0,
-      "avg_entry": 0,
-      "current_price": 81.45,
-      "unrealized_pnl": 0.0,
+      "avg_entry": 177.98740959991818,
+      "current_price": 81.195,
+      "unrealized_pnl": 1012.47,
       "next_so_price": null,
       "next_tp_price": null,
-      "invested": 0,
+      "invested": 1861.79,
       "realized_pnl": 189.63,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 41.5
+      "cfgi": 42.5
     },
     "LINK/USDC": {
       "state": "SHORTING",
-      "side": "none",
+      "side": "short",
       "layers": 0,
-      "avg_entry": 0,
+      "avg_entry": 17.795296420691248,
       "current_price": 8.681,
-      "unrealized_pnl": 0.0,
+      "unrealized_pnl": 1754.59,
       "next_so_price": null,
       "next_tp_price": null,
-      "invested": 0,
+      "invested": 3425.77,
       "realized_pnl": 2393.36,
       "lifecycle_phase": "MARKDOWN",
       "cfgi": 51.0
     },
     "XRP/USDC": {
       "state": "SHORTING",
-      "side": "none",
+      "side": "short",
       "layers": 0,
-      "avg_entry": 0,
+      "avg_entry": 2.3956033083158728,
       "current_price": 1.35,
-      "unrealized_pnl": 0.0,
+      "unrealized_pnl": 3363.88,
       "next_so_price": null,
       "next_tp_price": null,
-      "invested": 0,
+      "invested": 7707.06,
       "realized_pnl": 8430.37,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 46.5
+      "cfgi": 48.5
     }
   },
   "lifecycle": {
@@ -73,7 +73,7 @@
       "metrics": {
         "markup_cycles": 2,
         "shorts_enabled": true,
-        "tier": 0,
+        "tier": 3,
         "dca_trades": 2,
         "dca_pnl": 65.88,
         "total_pnl": 779.34
@@ -87,7 +87,7 @@
       "metrics": {
         "markup_cycles": 3,
         "shorts_enabled": true,
-        "tier": 0,
+        "tier": 3,
         "dca_trades": 21,
         "dca_pnl": 369.97,
         "total_pnl": 189.63
@@ -101,7 +101,7 @@
       "metrics": {
         "markup_cycles": 2,
         "shorts_enabled": true,
-        "tier": 0,
+        "tier": 3,
         "dca_trades": 7,
         "dca_pnl": -51.76,
         "total_pnl": 2393.36
@@ -115,7 +115,7 @@
       "metrics": {
         "markup_cycles": 3,
         "shorts_enabled": true,
-        "tier": 0,
+        "tier": 3,
         "dca_trades": 6,
         "dca_pnl": 30.1,
         "total_pnl": 8430.37
@@ -135,8 +135,8 @@
   "deals_completed": 48,
   "win_rate": 70.8,
   "max_drawdown_pct": 29.1,
-  "uptime_hours": 0.07,
+  "uptime_hours": 0.06,
   "fear_greed_index": 52.75,
-  "last_update": "2026-02-27T21:12:50.611099+00:00",
+  "last_update": "2026-02-27T22:02:34.253551+00:00",
   "timeframe": "1h"
 }
