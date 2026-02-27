@@ -244,6 +244,20 @@
 - Slack channel: C092DGXUZFW (#team-)
 - Slack user IDs: Brett=U092S0TJK5X, Adeel=U092D6SA0JW
 
+## Q1 2026 Roadmap (created 2026-02-26)
+- **Roadmap doc**: `projects/roadmap-q1-2026.md` — daily review cadence
+- **Project 1**: LLM Engine Config — Gemini 2.5 Pro (reasoning/research), Claude Opus/Sonnet (coding/analytics). Blocked on Gemini API key.
+- **Project 2A**: Website V13 update — product, pricing, Wyckoff pages. Collaborative. CSS unchanged, content only.
+- **Project 2B**: DCA dual-track optimization — long+short DCA, dynamic BB-based params, risk-profiled tiers. Baseline doc: `projects/ait-product/dca-optimization-baseline.md`
+- **Project 2C**: Gate optimization + coin qualification — 17 qualified coins identified from 44. Matrix: `projects/ait-product/coin-qualification-matrix.md`. Backfill, gate accuracy tests, signal stack optimization, light leverage assessment.
+- **Project 2D**: Paper bot reset with optimized settings — blocked on 2B+2C.
+- **8 V13 gaps** identified and tracked in roadmap (bias trigger, failure detector, FLAT phase, correlation sizing, profit protection, scheduled task, OB85 timing, DCA transitions)
+
+### Qualified Coin Universe (17 coins)
+BTC, ETH, XRP, BNB, SOL, LINK, ADA, LTC, AVAX, DOT, UNI, AAVE, NEAR, HBAR, MATIC, ATOM, MKR
+- Borderline (could expand to 20): SUI, RENDER, VET
+- All meme coins excluded (DOGE, SHIB, PEPE, BONK, WIF, FLOKI)
+
 ## Deferred Projects
 - **AI GEO / ShadowQuery**: Brett moved discussion to Slack with Adeel; TBR migration is prep for this
 - Tutorial notes saved: `reference/shadowquery-tutorials.md`
