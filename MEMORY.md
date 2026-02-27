@@ -55,6 +55,9 @@
 - **ROUTER (was FLAT) routing**: Central nervous system for ALL phase transitions. Phase cycle: `DCA ↔ ROUTER ↔ MARKUP ↔ ROUTER ↔ MARKDOWN ↔ ROUTER`. No 42-day timeout. 3-day min eval. Confidence scoring evaluates all 3 exit paths simultaneously. Design doc: `projects/ait-product/intelligent-flat-conductor.md`
 - **Min phase hold**: 3 days (not 2 weeks!)
 - **HVF**: Dead code - logged only, not used for routing (confirmed 2026-02-26)
+- **ROUTER is always-on orchestration layer (2026-02-27)**: NOT a phase you enter between transitions. It monitors signals during EVERY phase and triggers ALL transitions. Phases just execute, ROUTER decides when to change. Replaces `_check_dca()`, `_check_markup()`, `_check_flat()`, `_check_markdown()` with single `_router_evaluate()`. Brett's vision: scales from phase routing → dynamic tier sizing → coin selection → portfolio orchestration.
+- **Min phase hold**: 3 days (not 2 weeks!)
+- **HVF**: Dead code - logged only, not used for routing (confirmed 2026-02-26)
 - Scheduled Task: **Not yet created** - needs elevated PS from Brett
 - **State persistence**: state.json + trades.csv. Bot loads state.json on restart, overwrites disk edits from memory. Cannot easily void historical trades without code changes.
 - **CRITICAL**: Multiple v8 backtest files exist - only `v13_phase_backtest_v8.py` is correct. `v13_backtest_v8.py` produces -15% ROI on same coins.
