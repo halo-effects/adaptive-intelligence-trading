@@ -292,10 +292,13 @@ BTC, ETH, XRP, BNB, SOL, LINK, ADA, LTC, AVAX, DOT, UNI, AAVE, NEAR, HBAR, MATIC
 
 ### Bottom Conviction Stack (LOCKED 2026-02-27)
 - Score 0-4 on 2D: (1) Below SMA200, (2) RSI(14)<26, (3) StochRSI K&D<20, (4) CFGI<35
-- Gate: Top detected → in death cross → score ≥3/4 → fire. One per cycle. No reshort after flip.
-- **Close ALL shorts when conviction fires** (decision reversed 2026-02-27 evening — was "keep shorts")
-- 2W K×D cross lags bottom by ~22 days / +34% price — may be too slow as additional gate
-- 3D death cross gate currently leading (+$11,228 vs 2D +$8,092)
+- **Triple gate**: Top detected → 3D death cross active → 2W StochRSI K≥5 (after pinned <5) → score ≥3/4 → FIRE
+- One trigger per cycle. No reshort after flip.
+- **Action**: Close ALL shorts, flip to MARKUP T1 (60%)
+- **Final backtest**: +$9,847 (+98.5%) on $10K, 2 triggers (ETH Jun 2025, LINK Feb 2026), zero false bottoms
+- **2W K≥5 gate**: Avg ~17 days / +30% after true bottom — but coins skid at bottom waiting for market turn, so real cost is minimal. Blocked premature SOL Feb 2026 trigger (-0.6% drawdown avoided).
+- **Tested and rejected**: No gate (+$11,228 but LINK -7.8% premature), 1W gate (missed ETH), weekly HL (unreliable, XRP 58d delay)
+- ROUTER v2 engine: `v13_router_engine_v2.py`, default config = locked params
 
 ## Deferred Projects
 - **AI GEO / ShadowQuery**: Brett moved discussion to Slack with Adeel; TBR migration is prep for this
