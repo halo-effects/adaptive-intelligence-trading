@@ -49,7 +49,7 @@
   - MARKUP: HH_HL ≥ 2 + Fib_support (original)
   - MARKDOWN: **LH_LL ≥ 2** + ADX>20 + Fib_break (LH_LL added 2026-02-26)
   - FLAT→MARKDOWN: **LH_LL ≥ 2** + ADX>20 + Fib_break
-- **Top detection**: 2W StochRSI OB93 (primary) / 1W OB85 (fallback) / 1W K<50 (failsafe)
+- **Top detection**: **2D RSI bearish divergence** (primary, replaces OB93 as of 2026-02-28) / OB93 deprecated (missed ETH/BTC)
 - **Front-loaded tiers**: 60/20/10 for both markup AND shorts (symmetric)
 - **Failure detectors**: Markup fail (DD>25%+ADX>25), Markdown fail (rise>25%+ADX>25)
 - **ROUTER (was FLAT) routing**: Central nervous system for ALL phase transitions. Phase cycle: `DCA ↔ ROUTER ↔ MARKUP ↔ ROUTER ↔ MARKDOWN ↔ ROUTER`. No 42-day timeout. 3-day min eval. Confidence scoring evaluates all 3 exit paths simultaneously. Design doc: `projects/ait-product/intelligent-flat-conductor.md`
@@ -286,7 +286,9 @@ BTC, ETH, XRP, BNB, SOL, LINK, ADA, LTC, AVAX, DOT, UNI, AAVE, NEAR, HBAR, MATIC
 - **MFI (Money Flow Index)**: Volume-weighted RSI — new indicator for us. Differentiates score 2 (noise) from 3/4 (signal).
 - **Steve 2D timing crushes OB93**: +4 to +58d before peak vs OB93's +11 to +279d. But 56-85% false positive rate.
 - **CFGI at actual tops**: ETH=46 (neutral!), SOL=78, XRP=80. ETH tops in neutral sentiment (divergence).
-- **OB93 kept as current top signal** — lowest false rate (36%). Steve score as future early-warning tier.
+- **OB93 BROKEN for tops (2026-02-28)**: 2W StochRSI never hit 93 for ETH or BTC in this cycle. Only XRP armed. OB80 still misses BTC. Same bottom/top asymmetry — K pins at 0 at bottoms but oscillates near 100 at tops.
+- **2D RSI Bearish Divergence is new top signal (2026-02-28)**: 5/5 coverage, 24% false rate, 24d avg timing. Config: 30-bar 2D lookback, RSI gap≥8, price within 3% of high, RSI>60, RSI peak>75. In V13 MARKUP context: 0% effective false rate (all false positives occur during DCA/FLAT phases). Replaces OB93.
+- **RSI bearish divergence present at 100% of cycle tops**: Price HH + RSI LH is the universal top signal. ETH 25d early, BTC 59d early, LINK 6d early.
 - **Top harder than bottom**: Tops distribute gradually (divergence), bottoms capitulate sharply (alignment).
 - **Doc**: `projects/ait-product/top-conviction-stack-analysis.md`
 
