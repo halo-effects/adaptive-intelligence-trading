@@ -281,6 +281,22 @@ BTC, ETH, XRP, BNB, SOL, LINK, ADA, LTC, AVAX, DOT, UNI, AAVE, NEAR, HBAR, MATIC
 - Borderline (could expand to 20): SUI, RENDER, VET
 - All meme coins excluded (DOGE, SHIB, PEPE, BONK, WIF, FLOKI)
 
+### Top Conviction Stack Research (2026-02-27 evening)
+- **Steve Courtney top sell stack (2D)**: RSI>80 + StochRSI K&D>80 + MFI>80 + Above SMA200
+- **MFI (Money Flow Index)**: Volume-weighted RSI — new indicator for us. Differentiates score 2 (noise) from 3/4 (signal).
+- **Steve 2D timing crushes OB93**: +4 to +58d before peak vs OB93's +11 to +279d. But 56-85% false positive rate.
+- **CFGI at actual tops**: ETH=46 (neutral!), SOL=78, XRP=80. ETH tops in neutral sentiment (divergence).
+- **OB93 kept as current top signal** — lowest false rate (36%). Steve score as future early-warning tier.
+- **Top harder than bottom**: Tops distribute gradually (divergence), bottoms capitulate sharply (alignment).
+- **Doc**: `projects/ait-product/top-conviction-stack-analysis.md`
+
+### Bottom Conviction Stack (LOCKED 2026-02-27)
+- Score 0-4 on 2D: (1) Below SMA200, (2) RSI(14)<26, (3) StochRSI K&D<20, (4) CFGI<35
+- Gate: Top detected → in death cross → score ≥3/4 → fire. One per cycle. No reshort after flip.
+- **Close ALL shorts when conviction fires** (decision reversed 2026-02-27 evening — was "keep shorts")
+- 2W K×D cross lags bottom by ~22 days / +34% price — may be too slow as additional gate
+- 3D death cross gate currently leading (+$11,228 vs 2D +$8,092)
+
 ## Deferred Projects
 - **AI GEO / ShadowQuery**: Brett moved discussion to Slack with Adeel; TBR migration is prep for this
 - Tutorial notes saved: `reference/shadowquery-tutorials.md`
