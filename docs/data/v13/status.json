@@ -4,65 +4,65 @@
   "profile": "high",
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 28452.39,
+  "equity": 28403.38,
   "cash": 6188.51,
-  "pnl_pct": 184.52,
+  "pnl_pct": 184.03,
   "coins": {
     "ETH/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 3342.747627108792,
-      "current_price": 1959.2,
-      "unrealized_pnl": 953.92,
+      "current_price": 1967.3,
+      "unrealized_pnl": 948.34,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 2304.75,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 33.5
+      "cfgi": 32.5
     },
     "SOL/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 177.98740959991818,
-      "current_price": 84.47,
-      "unrealized_pnl": 978.21,
+      "current_price": 84.312,
+      "unrealized_pnl": 979.86,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 1861.79,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 33.0
+      "cfgi": 33.5
     },
     "LINK/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 17.795296420691248,
-      "current_price": 8.794,
-      "unrealized_pnl": 1732.84,
+      "current_price": 8.861,
+      "unrealized_pnl": 1719.94,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 3425.77,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 47.0
+      "cfgi": 41.5
     },
     "XRP/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 2.3956033083158728,
-      "current_price": 1.37,
-      "unrealized_pnl": 3299.54,
+      "current_price": 1.38,
+      "unrealized_pnl": 3267.37,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 7707.06,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 31.5
+      "cfgi": 32.0
     }
   },
   "lifecycle": {
@@ -135,8 +135,8 @@
   "deals_completed": 0,
   "win_rate": 0.0,
   "max_drawdown_pct": 3.12,
-  "uptime_hours": 24.18,
+  "uptime_hours": 24.35,
   "fear_greed_index": 46.1,
-  "last_update": "2026-02-28T22:52:31.986988+00:00",
+  "last_update": "2026-02-28T23:02:38.937565+00:00",
   "timeframe": "1h"
 }
