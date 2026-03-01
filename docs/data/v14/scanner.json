@@ -1,0 +1,437 @@
+{
+  "timestamp": "2026-03-01T00:08:34.423622+00:00",
+  "engine": "v14_dca",
+  "profile": "medium",
+  "backtest_start": "2024-10-01",
+  "coins_tested": 15,
+  "coins_qualified": 15,
+  "rankings": [
+    {
+      "symbol": "ATOM/USDT",
+      "composite_score": 97,
+      "grade": "A+",
+      "roi_pct": 406.3,
+      "max_drawdown_pct": -20.4,
+      "total_trades": 86,
+      "long_trades": 20,
+      "short_trades": 66,
+      "long_pnl": 192.75,
+      "short_pnl": 2516.03,
+      "phase_changes": 2,
+      "win_rate": 96.5,
+      "trades_per_phase": 43.0,
+      "short_pnl_pct": 92.9,
+      "history_days": 2498,
+      "scoring": {
+        "cycling_rate": 25,
+        "short_dominance": 25,
+        "drawdown": 17,
+        "phase_count": 15,
+        "history": 15
+      },
+      "is_active": true,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "HBAR/USDT",
+      "composite_score": 94,
+      "grade": "A+",
+      "roi_pct": 437.1,
+      "max_drawdown_pct": -39.8,
+      "total_trades": 107,
+      "long_trades": 21,
+      "short_trades": 86,
+      "long_pnl": 902.63,
+      "short_pnl": 2011.44,
+      "phase_changes": 3,
+      "win_rate": 96.3,
+      "trades_per_phase": 35.7,
+      "short_pnl_pct": 69.0,
+      "history_days": 2345,
+      "scoring": {
+        "cycling_rate": 25,
+        "short_dominance": 25,
+        "drawdown": 14,
+        "phase_count": 15,
+        "history": 15
+      },
+      "is_active": true,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "LINK/USDC",
+      "composite_score": 86,
+      "grade": "A",
+      "roi_pct": 324.3,
+      "max_drawdown_pct": -31.8,
+      "total_trades": 88,
+      "long_trades": 37,
+      "short_trades": 51,
+      "long_pnl": 710.92,
+      "short_pnl": 1451.09,
+      "phase_changes": 4,
+      "win_rate": 95.5,
+      "trades_per_phase": 22.0,
+      "short_pnl_pct": 67.1,
+      "history_days": 2596,
+      "scoring": {
+        "cycling_rate": 20,
+        "short_dominance": 25,
+        "drawdown": 14,
+        "phase_count": 12,
+        "history": 15
+      },
+      "is_active": true,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "UNI/USDT",
+      "composite_score": 82,
+      "grade": "A",
+      "roi_pct": 218.5,
+      "max_drawdown_pct": -55.0,
+      "total_trades": 68,
+      "long_trades": 25,
+      "short_trades": 43,
+      "long_pnl": -299.82,
+      "short_pnl": 1756.67,
+      "phase_changes": 2,
+      "win_rate": 95.6,
+      "trades_per_phase": 34.0,
+      "short_pnl_pct": 120.6,
+      "history_days": 1991,
+      "scoring": {
+        "cycling_rate": 25,
+        "short_dominance": 25,
+        "drawdown": 5,
+        "phase_count": 15,
+        "history": 12
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "SOL/USDT",
+      "composite_score": 80,
+      "grade": "A",
+      "roi_pct": 117.7,
+      "max_drawdown_pct": -53.3,
+      "total_trades": 40,
+      "long_trades": 16,
+      "short_trades": 24,
+      "long_pnl": 267.7,
+      "short_pnl": 517.03,
+      "phase_changes": 2,
+      "win_rate": 97.5,
+      "trades_per_phase": 20.0,
+      "short_pnl_pct": 65.9,
+      "history_days": 2015,
+      "scoring": {
+        "cycling_rate": 20,
+        "short_dominance": 25,
+        "drawdown": 5,
+        "phase_count": 15,
+        "history": 15
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "ADA/USDT",
+      "composite_score": 80,
+      "grade": "A",
+      "roi_pct": 222.0,
+      "max_drawdown_pct": -52.7,
+      "total_trades": 58,
+      "long_trades": 18,
+      "short_trades": 40,
+      "long_pnl": 334.18,
+      "short_pnl": 1145.89,
+      "phase_changes": 1,
+      "win_rate": 98.3,
+      "trades_per_phase": 58.0,
+      "short_pnl_pct": 77.4,
+      "history_days": 2616,
+      "scoring": {
+        "cycling_rate": 25,
+        "short_dominance": 25,
+        "drawdown": 5,
+        "phase_count": 10,
+        "history": 15
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "LTC/USDT",
+      "composite_score": 75,
+      "grade": "B+",
+      "roi_pct": 152.9,
+      "max_drawdown_pct": -64.4,
+      "total_trades": 52,
+      "long_trades": 18,
+      "short_trades": 34,
+      "long_pnl": 266.49,
+      "short_pnl": 752.96,
+      "phase_changes": 1,
+      "win_rate": 98.1,
+      "trades_per_phase": 52.0,
+      "short_pnl_pct": 73.9,
+      "history_days": 2616,
+      "scoring": {
+        "cycling_rate": 25,
+        "short_dominance": 25,
+        "drawdown": 0,
+        "phase_count": 10,
+        "history": 15
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "DOT/USDT",
+      "composite_score": 75,
+      "grade": "B+",
+      "roi_pct": 59.7,
+      "max_drawdown_pct": -60.2,
+      "total_trades": 54,
+      "long_trades": 40,
+      "short_trades": 14,
+      "long_pnl": 110.61,
+      "short_pnl": 287.27,
+      "phase_changes": 2,
+      "win_rate": 96.3,
+      "trades_per_phase": 27.0,
+      "short_pnl_pct": 72.2,
+      "history_days": 2021,
+      "scoring": {
+        "cycling_rate": 20,
+        "short_dominance": 25,
+        "drawdown": 0,
+        "phase_count": 15,
+        "history": 15
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "NEAR/USDT",
+      "composite_score": 74,
+      "grade": "B+",
+      "roi_pct": 296.7,
+      "max_drawdown_pct": -47.9,
+      "total_trades": 68,
+      "long_trades": 31,
+      "short_trades": 37,
+      "long_pnl": 745.31,
+      "short_pnl": 1232.81,
+      "phase_changes": 4,
+      "win_rate": 97.1,
+      "trades_per_phase": 17.0,
+      "short_pnl_pct": 62.3,
+      "history_days": 1964,
+      "scoring": {
+        "cycling_rate": 15,
+        "short_dominance": 25,
+        "drawdown": 10,
+        "phase_count": 12,
+        "history": 12
+      },
+      "is_active": true,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "BNB/USDT",
+      "composite_score": 65,
+      "grade": "B",
+      "roi_pct": 29.5,
+      "max_drawdown_pct": -126.5,
+      "total_trades": 24,
+      "long_trades": 13,
+      "short_trades": 11,
+      "long_pnl": 129.1,
+      "short_pnl": 67.65,
+      "phase_changes": 1,
+      "win_rate": 95.8,
+      "trades_per_phase": 24.0,
+      "short_pnl_pct": 34.4,
+      "history_days": 2616,
+      "scoring": {
+        "cycling_rate": 20,
+        "short_dominance": 20,
+        "drawdown": 0,
+        "phase_count": 10,
+        "history": 15
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "AAVE/USDT",
+      "composite_score": 62,
+      "grade": "B",
+      "roi_pct": 59.0,
+      "max_drawdown_pct": -142.0,
+      "total_trades": 29,
+      "long_trades": 4,
+      "short_trades": 25,
+      "long_pnl": -20.16,
+      "short_pnl": 413.21,
+      "phase_changes": 2,
+      "win_rate": 96.6,
+      "trades_per_phase": 14.5,
+      "short_pnl_pct": 105.1,
+      "history_days": 1964,
+      "scoring": {
+        "cycling_rate": 10,
+        "short_dominance": 25,
+        "drawdown": 0,
+        "phase_count": 15,
+        "history": 12
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "AVAX/USDT",
+      "composite_score": 57,
+      "grade": "C",
+      "roi_pct": -3.4,
+      "max_drawdown_pct": -70.5,
+      "total_trades": 59,
+      "long_trades": 38,
+      "short_trades": 21,
+      "long_pnl": -631.44,
+      "short_pnl": 608.61,
+      "phase_changes": 2,
+      "win_rate": 96.6,
+      "trades_per_phase": 29.5,
+      "short_pnl_pct": 0,
+      "history_days": 1986,
+      "scoring": {
+        "cycling_rate": 20,
+        "short_dominance": 10,
+        "drawdown": 0,
+        "phase_count": 15,
+        "history": 12
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "BTC/USDT",
+      "composite_score": 50,
+      "grade": "C",
+      "roi_pct": -39.3,
+      "max_drawdown_pct": -57.6,
+      "total_trades": 34,
+      "long_trades": 23,
+      "short_trades": 11,
+      "long_pnl": -101.3,
+      "short_pnl": -161.02,
+      "phase_changes": 2,
+      "win_rate": 91.2,
+      "trades_per_phase": 17.0,
+      "short_pnl_pct": 0,
+      "history_days": 2600,
+      "scoring": {
+        "cycling_rate": 15,
+        "short_dominance": 0,
+        "drawdown": 5,
+        "phase_count": 15,
+        "history": 15
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "XRP/USDT",
+      "composite_score": 40,
+      "grade": "D",
+      "roi_pct": -36.7,
+      "max_drawdown_pct": -68.6,
+      "total_trades": 29,
+      "long_trades": 15,
+      "short_trades": 14,
+      "long_pnl": -142.7,
+      "short_pnl": -102.24,
+      "phase_changes": 2,
+      "win_rate": 93.1,
+      "trades_per_phase": 14.5,
+      "short_pnl_pct": 0,
+      "history_days": 2611,
+      "scoring": {
+        "cycling_rate": 10,
+        "short_dominance": 0,
+        "drawdown": 0,
+        "phase_count": 15,
+        "history": 15
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    },
+    {
+      "symbol": "ETH/USDT",
+      "composite_score": 38,
+      "grade": "D",
+      "roi_pct": 8.6,
+      "max_drawdown_pct": -55.7,
+      "total_trades": 67,
+      "long_trades": 22,
+      "short_trades": 45,
+      "long_pnl": 167.59,
+      "short_pnl": -110.25,
+      "phase_changes": 5,
+      "win_rate": 95.5,
+      "trades_per_phase": 13.4,
+      "short_pnl_pct": -192.3,
+      "history_days": 2600,
+      "scoring": {
+        "cycling_rate": 10,
+        "short_dominance": 0,
+        "drawdown": 5,
+        "phase_count": 8,
+        "history": 15
+      },
+      "is_active": false,
+      "available_on": [
+        "hyperliquid"
+      ]
+    }
+  ],
+  "active_coins": [
+    "HBAR/USDT",
+    "ATOM/USDT",
+    "LINK/USDC",
+    "NEAR/USDT"
+  ],
+  "disqualified": []
+}
