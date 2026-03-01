@@ -755,6 +755,10 @@ function renderPositions(){
     html+='<div class="position-stat"><div class="ps-label">Invested</div><div class="ps-val">'+fUsd(inv)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Grid Layers</div><div class="ps-val">'+layers+' / '+maxLayers+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">TP Target</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+'</div></div>';
+    var liqPrice=c.liquidation_price||null;
+    var liqDist=c.distance_to_liq_pct||null;
+    html+='<div class="position-stat"><div class="ps-label">Liquidation</div><div class="ps-val" style="color:var(--red)">'+(liqPrice?fUsd(liqPrice,pd_):'N/A')+'</div></div>';
+    html+='<div class="position-stat"><div class="ps-label">Dist to Liq</div><div class="ps-val" style="color:'+(liqDist!=null&&liqDist<20?'var(--amber)':'var(--text2)')+'">'+(liqDist!=null?fmt(liqDist,1)+'%':'N/A')+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Unrealized PnL</div><div class="ps-val" style="color:'+pC(upnl)+'">'+(upnl>=0?'+':'')+fUsd(upnl)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Realized PnL</div><div class="ps-val" style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</div></div>';
     var netVal=inv+upnl;
@@ -772,12 +776,14 @@ function renderPositions(){
     if(entry>0&&price>0){
       var pts=[price,entry];
       if(tp>0)pts.push(tp);
+      if(liqPrice)pts.push(liqPrice);
       var mn=Math.min.apply(null,pts), mx=Math.max.apply(null,pts);
       var rng=mx-mn||1;
       var pctOf=function(v){return Math.max(2,Math.min(98,((v-mn)/rng)*100))};
 
       html+='<div class="price-bar" style="margin-top:10px">';
       html+='<div class="price-bar-fill" style="width:'+pctOf(price)+'%"></div>';
+      if(liqPrice)html+='<div class="pb-dot so" style="left:'+pctOf(liqPrice)+'%;background:var(--red)"><div class="pb-label" style="color:var(--red)">Liq</div></div>';
       if(tp>0)html+='<div class="pb-dot tp" style="left:'+pctOf(tp)+'%"><div class="pb-label">TP</div></div>';
       html+='<div class="pb-dot current" style="left:'+pctOf(price)+'%"><div class="pb-label" style="color:var(--accent)">Now</div></div>';
       html+='</div>';
