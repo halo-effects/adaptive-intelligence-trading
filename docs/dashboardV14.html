@@ -606,8 +606,9 @@ function renderStats(){
   var rpnl=S.total_realized_pnl||0;
   var deals=S.deals_completed||0;
   if(deals===0 && trades.length>0) deals=trades.length;
+  var totalFees=S.total_fees||0;
   $('vRPnl').innerHTML='<span style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</span>';
-  $('vRPnlSub').textContent=deals+' completed deals';
+  $('vRPnlSub').textContent=deals+' completed deals'+(totalFees>0?' · after '+fUsd(totalFees)+' fees':'');
 
   var syms=S.symbols||Object.keys(S.coins||{});
   var totalUpnl=0, totalInv=0;
