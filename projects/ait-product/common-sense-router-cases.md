@@ -88,7 +88,7 @@ The Common Sense Router could replicate CFGI's two jobs using publicly available
 - Funding rates (perp market sentiment)
 - Open interest changes (positioning shifts)
 - Order book depth imbalance (bid/ask pressure)
-- Social sentiment aggregation (alternative to CFGI)
+- Social sentiment aggregation (alternative to CFGI) — **Grok API + X/Twitter cryptoverse** as primary sentiment source (real-time, coin-specific, no third-party CFGI dependency)
 
 **For bottom conviction (replacing raw CFGI < 35):**
 - Multi-timeframe RSI exhaustion
