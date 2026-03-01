@@ -1175,9 +1175,15 @@ function renderEquityChart(){
   var lev=S?S.leverage||1:1;
   var eq=cap; var pts=[];
   if(trades.length){
-    var t0=trades[0]?trades[0].close_time||trades[0].open_time:null;
+    // Sort trades by close_time for correct chronological equity curve
+    var sorted=trades.slice().sort(function(a,b){
+      var ta=a.close_time||a.open_time||'';
+      var tb=b.close_time||b.open_time||'';
+      return ta<tb?-1:ta>tb?1:0;
+    });
+    var t0=sorted[0]?sorted[0].close_time||sorted[0].open_time:null;
     if(t0)pts.push({x:new Date(t0),y:cap});
-    trades.forEach(function(t){
+    sorted.forEach(function(t){
       var p=parseFloat(t.pnl||t.PnL||0)*lev;
       if(p){eq+=p;var tm=t.close_time||t.open_time;if(tm)pts.push({x:new Date(tm),y:eq})}
     });
