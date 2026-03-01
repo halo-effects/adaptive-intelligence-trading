@@ -322,7 +322,7 @@ body {
   <div class="hero-stats">
     <div class="hero-stat"><div class="hero-stat-value">8</div><div class="hero-stat-label">Intelligence Signals</div></div>
     <div class="hero-stat"><div class="hero-stat-value">1h</div><div class="hero-stat-label">Candle Resolution</div></div>
-    <div class="hero-stat"><div class="hero-stat-value">100%</div><div class="hero-stat-label">Win Rate (Backtest)</div></div>
+    <div class="hero-stat"><div class="hero-stat-value">97.5%</div><div class="hero-stat-label">Win Rate (Paper Trading)</div></div>
     <div class="hero-stat"><div class="hero-stat-value">0</div><div class="hero-stat-label">Daily Management</div></div>
   </div>
 </section>
@@ -440,9 +440,9 @@ body {
 
       <div style="background:var(--bg-card-dark);border-radius:var(--radius-card);padding:28px;">
         <div style="font-size:42px;font-weight:700;color:rgba(255,255,255,0.05);line-height:1;margin-bottom:10px;">05</div>
-        <h3 style="font-size:18px;font-weight:600;margin-bottom:6px;">Spot DCA &amp; Scale-Out</h3>
-        <p style="font-size:14px;color:var(--ait-blue);font-weight:500;margin-bottom:10px;">You own real coins. No leverage. No liquidation risk.</p>
-        <p style="font-size:14px;color:var(--text-body-dark);line-height:1.6;">Buys the dips in layers, sells the biggest lots first on recovery &#8212; 5-8├ù more profit per cycle. Zero funding fees because you hold actual coins.</p>
+        <h3 style="font-size:18px;font-weight:600;margin-bottom:6px;">Intelligent DCA</h3>
+        <p style="font-size:14px;color:var(--ait-blue);font-weight:500;margin-bottom:10px;">Buys dips systematically. Compounds every cycle.</p>
+        <p style="font-size:14px;color:var(--text-body-dark);line-height:1.6;">Builds positions in layers during pullbacks, takes profit on recovery. Every completed deal's profit feeds into the next cycle &#8212; compounding gains automatically.</p>
       </div>
 
       <div style="background:var(--bg-card-dark);border-radius:var(--radius-card);padding:28px;">
@@ -474,7 +474,7 @@ body {
 <div id="risk-profiles" class="dark-section" style="margin-top:var(--section-gap);">
   <div class="container">
     <h2 class="fade-in">Pick Your Risk Profile. That's It.</h2>
-    <p class="sub fade-in">You don't need to understand trading. Just choose how aggressive you want to be &#8212; the system handles everything else. <strong>100% win rate across all profiles and coins.</strong></p>
+    <p class="sub fade-in">You don't need to understand trading. Just choose how aggressive you want to be &#8212; the system handles everything else. <strong>97.5% win rate across 361 completed deals.</strong></p>
 
     <div class="grid-3 fade-in" style="margin-bottom:40px;">
       <div class="risk-profile-card">
@@ -495,15 +495,17 @@ body {
     </div>
 
     <div class="fade-in" style="margin-bottom:32px;">
-      <h3 style="font-size:20px;font-weight:500;margin-bottom:4px;text-align:center;">Backtest Results</h3>
-      <div style="font-size:14px;color:var(--text-tertiary-dark);text-align:center;margin-bottom:16px;">Oct 2020 &#8594; Feb 2025 &#183; $10,000 starting capital &#183; 1h candles</div>
+      <h3 style="font-size:20px;font-weight:500;margin-bottom:4px;text-align:center;">Live Paper Trading Results</h3>
+      <div style="font-size:14px;color:var(--text-tertiary-dark);text-align:center;margin-bottom:16px;">Oct 2024 &#8594; Mar 2026 &#183; $10,000 starting capital &#183; 4 coins &#183; Medium profile</div>
       <table class="bt-table">
-        <thead><tr><th></th><th>Low</th><th>Medium</th><th>High</th></tr></thead>
+        <thead><tr><th>Coin</th><th>Realized PnL</th><th>Deals</th></tr></thead>
         <tbody>
-          <tr><td style="font-weight:500;">ETH</td><td class="green">+522%</td><td class="green">+976%</td><td class="green">+1,284%</td></tr>
-          <tr><td style="font-weight:500;">SOL</td><td class="green">+22,034%</td><td class="green">+35,409%</td><td class="green">+64,627%</td></tr>
-          <tr><td style="font-weight:500;">BTC</td><td class="green">+245%</td><td class="green">+218%</td><td class="green">+590%</td></tr>
-          <tr><td style="font-weight:500;">Win Rate</td><td class="green">100%</td><td class="green">100%</td><td class="green">100%</td></tr>
+          <tr><td style="font-weight:500;">HBAR</td><td class="green">+$17,818</td><td>113</td></tr>
+          <tr><td style="font-weight:500;">ATOM</td><td class="green">+$19,294</td><td>87</td></tr>
+          <tr><td style="font-weight:500;">LINK</td><td class="green">+$12,941</td><td>90</td></tr>
+          <tr><td style="font-weight:500;">NEAR</td><td class="green">+$12,213</td><td>71</td></tr>
+          <tr style="border-top:2px solid var(--border-glass);"><td style="font-weight:600;">Portfolio</td><td class="green" style="font-weight:700;">+573% ($67,329)</td><td style="font-weight:600;">361</td></tr>
+          <tr><td style="font-weight:500;">Win Rate</td><td class="green" colspan="2">97.5%</td></tr>
         </tbody>
       </table>
 
@@ -576,7 +578,7 @@ body {
           <tr><td><strong>During a crash</strong></td><td>Fully exposed &#8212; ride it out</td><td style="color:var(--ait-blue);font-weight:600;">Exits to cash automatically</td></tr>
           <tr><td><strong>Capital at risk</strong></td><td>100%, always</td><td>Only what&#8212;s in active deals</td></tr>
           <tr><td><strong>Recovery plan</strong></td><td>Wait for the market</td><td>Buys back in at the bottom</td></tr>
-          <tr><td><strong>Win rate</strong></td><td>Depends on when you sell</td><td style="color:var(--ait-blue);font-weight:600;">100% on completed cycles</td></tr>
+          <tr><td><strong>Win rate</strong></td><td>Depends on when you sell</td><td style="color:var(--ait-blue);font-weight:600;">97.5% on completed deals</td></tr>
           <tr><td><strong>Your involvement</strong></td><td>Emotional decisions for years</td><td>None &#8212; fully automated</td></tr>
           <tr><td><strong>Profit-taking</strong></td><td>No plan &#8212; hope it goes up</td><td>Automatic at peaks, in stages</td></tr>
         </tbody>
@@ -584,9 +586,9 @@ body {
     </div>
 
     <div class="fade-in" style="text-align:center;margin-top:40px;padding:24px;border:1px solid var(--border-light);border-radius:var(--radius-card);display:flex;justify-content:center;gap:40px;flex-wrap:wrap;">
-      <div style="text-align:center;"><strong style="color:var(--ait-blue);font-size:20px;">100%</strong><br><span style="font-size:14px;color:var(--text-body);">win rate &middot; all risk levels</span></div>
+      <div style="text-align:center;"><strong style="color:var(--ait-blue);font-size:20px;">97.5%</strong><br><span style="font-size:14px;color:var(--text-body);">win rate &middot; 361 deals</span></div>
       <div style="text-align:center;"><strong style="color:var(--ait-blue);font-size:20px;">Cash during crashes</strong><br><span style="font-size:14px;color:var(--text-body);">capital protected automatically</span></div>
-      <div style="text-align:center;"><strong style="color:var(--ait-blue);font-size:20px;">BTC &middot; ETH &middot; SOL</strong><br><span style="font-size:14px;color:var(--text-body);">backtested Oct 2020 &rarr; Feb 2026</span></div>
+      <div style="text-align:center;"><strong style="color:var(--ait-blue);font-size:20px;">HBAR &middot; ATOM &middot; LINK &middot; NEAR</strong><br><span style="font-size:14px;color:var(--text-body);">paper trading Oct 2024 &rarr; Mar 2026</span></div>
     </div>
   </div>
 </section>
@@ -799,8 +801,8 @@ body {
         <p>10-30% held in reserve depending on profile. Never fully exposed.</p>
       </div>
       <div class="risk-card">
-        <h4>&#9881; Spot Ownership</h4>
-        <p>You own actual coins &#8212; no leverage, no liquidation, no funding fees.</p>
+        <h4>&#9881; Conservative Leverage</h4>
+        <p>Low leverage with wide safety margins &#8212; liquidation prices far below market. Your capital is never over-exposed.</p>
       </div>
       <div class="risk-card">
         <h4>&#127931; Smart Priorities</h4>
@@ -870,7 +872,7 @@ body {
         <div style="position:absolute;left:-29px;top:6px;width:14px;height:14px;border-radius:50%;border:2px solid var(--profit);background:var(--profit);"></div>
         <div style="font-size:12px;color:var(--profit);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Generation 6 &#8212; Current</div>
         <div style="font-size:20px;font-weight:500;margin:4px 0 8px;">Full Lifecycle Autonomy + Sentiment Intelligence</div>
-        <div style="color:var(--text-body);font-size:16px;">Smart Entry + Conviction DCA + 8 real-time signals + Smart Exit + Wyckoff lifecycle + CFGI sentiment gates + Spot ownership. Per-coin sentiment direction prevents premature phase transitions &#8212; +39% improvement over previous generation.</div>
+        <div style="color:var(--text-body);font-size:16px;">Smart Entry + Conviction DCA + 8 real-time signals + Smart Exit + Wyckoff lifecycle + per-coin sentiment gates. Intelligent signal routing prevents premature phase transitions &#8212; +573% portfolio return on paper trading.</div>
       </div>
     </div>
   </div>
