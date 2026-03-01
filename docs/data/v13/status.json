@@ -4,17 +4,17 @@
   "profile": "high",
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 28252.07,
+  "equity": 28368.4,
   "cash": 6188.51,
-  "pnl_pct": 182.52,
+  "pnl_pct": 183.68,
   "coins": {
     "ETH/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 3342.747627108792,
-      "current_price": 2007.0,
-      "unrealized_pnl": 920.97,
+      "current_price": 1985.2,
+      "unrealized_pnl": 936.0,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 2304.75,
@@ -27,22 +27,22 @@
       "side": "short",
       "layers": 0,
       "avg_entry": 177.98740959991818,
-      "current_price": 86.576,
-      "unrealized_pnl": 956.18,
+      "current_price": 85.225,
+      "unrealized_pnl": 970.31,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 1861.79,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 39.0
+      "cfgi": 36.0
     },
     "LINK/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 17.795296420691248,
-      "current_price": 9.071,
-      "unrealized_pnl": 1679.52,
+      "current_price": 8.929,
+      "unrealized_pnl": 1706.85,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 3425.77,
@@ -55,14 +55,14 @@
       "side": "short",
       "layers": 0,
       "avg_entry": 2.3956033083158728,
-      "current_price": 1.3986,
-      "unrealized_pnl": 3207.53,
+      "current_price": 1.38,
+      "unrealized_pnl": 3267.37,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 7707.06,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 38.5
+      "cfgi": 38.0
     }
   },
   "lifecycle": {
@@ -135,8 +135,8 @@
   "deals_completed": 0,
   "win_rate": 0.0,
   "max_drawdown_pct": 3.12,
-  "uptime_hours": 34.19,
+  "uptime_hours": 34.36,
   "fear_greed_index": 35.9,
-  "last_update": "2026-03-01T08:53:25.333835+00:00",
+  "last_update": "2026-03-01T09:03:29.000162+00:00",
   "timeframe": "1h"
 }
