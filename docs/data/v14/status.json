@@ -6,9 +6,9 @@
   "leverage": 1.5,
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 77282.07,
-  "cash": 19057.85,
-  "pnl_pct": 672.82,
+  "equity": 84212.6,
+  "cash": 20424.12,
+  "pnl_pct": 742.13,
   "coins": {
     "HBAR/USDT": {
       "state": "SHORT_DCA",
@@ -16,15 +16,15 @@
       "layers": 1,
       "avg_entry": 0.094914,
       "current_price": 0.10127,
-      "unrealized_pnl": -474.51,
-      "invested": 4723.88,
-      "realized_pnl": 19904.88,
+      "unrealized_pnl": -506.51,
+      "invested": 5042.43,
+      "realized_pnl": 16538.88,
       "lifecycle_phase": "SHORT_DCA",
       "cfgi": 50.5,
       "next_tp_price": 0.09349029,
       "liquidation_price": 0.157715,
       "distance_to_liq_pct": 55.74,
-      "total_fees": 36.91
+      "total_fees": 76.31
     },
     "ATOM/USDT": {
       "state": "LONG_DCA",
@@ -32,15 +32,15 @@
       "layers": 8,
       "avg_entry": 2.210085,
       "current_price": 1.8517,
-      "unrealized_pnl": -4111.94,
-      "invested": 16904.99,
-      "realized_pnl": 23177.22,
+      "unrealized_pnl": -4617.83,
+      "invested": 18984.79,
+      "realized_pnl": 20926.07,
       "lifecycle_phase": "LONG_DCA",
-      "cfgi": 33.0,
+      "cfgi": 34.5,
       "next_tp_price": 2.2432361490104173,
       "liquidation_price": 0.747745,
       "distance_to_liq_pct": 59.62,
-      "total_fees": 38.75
+      "total_fees": 82.11
     },
     "LINK/USDC": {
       "state": "LONG_DCA",
@@ -48,15 +48,15 @@
       "layers": 4,
       "avg_entry": 9.009458,
       "current_price": 8.9778,
-      "unrealized_pnl": -50.66,
-      "invested": 9611.15,
-      "realized_pnl": 15229.18,
+      "unrealized_pnl": -54.17,
+      "invested": 10277.65,
+      "realized_pnl": 12251.17,
       "lifecycle_phase": "LONG_DCA",
-      "cfgi": 44.5,
+      "cfgi": 46.5,
       "next_tp_price": 9.144599968823607,
       "liquidation_price": 3.0482,
       "distance_to_liq_pct": 66.05,
-      "total_fees": 16.98
+      "total_fees": 35.14
     },
     "NEAR/USDT": {
       "state": "LONG_DCA",
@@ -64,15 +64,15 @@
       "layers": 3,
       "avg_entry": 1.156011,
       "current_price": 1.1634,
-      "unrealized_pnl": 72.87,
-      "invested": 7599.68,
-      "realized_pnl": 13606.4,
+      "unrealized_pnl": 78.11,
+      "invested": 8146.34,
+      "realized_pnl": 11785.27,
       "lifecycle_phase": "LONG_DCA",
       "cfgi": 48.0,
-      "next_tp_price": 1.1733507132828171,
+      "next_tp_price": 1.1733507132828174,
       "liquidation_price": 0.391117,
       "distance_to_liq_pct": 66.38,
-      "total_fees": 13.45
+      "total_fees": 27.87
     }
   },
   "symbols": [
@@ -83,13 +83,13 @@
   ],
   "regime": "ACCUMULATION",
   "trend_direction": "bullish",
-  "total_realized_pnl": 71917.68,
-  "total_fees": 106.09,
-  "deals_completed": 361,
+  "total_realized_pnl": 61501.39,
+  "total_fees": 221.43,
+  "deals_completed": 365,
   "win_rate": 97.5,
   "max_drawdown_pct": 15.54,
-  "uptime_hours": 0.16,
+  "uptime_hours": 0.01,
   "fear_greed_index": 35.9,
-  "last_update": "2026-03-01T02:19:45.657931+00:00",
+  "last_update": "2026-03-01T02:33:29.778927+00:00",
   "timeframe": "1h"
 }
