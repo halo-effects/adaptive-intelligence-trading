@@ -48,10 +48,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .header-time{font-size:.7rem;color:var(--text3)}
 
 /* ── Summary Cards ── */
-.summary{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:16px}
+.summary{display:grid;grid-template-columns:1.2fr 1.2fr 1.2fr 1fr 0.8fr 0.8fr;gap:14px;margin-bottom:16px}
 .scard{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden}
 .sc-label{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
-.sc-value{font-size:1.7rem;font-weight:700}
+.sc-value{font-size:1.7rem;font-weight:700;word-break:break-word}
+.sc-rpnl .sc-value,.sc-upnl .sc-value,.sc-eq .sc-value{font-size:clamp(1.1rem,2.5vw,1.7rem)}
 .sc-sub{font-size:.73rem;color:var(--text2);margin-top:4px}
 
 /* ── Coin Cards ── */
