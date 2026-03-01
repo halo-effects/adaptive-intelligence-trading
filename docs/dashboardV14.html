@@ -55,7 +55,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .sc-sub{font-size:.73rem;color:var(--text2);margin-top:4px}
 
 /* ── Coin Cards ── */
-.coins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:16px;margin-bottom:16px}
+.coins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px}
 .coin-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:border-color .2s}
 .coin-card:hover{border-color:var(--accent)}
 .cc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -174,7 +174,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .regime-desc{font-size:.78rem;color:var(--text2);line-height:1.5}
 
 /* ── Positions Section ── */
-.positions-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px}
+.positions-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
 .position-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:20px}
 .position-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .position-head-left{display:flex;align-items:center;gap:10px}
@@ -552,7 +552,7 @@ var PHASE_DESC = {
   ROUTER:'Evaluating direction — waiting for signal confirmation'
 };
 var PHASES = ['LONG_DCA','ROUTER','SHORT_DCA'];
-var REGIME_CLS = {ACCUMULATION:'rb-ACCUMULATION',ACC:'rb-ACC',TRENDING:'rb-TRENDING',TREND:'rb-TREND',RANGING:'rb-RANGING',EXTREME:'rb-EXTREME',CRASH:'rb-CRASH',CHOPPY:'rb-CHOPPY',DISTRIBUTION:'rb-DISTRIBUTION'};
+var REGIME_CLS = {ACCUMULATION:'rb-ACCUMULATION',ACC:'rb-ACC',TRENDING:'rb-TRENDING',TREND:'rb-TREND',RANGING:'rb-RANGING',EXTREME:'rb-EXTREME',CRASH:'rb-CRASH',CHOPPY:'rb-CHOPPY',DISTRIBUTION:'rb-DISTRIBUTION',LONG_DCA:'rb-ACC',SHORT_DCA:'rb-EXTREME',ROUTER:'rb-RANGING'};
 
 var S=null, trades=[], eqChart=null, countdownVal=CONFIG.refreshInterval, tradePage=0, oppPage=0, scannerData=null;
 
@@ -658,11 +658,11 @@ function renderRiskProfile(){
       '<div class="risk-badge '+badgeCls+'">'+profile.toUpperCase()+'</div>'+
       '<div class="risk-params">'+
         '<div class="risk-param"><div class="rp-label">BO</div><div class="rp-val">40%</div></div>'+
-        '<div class="risk-param"><div class="rp-label">DEV</div><div class="rp-val">2.0%</div></div>'+
-        '<div class="risk-param"><div class="rp-label">LAYERS</div><div class="rp-val">10</div></div>'+
+        '<div class="risk-param"><div class="rp-label">DEV</div><div class="rp-val">'+(profile==='high'?'1.5%':'2.0%')+'</div></div>'+
+        '<div class="risk-param"><div class="rp-label">LAYERS</div><div class="rp-val">'+(profile==='high'?'12':'10')+'</div></div>'+
         '<div class="risk-param"><div class="rp-label">TP</div><div class="rp-val">1.5%</div></div>'+
         '<div class="risk-param"><div class="rp-label">MULT</div><div class="rp-val">1.5&times;</div></div>'+
-        '<div class="risk-param"><div class="rp-label">LEVERAGE</div><div class="rp-val">1.5&times;</div></div>'+
+        '<div class="risk-param"><div class="rp-label">LEVERAGE</div><div class="rp-val">'+(profile==='low'?'1.0&times;':'1.5&times;')+'</div></div>'+
       '</div>'+
     '</div>'+
     '<div class="risk-col" style="text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px 20px">'+
@@ -757,7 +757,8 @@ function renderPositions(){
     html+='<div class="position-stat"><div class="ps-label">TP Target</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Unrealized PnL</div><div class="ps-val" style="color:'+pC(upnl)+'">'+(upnl>=0?'+':'')+fUsd(upnl)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Realized PnL</div><div class="ps-val" style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</div></div>';
-    html+='<div class="position-stat"><div class="ps-label">Leveraged Equity</div><div class="ps-val">'+fUsd(inv*1.5)+'</div></div>';
+    var netVal=inv+upnl;
+    html+='<div class="position-stat"><div class="ps-label">Net Value</div><div class="ps-val" style="color:'+pC(netVal-inv)+'">'+fUsd(netVal)+'</div></div>';
     html+='</div>';
 
     // Grid depth bar
@@ -871,11 +872,13 @@ function renderCompounding(){
     '<div class="comp-card"><div class="cc-lbl">Growth</div><div class="cc-val" style="color:'+pC(growth)+'">'+(growth>=0?'+':'')+fmt(growth)+'%</div></div>'+
     '<div class="comp-card"><div class="cc-lbl">Deals / Win Rate</div><div class="cc-val">'+deals+'</div><div class="cc-sub">'+fmt(wr,1)+'% win rate</div></div>';
 
+  var milestones=[25000,50000,100000,250000,500000,1000000];
   var target=cap*2;
+  for(var mi=0;mi<milestones.length;mi++){if(milestones[mi]>eq){target=milestones[mi];break}}
   var fillPct=Math.min(Math.max((eq/target)*100,0),100);
   $('compFill').style.width=fillPct+'%';
   $('compStart').textContent=fUsd(cap);
-  $('compTarget').textContent='2x Target: '+fUsd(target);
+  $('compTarget').textContent='Next: '+fUsd(target);
 
   $('projCards').innerHTML=
     '<div class="proj-card"><div class="pj-lbl">Daily Rate</div><div class="pj-val">'+fUsd(dailyRate)+'</div><div class="pj-sub">'+fmt(cap>0?(dailyRate/cap*100):0,3)+'% / day</div></div>'+
@@ -1021,8 +1024,8 @@ function renderFlowDiagram(){
   trades.forEach(function(t){
     var sym=t.symbol||'';
     if(!coinTradeCounts[sym])coinTradeCounts[sym]={long:0,short:0};
-    var side=(t.side||'').toLowerCase();
-    if(side==='short'||t.action==='SHORT_OPEN'||t.action==='SHORT_CLOSE')coinTradeCounts[sym].short++;
+    var phase=(t.regime||'').toUpperCase();
+    if(phase==='SHORT_DCA')coinTradeCounts[sym].short++;
     else coinTradeCounts[sym].long++;
   });
 
@@ -1164,9 +1167,9 @@ function renderEquityChart(){
   var cap=S?S.capital||10000:10000;
   var eq=cap; var pts=[];
   if(trades.length){
-    var t0=trades[0]?trades[0].timestamp||trades[0].time:null;
+    var t0=trades[0]?trades[0].close_time||trades[0].open_time:null;
     if(t0)pts.push({x:new Date(t0),y:cap});
-    trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);if(p){eq+=p;var tm=t.timestamp||t.time;if(tm)pts.push({x:new Date(tm),y:eq})}});
+    trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);if(p){eq+=p;var tm=t.close_time||t.open_time;if(tm)pts.push({x:new Date(tm),y:eq})}});
   }
   if(S)pts.push({x:new Date(),y:S.equity||cap});
   if(pts.length<2)pts.unshift({x:new Date(Date.now()-3600000),y:cap});
