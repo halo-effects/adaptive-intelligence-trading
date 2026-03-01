@@ -382,7 +382,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
     <div class="header-titles">
       <h1>Adaptive Intelligence Trading</h1>
-      <div class="sub">V14 DCA Engine &middot; Paper Trading</div>
+      <div class="sub"></div>
     </div>
   </div>
   <div class="header-right">
@@ -1165,11 +1165,15 @@ document.addEventListener('DOMContentLoaded',function(){
 function renderEquityChart(){
   var ctx=$('equityChart').getContext('2d');
   var cap=S?S.capital||10000:10000;
+  var lev=S?S.leverage||1:1;
   var eq=cap; var pts=[];
   if(trades.length){
     var t0=trades[0]?trades[0].close_time||trades[0].open_time:null;
     if(t0)pts.push({x:new Date(t0),y:cap});
-    trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);if(p){eq+=p;var tm=t.close_time||t.open_time;if(tm)pts.push({x:new Date(tm),y:eq})}});
+    trades.forEach(function(t){
+      var p=parseFloat(t.pnl||t.PnL||0)*lev;
+      if(p){eq+=p;var tm=t.close_time||t.open_time;if(tm)pts.push({x:new Date(tm),y:eq})}
+    });
   }
   if(S)pts.push({x:new Date(),y:S.equity||cap});
   if(pts.length<2)pts.unshift({x:new Date(Date.now()-3600000),y:cap});
