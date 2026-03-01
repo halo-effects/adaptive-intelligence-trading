@@ -352,6 +352,7 @@ class V14PaperBot:
         self._cfgi_market = None
         self._cfgi_coins: Dict[str, float] = {}
         self._cfgi_last_poll = 0.0
+        self._scanner_last_date = None  # Track last scanner run date (UTC)
 
         # Setup logging
         self._setup_logging()
@@ -673,6 +674,12 @@ class V14PaperBot:
                 except Exception as e:
                     logger.error(f"State save failed: {e}")
 
+                # Run daily scanner refresh (once per day, after midnight UTC)
+                try:
+                    self._maybe_run_scanner()
+                except Exception as e:
+                    logger.error(f"Scanner refresh failed: {e}")
+
                 # Sleep until next cycle
                 elapsed = time.time() - cycle_start
                 sleep_time = max(1, LIVE_POLL_INTERVAL - elapsed)
@@ -796,6 +803,38 @@ class V14PaperBot:
         except Exception as e:
             logger.warning("CFGI poll failed: %s", e)
             self._cfgi_last_poll = now
+
+    def _maybe_run_scanner(self):
+        """Run V14 coin scanner once per day (after 00:30 UTC)."""
+        now_utc = datetime.now(timezone.utc)
+        today = now_utc.date()
+
+        # Only run after 00:30 UTC to ensure daily candles are fresh
+        if now_utc.hour == 0 and now_utc.minute < 30:
+            return
+
+        # Already ran today
+        if self._scanner_last_date == today:
+            return
+
+        logger.info("Running daily V14 scanner refresh...")
+        try:
+            from trading.scanner.v14_scanner import scan_all, save_json
+            output_path = self.output_dir.parent.parent.parent / 'docs' / 'data' / 'v14' / 'scanner.json'
+            data = scan_all(capital=self.capital)
+            save_json(data, str(output_path))
+            self._scanner_last_date = today
+            logger.info(f"Scanner refresh complete: {data.get('coins_qualified', 0)} coins qualified")
+            try:
+                send_telegram(
+                    f"📊 <b>V14 Scanner</b> daily refresh complete\n"
+                    f"Qualified: {data.get('coins_qualified', 0)}/{data.get('coins_tested', 0)} coins"
+                )
+            except Exception:
+                pass
+        except Exception as e:
+            logger.error(f"Scanner refresh failed: {e}\n{traceback.format_exc()}")
+            self._scanner_last_date = today  # Don't retry endlessly on persistent errors
 
     def _write_status(self):
         """Write combined status.json from all engines."""
