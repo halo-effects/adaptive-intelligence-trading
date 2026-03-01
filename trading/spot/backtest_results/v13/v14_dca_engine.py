@@ -98,6 +98,14 @@ class V14Config:
     # -- DCA Capital Utilization --
     DCA_CAPITAL_PCT = 0.90       # Use 90% of capital for DCA grid (10% reserve)
 
+    # -- Leverage & Liquidation --
+    LEVERAGE = 1.0               # Default 1x for backtest (wrapper overrides)
+    MAINTENANCE_MARGIN = 0.005   # 0.5% maintenance margin (Hyperliquid isolated)
+
+    # -- Trading Fees (Hyperliquid perps) --
+    MAKER_FEE = 0.0002           # 0.02% — limit orders (DCA entries, TP closes)
+    TAKER_FEE = 0.0005           # 0.05% — market orders (emergency/phase closes, liquidations)
+
 
 # -- V14 DCA Engine ----------------------------------------------------------
 
@@ -165,6 +173,14 @@ class V14DCAEngine:
         )
         self.div_dates = self.detector.compute_2d_divergence_dates()
 
+        # -- Fee Tracking --
+        self.total_fees = 0.0
+
+        # -- Liquidation Tracking --
+        self.liquidation_events = 0
+        self.max_position_dd_pct = 0.0   # Worst unrealized loss as % of position
+        self.min_distance_to_liq_pct = float('inf')  # Closest approach to liquidation
+
         # -- Logging --
         self.trades = []
         self.phase_log = []
@@ -219,6 +235,99 @@ class V14DCAEngine:
         })
 
     # =========================================================================
+    #  FEE HELPER
+    # =========================================================================
+
+    def _charge_fee(self, trade_value, is_taker=False):
+        """Deduct trading fee from capital. Returns fee amount."""
+        rate = self.cfg.TAKER_FEE if is_taker else self.cfg.MAKER_FEE
+        fee = trade_value * rate
+        self.capital -= fee
+        self.total_fees += fee
+        return fee
+
+    # =========================================================================
+    #  LIQUIDATION
+    # =========================================================================
+
+    def _calc_liquidation_price(self, side, avg_entry):
+        """Calculate liquidation price (Hyperliquid isolated margin model).
+        Returns None if leverage <= 1.0 (no liquidation possible at 1x)."""
+        lev = self.cfg.LEVERAGE
+        if lev <= 1.0 or avg_entry <= 0:
+            return None
+        mm = self.cfg.MAINTENANCE_MARGIN
+        if side == 'long':
+            return avg_entry * (1 - (1.0 / lev) + mm)
+        else:  # short
+            return avg_entry * (1 + (1.0 / lev) - mm)
+
+    def _check_liquidation(self, date, price):
+        """Check if price has crossed liquidation price. Force-close if so."""
+        lev = self.cfg.LEVERAGE
+        if lev <= 1.0:
+            return
+
+        # Check long position
+        if self.long_coins > 0 and self.long_avg_entry > 0:
+            liq = self._calc_liquidation_price('long', self.long_avg_entry)
+            if liq is not None:
+                dist_pct = (price - liq) / price * 100
+                if dist_pct < self.min_distance_to_liq_pct:
+                    self.min_distance_to_liq_pct = dist_pct
+                # Track position drawdown
+                dd_pct = (self.long_avg_entry - price) / self.long_avg_entry * 100
+                if dd_pct > self.max_position_dd_pct:
+                    self.max_position_dd_pct = dd_pct
+                # Liquidation check
+                if price <= liq:
+                    self.liquidation_events += 1
+                    # Force close at liquidation price (total loss of margin)
+                    self.capital += 0  # Margin is lost
+                    self.trades.append({
+                        'date': date, 'action': f'LONG_LIQUIDATED (liq={liq:.2f})',
+                        'price': liq, 'amount': 0, 'coins': self.long_coins,
+                        'phase': self.phase, 'pnl_pct': -100
+                    })
+                    self.long_pnl -= self.long_cost
+                    self.long_trades += 1
+                    self.long_coins = 0
+                    self.long_avg_entry = 0
+                    self.long_layers = 0
+                    self.long_tp = 0
+                    self.long_cost = 0
+                    self.long_last_buy = None
+
+        # Check short position
+        if self.short_coins > 0 and self.short_avg_entry > 0:
+            liq = self._calc_liquidation_price('short', self.short_avg_entry)
+            if liq is not None:
+                dist_pct = (liq - price) / price * 100
+                if dist_pct < self.min_distance_to_liq_pct:
+                    self.min_distance_to_liq_pct = dist_pct
+                # Track position drawdown
+                dd_pct = (price - self.short_avg_entry) / self.short_avg_entry * 100
+                if dd_pct > self.max_position_dd_pct:
+                    self.max_position_dd_pct = dd_pct
+                # Liquidation check
+                if price >= liq:
+                    self.liquidation_events += 1
+                    self.capital += 0  # Margin is lost
+                    self.trades.append({
+                        'date': date, 'action': f'SHORT_LIQUIDATED (liq={liq:.2f})',
+                        'price': liq, 'amount': 0, 'coins': self.short_coins,
+                        'phase': self.phase, 'pnl_pct': -100
+                    })
+                    self.short_pnl -= self.short_cost
+                    self.short_trades += 1
+                    self.short_coins = 0
+                    self.short_avg_entry = 0
+                    self.short_layers = 0
+                    self.short_tp = 0
+                    self.short_cost = 0
+                    self.short_last_sell = None
+
+    # =========================================================================
     #  LONG DCA GRID
     # =========================================================================
 
@@ -232,7 +341,8 @@ class V14DCAEngine:
         # Check TP first (skip in accumulate mode — hold position for signal-based exit)
         if not cfg.DCA_ACCUMULATE and self.long_coins > 0 and self.long_tp > 0 and price >= self.long_tp:
             proceeds = self.long_coins * price
-            pnl = proceeds - self.long_cost
+            fee = self._charge_fee(proceeds, is_taker=False)  # TP = maker/limit
+            pnl = proceeds - self.long_cost - fee
             pnl_pct = pnl / self.long_cost * 100 if self.long_cost > 0 else 0
             self.capital += proceeds
             self.long_trades += 1
@@ -241,7 +351,7 @@ class V14DCAEngine:
             self.trades.append({
                 'date': date, 'action': f'LONG_DCA_TP ({self.long_layers}L)',
                 'price': price, 'amount': proceeds, 'coins': self.long_coins,
-                'phase': self.phase, 'pnl_pct': pnl_pct
+                'phase': self.phase, 'pnl_pct': pnl_pct, 'pnl': pnl, 'fee': fee
             })
             self.long_coins = 0
             self.long_avg_entry = 0
@@ -279,6 +389,7 @@ class V14DCAEngine:
                 return
 
             coins = order / price
+            fee = self._charge_fee(order, is_taker=False)  # DCA entry = maker/limit
             self.long_coins += coins
             self.capital -= order
             self.long_cost += order
@@ -288,7 +399,8 @@ class V14DCAEngine:
             self.long_tp = self.long_avg_entry * (1 + cfg.DCA_TP_PCT)
             self.trades.append({
                 'date': date, 'action': f'LONG_DCA_BUY_L{self.long_layers}',
-                'price': price, 'amount': order, 'coins': coins, 'phase': self.phase
+                'price': price, 'amount': order, 'coins': coins, 'phase': self.phase,
+                'fee': fee
             })
 
     def _long_dca_close(self, date, reason):
@@ -299,7 +411,8 @@ class V14DCAEngine:
         if np.isnan(price):
             return 0
         proceeds = self.long_coins * price
-        pnl = proceeds - self.long_cost
+        fee = self._charge_fee(proceeds, is_taker=True)  # Emergency/phase close = taker/market
+        pnl = proceeds - self.long_cost - fee
         pnl_pct = pnl / self.long_cost * 100 if self.long_cost > 0 else 0
         self.capital += proceeds
         self.long_trades += 1
@@ -309,7 +422,7 @@ class V14DCAEngine:
         self.trades.append({
             'date': date, 'action': f'LONG_DCA_CLOSE ({reason})',
             'price': price, 'amount': proceeds, 'coins': self.long_coins,
-            'phase': self.phase, 'pnl_pct': pnl_pct
+            'phase': self.phase, 'pnl_pct': pnl_pct, 'pnl': pnl, 'fee': fee
         })
         self.long_coins = 0
         self.long_avg_entry = 0
@@ -335,16 +448,17 @@ class V14DCAEngine:
         if not cfg.DCA_ACCUMULATE and self.short_coins > 0 and self.short_tp > 0 and price <= self.short_tp:
             # Buy back at lower price
             buy_cost = self.short_coins * price
-            pnl = self.short_cost - buy_cost  # Sold high, bought low
+            fee = self._charge_fee(buy_cost, is_taker=False)  # TP = maker/limit
+            pnl = self.short_cost - buy_cost - fee  # Sold high, bought low, minus fee
             pnl_pct = pnl / self.short_cost * 100 if self.short_cost > 0 else 0
-            self.capital += self.short_cost + pnl  # Return collateral + profit
+            self.capital += self.short_cost + pnl  # Return collateral + profit (fee already deducted)
             self.short_trades += 1
             self.short_wins += 1
             self.short_pnl += pnl
             self.trades.append({
                 'date': date, 'action': f'SHORT_DCA_TP ({self.short_layers}L)',
                 'price': price, 'amount': buy_cost, 'coins': self.short_coins,
-                'phase': self.phase, 'pnl_pct': pnl_pct
+                'phase': self.phase, 'pnl_pct': pnl_pct, 'pnl': pnl, 'fee': fee
             })
             self.short_coins = 0
             self.short_avg_entry = 0
@@ -383,6 +497,7 @@ class V14DCAEngine:
                 return
 
             coins = order / price
+            fee = self._charge_fee(order, is_taker=False)  # DCA entry = maker/limit
             self.short_coins += coins
             self.capital -= order  # Collateral locked
             self.short_cost += order
@@ -392,7 +507,8 @@ class V14DCAEngine:
             self.short_tp = self.short_avg_entry * (1 - cfg.DCA_TP_PCT)
             self.trades.append({
                 'date': date, 'action': f'SHORT_DCA_SELL_L{self.short_layers}',
-                'price': price, 'amount': order, 'coins': coins, 'phase': self.phase
+                'price': price, 'amount': order, 'coins': coins, 'phase': self.phase,
+                'fee': fee
             })
 
     def _short_dca_close(self, date, reason):
@@ -403,7 +519,8 @@ class V14DCAEngine:
         if np.isnan(price):
             return 0
         buy_cost = self.short_coins * price
-        pnl = self.short_cost - buy_cost
+        fee = self._charge_fee(buy_cost, is_taker=True)  # Emergency/phase close = taker/market
+        pnl = self.short_cost - buy_cost - fee
         pnl_pct = pnl / self.short_cost * 100 if self.short_cost > 0 else 0
         self.capital += self.short_cost + pnl
         self.short_trades += 1
@@ -413,7 +530,7 @@ class V14DCAEngine:
         self.trades.append({
             'date': date, 'action': f'SHORT_DCA_CLOSE ({reason})',
             'price': price, 'amount': self.short_cost + pnl, 'coins': self.short_coins,
-            'phase': self.phase, 'pnl_pct': pnl_pct
+            'phase': self.phase, 'pnl_pct': pnl_pct, 'pnl': pnl, 'fee': fee
         })
         self.short_coins = 0
         self.short_avg_entry = 0
@@ -669,6 +786,9 @@ class V14DCAEngine:
                 'date': date, 'equity': equity, 'price': price, 'phase': self.phase
             })
 
+            # Check liquidation (only relevant when LEVERAGE > 1.0)
+            self._check_liquidation(date, price)
+
         # End: close any open positions
         if len(data) > 0:
             last_date = data.index[-1]
@@ -726,6 +846,12 @@ class V14DCAEngine:
             'equity_curve': eq_curve,
             'conviction_triggers': self.conviction_triggers,
             'top_triggers': self.top_triggers,
+            'total_fees': self.total_fees,
+            'fees_pct_of_profit': (self.total_fees / max(self.long_pnl + self.short_pnl, 0.01) * 100)
+                if (self.long_pnl + self.short_pnl) > 0 else 0.0,
+            'liquidation_events': self.liquidation_events,
+            'max_position_dd_pct': self.max_position_dd_pct,
+            'min_distance_to_liq_pct': self.min_distance_to_liq_pct if self.min_distance_to_liq_pct != float('inf') else None,
         }
 
 

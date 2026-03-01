@@ -34,6 +34,7 @@ _WORKSPACE = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_WORKSPACE))
 
 from trading.spot.v14_lifecycle_engine import V14LifecycleEngine, V14_PROFILES
+from trading.spot.incident_schema import create_incident_report
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -140,6 +141,8 @@ class TradeTracker:
         self.trades: List[dict] = []
         self._deal_counter = 0
         self._open_deals: Dict[str, dict] = {}
+        self._existing_keys: set = set()  # keys from loaded trades to prevent re-recording
+        self.on_losing_trade = None  # callback(trade_dict, symbol) for incident capture
 
     def process_actions(self, symbol: str, actions: List[dict], timestamp: datetime):
         """Process engine actions and track trades."""
@@ -175,18 +178,27 @@ class TradeTracker:
                     ret_pct = (pnl / invested * 100) if invested > 0 else 0.0
                     open_dt = datetime.fromisoformat(deal["open_time"])
                     duration_h = (timestamp - open_dt).total_seconds() / 3600
-                    self.trades.append({
-                        "deal_id": deal["deal_id"],
-                        "symbol": symbol,
-                        "open_time": deal["open_time"],
-                        "close_time": timestamp.isoformat(),
-                        "regime": deal["regime"],
-                        "layers": deal["layers"],
-                        "invested": round(invested, 2),
-                        "pnl": round(pnl, 4),
-                        "return_pct": round(ret_pct, 2),
-                        "duration_h": round(duration_h, 1),
-                    })
+                    trade_key = f"{symbol}|{deal['open_time']}|{timestamp.isoformat()}"
+                    if trade_key not in self._existing_keys:
+                        self._existing_keys.add(trade_key)
+                        trade_record = {
+                            "deal_id": deal["deal_id"],
+                            "symbol": symbol,
+                            "open_time": deal["open_time"],
+                            "close_time": timestamp.isoformat(),
+                            "regime": deal["regime"],
+                            "layers": deal["layers"],
+                            "invested": round(invested, 2),
+                            "pnl": round(pnl, 4),
+                            "return_pct": round(ret_pct, 2),
+                            "duration_h": round(duration_h, 1),
+                        }
+                        self.trades.append(trade_record)
+                        if pnl < 0 and self.on_losing_trade:
+                            try:
+                                self.on_losing_trade(trade_record, symbol)
+                            except Exception:
+                                pass
 
             elif action == "SHORT_OPEN":
                 key = f"{symbol}:short"
@@ -213,30 +225,47 @@ class TradeTracker:
                     ret_pct = (pnl / invested * 100) if invested > 0 else 0.0
                     open_dt = datetime.fromisoformat(deal["open_time"])
                     duration_h = (timestamp - open_dt).total_seconds() / 3600
-                    self.trades.append({
-                        "deal_id": deal["deal_id"],
-                        "symbol": symbol,
-                        "open_time": deal["open_time"],
-                        "close_time": timestamp.isoformat(),
-                        "regime": "SHORT_DCA",
-                        "layers": deal["layers"],
-                        "invested": round(invested, 2),
-                        "pnl": round(pnl, 4),
-                        "return_pct": round(ret_pct, 2),
-                        "duration_h": round(duration_h, 1),
-                    })
+                    trade_key = f"{symbol}|{deal['open_time']}|{timestamp.isoformat()}"
+                    if trade_key not in self._existing_keys:
+                        self._existing_keys.add(trade_key)
+                        trade_record = {
+                            "deal_id": deal["deal_id"],
+                            "symbol": symbol,
+                            "open_time": deal["open_time"],
+                            "close_time": timestamp.isoformat(),
+                            "regime": "SHORT_DCA",
+                            "layers": deal["layers"],
+                            "invested": round(invested, 2),
+                            "pnl": round(pnl, 4),
+                            "return_pct": round(ret_pct, 2),
+                            "duration_h": round(duration_h, 1),
+                        }
+                        self.trades.append(trade_record)
+                        if pnl < 0 and self.on_losing_trade:
+                            try:
+                                self.on_losing_trade(trade_record, symbol)
+                            except Exception:
+                                pass
 
     def save_csv(self):
-        """Write trades.csv."""
+        """Write trades.csv (deduplicated by symbol+close_time)."""
         try:
             path = self.output_dir / "trades.csv"
+            # Deduplicate: keep first occurrence of each symbol+open_time+close_time
+            seen = set()
+            unique = []
+            for t in self.trades:
+                key = f"{t['symbol']}|{t['open_time']}|{t['close_time']}"
+                if key not in seen:
+                    seen.add(key)
+                    unique.append(t)
             with open(path, "w", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=[
                     "deal_id", "symbol", "open_time", "close_time", "regime",
                     "layers", "invested", "pnl", "return_pct", "duration_h",
                 ])
                 writer.writeheader()
-                writer.writerows(self.trades)
+                writer.writerows(unique)
         except Exception as e:
             logger.error(f"Failed to save trades CSV: {e}")
 
@@ -256,6 +285,9 @@ class TradeTracker:
                     row["return_pct"] = float(row["return_pct"])
                     row["duration_h"] = float(row["duration_h"])
                     self.trades.append(row)
+                    # Track existing trade keys to prevent re-recording on catch-up
+                    key = f"{row['symbol']}|{row['open_time']}|{row['close_time']}"
+                    self._existing_keys.add(key)
                     if row["deal_id"] > self._deal_counter:
                         self._deal_counter = row["deal_id"]
             logger.info(f"Loaded {len(self.trades)} existing trades from CSV")
@@ -304,6 +336,11 @@ class V14PaperBot:
 
         # Trade tracker
         self.tracker = TradeTracker(self.output_dir)
+        self.tracker.on_losing_trade = self._capture_incident
+
+        # Incidents directory
+        self._incidents_dir = self.output_dir / "incidents"
+        self._incidents_dir.mkdir(parents=True, exist_ok=True)
 
         # Shutdown flag
         self._shutdown = False
@@ -316,6 +353,90 @@ class V14PaperBot:
 
         # Setup logging
         self._setup_logging()
+
+    def _capture_incident(self, trade: dict, symbol: str):
+        """Capture a losing trade incident report. Never crashes the trading loop."""
+        try:
+            # Build engine state for this coin
+            engine_state = self.engines[symbol].get_status() if symbol in self.engines else {}
+
+            # Build peer states
+            peer_states = {}
+            for sym, eng in self.engines.items():
+                if sym != symbol:
+                    try:
+                        peer_states[sym] = eng.get_status()
+                    except Exception:
+                        pass
+
+            # Market context
+            market_context = {
+                "cfgi": self._cfgi_market,
+                "regime": None,
+                "trend_direction": None,
+            }
+            # Derive from CFGI
+            fgi = self._cfgi_market
+            if fgi is not None:
+                if fgi <= 20: market_context["regime"] = "EXTREME"
+                elif fgi <= 40: market_context["regime"] = "ACCUMULATION"
+                elif fgi <= 60: market_context["regime"] = "RANGING"
+                elif fgi <= 80: market_context["regime"] = "TRENDING"
+                else: market_context["regime"] = "DISTRIBUTION"
+
+            # Config snapshot
+            profile_params = V14_PROFILES.get(self.profile, V14_PROFILES['medium'])
+            config = {
+                "account_id": "paper-v14",
+                "profile": self.profile,
+                "capital": self.capital,
+                "leverage": self.leverage,
+                **profile_params,
+            }
+
+            # Add close reason from the last engine trade action
+            if symbol in self.engines and self.engines[symbol]._engine:
+                eng_trades = self.engines[symbol]._engine.trades
+                if eng_trades:
+                    last_trade = eng_trades[-1]
+                    trade["reason"] = last_trade.get("action", "unknown")
+
+            incident = create_incident_report(
+                trade=trade,
+                engine_state=engine_state,
+                peer_states=peer_states,
+                market_context=market_context,
+                config=config,
+            )
+
+            # Write incident file
+            incident_id = incident["incident_id"][:8]
+            coin = symbol.split("/")[0]
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            filename = f"{ts}_{coin}_{incident_id}.json"
+            filepath = self._incidents_dir / filename
+            with open(filepath, "w") as f:
+                json.dump(incident, f, indent=2, default=str)
+
+            logger.warning(
+                f"📋 Incident captured: {coin} {incident['classification']} "
+                f"${trade.get('pnl', 0):.2f} [{incident['severity']}] -> {filename}"
+            )
+
+            # Telegram alert
+            try:
+                send_telegram(
+                    f"📋 <b>Incident Report</b>\n"
+                    f"Coin: {coin} | {incident['classification']}\n"
+                    f"Loss: ${trade.get('pnl', 0):.2f} ({trade.get('return_pct', 0):.1f}%)\n"
+                    f"Severity: {incident['severity']} | Layers: {trade.get('layers', 0)}\n"
+                    f"💡 {incident['recommendation']}"
+                )
+            except Exception:
+                pass
+
+        except Exception as e:
+            logger.error(f"Incident capture failed (non-fatal): {e}")
 
     def _setup_logging(self):
         log_path = self.output_dir / "bot.log"
@@ -672,6 +793,7 @@ class V14PaperBot:
         total_equity = 0.0
         total_cash = 0.0
         total_realized = 0.0
+        total_fees = 0.0
         total_deals = 0
         total_won = 0
         max_dd = 0.0
@@ -691,6 +813,7 @@ class V14PaperBot:
             total_equity += st.get("equity", 0)
             total_cash += st.get("cash", 0)
             total_realized += st.get("total_realized_pnl", 0)
+            total_fees += st.get("total_fees", 0)
             total_deals += st.get("deals_completed", 0)
             total_won += engine.deals_won
             max_dd = max(max_dd, st.get("max_drawdown_pct", 0))
@@ -714,6 +837,34 @@ class V14PaperBot:
             except Exception as e:
                 logger.warning("Failed to read trades.csv for deal counts: %s", e)
 
+        # Derive regime from market CFGI
+        fgi = self._cfgi_market
+        if fgi is not None:
+            if fgi <= 20:
+                regime = "EXTREME"
+            elif fgi <= 40:
+                regime = "ACCUMULATION"
+            elif fgi <= 60:
+                regime = "RANGING"
+            elif fgi <= 80:
+                regime = "TRENDING"
+            else:
+                regime = "DISTRIBUTION"
+        else:
+            regime = "RANGING"
+
+        # Derive trend from coin phases
+        long_count = sum(1 for sym in self.symbols
+                         if coins.get(sym, {}).get("lifecycle_phase") == "LONG_DCA")
+        short_count = sum(1 for sym in self.symbols
+                          if coins.get(sym, {}).get("lifecycle_phase") == "SHORT_DCA")
+        if long_count > short_count:
+            trend_direction = "bullish"
+        elif short_count > long_count:
+            trend_direction = "bearish"
+        else:
+            trend_direction = "neutral"
+
         status = {
             "running": True,
             "mode": "paper",
@@ -727,7 +878,10 @@ class V14PaperBot:
             "pnl_pct": round(pnl_pct, 2),
             "coins": coins,
             "symbols": self.symbols,
+            "regime": regime,
+            "trend_direction": trend_direction,
             "total_realized_pnl": round(total_realized, 2),
+            "total_fees": round(total_fees, 2),
             "deals_completed": total_deals,
             "win_rate": round(win_rate, 1),
             "max_drawdown_pct": round(max_dd, 2),

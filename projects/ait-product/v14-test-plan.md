@@ -258,9 +258,40 @@ python -u -m trading.spot.run_v14_paper --capital 10000 --profile medium --excha
   - Risk profile: V14 params (BO 40%, DEV 2.0%, LAYERS 10, TP 1.5%, MULT 1.5×, LEV 1.5×)
   - Responsive, Chart.js, auto-refresh, standalone HTML
 
+### Incident Reports (added 2026-02-28)
+- **`trading/spot/incident_schema.py`** — Incident report generator
+  - `create_incident_report(trade, engine_state, peer_states, market_context, config)` → self-contained JSON
+  - Auto-classification: `GRID_EXHAUSTION`, `PHASE_TRANSITION`, `EARLY_EXIT`, `SIGNAL_FAILURE`, `UNKNOWN`
+  - Severity: LOW (<1% capital), MEDIUM (1-5%), HIGH (>5%)
+  - Auto-generated recommendations per classification type
+  - Multi-tenant ready: `account_id`, `strategy_id` fields, schema versioned (`1.0`)
+  - Cloud-migration ready: stateless, self-contained, one file per event → S3/blob later
+- **Runner integration** (`run_v14_paper.py`)
+  - `_capture_incident()` on `V14PaperBot` — gathers engine + peer + market context, writes JSON, sends Telegram alert
+  - `on_losing_trade` callback on `TradeTracker` — fires on SELL/SHORT_CLOSE when `pnl < 0`
+  - Wrapped in try/except — never crashes the trading loop
+  - Output: `trading/spot/paper/v14/incidents/{timestamp}_{coin}_{id}.json`
+- **`trading/spot/incident_viewer.py`** — CLI incident browser
+  - Summary table: date, coin, type, loss, severity, layers, hours
+  - Filters: `--coin`, `--type`, `--severity`
+  - Aggregate stats by type, by coin, total losses
+  - `--json` flag for machine-readable output
+- **Activation**: Next bot restart (pending — not yet active)
+
 ### Dashboard Sync
 - **`trading/sync_dashboard.ps1`** — Updated for V14 data paths
   - Syncs `trading/spot/paper/v14/status.json` → `docs/data/v14/status.json`
   - Syncs `trading/spot/paper/v14/trades.csv` → `docs/data/v14/trades.csv`
   - Syncs scanner output → `docs/data/v14/scanner.json`
   - Windows Scheduled Task: `AIT_DashboardSync` (every 10 min)
+
+### Realism Features (added 2026-02-28)
+- **Liquidation tracking**: Per-position liquidation price (Hyperliquid isolated margin model), distance-to-liq %, liquidation event detection during backtest. At 1.5x, liq is ~60% from entry. Zero liquidation events in Oct 2024 → present.
+- **Trading fees (realistic mode)**: Maker 0.02%, Taker 0.05%. Fees deducted from capital on every trade (compounding). Estimated all-time fees: ~$749 on $61,592 realized PnL (1.2%).
+- **Dashboard**: Liquidation price (red) + distance-to-liq (amber <20%) on position cards. Fee display on Realized PnL card.
+
+### Data Integrity Notes (2026-02-28)
+- **Engine `pnl` field**: Added to all trade records (TP, CLOSE). Wrapper uses exact engine PnL instead of reverse-engineering from `amount * pnl_pct / (100 + pnl_pct)` — eliminates floating-point drift.
+- **Dedup-at-source**: TradeTracker tracks `_existing_keys` (symbol+open_time+close_time) loaded from CSV. New trades checked against keys before recording. Prevents restart catch-up duplicates.
+- **Clean backfill baseline (2026-02-28)**: $67,068 (+571%), 357 trades, $61,592 realized, $749 fees. Status↔CSV gap: $124.73 (0.2%, stable, from edge-case trades without `pnl` field).
+- **PowerShell BOM hazard**: `Set-Content -Encoding UTF8` writes BOM (EF BB BF). Python's json.load() fails. Use `[System.Text.UTF8Encoding]::new($false)` for Python-consumed files.

@@ -338,7 +338,7 @@ class V14LifecycleEngine:
                     'phase': 'LONG_DCA', 'date': trade_date,
                 })
             elif 'LONG_DCA_TP' in action_str or 'LONG_DCA_CLOSE' in action_str:
-                pnl_dollar = amount * pnl_pct / (100 + pnl_pct) if (100 + pnl_pct) != 0 else 0
+                pnl_dollar = trade.get('pnl', amount * pnl_pct / (100 + pnl_pct) if (100 + pnl_pct) != 0 else 0)
                 # Skip OPEN_END fake closes
                 if 'OPEN_END' in action_str:
                     continue
@@ -356,7 +356,7 @@ class V14LifecycleEngine:
                     'phase': 'SHORT_DCA', 'date': trade_date,
                 })
             elif 'SHORT_DCA_TP' in action_str or 'SHORT_DCA_CLOSE' in action_str:
-                pnl_dollar = amount * pnl_pct / (100 + pnl_pct) if (100 + pnl_pct) != 0 else 0
+                pnl_dollar = trade.get('pnl', amount * pnl_pct / (100 + pnl_pct) if (100 + pnl_pct) != 0 else 0)
                 if 'OPEN_END' in action_str:
                     continue
                 actions.append({
@@ -514,6 +514,7 @@ class V14LifecycleEngine:
             'conviction_fired': eng.conviction_fired,
             # Cycle tracking
             'markup_cycles_completed': eng.markup_cycles_completed,
+            'total_fees': eng.total_fees,
             'adx_below_20_streak': eng.adx_below_20_streak,
             # Router
             'router_from_top': eng.router_from_top,
@@ -578,6 +579,7 @@ class V14LifecycleEngine:
 
         # Cycle tracking
         eng.markup_cycles_completed = state.get('markup_cycles_completed', 0)
+        eng.total_fees = state.get('total_fees', 0.0)
         eng.adx_below_20_streak = state.get('adx_below_20_streak', 0)
 
         # Router
@@ -609,6 +611,28 @@ class V14LifecycleEngine:
     # -----------------------------------------------------------------------
     # Status
     # -----------------------------------------------------------------------
+
+    def _calc_liq_price(self, eng, side, price):
+        """Calculate liquidation price using wrapper's leverage."""
+        if self.leverage <= 1.0:
+            return None
+        mm = 0.005  # Maintenance margin rate (Hyperliquid)
+        if side == 'long' and eng.long_avg_entry > 0:
+            return round(eng.long_avg_entry * (1 - (1.0 / self.leverage) + mm), 6)
+        elif side == 'short' and eng.short_avg_entry > 0:
+            return round(eng.short_avg_entry * (1 + (1.0 / self.leverage) - mm), 6)
+        return None
+
+    def _calc_distance_to_liq(self, eng, side, price):
+        """Calculate distance to liquidation as percentage."""
+        liq = self._calc_liq_price(eng, side, price)
+        if liq is None or price <= 0:
+            return None
+        if side == 'long':
+            return round((price - liq) / price * 100, 2)
+        elif side == 'short':
+            return round((liq - price) / price * 100, 2)
+        return None
 
     def get_status(self) -> dict:
         """Return status dict matching dashboard format."""
@@ -683,10 +707,14 @@ class V14LifecycleEngine:
                     'lifecycle_phase': eng.phase,
                     'cfgi': None,
                     'next_tp_price': eng.long_tp if eng.long_tp > 0 else (eng.short_tp if eng.short_tp > 0 else None),
+                    'liquidation_price': self._calc_liq_price(eng, side, price),
+                    'distance_to_liq_pct': self._calc_distance_to_liq(eng, side, price),
+                    'total_fees': round(eng.total_fees * self.leverage, 2),
                 }
             },
             'symbols': [self.symbol],
             'total_realized_pnl': round((eng.long_pnl + eng.short_pnl) * self.leverage, 2),
+            'total_fees': round(eng.total_fees * self.leverage, 2),
             'deals_completed': total_trades,
             'win_rate': round(win_rate, 1),
             'max_drawdown_pct': round(self.max_drawdown_pct, 2),
