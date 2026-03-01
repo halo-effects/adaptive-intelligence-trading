@@ -1064,7 +1064,7 @@ function renderFlowDiagram(){
       if(scanCoinData){
         if(scanCoinData.win_rate!=null)parts.push(Math.round(scanCoinData.win_rate)+'% win rate');
         if(scanCoinData.total_profit_pct!=null)parts.push((scanCoinData.total_profit_pct>=0?'+':'')+scanCoinData.total_profit_pct.toFixed(1)+'% profit');
-        if(scanCoinData.roi_pct!=null&&scanCoinData.history_days>0){var dailyRoi=((Math.pow(1+scanCoinData.roi_pct/100,1/scanCoinData.history_days)-1)*100);parts.push(dailyRoi.toFixed(2)+'%/day');}
+        if(scanCoinData.roi_pct!=null&&scannerData.backtest_start){var bsDays=Math.max(1,Math.round((Date.now()-new Date(scannerData.backtest_start).getTime())/86400000));var dailyRoi=((Math.pow(1+scanCoinData.roi_pct/100,1/bsDays)-1)*100);parts.push(dailyRoi.toFixed(2)+'%/day');}
       }
       signal=parts.join(' · ')||'Monitoring';
       phase='--';
