@@ -4,23 +4,23 @@
   "profile": "high",
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 28427.6,
+  "equity": 28441.32,
   "cash": 6188.51,
-  "pnl_pct": 184.28,
+  "pnl_pct": 184.41,
   "coins": {
     "ETH/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 3342.747627108792,
-      "current_price": 1992.9,
-      "unrealized_pnl": 930.69,
+      "current_price": 1973.0,
+      "unrealized_pnl": 944.41,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 2304.75,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 41.0
+      "cfgi": 40.0
     },
     "SOL/USDC": {
       "state": "SHORTING",
@@ -34,7 +34,7 @@
       "invested": 1861.79,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 43.5
+      "cfgi": 42.0
     },
     "LINK/USDC": {
       "state": "SHORTING",
@@ -62,7 +62,7 @@
       "invested": 7707.06,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 38.0
+      "cfgi": 37.0
     }
   },
   "lifecycle": {
@@ -135,8 +135,8 @@
   "deals_completed": 0,
   "win_rate": 0.0,
   "max_drawdown_pct": 3.12,
-  "uptime_hours": 42.3,
+  "uptime_hours": 43.3,
   "fear_greed_index": 35.9,
-  "last_update": "2026-03-01T17:00:02.872864+00:00",
+  "last_update": "2026-03-01T17:59:40.907128+00:00",
   "timeframe": "1h"
 }
