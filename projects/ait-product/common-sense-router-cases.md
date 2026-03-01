@@ -123,6 +123,80 @@ This is the north star for the Common Sense Router project:
 
 ---
 
+## Case 2: AVAX vs ATOM — Why Similar Charts Produce Opposite Results (2026-03-01)
+
+### Situation
+AVAX and ATOM have nearly identical macro chart structures on the 2W timeframe:
+- Both made ATHs in late 2021 (~$140 AVAX, ~$45 ATOM)
+- Both show lower highs each cycle (structural degradation pattern)
+- Both grinding near all-time lows (AVAX $9, ATOM $1.80)
+- Both look like "the same trade" visually
+
+Yet the V14 scanner scores them drastically differently:
+- **ATOM: A+ (97)** — +406% ROI, -20% max DD, 86 trades, 96.5% win rate
+- **AVAX: C (57)** — -3.4% ROI, -70% max DD, 59 trades, 96.6% win rate
+
+### What Explains the Divergence
+
+**Macro structure is similar, but micro price action is completely different.**
+
+V14's DCA grid profits from **mean-reversion within ranges** — buy dips, sell recoveries, cycle the grid. What matters isn't the overall direction but how the coin *bounces* within its current range.
+
+**ATOM's micro behavior:**
+- Cleaner mean-reversion: dips recover predictably, allowing grid cycles to complete
+- Tighter ranges relative to price: grid layers don't get blown through
+- 2 clean phase transitions with 86 profitable trades
+- Max drawdown only -20%: grid positions recover before hitting deep layers
+- Short-side PnL: +$2,516 (shorts work cleanly during markdown phases)
+
+**AVAX's micro behavior:**
+- Sharper, deeper drops that blow through grid layers without recovery
+- Long PnL: -$631 (grid gets trapped in long positions during steep declines)
+- Short PnL: +$608 (barely offsets long losses)
+- Max drawdown -70%: grid positions go deeply underwater
+- Net result: -3.4% ROI — the grid can't cycle efficiently
+
+### The Key Insight: Grid Cycling Efficiency
+
+The DCA grid is a volatility-harvesting machine. It needs:
+1. **Bounded ranges** — price oscillates within a predictable band
+2. **Mean-reversion** — dips recover enough to hit take-profit
+3. **Consistent volatility** — not too calm (no cycles) or too violent (blows through layers)
+
+ATOM provides this. AVAX doesn't. AVAX's drops are too sharp and too deep — the grid fills all layers, then price keeps falling, creating massive unrealized losses that take months to recover (if ever).
+
+### Why This Matters for Coin Selection
+
+You can't evaluate V14 coin fitness from a macro chart alone. Two coins with identical long-term structures can produce opposite results because:
+- **Micro volatility profile** matters more than macro trend
+- **Recovery behavior** (how quickly dips bounce) determines grid cycling rate
+- **Drop sharpness** (how fast price falls) determines if grid layers get blown through
+- **Range consistency** determines if parameters stay optimal over time
+
+This is exactly why the scanner exists — it backtests the actual grid behavior, not just the chart shape.
+
+### Current ATOM Position (2026-03-01)
+- 9 layers deep, avg entry $2.20, current price $1.80
+- Unrealized PnL: -$3,994
+- ATOM is currently testing prior cycle lows ($1.80 area = 2022-2023 bottom zone)
+- Structure suggests a bounce to at least $2.20-2.50 range is likely, which would close the open long
+- **If ATOM continues degrading like AVAX** (breaks below $1.50), the position becomes a problem
+- Worth monitoring: does ATOM hold its historical support or break structure?
+
+### Implications for Common Sense Router
+A future AI layer should be able to detect:
+1. **Micro volatility profile changes** — is a coin shifting from clean mean-reversion to AVAX-style sharp drops?
+2. **Grid efficiency degradation** — are completed trades per phase declining over time?
+3. **Structural support proximity** — is the current price near historical support (ATOM) or already below it (AVAX)?
+4. **Coin rotation trigger** — if a coin's grid efficiency drops below threshold, rotate it out for a better-fit coin
+
+### Brett's Input (2026-03-01)
+- "To me both should perform similarly but that's not the case"
+- "ATOM is holding at prior lows from previous cycle and looks like it's postured for at least a small rally"
+- Key observation: visual chart similarity ≠ trading behavior similarity. The scanner captures what the eye can't.
+
+---
+
 ## Template for Future Cases
 
 ### Case N: [Title] — [Core Issue] (Date)
