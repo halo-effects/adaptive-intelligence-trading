@@ -585,14 +585,18 @@ class V14PaperBot:
         while not self._shutdown:
             try:
                 cycle_start = time.time()
+                logger.debug(f"Live loop cycle starting at {datetime.now(timezone.utc).isoformat()}")
 
                 for sym in self.symbols:
-                    hl_sym = HL_PRICE_MAP[sym]
+                    hl_sym = HL_PRICE_MAP.get(sym)
+                    if not hl_sym:
+                        logger.error(f"No HL price map entry for {sym}")
+                        continue
 
                     try:
                         ohlcv = exchange.fetch_ohlcv(hl_sym, self.timeframe, limit=200)
                     except Exception as e:
-                        logger.error(f"Failed to fetch candles for {sym} ({hl_sym}): {e}")
+                        logger.error(f"Failed to fetch candles for {sym} ({hl_sym}): {e}\n{traceback.format_exc()}")
                         continue
 
                     if not ohlcv:
@@ -621,8 +625,13 @@ class V14PaperBot:
                             "volume": float(bar[5]),
                         }
 
-                        cash_avail = self.per_coin_cash[sym]
-                        actions = engine.tick(candle, cash_avail)
+                        try:
+                            cash_avail = self.per_coin_cash.get(sym, 0)
+                            actions = engine.tick(candle, cash_avail)
+                        except Exception as e:
+                            logger.error(f"Engine tick failed for {sym}: {e}\n{traceback.format_exc()}")
+                            continue
+                        
                         ts_dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
 
                         if actions:
