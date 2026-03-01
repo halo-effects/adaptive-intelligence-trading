@@ -259,11 +259,13 @@ class TradeTracker:
                 if key not in seen:
                     seen.add(key)
                     unique.append(t)
+            # Sort by close_time for chronological equity charts
+            unique.sort(key=lambda t: t.get('close_time', t.get('open_time', '')))
             with open(path, "w", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=[
                     "deal_id", "symbol", "open_time", "close_time", "regime",
                     "layers", "invested", "pnl", "return_pct", "duration_h",
-                ])
+                ], extrasaction='ignore')
                 writer.writeheader()
                 writer.writerows(unique)
         except Exception as e:
@@ -570,7 +572,14 @@ class V14PaperBot:
         exchange = ccxt.hyperliquid()
         exchange.load_markets()
 
-        last_candle_ts: Dict[str, int] = {s: 0 for s in self.symbols}
+        # Initialize last_candle_ts from state to avoid replaying old candles on restart
+        last_candle_ts: Dict[str, int] = {}
+        for s in self.symbols:
+            eng = self.engines[s]
+            if eng._last_candle_ts:
+                last_candle_ts[s] = eng._last_candle_ts
+            else:
+                last_candle_ts[s] = 0
 
         while not self._shutdown:
             try:
@@ -642,6 +651,7 @@ class V14PaperBot:
                                         pass
 
                         last_candle_ts[sym] = ts_ms
+                        engine._last_candle_ts = ts_ms
 
                 # Poll CFGI
                 try:

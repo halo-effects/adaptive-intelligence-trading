@@ -4,45 +4,45 @@
   "profile": "high",
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 28428.69,
+  "equity": 28299.58,
   "cash": 6188.51,
-  "pnl_pct": 184.29,
+  "pnl_pct": 183.0,
   "coins": {
     "ETH/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 3342.747627108792,
-      "current_price": 1977.5,
-      "unrealized_pnl": 941.31,
+      "current_price": 2006.8,
+      "unrealized_pnl": 921.1,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 2304.75,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 39.5
+      "cfgi": 41.0
     },
     "SOL/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 177.98740959991818,
-      "current_price": 84.885,
-      "unrealized_pnl": 973.87,
+      "current_price": 86.09,
+      "unrealized_pnl": 961.27,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 1861.79,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 44.0
+      "cfgi": 43.0
     },
     "LINK/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 17.795296420691248,
-      "current_price": 8.829,
-      "unrealized_pnl": 1726.1,
+      "current_price": 8.995,
+      "unrealized_pnl": 1694.15,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 3425.77,
@@ -55,14 +55,14 @@
       "side": "short",
       "layers": 0,
       "avg_entry": 2.3956033083158728,
-      "current_price": 1.37,
-      "unrealized_pnl": 3299.54,
+      "current_price": 1.39,
+      "unrealized_pnl": 3235.19,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 7707.06,
       "realized_pnl": 0.0,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 37.5
+      "cfgi": 40.0
     }
   },
   "lifecycle": {
@@ -135,8 +135,8 @@
   "deals_completed": 0,
   "win_rate": 0.0,
   "max_drawdown_pct": 3.12,
-  "uptime_hours": 39.29,
+  "uptime_hours": 40.3,
   "fear_greed_index": 35.9,
-  "last_update": "2026-03-01T13:59:23.933859+00:00",
+  "last_update": "2026-03-01T14:59:53.960160+00:00",
   "timeframe": "1h"
 }

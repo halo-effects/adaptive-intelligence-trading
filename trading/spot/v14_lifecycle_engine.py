@@ -130,6 +130,7 @@ class V14LifecycleEngine:
         self._last_trade_count: int = 0
         self._live_mode: bool = False
         self._candles_1h: List[dict] = []
+        self._last_candle_ts: int = 0  # Last processed 1h candle timestamp (ms)
         self.current_price: float = 0.0
         self.start_time: float = datetime.now(timezone.utc).timestamp()
 
@@ -255,6 +256,12 @@ class V14LifecycleEngine:
 
                     if self._engine.phase == Phase.LONG_DCA:
                         self._engine._long_dca_tick(date_ts, price)
+                        # Check orphaned short TP (manual phase override — close only, no new layers)
+                        if self._engine.short_coins > 0 and self._engine.short_tp > 0 and price <= self._engine.short_tp:
+                            old_unwinding = self._engine.unwinding
+                            self._engine.unwinding = True  # Prevent new layers
+                            self._engine._short_dca_tick(date_ts, price)
+                            self._engine.unwinding = old_unwinding
                     elif self._engine.phase == Phase.SHORT_DCA:
                         self._engine._short_dca_tick(date_ts, price)
 
@@ -278,6 +285,12 @@ class V14LifecycleEngine:
         # Phase-specific logic (EXACT order from V14 run() loop)
         if eng.phase == Phase.LONG_DCA:
             eng._long_dca_tick(date, price)
+            # Check orphaned short TP (manual phase override — close only, no new layers)
+            if eng.short_coins > 0 and eng.short_tp > 0 and price <= eng.short_tp:
+                old_unwinding = eng.unwinding
+                eng.unwinding = True
+                eng._short_dca_tick(date, price)
+                eng.unwinding = old_unwinding
             eng._check_top_signals(date, price, signals)
         elif eng.phase == Phase.SHORT_DCA:
             eng._short_dca_tick(date, price)
@@ -522,6 +535,7 @@ class V14LifecycleEngine:
             # Wrapper state
             '_last_daily_date': self._last_daily_date,
             '_live_mode': self._live_mode,
+            '_last_candle_ts': self._last_candle_ts,
             'start_time': self.start_time,
             'current_price': self.current_price,
         }
@@ -589,6 +603,7 @@ class V14LifecycleEngine:
         # Wrapper state
         self._last_daily_date = state.get('_last_daily_date')
         self._live_mode = state.get('_live_mode', False)
+        self._last_candle_ts = state.get('_last_candle_ts', 0)
         self.start_time = state.get('start_time', datetime.now(timezone.utc).timestamp())
         self.current_price = state.get('current_price', 0.0)
 

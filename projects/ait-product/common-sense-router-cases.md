@@ -31,14 +31,30 @@ Cases where rigid signal gates produce suboptimal decisions that a human (or AI 
 - **Structural support check**: Multiple bounces off a level = demand zone confirmation
 - **Time in phase check**: 7+ months in one direction with price stabilizing = potential regime exhaustion
 
+### Outcome (2026-03-01)
+- **Manual override executed**: HBAR flipped SHORT_DCA → LONG_DCA
+- Existing short closed during hourly catchup
+- HBAR immediately started cycling longs in $0.095-$0.105 range
+- Portfolio equity jumped $67K → $70K from catchup trades alone
+- Wrapper code updated: orphaned short TPs now checked during LONG_DCA phase
+
 ### Decision Framework
 This isn't about overriding the conviction stack — it's about adding a parallel "sanity check" layer:
 - Conviction stack says WHEN to flip (precise timing)
 - Common sense says WHETHER staying in current direction still makes sense (risk management)
 - If common sense says "no reasonable risk to flip" AND conviction is close-ish, consider early flip or at minimum stop adding to shorts
 
+### Monthly Chart Confirmation (2026-03-01)
+- 1M chart shows HBAR retesting the 2022-2023 accumulation range ($0.05-$0.10) — the exact zone it consolidated in for ~2 years before the Nov 2024 breakout
+- Monthly RSI neutral (42-51), no selling pressure
+- Price sitting on long-term structural support (green zone on chart)
+- However: project/coin interest may be fading — could grind sideways without catalyst
+- Implication: even if it doesn't go up, the short has played out. Risk/reward favors neutral or long.
+
 ### Brett's Input (2026-03-01)
-"If we did switch to longs, there is no reasonable capital risk. We are still above recent retest levels, bouncing along a level of support."
+- "If we did switch to longs, there is no reasonable capital risk. We are still above recent retest levels, bouncing along a level of support."
+- "It's kind of finding support and doesn't look like it has much other choice than to go up. Now there may not be much interest in the project or coin. So it may not be a great pick for the bear market or next bull cycle."
+- Monthly charts as context gates (not triggers) — confirmed principle. The monthly structure informs risk assessment, not entry timing.
 
 ---
 
