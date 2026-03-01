@@ -674,11 +674,8 @@ class V14PaperBot:
                 except Exception as e:
                     logger.error(f"State save failed: {e}")
 
-                # Run daily scanner refresh (once per day, after midnight UTC)
-                try:
-                    self._maybe_run_scanner()
-                except Exception as e:
-                    logger.error(f"Scanner refresh failed: {e}")
+                # Scanner moved to separate scheduled task (CPU-intensive, causes live loop crashes)
+                # See: trading/run_v14_scanner_task.py
 
                 # Sleep until next cycle
                 elapsed = time.time() - cycle_start
