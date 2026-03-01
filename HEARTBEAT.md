@@ -31,6 +31,16 @@
 - **Startup takes ~30s** for initial 200-candle catchup — exec sessions need timeout ≥ 120s
 - If restarting via exec, use `timeout=300` and `yieldMs=120000` to avoid false crash reports
 
+### V14 Paper Bot (Hyperliquid — HBAR/ATOM/LINK/NEAR) — LIVE as of 2026-02-28
+- Check `trading/spot/paper/v14/status.json` for bot health
+- Alert if: process not running or status.json stale (>65 min)
+- Coins: HBAR/USDT, ATOM/USDT, LINK/USDC, NEAR/USDT — 1h candles, daily signal ticks
+- Profile: Medium (1.5x leverage), BO=40%, Dev=2%, Mult=1.5x, 10 layers, TP=1.5%
+- Engine: V14 DCA-only with ROUTER v2 signals
+- Entry point: `python -u -m trading.spot.run_v14_paper --capital 10000 --profile medium --exchange hyperliquid --skip-backfill`
+- Scheduled Task: `V14PaperBot`
+- Backfill verified: +552% on $10K, matches standalone backtest
+
 ### Dashboard Sync
 - Task: `AIT_DashboardSync` (every 10 min — changed from 2 min to avoid GitHub Pages rate limit)
 - Verify `docs/data/v13/status.json` is fresh on GitHub Pages
