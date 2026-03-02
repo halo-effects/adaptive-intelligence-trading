@@ -62,10 +62,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .cc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .cc-id{display:flex;align-items:center;gap:10px}
 .coin-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:#fff;flex-shrink:0}
+.coin-icon.sol{background:linear-gradient(135deg,#9945FF,#14F195)}
+.coin-icon.xrp{background:linear-gradient(135deg,#23292F,#4A5568)}
+.coin-icon.ltc{background:linear-gradient(135deg,#BFBBBB,#D4D4D4)}
 .coin-icon.hbar{background:linear-gradient(135deg,#3A3A3A,#5A5A5A)}
-.coin-icon.atom{background:linear-gradient(135deg,#6F7390,#9A9DBF)}
-.coin-icon.link{background:linear-gradient(135deg,#2A5ADA,#5A8DEE)}
-.coin-icon.near{background:linear-gradient(135deg,#00C08B,#00E6A7)}
+.coin-icon.ada{background:linear-gradient(135deg,#0033AD,#1A53FF)}
 .cc-name{font-weight:700;font-size:1.05rem}
 .cc-sym{font-size:.7rem;color:var(--text3);font-weight:400}
 
@@ -221,7 +222,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .pf-coins{display:flex;gap:3px;margin-top:6px;justify-content:center;flex-wrap:wrap}
 .pf-arrow{font-size:1.2rem;color:var(--text3);align-self:center;margin:0 8px;opacity:.5}
 .fc-dot{width:18px;height:18px;border-radius:50%;font-size:.5rem;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center}
-.fc-dot.hbar{background:#3A3A3A}.fc-dot.atom{background:#6F7390}.fc-dot.link{background:#2A5ADA}.fc-dot.near{background:#00C08B}
+.fc-dot.sol{background:#9945FF}.fc-dot.xrp{background:#23292F}.fc-dot.ltc{background:#BFBBBB}.fc-dot.hbar{background:#3A3A3A}.fc-dot.ada{background:#0033AD}
 
 /* ── Charts Row ── */
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
@@ -516,7 +517,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 
 <!-- FOOTER -->
 <div class="footer">
-  Powered by <strong>AIT</strong> &middot; Adaptive Intelligence Trading V14 &middot;
+  Powered by <strong>AIT</strong> &middot; Adaptive Intelligence Trading V14-ETF &middot;
   <a href="index.html">Product Page</a><br>
   Auto-refreshes every 60s &middot; Next refresh in <span id="countdown">60</span>s
 </div>
@@ -540,12 +541,13 @@ var pC = function(v){return v>0?'var(--green)':v<0?'var(--red)':'var(--text)'};
 var pDec = function(p){return p>1000?2:p>1?4:6};
 
 var COIN_BASE = {
+  SOL:{icon:'sol',label:'SOL',name:'Solana',color:'#9945FF'},
+  XRP:{icon:'xrp',label:'XRP',name:'XRP',color:'#23292F'},
+  LTC:{icon:'ltc',label:'LTC',name:'Litecoin',color:'#BFBBBB'},
   HBAR:{icon:'hbar',label:'HBAR',name:'Hedera',color:'#3A3A3A'},
-  ATOM:{icon:'atom',label:'ATOM',name:'Cosmos',color:'#6F7390'},
-  LINK:{icon:'link',label:'LINK',name:'Chainlink',color:'#2A5ADA'},
-  NEAR:{icon:'near',label:'NEAR',name:'NEAR',color:'#00C08B'}
+  ADA:{icon:'ada',label:'ADA',name:'Cardano',color:'#0033AD'}
 };
-function cm(sym){var b=sym.split('/')[0];return COIN_BASE[b]||{icon:'hbar',label:b,name:b,color:'#888'}}
+function cm(sym){var b=sym.split('/')[0];return COIN_BASE[b]||{icon:'sol',label:b,name:b,color:'#888'}}
 
 var PHASE_DESC = {
   LONG_DCA:'Long grid active — buying dips, cycling TPs',
