@@ -973,8 +973,13 @@ class V14PaperBot:
                 send_telegram("🆕 <b>[V14-ETF]</b> fresh start — $10K, entering live trading")
             except Exception:
                 pass
+            # Set all engines to live mode and mark current time as last candle
+            # so the live loop only processes NEW candles from this point forward
+            now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
             for engine in self.engines.values():
                 engine._live_mode = True
+                engine._last_candle_ts = now_ms
+            self._fresh_start_ts = now_ms
             self._save_state()
             self._write_status()
         elif skip_backfill:

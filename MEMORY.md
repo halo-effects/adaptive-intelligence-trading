@@ -63,6 +63,27 @@
 - **State persistence**: state.json + trades.csv. Bot loads state.json on restart, overwrites disk edits from memory. Cannot easily void historical trades without code changes.
 - **CRITICAL**: Multiple v8 backtest files exist - only `v13_phase_backtest_v8.py` is correct. `v13_backtest_v8.py` produces -15% ROI on same coins.
 
+### V14-ETF Paper Bot (Hyperliquid - SOL/XRP/LTC/HBAR/ADA) - LIVE as of 2026-03-02
+- **Engine**: Same V14 DCA-only with ROUTER v2 signals
+- **Runner**: `trading/spot/run_v14etf_paper.py`
+- Coins: SOL/USDT, XRP/USDT, LTC/USDT, HBAR/USDT, ADA/USDT — 1h candles, daily signal ticks
+- Profile: High (1.5x leverage), BO=40%, Dev=1.5%, Mult=1.5x, 12 layers, TP=1.5%
+- Capital: $10,000 paper, $2,000/coin (equal weight)
+- State/status: `trading/spot/paper/v14etf/`
+- Dashboard: `docs/dashboardV14ETF.html`
+- Dashboard URL: https://halo-effects.github.io/adaptive-intelligence-trading/dashboardV14ETF.html
+- **Fresh start**: No backfill history, started 2026-03-02 with clean $10K
+- **Thesis**: ETF-candidate coins (pending/filed US spot ETFs) may have structural tailwind
+- Telegram: All notifications prefixed `[V14-ETF]`
+- Scheduled Task: **Not yet created** — needs elevated PS from Brett
+- `--fresh` flag: skips all historical candles, only processes new ones from startup time
+- Restart: `--skip-backfill` (loads existing state.json)
+
+### V13 Paper Bot — SUNSET (2026-03-02)
+- **Stopped.** V14 is the go-forward engine. V13 kept for reference only.
+- Final state: +184.5% equity ($28,449), all 4 coins in MARKDOWN tier 3 shorts
+- Process killed 2026-03-02, HEARTBEAT monitoring removed
+
 ### Legacy Bots (DEPRECATED/INACTIVE)
 - **Aster Spot Live (V12e)**: ASTER/USDT, $300 real capital. Not running since ~Feb 17. Task `AsterSpotLive` exists but no status.json.
 - **V12e Paper**: Hyperliquid ETH/SOL/BTC. Task `SpotPaperHyperliquid`. Deprioritized.
