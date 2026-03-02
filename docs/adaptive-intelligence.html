@@ -170,6 +170,9 @@ body {
   text-align: center; padding: 48px 24px; color: var(--text-body); font-size: 14px;
   border-top: 1px solid var(--border-light); margin-top: 80px;
 }
+.footer-links { display: flex; justify-content: center; gap: 32px; margin-bottom: 24px; flex-wrap: wrap; }
+.footer-links a { color: var(--text-body); text-decoration: none; }
+.footer-links a:hover { text-decoration: underline; }
 
 .results-block { margin-bottom: 48px; }
 .results-block h3 { font-size: 24px; font-weight: 500; color: #FFF; text-align: center; margin-bottom: 8px; }
@@ -508,9 +511,15 @@ body {
 </style>
 
 <!-- FOOTER -->
-<div class="footer">
-  <p>Adaptive Intelligence Trading &#183; Adaptive Intelligence Engine &#183; 2024&#8211;2026</p>
-</div>
+<footer class="footer">
+  <div class="footer-links">
+    <a href="./">Overview</a>
+    <a href="adaptive-intelligence.html">How it Works</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="dashboardV14.html">Live Dashboard</a>
+  </div>
+  <div>&copy; 2026 Halo Effects &middot; Adaptive Intelligence Trading</div>
+</footer>
 
 <script>
 (function(){
