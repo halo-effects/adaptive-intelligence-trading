@@ -263,6 +263,39 @@ This is exactly what the data showed tonight:
 
 ---
 
+## External Reference: 5-Day Gaussian Channel (CryptoCrew / Steve Courtney, 2026-03-02)
+**Source:** YouTube video shared by Brett — "WARNING: IT'S HAPPENING AGAIN"
+
+### What It Is
+- 5-day Gaussian Channel on BTC — green = bull run, red = crash/bottom phase
+- Lagging trend-following indicator (confirms markdown, doesn't predict tops)
+- Flipped red **Jan 16, 2026** at ~$92K (BTC had already topped ~$108K, down ~15%)
+
+### Historical Red-Flip to Bottom Timing
+| Cycle | Days from Red Flip to Bottom |
+|-------|------------------------------|
+| 2014  | 95 days                      |
+| 2018  | 145 days (pendulum overshoot)|
+| 2022  | 80 days (pendulum correction)|
+
+### Implied Bottom Window
+- Red flip: Jan 16, 2026
+- 80 days → **April 5, 2026**
+- 95 days → **April 21, 2026**
+- Steve's pendulum theory suggests closer to 80-95 days (not 145)
+
+### Assessment for V14
+- **Top detection**: Not useful — too lagging. Our 2D RSI bearish divergence fires 6-59 days BEFORE peak.
+- **Bottom timing**: Useful as macro sanity check. If our bottom conviction stack (CFGI<35, RSI<26, StochRSI K&D<20, below SMA200) fires within the April window, that's convergence from independent systems = higher confidence.
+- **Every cycle makes a double bottom** per Steve's analysis — aligns with our 2W StochRSI K≥5 gate (waits for confirmation after initial bottom).
+
+### Alt Recovery Ahead of BTC (Brett Observation, 2026-03-02)
+- As of early March 2026, alts are **way ahead of BTC** in the crash cycle — already experiencing 3D death crosses and severe oversold territory while BTC is still mid-markdown
+- Implication: alts front-ran the crash → what crashes first recovers first → alts could bottom and recover ahead of BTC
+- This would drive **BTC dominance down** — classic alt season trigger (BTC.D peaks during fear, falls as alts lead recovery)
+- **V14 positioning**: HBAR, ATOM, LINK, NEAR are all alts that would benefit from this rotation. DCA layers accumulating at/near lows.
+- **Risk**: BTC capitulation event could drag everything lower one more time — conviction bottom stack designed to catch this
+
 ## Current 2W StochRSI Status (all coins)
 All coins have K near 0 on 2W — at the BOTTOM of cycle, not top.
 ETH K=0.0, SOL K=0.0, BTC K=0.0, LINK K=0.4, XRP K=0.3

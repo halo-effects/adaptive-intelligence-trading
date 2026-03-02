@@ -18,18 +18,9 @@
 - Pipeline enabled (scanner → pipeline → trader)
 - Entry point: `python -u -m trading.spot.run_v12f_paper --exchange hyperliquid --pipeline`
 
-### V13 Paper Bot (Hyperliquid — ETH/SOL/LINK/XRP USDC) — LIVE as of 2026-02-25
-- Check `trading/spot/paper/v13/status.json` for bot health
-- Alert if: process not running or status.json stale (>65 min)
-- **Engine**: `v13_phase_backtest_v8.py` (the correct one — 43KB, NOT v13_backtest_v8.py)
-- Coins: ETH/USDC, SOL/USDC, LINK/USDC, XRP/USDC — 1h candles, daily signal ticks
-- Profile: High (T1=60%, T2=20%, T3=10%, symmetric shorts)
-- Backfill verified: exact match with standalone backtest (+184% portfolio ROI, $28,438 on $10K)
-- Uses `backfill_direct()` — calls v8 `run()` directly (no tick-by-tick wrapper drift)
-- Entry point: `python -u -m trading.spot.run_v13_paper --capital 10000 --profile high --exchange hyperliquid --skip-backfill`
-- Scheduled Task: **Not yet created** — needs elevated PS from Brett
-- **Startup takes ~30s** for initial 200-candle catchup — exec sessions need timeout ≥ 120s
-- If restarting via exec, use `timeout=300` and `yieldMs=120000` to avoid false crash reports
+### V13 Paper Bot — SUNSET (2026-03-02)
+- **Stopped.** V14 is the go-forward engine. V13 kept for reference only.
+- Final state: +184.5% equity ($28,449), all 4 coins in MARKDOWN tier 3 shorts
 
 ### V14 Paper Bot (Hyperliquid — HBAR/ATOM/LINK/NEAR) — LIVE as of 2026-02-28
 - Check `trading/spot/paper/v14/status.json` for bot health
