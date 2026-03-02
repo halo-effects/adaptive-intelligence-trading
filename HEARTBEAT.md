@@ -41,7 +41,7 @@
 - Fresh start (no backfill history) — started 2026-03-02 with $10K
 - Entry point: `python -u -m trading.spot.run_v14etf_paper --capital 10000 --profile high --exchange hyperliquid --fresh`
 - Telegram: All notifications prefixed with `[V14-ETF]`
-- Scheduled Task: **Not yet created** — needs elevated PS from Brett
+- Scheduled Task: `V14ETFPaperBot` (created 2026-03-02)
 - Dashboard: `docs/dashboardV14ETF.html`
 
 ### Dashboard Sync
