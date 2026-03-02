@@ -4,17 +4,17 @@
   "profile": "high",
   "exchange": "hyperliquid",
   "capital": 10000.0,
-  "equity": 28510.01,
+  "equity": 28549.32,
   "cash": 6188.51,
-  "pnl_pct": 185.1,
+  "pnl_pct": 185.49,
   "coins": {
     "ETH/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 3342.747627108792,
-      "current_price": 1950.8,
-      "unrealized_pnl": 959.72,
+      "current_price": 1947.0,
+      "unrealized_pnl": 962.34,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 2304.75,
@@ -27,22 +27,22 @@
       "side": "short",
       "layers": 0,
       "avg_entry": 177.98740959991818,
-      "current_price": 83.824,
-      "unrealized_pnl": 984.97,
+      "current_price": 83.87,
+      "unrealized_pnl": 984.49,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 1861.79,
       "realized_pnl": 114.87,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 37.0
+      "cfgi": 35.5
     },
     "LINK/USDC": {
       "state": "SHORTING",
       "side": "short",
       "layers": 0,
       "avg_entry": 17.795296420691248,
-      "current_price": 8.727,
-      "unrealized_pnl": 1745.74,
+      "current_price": 8.701,
+      "unrealized_pnl": 1750.74,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 3425.77,
@@ -55,14 +55,14 @@
       "side": "short",
       "layers": 0,
       "avg_entry": 2.3956033083158728,
-      "current_price": 1.36,
-      "unrealized_pnl": 3331.71,
+      "current_price": 1.35,
+      "unrealized_pnl": 3363.88,
       "next_so_price": null,
       "next_tp_price": null,
       "invested": 7707.06,
       "realized_pnl": 8324.52,
       "lifecycle_phase": "MARKDOWN",
-      "cfgi": 31.5
+      "cfgi": 32.0
     }
   },
   "lifecycle": {
@@ -135,8 +135,8 @@
   "deals_completed": 46,
   "win_rate": 87.0,
   "max_drawdown_pct": 3.12,
-  "uptime_hours": 15.04,
+  "uptime_hours": 15.2,
   "fear_greed_index": 40.45,
-  "last_update": "2026-03-02T11:52:35.220299+00:00",
+  "last_update": "2026-03-02T12:02:41.079196+00:00",
   "timeframe": "1h"
 }
