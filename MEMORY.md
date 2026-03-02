@@ -11,27 +11,29 @@
 - **Product name**: Adaptive Intelligence Trading (AIT) - decided 2026-02-14
 - **GitHub**: github.com/halo-effects/adaptive-intelligence-trading (account: halo-effects, geegee@haloeffects.net)
 - **Product page**: https://halo-effects.github.io/adaptive-intelligence-trading/ (served from `docs/` on main branch)
-- **Live Dashboard**: https://halo-effects.github.io/adaptive-intelligence-trading/dashboard.html (v3.0, data synced every 2 min)
-- **Local dashboard**: trading/live/dashboard.html (served on port 8080)
+- **Dashboards**: V13 (`dashboardV13.html`), V14 (`dashboardV14.html`), hidden pages: `adaptive-intelligence.html`, `wyckoff-lifecycle.html`
 - GitHub PAT: `openclaw-deploy` (repo scope, expires ~Mar 16 2026)
-- **Dashboard sync**: Windows Scheduled Task `AIT_DashboardSync` runs every 2 min, pushes status.json/trades.csv to `docs/data/` via `trading/sync_dashboard.ps1`
+- **Dashboard sync**: Windows Scheduled Task `AIT_DashboardSync` runs every 10 min, pushes status.json/trades.csv to `docs/data/` via `trading/sync_dashboard.ps1`
 - GitHub Pages config: Deploy from branch `main`, folder `/docs`
 
 ## Current Live Bots
 
-### Aster Spot Live (ASTER/USDT) - V12e
-- **Live** on Aster DEX, Medium profile, 1h timeframe, lifecycle enabled
-- Task: `AsterSpotLive` (updated to 1h trigger by Brett 2026-02-23)
-- Files: `trading/spot/lifecycle_trader.py` (class: `LifecycleTrader`), `trading/spot/run_live.py`
-- State/status: `trading/spot/live/aster/`
-- Dashboard: `docs/data/live-aster/` → private `d-474521b7c3545633.html`
-
-### V12e Paper (Hyperliquid - ETH/SOL/BTC USDC)
-- Hyperliquid, Medium profile, 1h timeframe, pipeline enabled
-- Task: `SpotPaperHyperliquid`
-- Coins: ETH/USDC, SOL/USDC, BTC/USDC
-- State/status: `trading/spot/paper/hyperliquid/`
-- Dashboard: `docs/data/v12e/` → public `dashboardV12.html`
+### V14 Paper Bot (Hyperliquid - HBAR/ATOM/LINK/NEAR) - LIVE as of 2026-02-28
+- **Engine**: `trading/spot/backtest_results/v13/v14_dca_engine.py` (DCA-only with ROUTER v2 signals)
+- **Wrapper**: `trading/spot/v14_lifecycle_engine.py`
+- **Runner**: `trading/spot/run_v14_paper.py`
+- Coins: HBAR/USDT, ATOM/USDT, LINK/USDC, NEAR/USDT — 1h candles, daily signal ticks
+- Profile: Medium (1.5x leverage), BO=40%, Dev=2%, Mult=1.5x, 10 layers, TP=1.5%
+- Capital: $10,000 paper, $2,500/coin (equal weight)
+- State/status: `trading/spot/paper/v14/`
+- Task: `V14PaperBot` (IdleSettings fixed 2026-03-01)
+- Dashboard: `docs/dashboardV14.html`, scanner: `docs/data/v14/scanner.json`
+- **Backfill verified**: +552% on $10K, matches standalone backtest
+- **Current state (2026-03-01)**: All 4 coins LONG_DCA, equity ~$66,515 (+565%), 361 trades, 97.5% win rate, $760 fees
+- **Daily scanner**: runs once/day after 00:30 UTC, backtests 15 coins, qualifies top performers
+- **Incidents**: `trading/spot/incident_schema.py` + `trading/spot/paper/v14/incidents/`
+- **Leverage note**: Engine always runs at 1.0 internally; wrapper tracks leverage for liq price only
+- **Price feeds**: `HL_PRICE_MAP` → perps (HBAR/ATOM/NEAR have no spot on Hyperliquid)
 
 ### V13 Paper Bot (Hyperliquid - ETH/SOL/LINK/XRP USDC) - LIVE as of 2026-02-25
 - **Engine**: `v13_phase_backtest_v8.py` (43KB) - the CORRECT v8, NOT `v13_backtest_v8.py` (38KB)
@@ -41,9 +43,8 @@
 - Profile: High (T1=60%, T2=20%, T3=10%, symmetric shorts, DCA 5% BO, 12 layers)
 - Capital: $10,000 paper, $2,500/coin
 - State/status: `trading/spot/paper/v13/`
-- **Current state (2026-02-26)**: All 4 coins in MARKDOWN, tier 3 shorts, equity $29,795 (+198%)
-- **LH_LL gate active** since 2026-02-26 restart (PID 10752)
-- **Brett directive (2026-02-25)**: "Just focus on V13 - our most valuable asset now"
+- **Current state (2026-03-01)**: All 4 coins in MARKDOWN, tier 3 shorts, equity ~$28,564 (+186%)
+- **LH_LL gate active** since 2026-02-26 restart
 - **4 phases**: DCA → MARKUP → ROUTER → MARKDOWN (FLAT renamed to ROUTER 2026-02-27)
 - **Entry gates (updated 2026-02-26)**:
   - MARKUP: HH_HL ≥ 2 + Fib_support (original)
@@ -62,18 +63,11 @@
 - **State persistence**: state.json + trades.csv. Bot loads state.json on restart, overwrites disk edits from memory. Cannot easily void historical trades without code changes.
 - **CRITICAL**: Multiple v8 backtest files exist - only `v13_phase_backtest_v8.py` is correct. `v13_backtest_v8.py` produces -15% ROI on same coins.
 
-### Aster Spot Live Bot - STATUS UNKNOWN (2026-02-25)
-- `AsterSpotLive` task state=Ready but no LastRunTime, no status.json exists
-- No Python process found running Aster as of 2026-02-25 evening
-- Last known status was 2026-02-17 (9+ days stale before file disappeared)
-
-### V12f Paper Bot - RUNNING BUT BROKEN STATUS (2026-02-25)
-- Process running (PID 10352) but `trading/spot/paper/v12f/` directory doesn't exist
-- Status file not being written - may need path fix in runner
-
-### Legacy: Aster Futures Bot (DEPRECATED)
-- Was HYPE/USDT dual-tracking bidirectional DCA on Aster futures
-- Task `AsterTradingBot` is **Disabled** - superseded by spot V12e
+### Legacy Bots (DEPRECATED/INACTIVE)
+- **Aster Spot Live (V12e)**: ASTER/USDT, $300 real capital. Not running since ~Feb 17. Task `AsterSpotLive` exists but no status.json.
+- **V12e Paper**: Hyperliquid ETH/SOL/BTC. Task `SpotPaperHyperliquid`. Deprioritized.
+- **V12f Paper**: Broken status (no output dir). Deprioritized.
+- **Aster Futures**: HYPE/USDT dual-tracking. Task `AsterTradingBot` **Disabled**.
 
 ### Key Technical Lessons
 - reduceOnly orders fail in net position mode when opposing side has larger position - don't use reduceOnly
@@ -107,15 +101,10 @@
 - **Bear bias system finalized (2026-02-27)**: Bear ON = engine top signal (2W OB93/1W OB85/K<50). Bear OFF = **coin-specific Weekly CFGI RSI(7) < 40**. Upgraded from Daily RSI(14)<35 — weekly timeframe + faster period improved BTC by $4.4K combined. StochRSI tested and rejected (normalizes away signal differences on CFGI). CCU "Bottom Is In" tested and rejected (sentiment leads price — CFGI fires first).
 - **Timeframe > calculation method (2026-02-27)**: Switching Daily→Weekly RSI improved results more than switching RSI→StochRSI. Weekly RSI(7) on CFGI is a novel indicator unique to our system.
 - **Coin-specific CFGI > market average CFGI (2026-02-26)**: BTC Jun 2024 entry correctly allowed by coin-specific CFGI (BTC sentiment had recovered) while market average still showed fear.
-- **All bias trigger approaches tested have flaws (2026-02-26)**: Engine top signals miss new coins (SOL bootstrap). Death cross chatters during consolidation (dozens of daily flips). SMA200 kills bear bottom recovery entries. No universal low-frequency regime trigger found yet.
-- **Bear bias system finalized (2026-02-27)**: Bear ON = engine top signal (2W OB93/1W OB85/K<50). Bear OFF = **coin-specific Weekly CFGI RSI(7) < 40**. Upgraded from Daily RSI(14)<35 — weekly timeframe + faster period improved BTC by $4.4K combined. StochRSI tested and rejected (normalizes away signal differences on CFGI). CCU "Bottom Is In" tested and rejected (sentiment leads price — CFGI fires first).
-- **Timeframe > calculation method (2026-02-27)**: Switching Daily→Weekly RSI improved results more than switching RSI→StochRSI. Weekly RSI(7) on CFGI is a novel indicator unique to our system.
-- **Coin-specific CFGI > market average CFGI (2026-02-26)**: BTC Jun 2024 entry correctly allowed by coin-specific CFGI (BTC sentiment had recovered) while market average still showed fear.
 - **V13 vs V12f DCA gap (2026-02-27)**: V13 barely trades during DCA phases (daily ticks, ~5-7 trades/5yr). V12f's adaptive DCA on 1h had 110+ ETH trades compounding. ETH: +284% vs +1,283%. Building isolated DCA test harness to matrix-sweep V12f-style params within V13 DCA windows on 15m candles.
 - **DCA phases are structurally long-biased (2026-02-27)**: V13 routes bearish ranging to FLAT→MARKDOWN, not through DCA. 79% of DCA windows exit to MARKUP across all coins. Dual-track (long+short) DCA during DCA phase LOSES money — shorts fight the structural bias. Long-only DCA is correct.
 - **FLAT phase is the real bottleneck (2026-02-27)**: HVF was designed for FLAT routing but is dead code (logging only). 42-day timeout defaults to DCA when BTC should go MARKDOWN. HVF>0.3 + SMA50_ABOVE → DCA fast-track has 100% accuracy (20/20) saving ~1,434 FLAT days. Predicting MARKDOWN from FLAT is much harder — existing LH_LL+ADX+Fib gate is the right tool.
 - **HVF fast-track fails for SOL (2026-02-27)**: ETF-era test showed SOL goes from +381% to -27% with ANY HVF filter variant (SMA50, SMA200, CFGI>40 all tried). SOL's 131-day ranging at $15-25 in 2023 gets split into bad DCA windows. Works for ETH+BTC only. No universal filter found.
-- **All bias trigger approaches tested have flaws (2026-02-27)**: Engine top signals miss new coins (SOL bootstrap). Death cross chatters during consolidation (dozens of daily flips). SMA200 kills bear bottom recovery entries. No universal low-frequency regime trigger found yet.
 - **ETF era is the relevant test period (2026-02-27)**: Brett directive — Jan 2023+ only. Pre-ETF crypto (2020-2022) was structurally different, too volatile. Don't let pre-ETF data skew V13 decisions.
 - **Graceful runoff inflates DCA results (2026-02-27)**: First DCA test showed +$494 including longs riding into markup. Pure DCA grinding within windows is much more modest (+1-2% avg). Phase classification speed matters more than DCA parameter tuning.
 - **LINK/XRP daily data backfilled (2026-02-26)**: LINK/USDC 3040 rows, XRP/USDC 2819 rows from Jan 2019. V13SignalPack fails to load them ("Index 1-dimensional" error) — needs weekly candles and possible structure fix.
