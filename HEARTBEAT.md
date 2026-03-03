@@ -2,14 +2,15 @@
 
 ## Priority Checks (every heartbeat)
 
-### Aster Spot Live Bot (ASTER/USDT)
-- Check `trading/spot/live/aster/status.json` for bot health
-- Alert if: `running` is false, drawdown > 15%, or regime changes to EXTREME
-- Check status.json `last_update` — stale if >65 min old (1h candle + 5min grace)
-- **Capital: $300** (rebased 2026-02-23). Alert if status.json shows different capital value.
-- Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "AsterSpotLive"` (task alone won't kill running process)
+### V14 Live Bot (Aster — ASTER/USDT) ⚠️ REAL MONEY
+- Check `trading/spot/live/v14/status.json` for bot health
+- Alert if: `running` is false, drawdown > 15%, or status.json stale (>65 min)
+- **Capital: $300** real USDT. Alert if balance drifts significantly.
+- Profile: High, 12 layers, 1.5% TP, 1.5x leverage
+- Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "V14LiveAster"` (task not yet created)
+- Manual restart: `python -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill`
 - Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
-- Config: ASTER/USDT, Medium profile, 1h timeframe, V12f lifecycle + CFGI gates enabled
+- Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
 
 ### V12f Paper Bot (Hyperliquid — ETH/SOL/BTC USDC)
 - Check `trading/spot/paper/v12f/status.json` for bot health

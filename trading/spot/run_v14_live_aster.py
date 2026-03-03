@@ -514,12 +514,16 @@ class V14LiveBot:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.start_date = start_date
         self.dry_run = dry_run
-        self.leverage = V14_PROFILES.get(profile, V14_PROFILES['high'])['leverage']
+        # Spot trading = no leverage. Override to 1.0 regardless of profile.
+        # High profile DCA params (Dev=1.5%, 12 layers, TP=1.5%) still apply.
+        self.leverage = 1.0
 
         # V14 engine (single coin, full capital allocation)
         self.engine = V14LifecycleEngine(
             symbol=SYMBOL, capital=capital, profile=profile
         )
+        # Force engine leverage to 1.0 for spot (profile may say 1.5)
+        self.engine.leverage = 1.0
 
         # Exchange client
         self.exchange_client = SpotExchangeClient()

@@ -11,12 +11,33 @@
 - **Product name**: Adaptive Intelligence Trading (AIT) - decided 2026-02-14
 - **GitHub**: github.com/halo-effects/adaptive-intelligence-trading (account: halo-effects, geegee@haloeffects.net)
 - **Product page**: https://halo-effects.github.io/adaptive-intelligence-trading/ (served from `docs/` on main branch)
-- **Dashboards**: V13 (`dashboardV13.html`), V14 (`dashboardV14.html`), hidden pages: `adaptive-intelligence.html`, `wyckoff-lifecycle.html`
+- **Dashboards**: V13 (`dashboardV13.html`), V14 (`dashboardV14.html`), V14 Live (`d-984ae0d4ab9dc1a5.html`), hidden pages: `adaptive-intelligence.html`, `wyckoff-lifecycle.html`
 - GitHub PAT: `openclaw-deploy` (repo scope, expires ~Mar 16 2026)
 - **Dashboard sync**: Windows Scheduled Task `AIT_DashboardSync` runs every 10 min, pushes status.json/trades.csv to `docs/data/` via `trading/sync_dashboard.ps1`
 - GitHub Pages config: Deploy from branch `main`, folder `/docs`
 
 ## Current Live Bots
+
+### V14 Live Bot (Aster - ASTER/USDT) - LIVE as of 2026-03-03
+- **Engine**: V14 DCA-only with ROUTER v2 signals (same as paper)
+- **Runner**: `trading/spot/run_v14_live_aster.py`
+- **Exchange**: Aster (spot for LONG_DCA, futures available for SHORT_DCA)
+- Coin: ASTER/USDT — 1h candles, daily signal ticks
+- Profile: High (1.5x leverage), BO=40%, Dev=1.5%, Mult=1.5x, 12 layers, TP=1.5%
+- Capital: $300 real USDT (started with $310.58)
+- State/status: `trading/spot/live/v14/`
+- Dashboard: `docs/d-984ae0d4ab9dc1a5.html` (coin-agnostic, no "Aster" in UI)
+- Dashboard URL: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
+- Sync: `docs/data/v14-live/` (also mirrors to `docs/data/live-aster/` for old dashboard)
+- Telegram: `[V14-LIVE]` prefix
+- API keys: `trading/spot/live/v14/.env` (gitignored)
+- Scheduled Task: **Awaiting creation** — `V14LiveAster`, needs elevated PS from Brett
+- **NEAR rejected**: Only perpetuals on Aster (no spot), funding fees would destroy $300 account
+- **ASTER chosen**: Only coin with both spot AND futures on Aster exchange
+- **Signal limitation**: Only ~5 months data — 2W StochRSI/top detection NaN, stays in LONG_DCA
+- **Coin is swappable**: Brett said "if NEAR doesn't work out, we can switch coins to something like HYPE"
+- **First trades**: L1 126.11 @ $0.7136 ($90), L2 90.78 @ $0.6939 ($63)
+- **Bugs fixed at launch**: CCXT precision-as-float TypeError, Windows cp1252 emoji encoding
 
 ### V14 Paper Bot (Hyperliquid - HBAR/ATOM/LINK/NEAR) - LIVE as of 2026-02-28
 - **Engine**: `trading/spot/backtest_results/v13/v14_dca_engine.py` (DCA-only with ROUTER v2 signals)
