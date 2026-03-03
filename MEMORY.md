@@ -355,6 +355,7 @@ BTC, ETH, XRP, BNB, SOL, LINK, ADA, LTC, AVAX, DOT, UNI, AAVE, NEAR, HBAR, MATIC
 - **Output**: `docs/data/v14/cycle_scanner.json` - ranked coins for dashboard consumption
 - **Research doc**: `projects/ait-product/bear-market-coin-research.md`
 - **Hyperliquid**: 45 quality coins on perps. GRT not available. Aster spot too limited (49 pairs, mostly micro).
+- **Production exchange decision (2026-03-03)**: Hyperliquid is the target production exchange. Coin universe built around HL offerings. Aster is small live test only ($300).
 - **Lesson**: Simple daily range ≠ DCA profitability. Need to simulate actual cycle completion with capital lock-up.
 - **Lesson**: Don't build narrative without data. Brett called out unverified DeFi thesis - "Did you find that in your research or just from what I originally said?"
 

@@ -45,6 +45,12 @@
 - Scheduled Task: `V14ETFPaperBot` (created 2026-03-02)
 - Dashboard: `docs/dashboardV14ETF.html`
 
+### V14 DCA Cycle Scanner
+- New tool: `trading/spot/v14_cycle_scanner.py` — scores coins by DCA cycle velocity
+- Output: `docs/data/v14/cycle_scanner.json`
+- Not yet scheduled — run manually or wire into periodic task
+- Brett wants real-time capital rotation based on scanner rankings
+
 ### Dashboard Sync
 - Task: `AIT_DashboardSync` (every 10 min — changed from 2 min to avoid GitHub Pages rate limit)
 - Verify `docs/data/v13/status.json` is fresh on GitHub Pages
