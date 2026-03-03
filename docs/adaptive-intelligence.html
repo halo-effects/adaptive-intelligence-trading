@@ -433,6 +433,208 @@ body {
 </div>
 </div>
 
+<!-- EARNINGS CALCULATOR -->
+<div style="padding: 80px 0 0;">
+<div class="dark-section" id="calculator-section">
+  <h2 style="font-size:36px; font-weight:500; color:#FFF; text-align:center; margin-bottom:8px;">See What You Could Have Earned</h2>
+  <p style="text-align:center; color:var(--text-body-dark); font-size:16px; margin-bottom:8px; max-width:700px; margin-left:auto; margin-right:auto;">Enter your starting capital and time period to see projected returns based on actual bot performance data.</p>
+  <p style="text-align:center; color:var(--text-tertiary-dark); font-size:13px; margin-bottom:40px;">All calculations use real, verified paper trading results &mdash; compounded daily with no additional deposits or withdrawals.</p>
+
+  <div id="calc-container" style="max-width:800px; margin:0 auto;">
+    <!-- Inputs -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:32px;">
+      <div>
+        <label style="display:block; font-size:13px; font-weight:600; color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Initial Deposit</label>
+        <div style="position:relative;">
+          <span style="position:absolute; left:16px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.4); font-size:18px; font-weight:600;">$</span>
+          <input type="text" id="calc-capital" value="10,000" inputmode="numeric"
+            style="width:100%; padding:14px 16px 14px 32px; background:var(--bg-card-dark); border:1px solid rgba(255,255,255,0.15); border-radius:10px; color:#FFF; font-size:18px; font-weight:600; font-family:var(--font); outline:none; transition:border-color 0.2s;"
+            onfocus="this.style.borderColor='var(--ait-blue)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+        </div>
+      </div>
+      <div>
+        <label style="display:block; font-size:13px; font-weight:600; color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Number of Days <span id="calc-max-label" style="color:var(--ait-blue); font-weight:500; text-transform:none;">(Max --- Days)</span></label>
+        <input type="range" id="calc-days-slider" min="1" max="519" value="519"
+          style="width:100%; margin-bottom:8px; accent-color:var(--ait-blue);">
+        <input type="number" id="calc-days" value="519" min="1" max="519"
+          style="width:100%; padding:14px 16px; background:var(--bg-card-dark); border:1px solid rgba(255,255,255,0.15); border-radius:10px; color:#FFF; font-size:18px; font-weight:600; font-family:var(--font); outline:none; transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='var(--ait-blue)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div style="background:rgba(34,105,252,0.08); border:1px solid rgba(34,105,252,0.25); border-radius:12px; padding:28px; margin-bottom:24px;">
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; text-align:center;" id="calc-results">
+        <div>
+          <div id="calc-equity" style="font-size:32px; font-weight:700; color:var(--profit); line-height:1;">--</div>
+          <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px;">Final Portfolio Value</div>
+        </div>
+        <div>
+          <div id="calc-return" style="font-size:32px; font-weight:700; color:var(--profit); line-height:1;">--</div>
+          <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px;">Total Return</div>
+        </div>
+        <div>
+          <div id="calc-roi" style="font-size:32px; font-weight:700; color:#4A8AFF; line-height:1;">--</div>
+          <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px;">ROI</div>
+        </div>
+        <div>
+          <div id="calc-daily" style="font-size:32px; font-weight:700; color:#4A8AFF; line-height:1;">--</div>
+          <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px;">Avg Daily Return</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary stats -->
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; text-align:center; margin-bottom:24px;">
+      <div style="background:var(--bg-card-dark); border-radius:10px; padding:16px;">
+        <div id="calc-winrate" style="font-size:24px; font-weight:700; color:var(--profit); line-height:1;">--</div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px;">Win Rate</div>
+      </div>
+      <div style="background:var(--bg-card-dark); border-radius:10px; padding:16px;">
+        <div id="calc-trades" style="font-size:24px; font-weight:700; color:#FFF; line-height:1;">--</div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px;">Estimated Trades</div>
+      </div>
+      <div style="background:var(--bg-card-dark); border-radius:10px; padding:16px;">
+        <div id="calc-period" style="font-size:24px; font-weight:700; color:#FFF; line-height:1;">--</div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px;">Trading Period</div>
+      </div>
+    </div>
+
+    <p style="text-align:center; color:var(--text-tertiary-dark); font-size:12px; max-width:600px; margin:0 auto;">
+      Hypothetical results based on actual V14 paper bot performance. Assumes equal-weight allocation across 4 coins, full profit compounding, and no additional deposits or withdrawals. Past performance does not guarantee future results.
+    </p>
+  </div>
+
+  <div id="calc-loading" style="text-align:center; padding:40px; color:var(--text-body-dark);">Loading calculator data...</div>
+</div>
+</div>
+
+<style>
+#calc-container { display: none; }
+#calc-container.loaded { display: block; }
+@media (max-width: 768px) {
+  #calc-results { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  #calc-results > div > div:first-child { font-size: 24px !important; }
+  #calc-container > div:first-child { grid-template-columns: 1fr !important; }
+}
+</style>
+
+<script>
+(function(){
+  var equityData = null;
+
+  function formatUsd(n) {
+    if (n >= 1e9) return '$' + (n/1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M';
+    if (n >= 1e4) return '$' + Math.round(n).toLocaleString('en-US');
+    return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function parseCapital(s) {
+    return parseFloat(s.replace(/[^0-9.]/g, '')) || 0;
+  }
+
+  function formatInput(val) {
+    var n = parseFloat(val.replace(/[^0-9.]/g, ''));
+    if (isNaN(n)) return '';
+    return Math.round(n).toLocaleString('en-US');
+  }
+
+  function calculate() {
+    if (!equityData) return;
+    var eq = equityData.daily_equity;
+    var maxDays = eq.length;
+    var capital = parseCapital(document.getElementById('calc-capital').value);
+    var days = parseInt(document.getElementById('calc-days').value) || maxDays;
+    if (days > maxDays) days = maxDays;
+    if (days < 1) days = 1;
+    if (capital <= 0) capital = 1;
+
+    // Get equity at start and end of the requested window
+    var startIdx = maxDays - days;
+    if (startIdx < 0) startIdx = 0;
+    var startEquity = eq[startIdx].equity;
+    var endEquity = eq[eq.length - 1].equity;
+
+    // Multiplier: how much $1 invested at startIdx became at end
+    var multiplier = endEquity / startEquity;
+    var finalValue = capital * multiplier;
+    var totalReturn = finalValue - capital;
+    var roiPct = (multiplier - 1) * 100;
+    var dailyAvg = days > 0 ? (Math.pow(multiplier, 1 / days) - 1) * 100 : 0;
+
+    // Estimate trades proportionally
+    var totalTrades = equityData.total_deals || 0;
+    var estTrades = Math.round(totalTrades * (days / maxDays));
+
+    // Date range
+    var startDate = eq[startIdx].date;
+    var endDate = eq[eq.length - 1].date;
+    var startParts = startDate.split('-');
+    var period = startParts[1] + '/' + startParts[2].substring(0,2) + '/' + startParts[0].substring(2);
+
+    document.getElementById('calc-equity').textContent = formatUsd(finalValue);
+    document.getElementById('calc-equity').style.color = totalReturn >= 0 ? 'var(--profit)' : 'var(--loss)';
+    document.getElementById('calc-return').textContent = (totalReturn >= 0 ? '+' : '') + formatUsd(Math.abs(totalReturn));
+    document.getElementById('calc-return').style.color = totalReturn >= 0 ? 'var(--profit)' : 'var(--loss)';
+    document.getElementById('calc-roi').textContent = (roiPct >= 0 ? '+' : '') + roiPct.toFixed(1) + '%';
+    document.getElementById('calc-daily').textContent = dailyAvg.toFixed(2) + '%';
+    document.getElementById('calc-winrate').textContent = (equityData.win_rate || 0).toFixed(1) + '%';
+    document.getElementById('calc-trades').textContent = estTrades.toLocaleString('en-US');
+    document.getElementById('calc-period').textContent = days + ' days';
+  }
+
+  function init(data) {
+    equityData = data;
+    var maxDays = data.daily_equity.length;
+
+    document.getElementById('calc-max-label').textContent = '(Max ' + maxDays + ' Days)';
+    document.getElementById('calc-days-slider').max = maxDays;
+    document.getElementById('calc-days-slider').value = maxDays;
+    document.getElementById('calc-days').max = maxDays;
+    document.getElementById('calc-days').value = maxDays;
+
+    document.getElementById('calc-loading').style.display = 'none';
+    document.getElementById('calc-container').classList.add('loaded');
+
+    // Wire up events
+    var capitalInput = document.getElementById('calc-capital');
+    var daysSlider = document.getElementById('calc-days-slider');
+    var daysInput = document.getElementById('calc-days');
+
+    capitalInput.addEventListener('input', function() { calculate(); });
+    capitalInput.addEventListener('blur', function() {
+      this.value = formatInput(this.value);
+      calculate();
+    });
+
+    daysSlider.addEventListener('input', function() {
+      daysInput.value = this.value;
+      calculate();
+    });
+
+    daysInput.addEventListener('input', function() {
+      var v = parseInt(this.value);
+      if (v > maxDays) { this.value = maxDays; v = maxDays; }
+      if (v < 1) v = 1;
+      daysSlider.value = v;
+      calculate();
+    });
+
+    calculate();
+  }
+
+  // Load data
+  fetch('data/v14/daily_equity.json')
+    .then(function(r) { return r.json(); })
+    .then(init)
+    .catch(function(e) {
+      document.getElementById('calc-loading').textContent = 'Calculator temporarily unavailable.';
+      console.error('Calculator load error:', e);
+    });
+})();
+</script>
+
 <!-- BATTLE-TESTED DEVELOPMENT -->
 <div style="padding: 80px 0 0;">
 <div style="background: #0A1628; border-radius: 16px; padding: 64px 32px; margin-left: 16px; margin-right: 16px;">
