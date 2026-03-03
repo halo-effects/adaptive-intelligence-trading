@@ -1,14 +1,14 @@
 {
-  "saved_at": "2026-03-02T21:17:12.983537+00:00",
+  "saved_at": "2026-03-03T03:59:16.314903+00:00",
   "capital": 10000.0,
-  "cash": 20997.97580854235,
+  "cash": 21142.054448867035,
   "per_coin_cash": {
     "HBAR/USDT": 10009.680379190406,
     "ATOM/USDT": 568.0612109136306,
     "LINK/USDC": 2756.0320288078283,
-    "NEAR/USDT": 7664.202189630481
+    "NEAR/USDT": 7808.280829955171
   },
-  "deal_counter": 371,
+  "deal_counter": 373,
   "open_deals": {
     "ATOM/USDT:long": {
       "deal_id": 357,
@@ -35,12 +35,12 @@
       "invested": 4289.125031903848
     },
     "NEAR/USDT:long": {
-      "deal_id": 371,
+      "deal_id": 373,
       "symbol": "NEAR/USDT",
-      "open_time": "2026-03-02T17:00:00+00:00",
+      "open_time": "2026-03-03T02:00:00+00:00",
       "regime": "LONG_DCA",
       "layers": 1,
-      "invested": 3242.005916523704
+      "invested": 3302.617544436145
     }
   },
   "engines": {
@@ -72,7 +72,7 @@
       "short_pnl": 8517.85961940897,
       "early_warning_date": null,
       "failsafe_armed": false,
-      "peak_2w_k": 6.243594799928313,
+      "peak_2w_k": 6.963112211279771,
       "ob93_armed": false,
       "ob93_armed_date": null,
       "unwinding": false,
@@ -83,11 +83,11 @@
       "adx_below_20_streak": 0,
       "router_from_top": false,
       "router_from_markdown": false,
-      "_last_daily_date": "2026-03-02",
+      "_last_daily_date": "2026-03-03",
       "_live_mode": true,
-      "_last_candle_ts": 1772481600000,
+      "_last_candle_ts": 1772503200000,
       "start_time": 1772333044.542687,
-      "current_price": 0.099628
+      "current_price": 0.096872
     },
     "ATOM/USDT": {
       "symbol": "ATOM/USDT",
@@ -128,11 +128,11 @@
       "adx_below_20_streak": 0,
       "router_from_top": false,
       "router_from_markdown": false,
-      "_last_daily_date": "2026-03-02",
+      "_last_daily_date": "2026-03-03",
       "_live_mode": true,
-      "_last_candle_ts": 1772481600000,
+      "_last_candle_ts": 1772503200000,
       "start_time": 1772333044.734216,
-      "current_price": 1.85
+      "current_price": 1.8436
     },
     "LINK/USDC": {
       "symbol": "LINK/USDC",
@@ -173,11 +173,11 @@
       "adx_below_20_streak": 0,
       "router_from_top": false,
       "router_from_markdown": false,
-      "_last_daily_date": "2026-03-02",
+      "_last_daily_date": "2026-03-03",
       "_live_mode": true,
-      "_last_candle_ts": 1772481600000,
+      "_last_candle_ts": 1772503200000,
       "start_time": 1772333044.940803,
-      "current_price": 8.9987
+      "current_price": 8.917
     },
     "NEAR/USDT": {
       "symbol": "NEAR/USDT",
@@ -185,17 +185,17 @@
       "profile": "medium",
       "leverage": 1.5,
       "phase": "LONG_DCA",
-      "capital": 7564.032070705336,
+      "capital": 7705.447080175452,
       "phase_start_date": "2026-01-29 00:00:00",
-      "long_coins": 2468.97107343211,
-      "long_avg_entry": 1.3131,
+      "long_coins": 2394.0685352926025,
+      "long_avg_entry": 1.3795,
       "long_layers": 1,
-      "long_last_buy": "2026-03-02 17:00:00",
-      "long_tp": 1.3327964999999997,
-      "long_cost": 3242.0059165237035,
-      "long_trades": 38,
-      "long_wins": 37,
-      "long_pnl": 3795.8725148360227,
+      "long_last_buy": "2026-03-03 02:00:00",
+      "long_tp": 1.4001924999999997,
+      "long_cost": 3302.617544436145,
+      "long_trades": 40,
+      "long_wins": 39,
+      "long_pnl": 3999.216559781834,
       "short_coins": 0,
       "short_avg_entry": 0,
       "short_layers": 0,
@@ -214,15 +214,15 @@
       "top_detected": true,
       "conviction_fired": true,
       "markup_cycles_completed": 2,
-      "total_fees": 100.17011892514148,
+      "total_fees": 102.833749779715,
       "adx_below_20_streak": 0,
       "router_from_top": false,
       "router_from_markdown": false,
-      "_last_daily_date": "2026-03-02",
+      "_last_daily_date": "2026-03-03",
       "_live_mode": true,
-      "_last_candle_ts": 1772481600000,
+      "_last_candle_ts": 1772503200000,
       "start_time": 1772333045.106119,
-      "current_price": 1.3253
+      "current_price": 1.3795
     }
   }
 }

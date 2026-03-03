@@ -138,8 +138,9 @@ def load_daily_candles(symbol_usdt: str) -> pd.DataFrame:
 class TradeTracker:
     """Tracks trades from engine actions and writes trades.csv."""
 
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path, leverage: float = 1.0):
         self.output_dir = output_dir
+        self.leverage = leverage
         self.trades: List[dict] = []
         self._deal_counter = 0
         self._open_deals: Dict[str, dict] = {}
@@ -175,7 +176,7 @@ class TradeTracker:
                 key = f"{symbol}:long"
                 deal = self._open_deals.pop(key, None)
                 if deal:
-                    pnl = act.get("pnl", 0.0)
+                    pnl = act.get("pnl", 0.0) * self.leverage
                     invested = deal["invested"]
                     ret_pct = (pnl / invested * 100) if invested > 0 else 0.0
                     open_dt = datetime.fromisoformat(deal["open_time"])
@@ -222,7 +223,7 @@ class TradeTracker:
                 key = f"{symbol}:short"
                 deal = self._open_deals.pop(key, None)
                 if deal:
-                    pnl = act.get("pnl", 0.0)
+                    pnl = act.get("pnl", 0.0) * self.leverage
                     invested = deal["invested"]
                     ret_pct = (pnl / invested * 100) if invested > 0 else 0.0
                     open_dt = datetime.fromisoformat(deal["open_time"])
@@ -339,7 +340,7 @@ class V14PaperBot:
         self.per_coin_cash: Dict[str, float] = {s: per_coin for s in symbols}
 
         # Trade tracker
-        self.tracker = TradeTracker(self.output_dir)
+        self.tracker = TradeTracker(self.output_dir, leverage=self.leverage)
         self.tracker.on_losing_trade = self._capture_incident
 
         # Incidents directory
