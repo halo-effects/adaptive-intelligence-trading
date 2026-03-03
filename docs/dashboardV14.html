@@ -473,14 +473,22 @@ tr:hover td{background:rgba(99,102,241,.04)}
   <!-- Phase Flow Diagram -->
   <div class="phase-flow" id="phaseFlow"></div>
 
-  <div class="pag-bar" style="justify-content:flex-start;margin-bottom:8px">
+  <!-- Top Picks Summary -->
+  <div id="topPicksSummary" style="text-align:center;font-size:.75rem;color:var(--text3);margin-bottom:8px;display:none"></div>
+
+  <div class="pag-bar" style="justify-content:space-between;margin-bottom:8px">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:.75rem;color:var(--text2)">Show:</span>
       <select id="oppPageSize"><option value="10" selected>10</option><option value="25">25</option><option value="50">50</option></select>
     </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:.75rem;color:var(--text2)">Window:</span>
+      <select id="scanWindow"><option value="7d">7d</option><option value="14d">14d</option><option value="30d" selected>30d</option><option value="bear">Bear</option></select>
+      <span id="scanTimestamp" style="font-size:.7rem;color:var(--text3)"></span>
+    </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th>GRADE</th><th>SIGNAL</th><th>OPPORTUNITY</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th>DCA SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>CAP FREE</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -528,7 +536,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 var CONFIG = {
   statusUrl: 'data/v14/status.json',
   tradesUrl: 'data/v14/trades.csv',
-  scannerUrl: 'data/v14/scanner.json',
+  scannerUrl: 'data/v14/cycle_scanner.json',
   refreshInterval: 60
 };
 
@@ -1011,9 +1019,37 @@ function renderFlowDiagram(){
   $('phaseFlow').innerHTML=flowHtml;
 
   // Opportunity table
+  var selectedWindow=$('scanWindow')?$('scanWindow').value:'30d';
+  var scanWindow=scannerData&&scannerData.windows&&scannerData.windows[selectedWindow];
+  var scanCoins=scanWindow&&scanWindow.rankings||[];
+
+  // Top picks summary
+  var tpEl=$('topPicksSummary');
+  if(tpEl&&scannerData&&scannerData.top_picks){
+    var tp=scannerData.top_picks;
+    // Find scores for top picks from current window
+    function findCoinScore(coin,field){var v='';scanCoins.forEach(function(sc){if(sc.coin===coin&&sc[field]!=null)v=sc[field]});return v}
+    var tpParts=[];
+    if(tp.best_score)tpParts.push('\uD83C\uDFC6 Best: '+tp.best_score+' ('+findCoinScore(tp.best_score,'dca_score')+')');
+    if(tp.fastest_cycler)tpParts.push('\u26A1 Fastest: '+tp.fastest_cycler+' ('+findCoinScore(tp.fastest_cycler,'deals_per_week')+'/wk)');
+    if(tp.lowest_dd)tpParts.push('\uD83D\uDEE1\uFE0F Lowest DD: '+tp.lowest_dd+' ('+findCoinScore(tp.lowest_dd,'max_drawdown_pct')+'%)');
+    if(tp.most_capital_free){var cfVal=findCoinScore(tp.most_capital_free,'capital_freedom');tpParts.push('\uD83D\uDCB0 Most Free: '+tp.most_capital_free+' ('+(cfVal?Math.round(cfVal*100)+'%':'')+')');} 
+    tpEl.innerHTML=tpParts.join(' &nbsp;|&nbsp; ');
+    tpEl.style.display=tpParts.length?'block':'none';
+  }else if(tpEl){tpEl.style.display='none'}
+
+  // Scanner timestamp
+  var tsEl=$('scanTimestamp');
+  if(tsEl&&scannerData&&scannerData.generated_at){
+    var genTime=new Date(scannerData.generated_at);
+    var agoMs=Date.now()-genTime.getTime();
+    var agoMin=Math.round(agoMs/60000);
+    var agoStr=agoMin<60?agoMin+'m ago':Math.round(agoMin/60)+'h ago';
+    tsEl.textContent='Scanner: '+agoStr;
+  }
+
   var allSyms=[];
   activeSyms.forEach(function(s){ allSyms.push(s) });
-  var scanCoins=scannerData&&(scannerData.rankings||scannerData.candidates)||[];
   scanCoins.forEach(function(c){
     var sym=c.symbol;
     if(allSyms.indexOf(sym)===-1) allSyms.push(sym);
@@ -1021,95 +1057,66 @@ function renderFlowDiagram(){
   var syms=allSyms.length>0?allSyms:activeSyms;
 
   var phaseColors={LONG_DCA:'var(--phase-long-dca)',SHORT_DCA:'var(--phase-short-dca)',ROUTER:'var(--phase-router)'};
-  var oppMap={
-    LONG_DCA:{text:'Active \u2014 long grid cycling',color:'var(--green)'},
-    SHORT_DCA:{text:'Active \u2014 short grid cycling',color:'var(--red)'},
-    ROUTER:{text:'Evaluating \u2014 direction pending',color:'var(--accent2)'}
-  };
 
-  // Derive trade counts per coin from trades.csv
-  var coinTradeCounts={};
-  trades.forEach(function(t){
-    var sym=t.symbol||'';
-    if(!coinTradeCounts[sym])coinTradeCounts[sym]={long:0,short:0};
-    var phase=(t.regime||'').toUpperCase();
-    if(phase==='SHORT_DCA')coinTradeCounts[sym].short++;
-    else coinTradeCounts[sym].long++;
-  });
+  function dcaGrade(s){
+    if(s==null)return{letter:'--',color:'var(--text3)'};
+    if(s>=30)return{letter:'S',color:'var(--green)'};
+    if(s>=15)return{letter:'A',color:'var(--green)'};
+    if(s>=8)return{letter:'B',color:'#22d3ee'};
+    if(s>=4)return{letter:'C',color:'var(--amber)'};
+    return{letter:'D',color:'var(--red)'};
+  }
+  function scoreColor(v){return v>10?'var(--green)':v>=5?'var(--amber)':'var(--red)'}
+  function capColor(v){return v>0.7?'var(--green)':v>=0.5?'var(--amber)':'var(--red)'}
+  function ddColor(v){return v<30?'var(--green)':v<=45?'var(--amber)':'var(--red)'}
 
-  var h='';
+  // Build sortable row data
+  var rowData=[];
   syms.forEach(function(sym){
     var c=(S.coins||{})[sym]||{};
     var m=cm(sym);
     var isActive=activeSyms.indexOf(sym)!==-1;
-    var phase=c.lifecycle_phase||c.state||'--';
-    var cfgi=c.cfgi!=null?c.cfgi:null;
+    var phase=isActive?(c.lifecycle_phase||c.state||'ROUTER'):'--';
 
     var scanCoinData=null;
     scanCoins.forEach(function(sc){if(sc.symbol===sym)scanCoinData=sc});
 
-    // Grade
-    function scoreGrade(s){
-      if(s==='--'||s==null)return{letter:'--',color:'var(--text3)'};
-      if(s>=95)return{letter:'A+',color:'var(--green)'};
-      if(s>=85)return{letter:'A',color:'var(--green)'};
-      if(s>=75)return{letter:'B+',color:'#22d3ee'};
-      if(s>=60)return{letter:'B',color:'var(--accent2)'};
-      if(s>=45)return{letter:'C',color:'var(--amber)'};
-      return{letter:'D',color:'var(--red)'};
-    }
+    var dcaScore=scanCoinData?scanCoinData.dca_score:null;
+    var dealsWk=scanCoinData?scanCoinData.deals_per_week:null;
+    var avgCycle=scanCoinData?scanCoinData.avg_cycle_hours:null;
+    var capFree=scanCoinData?scanCoinData.capital_freedom:null;
+    var ddPct=scanCoinData?scanCoinData.max_drawdown_pct:null;
 
-    var signal='';
-    if(!isActive){
-      var parts=[];
-      if(scanCoinData){
-        if(scanCoinData.win_rate!=null)parts.push(Math.round(scanCoinData.win_rate)+'% win rate');
-        if(scanCoinData.total_profit_pct!=null)parts.push((scanCoinData.total_profit_pct>=0?'+':'')+scanCoinData.total_profit_pct.toFixed(1)+'% profit');
-        if(scanCoinData.roi_pct!=null&&scannerData.backtest_start){var bsDays=Math.max(1,Math.round((Date.now()-new Date(scannerData.backtest_start).getTime())/86400000));var dailyRoi=scanCoinData.roi_pct/bsDays;parts.push(dailyRoi.toFixed(2)+'%/day');}
-      }
-      signal=parts.join(' · ')||'Monitoring';
-      phase='--';
-    }else if(phase==='LONG_DCA'){
-      var tc=coinTradeCounts[sym]||{long:0,short:0};
-      signal='Long grid cycling';
-      if(cfgi!=null)signal+=', F&G '+Math.round(cfgi);
-      if(tc.long>0)signal+=', '+tc.long+' trades';
-    }else if(phase==='SHORT_DCA'){
-      var tc2=coinTradeCounts[sym]||{long:0,short:0};
-      signal='Short grid cycling';
-      if(cfgi!=null)signal+=', F&G '+Math.round(cfgi);
-      if(tc2.short>0)signal+=', '+tc2.short+' trades';
-    }else if(phase==='ROUTER'){
-      signal='Evaluating direction';
-      if(cfgi!=null)signal+=', F&G '+Math.round(cfgi);
-    }
+    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct});
+  });
 
-    var opp;
-    if(!isActive){
-      opp={text:'Scanner \u2014 available',color:'var(--text2)'};
-    }else{
-      opp=oppMap[phase]||{text:'--',color:'var(--text3)'};
-    }
+  // Sort by dca_score descending (nulls last)
+  rowData.sort(function(a,b){
+    var as=a.dcaScore!=null?a.dcaScore:-999;
+    var bs=b.dcaScore!=null?b.dcaScore:-999;
+    return bs-as;
+  });
 
-    var phaseHtml=phase==='--'?'<span style="color:var(--text3)">Monitoring</span>':'<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[phase]||'var(--text3)')+'"></span>'+phase.replace('_',' ')+'</span>';
+  var h='';
+  rowData.forEach(function(rd){
+    var phaseHtml=rd.phase==='--'?'<span class="phase-pill" style="background:rgba(99,102,241,.1);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Scanner</span>':'<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[rd.phase]||'var(--text3)')+'"></span>'+rd.phase.replace('_',' ')+'</span>';
 
-    var gradeHtml;
-    if(isActive){
-      var phaseGrades={LONG_DCA:{letter:'A',color:'var(--green)'},SHORT_DCA:{letter:'A',color:'var(--red)'},ROUTER:{letter:'B',color:'var(--accent2)'}};
-      var pg=phaseGrades[phase]||{letter:'B',color:'var(--accent2)'};
-      gradeHtml='<span style="font-weight:800;font-size:1.1rem;color:'+pg.color+'">'+pg.letter+'</span>';
-    }else{
-      var scanScore=scanCoinData?(scanCoinData.composite_score||scanCoinData.total_score||'--'):'--';
-      var g=scoreGrade(scanScore);
-      gradeHtml='<span style="font-weight:800;font-size:1.1rem;color:'+g.color+'">'+g.letter+'</span>';
-    }
+    var g=dcaGrade(rd.dcaScore);
+    var scoreHtml=rd.dcaScore!=null?'<span style="font-weight:800;font-size:1.05rem;color:'+scoreColor(rd.dcaScore)+'">'+rd.dcaScore.toFixed(1)+'</span> <span style="font-size:.7rem;color:'+g.color+'">'+g.letter+'</span>':'<span style="color:var(--text3)">--</span>';
 
-    h+='<tr'+(isActive?' style="background:rgba(99,102,241,.06)"':'')+'>';
-    h+='<td class="coin-name">'+m.label+(isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'')+'</td>';
+    var dealsHtml=rd.dealsWk!=null?rd.dealsWk.toFixed(1):'--';
+    var cycleHtml=rd.avgCycle!=null?rd.avgCycle.toFixed(1)+'h':'--';
+    var capHtml=rd.capFree!=null?'<span style="color:'+capColor(rd.capFree)+'">'+Math.round(rd.capFree*100)+'%</span>':'--';
+    var ddHtml=rd.ddPct!=null?'<span style="color:'+ddColor(rd.ddPct)+'">'+rd.ddPct.toFixed(1)+'%</span>':'--';
+
+    h+='<tr'+(rd.isActive?' style="background:rgba(99,102,241,.06)"':'')+'>';
+    h+='<td class="coin-name">'+rd.m.label+(rd.isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'')+'</td>';
     h+='<td>'+phaseHtml+'</td>';
-    h+='<td style="text-align:center">'+gradeHtml+'</td>';
-    h+='<td class="signal-text">'+signal+'</td>';
-    h+='<td class="opp-text" style="color:'+opp.color+'">'+opp.text+'</td>';
+    h+='<td style="text-align:center">'+scoreHtml+'</td>';
+    h+='<td style="text-align:center">'+dealsHtml+'</td>';
+    h+='<td style="text-align:center">'+cycleHtml+'</td>';
+    h+='<td style="text-align:center">'+capHtml+'</td>';
+    h+='<td style="text-align:center">'+ddHtml+'</td>';
     h+='</tr>';
   });
 
@@ -1119,7 +1126,7 @@ function renderFlowDiagram(){
   var oppMaxPage=Math.max(0,Math.ceil(oppRows.length/ops)-1);
   oppPage=Math.min(oppPage,oppMaxPage);
   var oppPageRows=oppRows.slice(oppPage*ops,(oppPage+1)*ops);
-  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
+  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
   if(oppRows.length>ops){
     $('oppPagBar').style.display='flex';
     $('oppPagInfo').textContent='Page '+(oppPage+1)+' of '+(oppMaxPage+1);
@@ -1167,6 +1174,7 @@ document.addEventListener('DOMContentLoaded',function(){
   $('oppPagPrev').onclick=function(){oppPage--;renderFlowDiagram()};
   $('oppPagNext').onclick=function(){oppPage++;renderFlowDiagram()};
   $('oppPageSize').onchange=function(){oppPage=0;renderFlowDiagram()};
+  if($('scanWindow'))$('scanWindow').onchange=function(){oppPage=0;renderFlowDiagram()};
 });
 
 // EQUITY CHART
