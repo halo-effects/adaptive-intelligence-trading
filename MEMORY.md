@@ -22,7 +22,7 @@
 - **Engine**: V14 DCA-only with ROUTER v2 signals (same as paper)
 - **Runner**: `trading/spot/run_v14_live_aster.py`
 - **Exchange**: Aster (spot for LONG_DCA, futures available for SHORT_DCA)
-- Coin: ASTER/USDT — 1h candles, daily signal ticks
+- Coin: ASTER/USDT - 1h candles, daily signal ticks
 - Profile: High (1.5x leverage), BO=40%, Dev=1.5%, Mult=1.5x, 12 layers, TP=1.5%
 - Capital: $300 real USDT (started with $310.58)
 - State/status: `trading/spot/live/v14/`
@@ -31,19 +31,23 @@
 - Sync: `docs/data/v14-live/` (also mirrors to `docs/data/live-aster/` for old dashboard)
 - Telegram: `[V14-LIVE]` prefix
 - API keys: `trading/spot/live/v14/.env` (gitignored)
-- Scheduled Task: **Awaiting creation** — `V14LiveAster`, needs elevated PS from Brett
+- Scheduled Task: `V14LiveAster` - created by Brett 2026-03-03
 - **NEAR rejected**: Only perpetuals on Aster (no spot), funding fees would destroy $300 account
 - **ASTER chosen**: Only coin with both spot AND futures on Aster exchange
-- **Signal limitation**: Only ~5 months data — 2W StochRSI/top detection NaN, stays in LONG_DCA
+- **Signal limitation**: Only ~5 months data - 2W StochRSI/top detection NaN, stays in LONG_DCA
 - **Coin is swappable**: Brett said "if NEAR doesn't work out, we can switch coins to something like HYPE"
 - **First trades**: L1 126.11 @ $0.7136 ($90), L2 90.78 @ $0.6939 ($63)
 - **Bugs fixed at launch**: CCXT precision-as-float TypeError, Windows cp1252 emoji encoding
+- **Leverage**: 1.0x for spot (no margin trading available on Aster spot)
+- **Scheduled Task**: `V14LiveAster` - created by Brett 2026-03-03
+- **Silent hang bug**: Bot hung ~1AM 2026-03-03 with no errors. Same pattern across all 3 bots. Root cause unknown.
+- **last_candle_ts bug**: State.json had future timestamp → bot skipped all candles. Fixed manually.
 
 ### V14 Paper Bot (Hyperliquid - HBAR/ATOM/LINK/NEAR) - LIVE as of 2026-02-28
 - **Engine**: `trading/spot/backtest_results/v13/v14_dca_engine.py` (DCA-only with ROUTER v2 signals)
 - **Wrapper**: `trading/spot/v14_lifecycle_engine.py`
 - **Runner**: `trading/spot/run_v14_paper.py`
-- Coins: HBAR/USDT, ATOM/USDT, LINK/USDC, NEAR/USDT — 1h candles, daily signal ticks
+- Coins: HBAR/USDT, ATOM/USDT, LINK/USDC, NEAR/USDT - 1h candles, daily signal ticks
 - Profile: Medium (1.5x leverage), BO=40%, Dev=2%, Mult=1.5x, 10 layers, TP=1.5%
 - Capital: $10,000 paper, $2,500/coin (equal weight)
 - State/status: `trading/spot/paper/v14/`
@@ -87,7 +91,7 @@
 ### V14-ETF Paper Bot (Hyperliquid - SOL/XRP/LTC/HBAR/ADA) - LIVE as of 2026-03-02
 - **Engine**: Same V14 DCA-only with ROUTER v2 signals
 - **Runner**: `trading/spot/run_v14etf_paper.py`
-- Coins: SOL/USDT, XRP/USDT, LTC/USDT, HBAR/USDT, ADA/USDT — 1h candles, daily signal ticks
+- Coins: SOL/USDT, XRP/USDT, LTC/USDT, HBAR/USDT, ADA/USDT - 1h candles, daily signal ticks
 - Profile: High (1.5x leverage), BO=40%, Dev=1.5%, Mult=1.5x, 12 layers, TP=1.5%
 - Capital: $10,000 paper, $2,000/coin (equal weight)
 - State/status: `trading/spot/paper/v14etf/`
@@ -96,11 +100,11 @@
 - **Fresh start**: No backfill history, started 2026-03-02 with clean $10K
 - **Thesis**: ETF-candidate coins (pending/filed US spot ETFs) may have structural tailwind
 - Telegram: All notifications prefixed `[V14-ETF]`
-- Scheduled Task: **Not yet created** — needs elevated PS from Brett
+- Scheduled Task: **Not yet created** - needs elevated PS from Brett
 - `--fresh` flag: skips all historical candles, only processes new ones from startup time
 - Restart: `--skip-backfill` (loads existing state.json)
 
-### V13 Paper Bot — SUNSET (2026-03-02)
+### V13 Paper Bot - SUNSET (2026-03-02)
 - **Stopped.** V14 is the go-forward engine. V13 kept for reference only.
 - Final state: +184.5% equity ($28,449), all 4 coins in MARKDOWN tier 3 shorts
 - Process killed 2026-03-02, HEARTBEAT monitoring removed
@@ -130,8 +134,8 @@
 - **DCA PnL ≠ Total PnL**: The real money in V13 is from markup sells (+32-374%) and short profits (+9-52%), not DCA scalps ($1-4%). Track all closed trade P&L, not just `dca_pnl`.
 - **candles.db not gitignored = data loss risk**: Git rebase operations can wipe runtime SQLite databases. Restored 72MB candles.db from git history after rebase abort zeroed it.
 - **Coin name format inconsistency is a silent killer (2026-02-27)**: `load_cfgi()` used full symbol (`XRP/USDC`) but cfgi_daily stores as `XRP` or `XRP/USDT`. LIKE 'XRP/USDC%' matched nothing → NaN CFGI → tier adds silently disabled. `load_daily()` already extracted base coin; `load_cfgi()` didn't. Fix: `base = coin.split('/')[0]`. This caused $1,459 equity gap between standalone and wrapper backtests. **Always normalize to base coin for DB lookups.**
-- **Missing data ≠ error — silent feature degradation (2026-02-27)**: `_cfgi()` returning NaN wasn't raised as error. Engine just skipped CFGI-gated tier adds (T2/T3). No warning. Test what you ship with the same coin name format.
-- **Reimplemented loops always diverge (2026-02-27)**: Wrapper's tick-by-tick reimplementation of standalone's `run()` had subtle extra-trade bugs. Added `backfill_direct()` to call `run()` directly during backfill — 100% match guaranteed.
+- **Missing data ≠ error - silent feature degradation (2026-02-27)**: `_cfgi()` returning NaN wasn't raised as error. Engine just skipped CFGI-gated tier adds (T2/T3). No warning. Test what you ship with the same coin name format.
+- **Reimplemented loops always diverge (2026-02-27)**: Wrapper's tick-by-tick reimplementation of standalone's `run()` had subtle extra-trade bugs. Added `backfill_direct()` to call `run()` directly during backfill - 100% match guaranteed.
 - **Unit mismatch bugs are silent killers (2026-02-26)**: `price_vs_sma200` stored as percentage (32.55 = +32.55%) but `SMA200_OVEREXTENSION` threshold was 0.20 (decimal). Every MARKUP entry blocked for entire backtest. Fix: threshold = 20. Always verify units match between signal values and thresholds.
 - **Deep warmup essential for 2W StochRSI**: Needs ~784 days of daily data. Without Jan 2019 backfill, Oct 2020 signals were invalid. Backfill 1h candles then rebuild daily (correct approach).
 - **Structure confirmation gates critical (2026-02-26)**: MARKUP required HH_HL ≥ 2 (bullish structure). Adding LH_LL ≥ 2 requirement for MARKDOWN (bearish structure) created perfect symmetry. ETH shorts improved +108% (+$16.2K profit), blocking 5 bad shorts with ADX barely above 20 but zero bearish structure. Gate applies to both DCA→MARKDOWN and FLAT→MARKDOWN paths.
@@ -140,16 +144,16 @@
 - **Don't claim outcomes before running the numbers (2026-02-27)**: Told Brett equity wouldn't change on re-backfill. It dropped $1,600 because the CFGI fix changed which trades execute. Brett called it out. Always verify before making claims.
 - **V13 paper bot live loop crashes silently (2026-02-27)**: Exits code 1 after CFGI update with no error logged. Root cause: exception handler calls send_telegram() which itself can fail, causing unhandled exception. Fixed by wrapping all output writes + telegram calls in individual try/excepts. Added debug logging to pinpoint exact failure point. Still investigating.
 - **All bias trigger approaches tested have flaws (2026-02-26)**: Engine top signals miss new coins (SOL bootstrap). Death cross chatters during consolidation (dozens of daily flips). SMA200 kills bear bottom recovery entries. No universal low-frequency regime trigger found yet.
-- **Bear bias system finalized (2026-02-27)**: Bear ON = engine top signal (2W OB93/1W OB85/K<50). Bear OFF = **coin-specific Weekly CFGI RSI(7) < 40**. Upgraded from Daily RSI(14)<35 — weekly timeframe + faster period improved BTC by $4.4K combined. StochRSI tested and rejected (normalizes away signal differences on CFGI). CCU "Bottom Is In" tested and rejected (sentiment leads price — CFGI fires first).
+- **Bear bias system finalized (2026-02-27)**: Bear ON = engine top signal (2W OB93/1W OB85/K<50). Bear OFF = **coin-specific Weekly CFGI RSI(7) < 40**. Upgraded from Daily RSI(14)<35 - weekly timeframe + faster period improved BTC by $4.4K combined. StochRSI tested and rejected (normalizes away signal differences on CFGI). CCU "Bottom Is In" tested and rejected (sentiment leads price - CFGI fires first).
 - **Timeframe > calculation method (2026-02-27)**: Switching Daily→Weekly RSI improved results more than switching RSI→StochRSI. Weekly RSI(7) on CFGI is a novel indicator unique to our system.
 - **Coin-specific CFGI > market average CFGI (2026-02-26)**: BTC Jun 2024 entry correctly allowed by coin-specific CFGI (BTC sentiment had recovered) while market average still showed fear.
 - **V13 vs V12f DCA gap (2026-02-27)**: V13 barely trades during DCA phases (daily ticks, ~5-7 trades/5yr). V12f's adaptive DCA on 1h had 110+ ETH trades compounding. ETH: +284% vs +1,283%. Building isolated DCA test harness to matrix-sweep V12f-style params within V13 DCA windows on 15m candles.
-- **DCA phases are structurally long-biased (2026-02-27)**: V13 routes bearish ranging to FLAT→MARKDOWN, not through DCA. 79% of DCA windows exit to MARKUP across all coins. Dual-track (long+short) DCA during DCA phase LOSES money — shorts fight the structural bias. Long-only DCA is correct.
-- **FLAT phase is the real bottleneck (2026-02-27)**: HVF was designed for FLAT routing but is dead code (logging only). 42-day timeout defaults to DCA when BTC should go MARKDOWN. HVF>0.3 + SMA50_ABOVE → DCA fast-track has 100% accuracy (20/20) saving ~1,434 FLAT days. Predicting MARKDOWN from FLAT is much harder — existing LH_LL+ADX+Fib gate is the right tool.
+- **DCA phases are structurally long-biased (2026-02-27)**: V13 routes bearish ranging to FLAT→MARKDOWN, not through DCA. 79% of DCA windows exit to MARKUP across all coins. Dual-track (long+short) DCA during DCA phase LOSES money - shorts fight the structural bias. Long-only DCA is correct.
+- **FLAT phase is the real bottleneck (2026-02-27)**: HVF was designed for FLAT routing but is dead code (logging only). 42-day timeout defaults to DCA when BTC should go MARKDOWN. HVF>0.3 + SMA50_ABOVE → DCA fast-track has 100% accuracy (20/20) saving ~1,434 FLAT days. Predicting MARKDOWN from FLAT is much harder - existing LH_LL+ADX+Fib gate is the right tool.
 - **HVF fast-track fails for SOL (2026-02-27)**: ETF-era test showed SOL goes from +381% to -27% with ANY HVF filter variant (SMA50, SMA200, CFGI>40 all tried). SOL's 131-day ranging at $15-25 in 2023 gets split into bad DCA windows. Works for ETH+BTC only. No universal filter found.
-- **ETF era is the relevant test period (2026-02-27)**: Brett directive — Jan 2023+ only. Pre-ETF crypto (2020-2022) was structurally different, too volatile. Don't let pre-ETF data skew V13 decisions.
+- **ETF era is the relevant test period (2026-02-27)**: Brett directive - Jan 2023+ only. Pre-ETF crypto (2020-2022) was structurally different, too volatile. Don't let pre-ETF data skew V13 decisions.
 - **Graceful runoff inflates DCA results (2026-02-27)**: First DCA test showed +$494 including longs riding into markup. Pure DCA grinding within windows is much more modest (+1-2% avg). Phase classification speed matters more than DCA parameter tuning.
-- **LINK/XRP daily data backfilled (2026-02-26)**: LINK/USDC 3040 rows, XRP/USDC 2819 rows from Jan 2019. V13SignalPack fails to load them ("Index 1-dimensional" error) — needs weekly candles and possible structure fix.
+- **LINK/XRP daily data backfilled (2026-02-26)**: LINK/USDC 3040 rows, XRP/USDC 2819 rows from Jan 2019. V13SignalPack fails to load them ("Index 1-dimensional" error) - needs weekly candles and possible structure fix.
 
 ### Adaptive TP/Deviation System (Live since 2026-02-14)
 - Dynamic TP: 0.6-2.5% based on 14-period ATR + regime multipliers (baseline 1.5%, ATR_BASELINE=0.8%)
@@ -186,7 +190,7 @@
 - Key diff: 4x lot multiplier (vs 2x now), fixed params, no equity protection
 - Evolution: from static hardcoded → dynamic regime-adaptive ("Breathing Grid")
 
-### V13 Coin Scanner — Built 2026-02-25
+### V13 Coin Scanner - Built 2026-02-25
 - `trading/spot/coin_scanner_v13.py` + `trading/spot/run_scanner_v13.py`
 - Runs all 44 CFGI tokens through `v13_phase_backtest_v8.py` (the REAL engine)
 - 90-day rolling window, high profile, $2,500/coin, Binance 1h candles
@@ -195,30 +199,30 @@
 - Cold start accurate: scanner phase = exact phase paper bot would start in
 - Known issues: ASTER isnan error (short data), HYPE not on Binance, FTM/MATIC delisted
 
-### V13 Analytics DB — Built 2026-02-25
+### V13 Analytics DB - Built 2026-02-25
 - 5 new tables: `scanner_results`, `phase_transitions`, `signal_snapshots`, `coin_correlations`, `trade_context`
 - Daily collector: `trading/spot/daily_collector.py` (candles → daily → CFGI → signals → correlations)
 - Runner: `python -u -m trading.spot.run_daily_collector`
 - Scanner stores analytics after each run (scanner_results + phase_transitions + trade_context)
 
-### Daily Cron Schedule — Set Up 2026-02-25
-- **5:30 AM PST** — V13 Daily Collector (cron ID: a520cd05)
-- **6:00 AM PST** — V13 Daily Scanner (cron ID: ef85844d)
-- Old `AIT_CandleCollector` task broken (script deleted in git rebase) — superseded
+### Daily Cron Schedule - Set Up 2026-02-25
+- **5:30 AM PST** - V13 Daily Collector (cron ID: a520cd05)
+- **6:00 AM PST** - V13 Daily Scanner (cron ID: ef85844d)
+- Old `AIT_CandleCollector` task broken (script deleted in git rebase) - superseded
 
-### GitHub Pages Deployment — Fixed 2026-02-25
-- **Broken submodule** (`repos/intelligent-accumulation-trading`) caused instant build failures — removed
+### GitHub Pages Deployment - Fixed 2026-02-25
+- **Broken submodule** (`repos/intelligent-accumulation-trading`) caused instant build failures - removed
 - **`.nojekyll`** file required in `docs/` to prevent Jekyll processing
 - **Sync interval** changed from 2 min → 10 min (GitHub Pages rate limit: 10 builds/hour)
-- **Auto-backup conflict**: Workspace auto-backup + sync script both push to `main` — auto-backup was deleting files sync script added. Fixed by ensuring workspace git tracks all `docs/` files.
+- **Auto-backup conflict**: Workspace auto-backup + sync script both push to `main` - auto-backup was deleting files sync script added. Fixed by ensuring workspace git tracks all `docs/` files.
 - Sync script updated to always ensure `.nojekyll` exists
 
-### V13 Documentation Suite — Updated 2026-02-26
-- **Architecture spec**: `projects/ait-product/v13-architecture-spec.md` — comprehensive system reference (updated with LH_LL gate, validation results, signal test archive)
-- **Test setup**: `projects/ait-product/v13-test-setup.md` — complete test infrastructure reference (DB, scripts, data requirements, validation checklist)
-- **Gate test plan**: `projects/ait-product/v13-gate-test-plan.md` — all tests conducted with results, decisions, and lessons learned
-- **Test backlog**: `projects/ait/v13-test-backlog.md` — proposed improvements (two-layer failure detector)
-- **Paper bot update**: `projects/ait-product/v13-paper-bot-update-markdown-fix.md` — LH_LL gate deployment instructions
+### V13 Documentation Suite - Updated 2026-02-26
+- **Architecture spec**: `projects/ait-product/v13-architecture-spec.md` - comprehensive system reference (updated with LH_LL gate, validation results, signal test archive)
+- **Test setup**: `projects/ait-product/v13-test-setup.md` - complete test infrastructure reference (DB, scripts, data requirements, validation checklist)
+- **Gate test plan**: `projects/ait-product/v13-gate-test-plan.md` - all tests conducted with results, decisions, and lessons learned
+- **Test backlog**: `projects/ait/v13-test-backlog.md` - proposed improvements (two-layer failure detector)
+- **Paper bot update**: `projects/ait-product/v13-paper-bot-update-markdown-fix.md` - LH_LL gate deployment instructions
 
 ### V13 Architecture Spec Detail
 - Status: LIVE (fully implemented and operational, updated with LH_LL gate and full validation results)
@@ -231,7 +235,7 @@
 - **Runner**: `trading/run_scanner.py` - ties both tiers, outputs recommendation
 - **Maturity filters**: 60+ day age, <120% price swing, <4x volume spike, $1M volume floor
 - Latest results: HYPE #1 (52.9), ASTER #2 (46.1), DOGE #3 (41.2), SOL #4, ETH #5
-- Cron job: DISABLED (old ID: b9571b56). V12f scanner cron (ID: 830c5a2a) also disabled 2026-02-26 — source files deleted in git rebase, V13 scanner replaces it
+- Cron job: DISABLED (old ID: b9571b56). V12f scanner cron (ID: 830c5a2a) also disabled 2026-02-26 - source files deleted in git rebase, V13 scanner replaces it
 - Rotation threshold: 20% improvement required
 - Output: `trading/live/scanner_t1.json`, `scanner_t2.json`, `scanner_recommendation.json`
 
@@ -299,12 +303,12 @@
 - Slack user IDs: Brett=U092S0TJK5X, Adeel=U092D6SA0JW
 
 ## Q1 2026 Roadmap (created 2026-02-26)
-- **Roadmap doc**: `projects/roadmap-q1-2026.md` — daily review cadence
-- **Project 1**: LLM Engine Config — Gemini 2.5 Pro (reasoning/research), Claude Opus/Sonnet (coding/analytics). Blocked on Gemini API key.
-- **Project 2A**: Website V13 update — product, pricing, Wyckoff pages. Collaborative. CSS unchanged, content only.
-- **Project 2B**: DCA dual-track optimization — long+short DCA, dynamic BB-based params, risk-profiled tiers. Baseline doc: `projects/ait-product/dca-optimization-baseline.md`
-- **Project 2C**: Gate optimization + coin qualification — 17 qualified coins identified from 44. Matrix: `projects/ait-product/coin-qualification-matrix.md`. Backfill, gate accuracy tests, signal stack optimization, light leverage assessment.
-- **Project 2D**: Paper bot reset with optimized settings — blocked on 2B+2C.
+- **Roadmap doc**: `projects/roadmap-q1-2026.md` - daily review cadence
+- **Project 1**: LLM Engine Config - Gemini 2.5 Pro (reasoning/research), Claude Opus/Sonnet (coding/analytics). Blocked on Gemini API key.
+- **Project 2A**: Website V13 update - product, pricing, Wyckoff pages. Collaborative. CSS unchanged, content only.
+- **Project 2B**: DCA dual-track optimization - long+short DCA, dynamic BB-based params, risk-profiled tiers. Baseline doc: `projects/ait-product/dca-optimization-baseline.md`
+- **Project 2C**: Gate optimization + coin qualification - 17 qualified coins identified from 44. Matrix: `projects/ait-product/coin-qualification-matrix.md`. Backfill, gate accuracy tests, signal stack optimization, light leverage assessment.
+- **Project 2D**: Paper bot reset with optimized settings - blocked on 2B+2C.
 - **8 V13 gaps** identified and tracked in roadmap (bias trigger, failure detector, FLAT phase, correlation sizing, profit protection, scheduled task, OB85 timing, DCA transitions)
 
 ### Qualified Coin Universe (17 coins)
@@ -314,10 +318,10 @@ BTC, ETH, XRP, BNB, SOL, LINK, ADA, LTC, AVAX, DOT, UNI, AAVE, NEAR, HBAR, MATIC
 
 ### Top Conviction Stack Research (2026-02-27 evening)
 - **Steve Courtney top sell stack (2D)**: RSI>80 + StochRSI K&D>80 + MFI>80 + Above SMA200
-- **MFI (Money Flow Index)**: Volume-weighted RSI — new indicator for us. Differentiates score 2 (noise) from 3/4 (signal).
+- **MFI (Money Flow Index)**: Volume-weighted RSI - new indicator for us. Differentiates score 2 (noise) from 3/4 (signal).
 - **Steve 2D timing crushes OB93**: +4 to +58d before peak vs OB93's +11 to +279d. But 56-85% false positive rate.
 - **CFGI at actual tops**: ETH=46 (neutral!), SOL=78, XRP=80. ETH tops in neutral sentiment (divergence).
-- **OB93 BROKEN for tops (2026-02-28)**: 2W StochRSI never hit 93 for ETH or BTC in this cycle. Only XRP armed. OB80 still misses BTC. Same bottom/top asymmetry — K pins at 0 at bottoms but oscillates near 100 at tops.
+- **OB93 BROKEN for tops (2026-02-28)**: 2W StochRSI never hit 93 for ETH or BTC in this cycle. Only XRP armed. OB80 still misses BTC. Same bottom/top asymmetry - K pins at 0 at bottoms but oscillates near 100 at tops.
 - **2D RSI Bearish Divergence is new top signal (2026-02-28)**: 5/5 coverage, 24% false rate, 24d avg timing. Config: 30-bar 2D lookback, RSI gap≥8, price within 3% of high, RSI>60, RSI peak>75. In V13 MARKUP context: 0% effective false rate (all false positives occur during DCA/FLAT phases). Replaces OB93.
 - **RSI bearish divergence present at 100% of cycle tops**: Price HH + RSI LH is the universal top signal. ETH 25d early, BTC 59d early, LINK 6d early.
 - **Top harder than bottom**: Tops distribute gradually (divergence), bottoms capitulate sharply (alignment).
@@ -329,9 +333,30 @@ BTC, ETH, XRP, BNB, SOL, LINK, ADA, LTC, AVAX, DOT, UNI, AAVE, NEAR, HBAR, MATIC
 - One trigger per cycle. No reshort after flip.
 - **Action**: Close ALL shorts, flip to MARKUP T1 (60%)
 - **Final backtest**: +$9,847 (+98.5%) on $10K, 2 triggers (ETH Jun 2025, LINK Feb 2026), zero false bottoms
-- **2W K≥5 gate**: Avg ~17 days / +30% after true bottom — but coins skid at bottom waiting for market turn, so real cost is minimal. Blocked premature SOL Feb 2026 trigger (-0.6% drawdown avoided).
+- **2W K≥5 gate**: Avg ~17 days / +30% after true bottom - but coins skid at bottom waiting for market turn, so real cost is minimal. Blocked premature SOL Feb 2026 trigger (-0.6% drawdown avoided).
 - **Tested and rejected**: No gate (+$11,228 but LINK -7.8% premature), 1W gate (missed ETH), weekly HL (unreliable, XRP 58d delay)
 - ROUTER v2 engine: `v13_router_engine_v2.py`, default config = locked params
+
+## Bear Market Coin Research & DCA Cycle Scanner (2026-03-03)
+- **Context**: BTC ~$66K, confirmed bear market, Brett believes bear until halving (~2027)
+- **Key metric**: DCA cycle velocity - deals completed per week, penalized by drawdown and capital lock-up
+- **Composite score**: `DCA Score = Realized_PnL × (1 - MaxDD%) × (1 - open_layers/24) / 100`
+- **Top bear market DCA coins (Jan-Mar 2026 backtest, $10K/coin, High profile)**:
+  1. ASTER - 3.1 d/wk, +$2,921 realized, 34% DD, 4 layers, **+24.4% net** (only positive)
+  2. ATOM - 3.7 d/wk, +$2,692 realized, 30% DD, 7 layers, -10.1% net
+  3. INJ - 3.7 d/wk, +$2,667 realized, 45% DD, 7 layers, -27.3% net
+  4. HYPE - 3.1 d/wk, +$2,017 realized, 29% DD, 7 layers, -11.8% net
+  5. CRV - 2.6 d/wk, +$2,280 realized, 47% DD, 7 layers, -28.9% net
+- **Worst for V14 DCA**: BTC (0.9 d/wk), LTC, FIL, ETH (1.4 d/wk) - too slow cycling
+- **ASTER outperforms because it doesn't get trapped** (4 open layers vs 7 for all others)
+- **ATOM anomaly**: Only -17% DD from Jan 1 while everything else down 35-47%
+- **Brett's direction**: Capital rotation - shift capital toward actively cycling coins in real-time
+- **Scanner**: `trading/spot/v14_cycle_scanner.py` - rolling window analysis (7d/14d/30d/bear)
+- **Output**: `docs/data/v14/cycle_scanner.json` - ranked coins for dashboard consumption
+- **Research doc**: `projects/ait-product/bear-market-coin-research.md`
+- **Hyperliquid**: 45 quality coins on perps. GRT not available. Aster spot too limited (49 pairs, mostly micro).
+- **Lesson**: Simple daily range ≠ DCA profitability. Need to simulate actual cycle completion with capital lock-up.
+- **Lesson**: Don't build narrative without data. Brett called out unverified DeFi thesis - "Did you find that in your research or just from what I originally said?"
 
 ## Deferred Projects
 - **AI GEO / ShadowQuery**: Brett moved discussion to Slack with Adeel; TBR migration is prep for this

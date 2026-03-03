@@ -762,6 +762,11 @@ class V14LiveBot:
 
                 prev_phase = self.engine.phase
 
+                # Update current price from latest candle (even if incomplete)
+                if ohlcv:
+                    latest_price = float(ohlcv[-1][4])
+                    self.engine.current_price = latest_price
+
                 for bar in ohlcv:
                     ts_ms = int(bar[0])
                     if ts_ms <= self._last_candle_ts:
