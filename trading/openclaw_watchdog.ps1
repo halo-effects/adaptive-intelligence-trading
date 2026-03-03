@@ -6,30 +6,48 @@ $logFile = "$env:USERPROFILE\.openclaw\watchdog.log"
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 # ---------- Helper ----------
-function Check-And-Restart {
+function Check-Task {
     param(
         [string]$Name,
         [string]$TaskName,
-        [scriptblock]$IsRunning
+        [string]$StatusFile,
+        [int]$StaleMinutes = 120
     )
     
-    $running = & $IsRunning
-    if ($running) { return }
+    # First check: is the scheduled task in "Running" state?
+    $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    if (-not $task) { return }  # Task doesn't exist, skip
     
-    Add-Content -Path $logFile -Value "$timestamp - $Name not found, restarting task '$TaskName'..."
+    if ($task.State -eq "Running") {
+        # Task says it's running. Only intervene if status file is VERY stale (2 hours)
+        # This catches hung processes that are alive but not processing
+        if ($StatusFile -and (Test-Path $StatusFile)) {
+            $age = ((Get-Date).ToUniversalTime() - (Get-Item $StatusFile).LastWriteTimeUtc).TotalMinutes
+            if ($age -gt $StaleMinutes) {
+                Add-Content -Path $logFile -Value "$timestamp - $Name task running but status stale (${age}m > ${StaleMinutes}m), restarting..."
+                try {
+                    Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+                    Start-Sleep -Seconds 3
+                    Start-ScheduledTask -TaskName $TaskName
+                    Add-Content -Path $logFile -Value "$timestamp - $Name restarted (was hung)"
+                } catch {
+                    Add-Content -Path $logFile -Value "$timestamp - ERROR: Failed to restart $Name : $_"
+                }
+            }
+        }
+        return  # Task is running and not stale — leave it alone
+    }
     
+    # Task is NOT running (Ready/Stopped) — restart it
+    Add-Content -Path $logFile -Value "$timestamp - $Name task state: $($task.State), restarting..."
     try {
-        # Stop first in case it's in a bad state
-        Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-        Start-Sleep -Seconds 2
         Start-ScheduledTask -TaskName $TaskName
         Start-Sleep -Seconds 5
-        
-        $check = & $IsRunning
-        if ($check) {
-            Add-Content -Path $logFile -Value "$timestamp - $Name restarted successfully via '$TaskName'"
+        $check = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+        if ($check.State -eq "Running") {
+            Add-Content -Path $logFile -Value "$timestamp - $Name restarted successfully"
         } else {
-            Add-Content -Path $logFile -Value "$timestamp - WARNING: $Name restart attempted but still not detected"
+            Add-Content -Path $logFile -Value "$timestamp - WARNING: $Name restart attempted but state is $($check.State)"
         }
     } catch {
         Add-Content -Path $logFile -Value "$timestamp - ERROR: Failed to restart $Name : $_"
@@ -58,19 +76,11 @@ if (-not $gwRunning) {
 }
 
 # ---------- 2. V14 Paper Bot ----------
-Check-And-Restart -Name "V14 Paper Bot" -TaskName "V14PaperBot" -IsRunning {
-    $statusFile = "$env:USERPROFILE\.openclaw\workspace\trading\spot\paper\v14\status.json"
-    if (-not (Test-Path $statusFile)) { return $false }
-    $age = ((Get-Date).ToUniversalTime() - (Get-Item $statusFile).LastWriteTimeUtc).TotalMinutes
-    # If status.json hasn't been written in 65 min, consider it dead
-    return ($age -lt 65)
-}
+Check-Task -Name "V14 Paper Bot" -TaskName "V14PaperBot" `
+    -StatusFile "$env:USERPROFILE\.openclaw\workspace\trading\spot\paper\v14\status.json" `
+    -StaleMinutes 120
 
 # ---------- 3. V14-ETF Paper Bot ----------
-Check-And-Restart -Name "V14-ETF Paper Bot" -TaskName "V14ETFPaperBot" -IsRunning {
-    $statusFile = "$env:USERPROFILE\.openclaw\workspace\trading\spot\paper\v14etf\status.json"
-    if (-not (Test-Path $statusFile)) { return $false }
-    $age = ((Get-Date).ToUniversalTime() - (Get-Item $statusFile).LastWriteTimeUtc).TotalMinutes
-    # If status.json hasn't been written in 65 min, consider it dead
-    return ($age -lt 65)
-}
+Check-Task -Name "V14-ETF Paper Bot" -TaskName "V14ETFPaperBot" `
+    -StatusFile "$env:USERPROFILE\.openclaw\workspace\trading\spot\paper\v14etf\status.json" `
+    -StaleMinutes 120
