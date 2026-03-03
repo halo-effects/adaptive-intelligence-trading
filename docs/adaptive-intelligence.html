@@ -561,7 +561,7 @@ body {
     var finalValue = capital * multiplier;
     var totalReturn = finalValue - capital;
     var roiPct = (multiplier - 1) * 100;
-    var dailyAvg = days > 0 ? (Math.pow(multiplier, 1 / days) - 1) * 100 : 0;
+    var dailyAvg = days > 0 ? roiPct / days : 0;
 
     // Estimate trades proportionally
     var totalTrades = equityData.total_deals || 0;
