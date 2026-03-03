@@ -111,20 +111,55 @@
 
 ---
 
-### 2D: Coin Scanner & Per-Coin Parameter Scoring
+### 2D: DCA Cycle Scanner & Capital Velocity Optimization
 
-**Goal:** Build scoring model for V14 coin selection and per-coin parameter optimization.
-**Owner:** Gee Gee (build) + Brett (review)
-**Status:** ⬜ Not started
+**Goal:** Real-time scoring of coins by DCA cycle efficiency for intelligent capital deployment.
+**Owner:** Gee Gee (build) + Brett (direction)
+**Status:** 🟢 Core complete — scanner live, dashboards updated
+
+**Key insight (2026-03-03):** What matters in a bear market isn't raw volatility — it's how fast a coin completes profitable DCA cycles (dip → SO fill → TP hit) without trapping capital in deep positions.
+
+**Scoring formula:** `DCA Score = Realized_PnL × (1 - MaxDD%) × Capital_Freedom / 100`
+- Capital_Freedom = 1 - (open_layers / 24) — penalizes trapped capital
+- Rolling windows: 7d, 14d, 30d, full bear (Jan 2026+)
 
 | Task | Owner | Status | Notes |
 |------|-------|--------|-------|
-| 2D.1 Define per-coin scoring metrics | Together | ⬜ TODO | Trade cycling rate, short PnL, DD, phase count, win rate |
-| 2D.2 Per-coin parameter optimization | Gee Gee | ⬜ TODO | Different TP/deviation per coin based on volatility characteristics |
-| 2D.3 Build automated scanner pipeline | Gee Gee | ⬜ TODO | Periodic re-scoring as new data arrives |
-| 2D.4 Integrate scoring into dashboard | Gee Gee | ⬜ TODO | Live opportunity rankings with per-coin grades |
+| 2D.1 Define DCA cycle scoring metrics | Together | ✅ Done | Deals/wk, realized PnL, DD, capital freedom, composite score |
+| 2D.2 Build cycle scanner | Gee Gee | ✅ Done | `trading/spot/v14_cycle_scanner.py` — 44 mature coins + immature tracking |
+| 2D.3 Backfill full Hyperliquid universe | Gee Gee | ✅ Done | 18 coins backfilled from Binance + KuCoin (KAS). 44 coins total. |
+| 2D.4 Update dashboards for cycle data | Gee Gee | ✅ Done | V14, V14-ETF, Live dashboards consume `cycle_scanner.json` |
+| 2D.5 Maturity gate (6-month minimum) | Gee Gee | ✅ Done | Immature coins tracked internally, excluded from published rankings |
+| 2D.6 Build coin discovery script | Gee Gee | ⬜ TODO | Auto-detect new Hyperliquid perp listings, backfill from Binance/KuCoin/Bybit |
+| 2D.7 Schedule periodic scanner runs | Gee Gee | ⬜ TODO | Every few hours via Scheduled Task or cron |
+| 2D.8 Per-coin parameter optimization | Gee Gee | ⬜ TODO | Different TP/deviation per coin based on cycle characteristics |
+| 2D.9 Capital rotation recommendations | Together | ⬜ TODO | Scanner suggests rebalancing when cycle velocity shifts between coins |
 
-**Current scanner** (`_v14_scanner.py`) scores 15 coins on aggregate metrics. This project extends to per-coin parameter tuning.
+**Coin Discovery Script (2D.6) — Design:**
+- Query Hyperliquid perps API for all available symbols
+- Compare against existing candles.db inventory
+- For any new coin: attempt backfill from Binance → KuCoin → Bybit (in order)
+- Filter: exclude obvious memecoins, synthetic/leveraged tokens, sub-$1M daily volume
+- Filter: exclude coins launched < 3 months ago (still in hype/price discovery)
+- Start collecting data immediately; auto-promote to published rankings at 6-month mark
+- Run weekly (new listings aren't daily)
+- Log discoveries to `memory/coin-discovery.log`
+
+**Current scanner results (2026-03-03, bear window):**
+| Rank | Coin | Score | Deals/Wk | Realized | DD% |
+|------|------|-------|----------|----------|-----|
+| 1 | ZRO | 68.7 | 17.5 | +$12,289 | 36% |
+| 2 | HYPE | 41.7 | 10.3 | +$7,031 | 25% |
+| 3 | RENDER | 18.0 | 7.6 | +$4,649 | 51% |
+| 4 | STX | 17.0 | 5.7 | +$3,516 | 39% |
+| 5 | FET | 13.3 | 5.5 | +$3,468 | 51% |
+
+**Key findings:**
+- ZRO is the top bear market DCA coin (wasn't on original 23-coin list — discovered via backfill)
+- HYPE confirmed as excellent (#2 overall, lowest DD at 25%)
+- BTC/ETH are worst for DCA cycling (too stable, <1.5 deals/wk)
+- DeFi revenue thesis was unverified narrative — data shows infrastructure/newer tokens cycle better
+- ASTER tracks as immature (4.9mo), auto-promotes ~mid-April 2026
 
 ---
 
@@ -192,8 +227,8 @@
 | Item | Owner | Blocking |
 |------|-------|----------|
 | Gemini API key | Brett | Project 1 |
-| V13 Scheduled Task (elevated PS) | Brett | V13 bot resilience |
-| Dashboard sync GitHub auth intermittent | Investigation | Dashboard freshness |
+| Silent bot hang bug (~1AM nightly) | Investigation | All bot reliability — processes stay alive but stop producing output |
+| MKR/USDT candle gap | Investigation | MKR missing from scanner — Binance data stops Sep 2025 (possibly delisted) |
 
 ---
 
@@ -217,3 +252,11 @@
 | 2026-02-28 | V14 paper bot LIVE (+608% on backfill) |
 | 2026-02-28 | V14 dashboard, scanner, sync deployed |
 | 2026-02-28 | All V14 files backed up to GitHub (37 files, 18K lines) |
+| 2026-03-02 | V14-ETF paper bot live (SOL/XRP/LTC/HBAR/ADA) |
+| 2026-03-02 | V13 paper bot sunset (+184.5% final equity) |
+| 2026-03-03 | V14 Live bot launched on Aster (ASTER/USDT, $300 real) |
+| 2026-03-03 | Bear market coin research — DCA cycle velocity as primary metric |
+| 2026-03-03 | DCA Cycle Scanner built (v14_cycle_scanner.py) — 44 mature coins |
+| 2026-03-03 | 18 coins backfilled from Binance/KuCoin for full Hyperliquid universe |
+| 2026-03-03 | All 3 dashboards updated with cycle scanner opportunity table |
+| 2026-03-03 | Hyperliquid confirmed as production exchange |

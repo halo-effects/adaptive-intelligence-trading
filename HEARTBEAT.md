@@ -12,13 +12,6 @@
 - Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
 - Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
 
-### V12f Paper Bot (Hyperliquid — ETH/SOL/BTC USDC)
-- Check `trading/spot/paper/v12f/status.json` for bot health
-- Alert if: process not running or status.json stale (>65 min, same 1h candle + 5min grace)
-- Coins: ETH/USDC, SOL/USDC, BTC/USDC — 1h timeframe, Medium profile
-- Pipeline enabled (scanner → pipeline → trader)
-- Entry point: `python -u -m trading.spot.run_v12f_paper --exchange hyperliquid --pipeline`
-
 ### V13 Paper Bot — SUNSET (2026-03-02)
 - **Stopped.** V14 is the go-forward engine. V13 kept for reference only.
 - Final state: +184.5% equity ($28,449), all 4 coins in MARKDOWN tier 3 shorts

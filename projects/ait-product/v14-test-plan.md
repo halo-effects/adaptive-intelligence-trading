@@ -240,15 +240,90 @@ python -u -m trading.spot.run_v14_paper --capital 10000 --profile medium --excha
 - `_risk_profiles.py` — Risk profile definition and validation
 - `_full_universe.py` — 15-coin × 3-profile universe sweep
 
-### Coin Scanner
-- **`trading/spot/backtest_results/v13/_v14_scanner.py`** — Scores coins on V14-specific metrics
+### Coin Scanner (Legacy — Superseded 2026-03-03)
+- **`trading/spot/backtest_results/v13/_v14_scanner.py`** — Original V14 scanner (DEPRECATED)
   - 15 coins evaluated, weighted scoring: trade cycling (25%), short PnL (20%), max DD (20%), ROI (15%), phase count (10%), win rate (10%)
   - Top scores: ATOM 97/A+, HBAR 94/A+, LINK 82/A, NEAR 74/B+
-  - Output: `docs/data/v14/scanner.json` — feeds dashboard Opportunity section
+  - Output: `docs/data/v14/scanner.json` — **no longer consumed by dashboards**
+
+### DCA Cycle Scanner (2026-03-03 — Current)
+- **`trading/spot/v14_cycle_scanner.py`** — Capital velocity optimizer
+  - Scores coins by DCA cycle efficiency: how fast they complete profitable cycles, how much capital gets trapped, and how deep the drawdowns go
+  - **44 mature coins** from full Hyperliquid perp universe + immature coin tracking (auto-promotes at 6-month mark)
+  - Rolling time windows: 7d, 14d, 30d, full bear (Jan 2026+)
+  - Output: `docs/data/v14/cycle_scanner.json` — feeds all 3 dashboard Opportunity sections
+
+- **Scoring formula:**
+  ```
+  DCA Score = Realized_PnL × (1 - MaxDD%) × Capital_Freedom / 100
+  Capital_Freedom = 1 - (open_layers / 24)
+  ```
+
+- **DCA simulation parameters (V14 High Profile):**
+  - BO=40%, SO_DEV=1.5%, SO_STEP_MULT=1.5, SO_VOL_MULT=1.5, TP=1.5%, MAX_LAYERS=12
+  - Capital: $10K per coin, 90% DCA allocation, Hyperliquid taker fee (0.025%)
+
+- **Per-coin metrics produced:**
+  - `deals_completed` — completed DCA cycles in window
+  - `deals_per_week` — cycle velocity (primary ranking metric)
+  - `avg_cycle_hours` — average time from entry to TP
+  - `realized_pnl` — total banked profit from completed cycles
+  - `avg_pnl_per_deal` — average profit per cycle
+  - `max_drawdown_pct` — worst peak-to-trough during window
+  - `open_layers` — layers open at window end (capital lock indicator)
+  - `unrealized_pnl` — P&L on open position
+  - `net_return_pct` — total return including unrealized
+  - `capital_freedom` — 1 - (open_layers/24), higher = more deployable capital
+  - `dca_score` — composite score (the ranking metric)
+  - `win_rate` — % of completed deals that were profitable
+  - `mature` — boolean, true if coin has ≥6 months candle history
+  - `history_months` — months of available data
+
+- **Maturity gating:**
+  - Minimum 6 months of 1h candle history required for published rankings
+  - Immature coins scanned and tracked in `immature` array per window
+  - Auto-promotes to published rankings when history crosses threshold
+  - Rolling date — not hardcoded, recalculated each scan
+
+- **Coin universe:**
+  - 45 quality Hyperliquid perps + ASTER (Aster exchange live bot)
+  - Auto-resolves symbol quotes (tries USDT then USDC)
+  - Data sources: Binance (primary), KuCoin (KAS), candles.db
+  - MKR gap: Binance data stops Sep 2025 (possibly delisted)
+
+- **CLI:**
+  ```
+  python -m trading.spot.v14_cycle_scanner              # Full scan, all windows
+  python -m trading.spot.v14_cycle_scanner --window 7d   # Single window
+  python -m trading.spot.v14_cycle_scanner --coin HYPE   # Single coin
+  python -m trading.spot.v14_cycle_scanner --top 5       # Top 5 only
+  python -m trading.spot.v14_cycle_scanner --no-telegram  # Skip TG notification
+  ```
+
+- **Bear market results (2026-03-03, Jan 1 – Mar 3, 44 coins):**
+  | Rank | Coin | Score | Deals/Wk | Realized | DD% |
+  |------|------|-------|----------|----------|-----|
+  | 1 | ZRO | 68.7 | 17.5 | +$12,289 | 36% |
+  | 2 | HYPE | 41.7 | 10.3 | +$7,031 | 25% |
+  | 3 | RENDER | 18.0 | 7.6 | +$4,649 | 51% |
+  | 4 | STX | 17.0 | 5.7 | +$3,516 | 39% |
+  | 5 | FET | 13.3 | 5.5 | +$3,468 | 51% |
+  | ... | ... | ... | ... | ... | ... |
+  | 43 | UNI | 2.3 | 0.9 | +$544 | 50% |
+  | 44 | LTC | 2.1 | 0.8 | +$425 | 40% |
+
+- **Key design insight:** Simple daily range / volatility ≠ DCA profitability. A coin can be very volatile but trend straight down (SOs fill, TP never hits). The simulation measures actual cycle completion with capital lock-up — what V14 actually experiences.
+
+### Coin Discovery (Planned — 2D.6)
+- **`trading/spot/v14_coin_discovery.py`** — not yet built
+- Auto-detect new Hyperliquid perp listings (weekly)
+- Backfill from Binance → KuCoin → Bybit (in order)
+- Filters: no memecoins, no synthetic/leveraged, no sub-$1M volume, no <3mo launches
+- Log to `memory/coin-discovery.log`
 
 ### Dashboard
 - **`docs/dashboardV14.html`** (~1,050 lines) — Standalone V14 dashboard
-  - Data: `data/v14/status.json`, `data/v14/trades.csv`, `data/v14/scanner.json`
+  - Data: `data/v14/status.json`, `data/v14/trades.csv`, `data/v14/cycle_scanner.json`
   - Phases: LONG_DCA / SHORT_DCA / ROUTER (3 phases, replacing V13's 6 Wyckoff phases)
   - Coins: HBAR, ATOM, LINK, NEAR with custom icon gradients
   - Positions: Direction badge, grid layers (X/10) progress bar, leveraged equity, TP target
@@ -282,7 +357,8 @@ python -u -m trading.spot.run_v14_paper --capital 10000 --profile medium --excha
 - **`trading/sync_dashboard.ps1`** — Updated for V14 data paths
   - Syncs `trading/spot/paper/v14/status.json` → `docs/data/v14/status.json`
   - Syncs `trading/spot/paper/v14/trades.csv` → `docs/data/v14/trades.csv`
-  - Syncs scanner output → `docs/data/v14/scanner.json`
+  - Syncs scanner output → `docs/data/v14/scanner.json` (legacy, no longer consumed)
+  - Cycle scanner writes directly to `docs/data/v14/cycle_scanner.json`
   - Windows Scheduled Task: `AIT_DashboardSync` (every 10 min)
 
 ### Realism Features (added 2026-02-28)
