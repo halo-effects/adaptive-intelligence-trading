@@ -489,7 +489,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th>DCA SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>CAP FREE</th><th>DD%</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="DCA Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">DCA SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -1079,7 +1079,7 @@ function renderFlowDiagram(){
     var phase=isActive?(c.lifecycle_phase||c.state||'ROUTER'):'--';
 
     var scanCoinData=null;
-    scanCoins.forEach(function(sc){if(sc.symbol===sym)scanCoinData=sc});
+    scanCoins.forEach(function(sc){if(sc.symbol===sym||sc.coin===sym.split('/')[0])scanCoinData=sc});
 
     var dcaScore=scanCoinData?scanCoinData.dca_score:null;
     var dealsWk=scanCoinData?scanCoinData.deals_per_week:null;
