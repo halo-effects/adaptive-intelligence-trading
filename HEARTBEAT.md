@@ -12,10 +12,6 @@
 - Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
 - Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
 
-### V13 Paper Bot — SUNSET (2026-03-02)
-- **Stopped.** V14 is the go-forward engine. V13 kept for reference only.
-- Final state: +184.5% equity ($28,449), all 4 coins in MARKDOWN tier 3 shorts
-
 ### V14 Paper Bot (Hyperliquid — HBAR/ATOM/LINK/NEAR) — LIVE as of 2026-02-28
 - Check `trading/spot/paper/v14/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
