@@ -6,17 +6,17 @@
   "leverage": 1.0,
   "exchange": "aster",
   "capital": 300.0,
-  "equity": 305.16,
+  "equity": 305.56,
   "cash": 213.34,
-  "pnl_pct": 1.72,
+  "pnl_pct": 1.85,
   "coins": {
     "ASTER/USDT": {
       "state": "LONG_DCA",
       "side": "long",
       "layers": 1,
       "avg_entry": 0.72379,
-      "current_price": 0.72688,
-      "unrealized_pnl": 0.39,
+      "current_price": 0.72999,
+      "unrealized_pnl": 0.78,
       "invested": 91.44,
       "realized_pnl": 4.84,
       "lifecycle_phase": "LONG_DCA",
@@ -35,14 +35,14 @@
   "deals_completed": 2,
   "win_rate": 100.0,
   "max_drawdown_pct": 0.0,
-  "uptime_hours": 4.63,
+  "uptime_hours": 4.79,
   "fear_greed_index": null,
-  "last_update": "2026-03-04T18:43:24.091560+00:00",
+  "last_update": "2026-03-04T18:53:14.625427+00:00",
   "timeframe": "1h",
   "exchange_balance": {
-    "usdt_free": 133.03,
-    "usdt_total": 133.03,
-    "base_free": 252.5682,
-    "base_total": 252.5682
+    "usdt_free": 224.77,
+    "usdt_total": 224.77,
+    "base_free": 126.3382,
+    "base_total": 126.3382
   }
 }
