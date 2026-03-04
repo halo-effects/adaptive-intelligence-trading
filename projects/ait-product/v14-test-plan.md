@@ -371,3 +371,32 @@ python -u -m trading.spot.run_v14_paper --capital 10000 --profile medium --excha
 - **Dedup-at-source**: TradeTracker tracks `_existing_keys` (symbol+open_time+close_time) loaded from CSV. New trades checked against keys before recording. Prevents restart catch-up duplicates.
 - **Clean backfill baseline (2026-02-28)**: $67,068 (+571%), 357 trades, $61,592 realized, $749 fees. Status↔CSV gap: $124.73 (0.2%, stable, from edge-case trades without `pnl` field).
 - **PowerShell BOM hazard**: `Set-Content -Encoding UTF8` writes BOM (EF BB BF). Python's json.load() fails. Use `[System.Text.UTF8Encoding]::new($false)` for Python-consumed files.
+
+### Live Order Execution Safety (2026-03-04) — CRITICAL for Hyperliquid Production
+
+**Incident:** V14 Live bot on Aster attempted TP sell of 216.90 ASTER but exchange rejected with "insufficient balance." Engine had already mutated state (closed the deal, recorded a win), so it immediately opened a new L1 buy. Result: ~$155 of orphaned ASTER sitting on exchange untracked by the engine. Required manual intervention to recover.
+
+**Root Cause:** Two-phase commit violation. `engine.tick()` mutates state (closes positions, updates PnL) and returns actions. The runner then tries to execute those actions on the exchange. If execution fails, the engine state is already wrong.
+
+**Fixes Applied (must carry forward to Hyperliquid runner):**
+
+1. **Qty cap on sell:** Always sell `min(tracked_qty, actual_exchange_balance)`. Fee/rounding drift means tracked qty will always be slightly more than actual balance over time. The `execute_sell()` pre-flight now has an `elif available < qty` branch that caps to actual balance and logs the drift.
+
+2. **Pre-tick snapshot + rollback:** Before calling `engine.tick()`, snapshot all position-critical fields (long_coins, long_avg_entry, long_layers, long_tp, long_cost, long_trades, long_wins, long_pnl, capital). If the resulting sell fails on the exchange, restore the snapshot so the engine retries next tick instead of moving on.
+
+3. **Sell failure notification:** On rollback, send Telegram alert with restored position details and "will retry on next candle."
+
+**Production Requirements for Hyperliquid:**
+
+- [ ] **Balance reconciliation loop:** Periodic (every N candles) comparison of engine state vs exchange balances. Alert on drift > 0.1%.
+- [ ] **Atomic execution pattern:** Consider execute-first-then-update-engine instead of update-engine-then-execute. This inverts the current pattern — engine state only updates AFTER exchange confirms the fill.
+- [ ] **Order receipt verification:** After `create_market_sell_order()`, verify the order ID exists and is filled via `fetch_order()` before proceeding.
+- [ ] **Partial fill handling:** Market sells can partially fill. Engine must handle partial closes (reduce position by filled amount, keep remainder open).
+- [ ] **Dead letter queue:** Failed actions should be queued and retried with backoff, not silently dropped.
+- [ ] **Position sync on startup:** On every bot restart, compare engine state vs exchange positions and reconcile before entering live loop.
+- [ ] **Idempotent trade recording:** Use exchange order IDs as dedup keys so the same fill can never be recorded twice.
+
+**Exchange-Specific Notes:**
+- **Aster:** Amount precision is a float step size (0.01), not decimal places. `round(amount, 0.01)` crashes Python — must convert to decimal places first.
+- **Hyperliquid:** Test fee model (maker/taker), precision format, and partial fill behavior before going live. Perps have funding fees every 8h that affect PnL tracking.
+- **General:** Never trust tracked qty for sells. Always query actual balance. The exchange is the source of truth, not the engine.

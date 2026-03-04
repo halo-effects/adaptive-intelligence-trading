@@ -317,7 +317,7 @@ class AsterOrderExecutor:
         bal = self.get_balance()
         available = bal["base_free"]
         if available < qty * 0.99:  # 1% tolerance for rounding
-            # Sell what we have
+            # Far too little — sell what we have if above minimum
             if available > 0 and (not self._min_amount or available >= self._min_amount):
                 logger.warning(
                     f"Adjusting sell qty from {qty} to {available} (balance limit)"
@@ -331,6 +331,14 @@ class AsterOrderExecutor:
                     f"Reason: {reason}"
                 )
                 return None
+        elif available < qty:
+            # Close enough but exchange balance is slightly less (fee/rounding drift)
+            # Cap at actual balance to avoid "insufficient balance" rejection
+            logger.info(
+                f"Capping sell qty from {qty:.6f} to {available:.6f} "
+                f"(drift: {qty - available:.6f} {self.base_currency})"
+            )
+            qty = self._round_amount(available)
 
         if self.dry_run:
             proceeds = qty * price
@@ -787,6 +795,24 @@ class V14LiveBot:
                         "volume": float(bar[5]),
                     }
 
+                    # Snapshot engine state BEFORE tick so we can roll back
+                    # if a sell order fails on the exchange.
+                    eng = self.engine._engine
+                    _pre_tick_snapshot = None
+                    if eng:
+                        _pre_tick_snapshot = {
+                            "long_coins": eng.long_coins,
+                            "long_avg_entry": eng.long_avg_entry,
+                            "long_layers": eng.long_layers,
+                            "long_last_buy": eng.long_last_buy,
+                            "long_tp": eng.long_tp,
+                            "long_cost": eng.long_cost,
+                            "long_trades": eng.long_trades,
+                            "long_wins": eng.long_wins,
+                            "long_pnl": eng.long_pnl,
+                            "capital": eng.capital,
+                        }
+
                     # Tick the V14 engine
                     try:
                         actions = self.engine.tick(candle, self.cash)
@@ -799,7 +825,7 @@ class V14LiveBot:
                     # Execute resulting actions
                     if actions:
                         for act in actions:
-                            self._execute_action(act, ts_dt)
+                            self._execute_action(act, ts_dt, _pre_tick_snapshot)
                             logger.info(f"⚡ {act}")
 
                     self._last_candle_ts = ts_ms
@@ -849,7 +875,7 @@ class V14LiveBot:
         logger.info("Live trading loop stopped")
         send_telegram(f"🛑 {TG_PREFIX} Bot stopped")
 
-    def _execute_action(self, action: dict, ts: datetime):
+    def _execute_action(self, action: dict, ts: datetime, pre_tick_snapshot: dict = None):
         """Execute a single engine action as a real order."""
         act_type = action.get("action", "")
         price = action.get("price", 0)
@@ -882,6 +908,23 @@ class V14LiveBot:
                     f"Reason: {reason}"
                 )
                 self.tracker.process_actions(self.symbol, [action], ts)
+            else:
+                # SELL FAILED — roll back engine state so it retries next tick
+                eng = self.engine._engine
+                if pre_tick_snapshot and eng:
+                    logger.warning(
+                        f"SELL FAILED — rolling back engine state "
+                        f"(restoring {pre_tick_snapshot['long_coins']:.4f} coins, "
+                        f"{pre_tick_snapshot['long_layers']} layers)"
+                    )
+                    for k, v in pre_tick_snapshot.items():
+                        setattr(eng, k, v)
+                    send_telegram(
+                        f"⚠️ {TG_PREFIX} <b>SELL FAILED — engine state rolled back</b>\n"
+                        f"Position restored: {pre_tick_snapshot['long_coins']:.4f} coins, "
+                        f"{pre_tick_snapshot['long_layers']} layers\n"
+                        f"Will retry on next candle"
+                    )
 
         elif act_type == "SHORT_OPEN":
             # Spot-only mode — log but don't execute shorts
