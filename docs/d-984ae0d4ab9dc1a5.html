@@ -488,7 +488,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th title="DCA Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">DCA SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="DCA Score = Realized PnL ï¿½ (1 - DD%) ï¿½ Liquid Capital" style="cursor:help">DCA SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -633,10 +633,10 @@ function renderStats(){
   $('vUPnlSub').textContent=fmt(upnlPct,2)+'% on '+fUsd(totalInv)+' invested';
 
   var wins=0, losses=0;
-  if(trades.length>0){
+  var dc=S.deals_completed||0, wr0=S.win_rate||0;
+  if(trades.length>0 && trades.length>=dc){
     trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);if(p>0)wins++;else if(p!==0)losses++});
   } else {
-    var dc=S.deals_completed||0, wr0=S.win_rate||0;
     wins=Math.round(dc*wr0/100);losses=dc-wins;
   }
   var totalTrades=wins+losses;
