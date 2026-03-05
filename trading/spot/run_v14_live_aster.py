@@ -811,6 +811,7 @@ class V14LiveBot:
                             "long_wins": eng.long_wins,
                             "long_pnl": eng.long_pnl,
                             "capital": eng.capital,
+                            "_trades_len": len(eng.trades),
                         }
 
                     # Tick the V14 engine
@@ -912,6 +913,7 @@ class V14LiveBot:
                 # SELL FAILED — roll back engine state so it retries next tick
                 eng = self.engine._engine
                 if pre_tick_snapshot and eng:
+                    old_trades_len = pre_tick_snapshot.pop("_trades_len", None)
                     logger.warning(
                         f"SELL FAILED — rolling back engine state "
                         f"(restoring {pre_tick_snapshot['long_coins']:.4f} coins, "
@@ -919,11 +921,29 @@ class V14LiveBot:
                     )
                     for k, v in pre_tick_snapshot.items():
                         setattr(eng, k, v)
+                    # Also trim the engine's internal trades list to remove
+                    # the phantom sell entry that the tick added
+                    if old_trades_len is not None and len(eng.trades) > old_trades_len:
+                        removed = eng.trades[old_trades_len:]
+                        eng.trades = eng.trades[:old_trades_len]
+                        logger.warning(
+                            f"Removed {len(removed)} phantom trade(s) from engine: "
+                            f"{[t.get('action','?') for t in removed]}"
+                        )
                     send_telegram(
                         f"⚠️ {TG_PREFIX} <b>SELL FAILED — engine state rolled back</b>\n"
                         f"Position restored: {pre_tick_snapshot['long_coins']:.4f} coins, "
                         f"{pre_tick_snapshot['long_layers']} layers\n"
                         f"Will retry on next candle"
+                    )
+                else:
+                    logger.error(
+                        "SELL FAILED but no pre-tick snapshot available! "
+                        "Engine state may be inconsistent."
+                    )
+                    send_telegram(
+                        f"🔴 {TG_PREFIX} <b>SELL FAILED — NO ROLLBACK AVAILABLE</b>\n"
+                        f"Engine state may be inconsistent. Manual intervention needed."
                     )
 
         elif act_type == "SHORT_OPEN":
@@ -940,6 +960,88 @@ class V14LiveBot:
         elif act_type == "PHASE_CHANGE":
             # Already handled in run_live
             pass
+
+    def _reconcile_on_startup(self):
+        """Reconcile engine cash with actual exchange balance on startup.
+
+        Queries the exchange for real USDT + ASTER balances and corrects
+        the engine's internal cash (eng.capital) and the bot's self.cash
+        if drift exceeds $1. This fixes accumulated discrepancies from
+        failed orders that weren't properly rolled back.
+        """
+        if self.executor is None:
+            logger.warning("Cannot reconcile on startup — no executor")
+            return
+
+        try:
+            bal = self.executor.get_balance()
+            price = self.executor.get_current_price() or 0
+            if price <= 0:
+                logger.warning("Cannot reconcile — price unavailable")
+                return
+
+            exchange_usdt = bal["usdt_free"]
+            exchange_base = bal["base_total"]
+
+            eng = self.engine._engine
+            if eng is None:
+                return
+
+            engine_cash = eng.capital
+            engine_coins = eng.long_coins
+
+            # --- Cash (USDT) reconciliation ---
+            # When no position is open, engine cash should ≈ exchange USDT.
+            # When a position IS open, we reconcile total portfolio value.
+            exchange_total = exchange_usdt + (exchange_base * price)
+            engine_total = engine_cash + (engine_coins * price)
+
+            cash_drift = exchange_usdt - engine_cash
+            total_drift = exchange_total - engine_total
+
+            logger.info(
+                f"STARTUP RECONCILIATION:\n"
+                f"  Exchange: ${exchange_usdt:.2f} USDT + "
+                f"{exchange_base:.4f} {self.executor.base_currency} "
+                f"(~${exchange_total:.2f} total)\n"
+                f"  Engine:   ${engine_cash:.2f} cash + "
+                f"{engine_coins:.4f} coins (~${engine_total:.2f} total)\n"
+                f"  Cash drift: ${cash_drift:+.2f} | Total drift: ${total_drift:+.2f}"
+            )
+
+            # Fix engine capital if total drift exceeds $1
+            DRIFT_THRESHOLD = 1.0
+            if abs(total_drift) > DRIFT_THRESHOLD:
+                old_capital = eng.capital
+                eng.capital += total_drift
+                logger.warning(
+                    f"RECONCILIATION ADJUSTMENT: eng.capital "
+                    f"${old_capital:.2f} → ${eng.capital:.2f} "
+                    f"(adjusted by ${total_drift:+.2f})"
+                )
+                send_telegram(
+                    f"🔧 {TG_PREFIX} <b>Startup Cash Reconciliation</b>\n"
+                    f"Engine capital: ${old_capital:.2f} → ${eng.capital:.2f}\n"
+                    f"Adjustment: ${total_drift:+.2f}\n"
+                    f"Exchange USDT: ${exchange_usdt:.2f}\n"
+                    f"Exchange {self.executor.base_currency}: {exchange_base:.4f}"
+                )
+            else:
+                logger.info(f"Reconciliation OK — drift ${total_drift:+.2f} within threshold")
+
+            # Always sync self.cash to engine capital (self.cash is the
+            # V14LiveBot's independent tracker; it should match eng.capital)
+            if abs(self.cash - eng.capital) > 0.01:
+                logger.info(
+                    f"Syncing self.cash: ${self.cash:.2f} → ${eng.capital:.2f}"
+                )
+                self.cash = eng.capital
+
+        except Exception as e:
+            logger.error(f"Startup reconciliation failed: {e}\n{traceback.format_exc()}")
+            send_telegram(
+                f"⚠️ {TG_PREFIX} Startup reconciliation failed: {str(e)[:200]}"
+            )
 
     def _maybe_reconcile(self):
         """Periodically reconcile engine state with exchange balances."""
@@ -964,7 +1066,8 @@ class V14LiveBot:
             engine_cash = eng.capital if eng else self.capital
             engine_value = engine_cash + (engine_coins * price)
 
-            drift_pct = abs(exchange_value - engine_value) / max(engine_value, 1) * 100
+            drift = exchange_value - engine_value
+            drift_pct = abs(drift) / max(engine_value, 1) * 100
 
             if drift_pct > 10:  # More than 10% drift is suspicious
                 logger.warning(
@@ -981,6 +1084,13 @@ class V14LiveBot:
                 )
             else:
                 logger.debug(f"Reconciliation OK — drift {drift_pct:.1f}%")
+
+            # Sync self.cash to engine capital (prevent self.cash from drifting)
+            if eng and abs(self.cash - eng.capital) > 0.01:
+                logger.info(
+                    f"Periodic sync self.cash: ${self.cash:.2f} → ${eng.capital:.2f}"
+                )
+                self.cash = eng.capital
 
         except Exception as e:
             logger.warning(f"Reconciliation failed: {e}")
@@ -1112,6 +1222,11 @@ class V14LiveBot:
             # Backfill signal context, then go live
             self.backfill()
             self.engine._live_mode = True
+
+        # Reconcile engine cash with actual exchange balance on startup.
+        # This fixes accumulated drift from failed orders, rounding, or
+        # any other discrepancy between engine state and reality.
+        self._reconcile_on_startup()
 
         # Save initial state
         try:

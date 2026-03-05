@@ -262,7 +262,62 @@ Each bot writes two files continuously:
 
 **`trades.csv`** — Complete trade history log
 
-### 5.4 Bot Management
+### 5.4 Exchange Interaction Safety (Live Bot)
+
+The live bot (`run_v14_live_aster.py`) implements multiple layers of protection for exchange order execution:
+
+#### 5.4.1 Sell Verification & Rollback
+
+Before each engine tick, the bot captures a **pre-tick snapshot** of the engine state (positions, capital, cash, and trades list). If a SELL order fails on the exchange:
+
+1. **Engine state is rolled back** to the pre-tick snapshot — positions, capital, and cash are restored
+2. **Phantom trades are removed** — the engine's internal `trades` list is trimmed back to its pre-tick length, preventing failed sells from being counted as completed deals
+3. **Failure is logged** with full context and a Telegram alert is sent
+4. **The engine retries** on the next tick cycle (65 seconds later)
+
+This prevents the critical bug where a failed sell could be counted as a completed deal, corrupting PnL accounting and the W/L record.
+
+#### 5.4.2 Balance Reconciliation
+
+The bot maintains two reconciliation mechanisms:
+
+**Startup Reconciliation (`_reconcile_on_startup`):**
+Runs every time the bot starts (after exchange connection + state restoration):
+1. Queries actual exchange balances (USDT free + base asset total)
+2. Computes total portfolio value for both exchange reality and engine state
+3. If drift exceeds $1: adjusts `eng.capital` to absorb the difference
+4. Syncs the bot's independent `self.cash` tracker to corrected engine capital
+5. Saves corrected state and sends Telegram notification with adjustment details
+
+**Periodic Reconciliation (`_maybe_reconcile`, every 5 minutes):**
+- Compares engine state to exchange balances
+- Syncs `self.cash` to `eng.capital` on every cycle to prevent tracker drift
+- Alerts via Telegram if drift exceeds 10% of capital
+
+#### 5.4.3 Order Execution Flow
+
+```
+Engine tick produces SELL action
+    │
+    ├─→ Capture pre-tick snapshot (positions, capital, trades)
+    │
+    ├─→ Submit MARKET SELL to exchange
+    │       │
+    │       ├─→ FILLED ✅
+    │       │     └─→ Update engine state, log trade, save CSV
+    │       │
+    │       └─→ FAILED ❌ (InsufficientFunds, timeout, etc.)
+    │             └─→ Rollback engine to pre-tick snapshot
+    │             └─→ Trim phantom trades from engine.trades
+    │             └─→ Log failure + Telegram alert
+    │             └─→ Retry on next tick (65s)
+    │
+    └─→ Periodic reconciliation (every 5 min)
+          └─→ Compare engine cash vs exchange USDT
+          └─→ Correct drift if > $1
+```
+
+### 5.5 Bot Management
 
 | Bot | Scheduled Task | Start Command |
 |-----|---------------|---------------|
@@ -317,7 +372,32 @@ Scanner data:
 | V14-ETF Paper | `https://halo-effects.github.io/adaptive-intelligence-trading/dashboardV14ETF.html` |
 | Main Index | `https://halo-effects.github.io/adaptive-intelligence-trading/` |
 
-### 6.3 GitHub Pages Notes
+### 6.3 Dashboard Data Integrity
+
+The dashboards consume two data sources per bot: `status.json` (engine state) and `trades.csv` (trade log). These can diverge if the bot is restarted or if trades fail to log.
+
+**Win/Loss Counter Logic:**
+The dashboard uses `status.json` as the authoritative source for deal counts when `trades.csv` has fewer entries than `deals_completed`. This prevents stale or incomplete CSV data from overriding the engine's accurate counter.
+
+```javascript
+// Dashboard falls back to status.json when CSV is incomplete
+if (trades.length > 0 && trades.length >= deals_completed) {
+    // Count W/L from trades.csv rows
+} else {
+    // Use status.json deals_completed + win_rate
+    wins = Math.round(dc * wr / 100);
+}
+```
+
+**Trade Log (`trades.csv`) Recovery:**
+The `TradeTracker` class reloads from `trades.csv` on bot restart via `load_existing()`. If the CSV was empty or incomplete at a prior restart point, historical trades are lost from the log. Recovery options:
+1. Reconstruct from `bot.log` (contains all BUY/SELL actions with timestamps and prices)
+2. Reconstruct from Telegram notifications (all orders are logged to Telegram)
+3. The engine's `deals_completed` counter in `state.json` is always authoritative
+
+**Known Limitation:** The `TradeTracker._deal_counter` resets based on what's loaded from CSV, not from the engine's deal count. This means deal IDs in the CSV may not match the engine's internal numbering after a restart with missing data.
+
+### 6.4 GitHub Pages Notes
 
 - Repository: `halo-effects/adaptive-intelligence-trading`
 - Rate limit: Max 10 builds/hour (sync interval set to 10 min to stay under)
@@ -554,11 +634,14 @@ These are one-time scripts used during initial setup, not part of the recurring 
 
 ## Appendix B: Known Issues
 
-| Issue | Impact | Workaround |
-|-------|--------|------------|
-| MKR candles stopped Sept 2025 | MKR excluded from scanner rankings | Needs manual backfill or removal from universe |
-| ASTER candles not in hourly pipeline | ASTER data may lag | Live bot self-collects; scanner marks as immature (< 6mo) |
-| Exit code 1 on stderr output | PowerShell treats Python stderr as error | Non-blocking; scripts complete successfully despite error code |
+| Issue | Impact | Status | Workaround |
+|-------|--------|--------|------------|
+| MKR candles stopped Sept 2025 | MKR excluded from scanner rankings | Open | Needs manual backfill or removal from universe |
+| ASTER candles not in hourly pipeline | ASTER data may lag | Open | Live bot self-collects; scanner marks as immature (< 6mo) |
+| Exit code 1 on stderr output | PowerShell treats Python stderr as error | Won't fix | Non-blocking; scripts complete successfully despite error code |
+| Failed sell counted as completed deal | Engine/exchange cash divergence ($10.91) | **Fixed 2026-03-05** | Sell verification + rollback + startup reconciliation added |
+| trades.csv incomplete after restarts | Dashboard showed 1W instead of 3W | **Fixed 2026-03-05** | Dashboard falls back to status.json; trades reconstructed from bot.log |
+| `self.cash` tracker corruption (-$34.33) | Bot's independent cash tracker diverged from engine | **Fixed 2026-03-05** | Periodic reconciliation syncs self.cash to eng.capital every 5 min |
 
 ---
 
@@ -567,3 +650,4 @@ These are one-time scripts used during initial setup, not part of the recurring 
 | Date | Version | Changes |
 |------|---------|---------|
 | 2026-03-05 | 1.0 | Initial V14 system spec. Documents full pipeline from candle collection through DCA scoring to dashboard sync. Includes cloud migration guide. |
+| 2026-03-05 | 1.1 | Added Section 5.4 (Exchange Interaction Safety): sell verification/rollback, startup + periodic balance reconciliation, order execution flow diagram. Added Section 6.3 (Dashboard Data Integrity): W/L counter fallback logic, trade log recovery procedures. Updated Appendix B with 3 resolved incidents from 2026-03-05. |
