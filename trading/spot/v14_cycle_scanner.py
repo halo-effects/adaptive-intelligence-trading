@@ -68,6 +68,7 @@ COINS = [
 WORKSPACE = Path(__file__).resolve().parent.parent.parent
 DB_PATH = WORKSPACE / "trading" / "spot" / "data" / "candles.db"
 OUTPUT_PATH = WORKSPACE / "docs" / "data" / "v14" / "cycle_scanner.json"
+SCORE_HISTORY_PATH = WORKSPACE / "trading" / "spot" / "data" / "score_history.json"
 
 
 def load_candles(conn: sqlite3.Connection, symbol: str, start_ms: int, end_ms: int) -> list[tuple]:
@@ -519,6 +520,169 @@ def print_table(output: dict, window: str, top_n: Optional[int] = None):
         print()
 
 
+def append_score_history(output: dict):
+    """Append current scan scores to the rolling history file.
+
+    History format:
+    {
+        "snapshots": [
+            {
+                "timestamp": "2026-03-05T12:00:00+00:00",
+                "scores": { "HBAR": 85.2, "SOL": 70.1, ... }
+            },
+            ...
+        ]
+    }
+
+    Keeps up to 180 days (~6 months) of daily snapshots.
+    """
+    MAX_SNAPSHOTS = 180
+
+    history = {"snapshots": []}
+    if SCORE_HISTORY_PATH.exists():
+        try:
+            with open(SCORE_HISTORY_PATH, "r", encoding="utf-8") as f:
+                history = json.load(f)
+        except (json.JSONDecodeError, KeyError):
+            logger.warning("Corrupt score_history.json, starting fresh")
+            history = {"snapshots": []}
+
+    # Use the "bear" window if available (longest backtest), else longest available
+    best_window = "bear"
+    if best_window not in output.get("windows", {}):
+        available = list(output.get("windows", {}).keys())
+        best_window = available[-1] if available else None
+
+    if not best_window:
+        return
+
+    rankings = output["windows"][best_window].get("rankings", [])
+    immature = output["windows"][best_window].get("immature", [])
+
+    scores = {}
+    for r in rankings + immature:
+        coin = r.get("coin", r.get("symbol", "").split("/")[0])
+        scores[coin] = {
+            "dca_score": r.get("dca_score", 0.0),
+            "deals_per_week": r.get("deals_per_week", 0.0),
+            "max_drawdown_pct": r.get("max_drawdown_pct", 0.0),
+            "realized_pnl": r.get("realized_pnl", 0.0),
+            "capital_freedom": r.get("capital_freedom", 1.0),
+            "mature": r.get("mature", False),
+        }
+
+    snapshot = {
+        "timestamp": output.get("generated_at", datetime.now(timezone.utc).isoformat()),
+        "window": best_window,
+        "scores": scores,
+    }
+
+    # De-duplicate: if last snapshot is from the same calendar day, replace it
+    today = snapshot["timestamp"][:10]
+    if history["snapshots"]:
+        last_day = history["snapshots"][-1]["timestamp"][:10]
+        if last_day == today:
+            history["snapshots"][-1] = snapshot
+        else:
+            history["snapshots"].append(snapshot)
+    else:
+        history["snapshots"].append(snapshot)
+
+    # Trim to MAX_SNAPSHOTS
+    if len(history["snapshots"]) > MAX_SNAPSHOTS:
+        history["snapshots"] = history["snapshots"][-MAX_SNAPSHOTS:]
+
+    SCORE_HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(SCORE_HISTORY_PATH, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2, ensure_ascii=False)
+    logger.info(f"Score history updated ({len(history['snapshots'])} snapshots) → {SCORE_HISTORY_PATH}")
+
+
+def compute_trend_scores(history_path: Path = SCORE_HISTORY_PATH) -> dict:
+    """Compute trend multipliers from score history.
+
+    Returns:
+        { "HBAR": { "trend_7d": 1.2, "trend_14d": 1.1, "trend_30d": 0.9,
+                     "trend_multiplier": 1.15, "direction": "accelerating" }, ... }
+    """
+    if not history_path.exists():
+        return {}
+
+    with open(history_path, "r", encoding="utf-8") as f:
+        history = json.load(f)
+
+    snapshots = history.get("snapshots", [])
+    if len(snapshots) < 3:
+        logger.info(f"Need ≥3 snapshots for trend (have {len(snapshots)}), skipping trend calc")
+        return {}
+
+    # Build time series per coin: [(days_ago, score), ...]
+    latest_ts = snapshots[-1]["timestamp"]
+    latest_dt = datetime.fromisoformat(latest_ts)
+
+    coin_series: dict[str, list[tuple[float, float]]] = {}
+    for snap in snapshots:
+        snap_dt = datetime.fromisoformat(snap["timestamp"])
+        days_ago = (latest_dt - snap_dt).total_seconds() / 86400
+        for coin, data in snap.get("scores", {}).items():
+            score = data["dca_score"] if isinstance(data, dict) else data
+            coin_series.setdefault(coin, []).append((days_ago, score))
+
+    trends = {}
+    for coin, series in coin_series.items():
+        series.sort(key=lambda x: x[0], reverse=True)  # oldest first (highest days_ago)
+
+        def slope_over_window(window_days: int) -> Optional[float]:
+            points = [(d, s) for d, s in series if d <= window_days]
+            if len(points) < 2:
+                return None
+            # Simple: (latest score - earliest score in window) / earliest score
+            earliest = points[0][1]  # oldest in window
+            latest = points[-1][1]   # most recent
+            if abs(earliest) < 0.01:
+                return 0.0
+            return (latest - earliest) / abs(earliest)
+
+        t7 = slope_over_window(7)
+        t14 = slope_over_window(14)
+        t30 = slope_over_window(30)
+
+        # Composite trend multiplier: weighted average of available windows
+        weights = []
+        if t7 is not None:
+            weights.append((t7, 0.5))   # 7d most recent, highest weight
+        if t14 is not None:
+            weights.append((t14, 0.3))
+        if t30 is not None:
+            weights.append((t30, 0.2))
+
+        if not weights:
+            continue
+
+        weighted_change = sum(w * s for s, w in weights) / sum(w for _, w in weights)
+
+        # Convert to multiplier: +20% change → 1.2x, -30% change → 0.7x
+        # Clamp between 0.3 and 1.5 to avoid extreme swings
+        multiplier = max(0.3, min(1.5, 1.0 + weighted_change))
+
+        if weighted_change > 0.05:
+            direction = "accelerating"
+        elif weighted_change < -0.05:
+            direction = "declining"
+        else:
+            direction = "stable"
+
+        trends[coin] = {
+            "trend_7d": round(t7, 3) if t7 is not None else None,
+            "trend_14d": round(t14, 3) if t14 is not None else None,
+            "trend_30d": round(t30, 3) if t30 is not None else None,
+            "trend_multiplier": round(multiplier, 3),
+            "direction": direction,
+        }
+
+    return trends
+
+
 def send_telegram_summary(output: dict):
     """Send scan summary to Telegram via API."""
     token = os.environ.get("AIT_TG_TOKEN")
@@ -634,6 +798,25 @@ def main():
         print(f"  Fastest Cycler: {tp.get('fastest_cycler', 'N/A')}")
         print(f"  Lowest DD:      {tp.get('lowest_dd', 'N/A')}")
         print(f"  Most Cap Free:  {tp.get('most_capital_free', 'N/A')}")
+
+    # Save score history for trend analysis
+    append_score_history(output)
+
+    # Compute and display trend scores if history is available
+    trends = compute_trend_scores()
+    if trends:
+        output["trend_scores"] = trends
+        print(f"\n{'='*70}")
+        print(f"  DCA Trend Scores (score momentum)")
+        print(f"{'='*70}")
+        print(f"{'Coin':<8} {'Direction':<14} {'7d':>8} {'14d':>8} {'30d':>8} {'Mult':>6}")
+        print(f"{'-'*70}")
+        for coin in sorted(trends.keys(), key=lambda c: trends[c]["trend_multiplier"], reverse=True):
+            t = trends[coin]
+            t7 = f"{t['trend_7d']:+.1%}" if t['trend_7d'] is not None else "—"
+            t14 = f"{t['trend_14d']:+.1%}" if t['trend_14d'] is not None else "—"
+            t30 = f"{t['trend_30d']:+.1%}" if t['trend_30d'] is not None else "—"
+            print(f"{coin:<8} {t['direction']:<14} {t7:>8} {t14:>8} {t30:>8} {t['trend_multiplier']:>5.2f}x")
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
