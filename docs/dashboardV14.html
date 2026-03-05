@@ -488,7 +488,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th title="DCA Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">DCA SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="DCA Score = Realized PnL ï¿½ (1 - DD%) ï¿½ Liquid Capital" style="cursor:help">DCA SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -1087,7 +1087,12 @@ function renderFlowDiagram(){
     var capFree=scanCoinData?scanCoinData.capital_freedom:null;
     var ddPct=scanCoinData?scanCoinData.max_drawdown_pct:null;
 
-    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct});
+    // Trend score from scanner history
+    var trendData=null;
+    var coinKey=sym.split('/')[0];
+    if(scannerData&&scannerData.trend_scores&&scannerData.trend_scores[coinKey]){trendData=scannerData.trend_scores[coinKey]}
+
+    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData});
   });
 
   // Sort by dca_score descending (nulls last)
