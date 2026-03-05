@@ -16,10 +16,13 @@ def main():
     print("  V13 Daily Collection Runner")
     print("=" * 60)
 
-    # Step 1: Ensure tables exist
+    # Step 1: Ensure tables exist (migration module removed; tables already present)
     print("\n--- DB Migration ---")
-    from trading.spot.db_migrate_v13_analytics import run_migration
-    run_migration()
+    try:
+        from trading.spot.db_migrate_v13_analytics import run_migration
+        run_migration()
+    except ImportError:
+        print("  Migration module not found — skipping (tables already exist).")
 
     # Step 2: Run collector
     print("\n--- Daily Collector ---")

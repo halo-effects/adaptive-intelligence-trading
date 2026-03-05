@@ -1,0 +1,569 @@
+# V14 System Specification — Adaptive Intelligence Trading (AIT)
+
+**Version:** 1.0  
+**Date:** 2026-03-05  
+**Author:** Gee Gee (AI Agent) + Brett (Principal)  
+**Status:** Live (Paper + Live)  
+**Engine:** V14 DCA-only with ROUTER v2 signal stack  
+**Production Exchange:** Hyperliquid (perps), Aster (spot)
+
+---
+
+## 1. Overview
+
+V14 is the current production trading engine for AIT. It is a **DCA-only (long) strategy** that uses the ROUTER v2 signal stack to time entries and exits. The system is designed for bear/ranging markets where coins cycle through predictable drawdown-and-recovery patterns.
+
+The architecture has four operational layers:
+
+1. **Data Pipeline** — Candle collection and storage
+2. **Intelligence Layer** — DCA Cycle Scanner and scoring
+3. **Execution Layer** — Live and paper trading bots
+4. **Presentation Layer** — Dashboards and GitHub Pages sync
+
+### Design Philosophy
+
+> "It's about finding the right coin at the right time and running the strategy and getting out with your shirt." — Brett
+
+V14 prioritizes **capital velocity** over raw profit. The system scores coins by how quickly they complete profitable DCA cycles, how much capital gets trapped in safety orders, and how deep the drawdowns go. Capital is deployed where the DCA Score is highest.
+
+---
+
+## 2. System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        DATA PIPELINE                            │
+│                                                                 │
+│  Hyperliquid API ──→ collect_scanner_candles.py ──→ candles.db  │
+│  (1h perp candles)    (hourly, incremental)         (SQLite)    │
+│                                                                 │
+│  Aster API ──→ live bot self-collects                           │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────────┐
+│                    INTELLIGENCE LAYER                            │
+│                                                                 │
+│  candles.db ──→ v14_cycle_scanner.py ──→ cycle_scanner.json     │
+│                 (hourly, after candle collection)                │
+│                                                                 │
+│  Outputs:                                                       │
+│    - DCA Score per coin (4 time windows)                        │
+│    - Rankings, top picks, capital deployment signals             │
+│    - Immature coin tracking (< 6mo history)                     │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────────┐
+│                     EXECUTION LAYER                             │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ V14 Live Bot (ASTER/USDT)         $300 real capital      │   │
+│  │ Exchange: Aster (spot)            Profile: High          │   │
+│  │ Runner: run_v14_live_aster.py     Task: V14LiveAster     │   │
+│  │ State: trading/spot/live/v14/                            │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ V14 Paper Bot (HBAR/ATOM/LINK/NEAR)   $10K paper        │   │
+│  │ Exchange: Hyperliquid (perps)         Profile: Medium    │   │
+│  │ Runner: run_v14_paper.py              Task: V14PaperBot  │   │
+│  │ State: trading/spot/paper/v14/                           │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ V14-ETF Paper Bot (SOL/XRP/LTC/HBAR/ADA)  $10K paper    │   │
+│  │ Exchange: Hyperliquid (perps)         Profile: High      │   │
+│  │ Runner: run_v14etf_paper.py           Task: V14ETFPaperBot│  │
+│  │ State: trading/spot/paper/v14etf/                        │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────────┐
+│                   PRESENTATION LAYER                            │
+│                                                                 │
+│  status.json + trades.csv ──→ sync_dashboard.ps1 ──→ GitHub     │
+│  cycle_scanner.json          (every 10 min)          Pages      │
+│  daily_equity.json                                              │
+│                                                                 │
+│  Dashboards:                                                    │
+│    - V14 Live:  d-984ae0d4ab9dc1a5.html                        │
+│    - V14 Paper: dashboardV14.html                               │
+│    - V14-ETF:   dashboardV14ETF.html                            │
+│                                                                 │
+│  GitHub: halo-effects.github.io/adaptive-intelligence-trading/  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Data Pipeline
+
+### 3.1 Candle Database
+
+**File:** `trading/spot/data/candles.db` (SQLite, ~212 MB)
+
+**Schema:**
+```sql
+CREATE TABLE candles (
+    symbol TEXT,
+    timeframe TEXT,
+    timestamp INTEGER,    -- Unix ms
+    open REAL, high REAL, low REAL, close REAL, volume REAL,
+    PRIMARY KEY (symbol, timeframe, timestamp)
+);
+
+CREATE TABLE candles_daily (
+    symbol TEXT,
+    timestamp INTEGER,
+    open REAL, high REAL, low REAL, close REAL, volume REAL,
+    PRIMARY KEY (symbol, timestamp)
+);
+```
+
+**Coverage:** 48 coins, 1h candles. Most coins have 6-86 months of history. The scanner requires a minimum of 6 months to be included in published rankings.
+
+### 3.2 Candle Collector
+
+**File:** `trading/spot/collect_scanner_candles.py`  
+**Schedule:** Hourly via `AIT_CandleCollector` Windows Scheduled Task  
+**Source:** Hyperliquid perps API (all coins mapped as `COIN/USDC:USDC`)
+
+**Behavior:**
+- **Incremental:** Only fetches candles newer than the last stored timestamp (with 6-hour overlap buffer for gap recovery)
+- **First run:** Pulls up to 2 years of history
+- **Rate limiting:** 0.5s between API pages, 0.8s between coins, automatic retry with exponential backoff on HTTP 429
+- **Deduplication:** Uses `INSERT OR IGNORE` on the primary key
+- **ASTER exception:** ASTER candles are collected by the live bot itself (Aster exchange, not Hyperliquid)
+
+**Coin Universe (48 coins):**
+
+| Category | Coins |
+|----------|-------|
+| Established (pre-2024) | BTC, ETH, SOL, XRP, LINK, DOGE, ADA, LTC, AVAX, DOT, UNI, ATOM, NEAR, HBAR, INJ, FIL, RUNE, CRV, SNX, COMP, MKR, ENS, DYDX, LDO, ARB, OP, STX, SEI, RENDER |
+| 2024 launches | SUI, FET, TAO, TON, JUP, KAS, PENDLE, PYTH, TIA, ONDO, ENA, EIGEN, W, ZRO |
+| Mid-cycle 2025 | HYPE, ASTER |
+| Standalone | AAVE |
+
+### 3.3 Pipeline Wrapper
+
+**File:** `trading/spot/run_candle_collector.ps1`  
+**Scheduled Task:** `AIT_CandleCollector` (hourly)  
+**Log:** `trading/spot/data/collector.log`
+
+```
+Step 1: Run collect_scanner_candles.py (pull candles)
+Step 2: Run v14_cycle_scanner.py (refresh DCA Scores)
+```
+
+This wrapper is called by the scheduled task via:
+```
+powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden
+    -File C:\Users\Never\.openclaw\workspace\trading\spot\run_candle_collector.ps1
+```
+
+---
+
+## 4. Intelligence Layer — DCA Cycle Scanner
+
+### 4.1 Purpose
+
+The scanner is the **source of truth** for capital deployment decisions. It evaluates every coin in the universe by simulating DCA cycles on historical candle data and scoring them by capital efficiency.
+
+**File:** `trading/spot/v14_cycle_scanner.py`  
+**Output:** `docs/data/v14/cycle_scanner.json`
+
+### 4.2 DCA Score Formula
+
+```
+DCA Score = Realized_PnL × (1 - MaxDD%) × Capital_Freedom / 100
+```
+
+| Component | What it measures | Why it matters |
+|-----------|-----------------|----------------|
+| **Realized_PnL** | Dollar profit from completed deals in the window | Raw earning power — coins that cycle fast and profitably score higher |
+| **(1 - MaxDD%)** | Penalty for maximum drawdown depth | Protects against coins that profit but expose you to catastrophic underwater periods |
+| **Capital_Freedom** | `1 - (open_layers / 24)` | Measures how often capital is free vs trapped in safety orders. A coin sitting at layer 10 permanently traps capital |
+
+### 4.3 DCA Simulation Parameters (V14 High Profile)
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `BO_PCT` | 40% | Base order as percentage of DCA allocation |
+| `SO_DEV` | 1.5% | Safety order price deviation |
+| `SO_STEP_MULT` | 1.5x | Each SO placed further apart (geometric) |
+| `SO_VOL_MULT` | 1.5x | Each SO is larger (geometric) |
+| `MAX_LAYERS` | 12 | Maximum safety orders per deal |
+| `TP_PCT` | 1.5% | Take profit from weighted average entry |
+| `TAKER_FEE` | 0.025% | Hyperliquid taker fee |
+| `CAPITAL` | $10,000 | Simulated capital per coin |
+| `DCA_ALLOC` | 90% | Percentage of capital allocated to DCA grid |
+
+### 4.4 Time Windows
+
+| Window | Range | Use Case |
+|--------|-------|----------|
+| `7d` | Last 7 days | Short-term momentum, what's cycling right now |
+| `14d` | Last 14 days | Medium-term trend, smooths out daily noise |
+| `30d` | Last 30 days | Monthly view, captures full market cycles |
+| `bear` | 2026-01-01 → now | Bear market performance since the current cycle began |
+
+### 4.5 Scanner Output
+
+The scanner produces a ranked list per window with:
+- `rank`, `coin`, `symbol`
+- `deals_completed`, `deals_per_week`, `avg_cycle_hours`
+- `realized_pnl`, `avg_pnl_per_deal`
+- `max_drawdown_pct`, `open_layers`, `unrealized_pnl`
+- `capital_freedom`, `dca_score`, `win_rate`
+- `mature` flag (coins with < 6 months history are tracked but excluded from published rankings)
+
+**Top Picks** (derived from the bear window):
+- `best_score` — Highest DCA Score overall
+- `fastest_cycler` — Most deals per week
+- `lowest_dd` — Lowest maximum drawdown
+- `most_capital_free` — Highest capital freedom
+
+### 4.6 Maturity Threshold
+
+Coins with fewer than 6 months of 1h candle history are classified as **immature**. They are still scanned and tracked internally but are excluded from the published rankings to prevent misleading scores based on limited data. This threshold is configurable via `MIN_HISTORY_MONTHS`.
+
+---
+
+## 5. Execution Layer — Trading Bots
+
+### 5.1 V14 Engine Core
+
+All three bots share the same V14 engine:
+- **Strategy:** DCA-only (long), no shorts in current configuration
+- **Signal Stack:** ROUTER v2 (StochRSI, structure analysis, trend detection)
+- **Lifecycle:** `IDLE → LONG_DCA (Layer 1..12) → TP Hit → IDLE`
+- **Tick Interval:** 65 seconds (live), 1h candle-driven (paper)
+
+### 5.2 Risk Profiles
+
+| Parameter | Medium (Paper) | High (Live + ETF) |
+|-----------|---------------|-------------------|
+| Leverage | 1.5x | 1.5x (Live: 1.0x spot) |
+| Base Order | 40% | 40% |
+| SO Deviation | 2.0% | 1.5% |
+| SO Step Mult | 1.5x | 1.5x |
+| SO Vol Mult | 1.5x | 1.5x |
+| Max Layers | 10 | 12 |
+| Take Profit | 1.5% | 1.5% |
+
+### 5.3 Bot Status Files
+
+Each bot writes two files continuously:
+
+**`status.json`** — Current state snapshot (read by dashboard sync):
+- Running state, equity, cash, PnL
+- Per-coin: state, layers, avg entry, current price, unrealized PnL, TP price, liquidation price
+- Aggregate: total realized PnL, fees, deals completed, win rate, max drawdown
+- Market context: regime, trend direction, fear/greed index
+
+**`trades.csv`** — Complete trade history log
+
+### 5.4 Bot Management
+
+| Bot | Scheduled Task | Start Command |
+|-----|---------------|---------------|
+| V14 Live (ASTER) | `V14LiveAster` | `python -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill` |
+| V14 Paper | `V14PaperBot` | `python -u -m trading.spot.run_v14_paper --capital 10000 --profile medium --exchange hyperliquid --skip-backfill` |
+| V14-ETF Paper | `V14ETFPaperBot` | `python -u -m trading.spot.run_v14etf_paper --capital 10000 --profile high --exchange hyperliquid --fresh` |
+
+**Python Runtime:** `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
+
+**Restart procedure (Live Bot):**
+1. Kill existing Python PID first
+2. `Start-ScheduledTask -TaskName "V14LiveAster"`
+3. Or manually: `python -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill`
+
+---
+
+## 6. Presentation Layer — Dashboards
+
+### 6.1 Dashboard Sync
+
+**File:** `trading/sync_dashboard.ps1`  
+**VBS Wrapper:** `trading/sync_dashboard_silent.vbs` (runs PowerShell hidden)  
+**Scheduled Task:** `AIT_DashboardSync` (every 10 minutes)
+
+**Process:**
+1. Clone/pull the AIT GitHub repo to `$env:TEMP\ait-dashboard-sync`
+2. Copy status files from bot state directories to `docs/data/` subdirectories
+3. Copy scanner data (`cycle_scanner.json`, `scanner.json`)
+4. Copy dashboard HTML files
+5. Run `generate_daily_equity.py` to produce equity curve data
+6. Ensure `.nojekyll` exists (prevents Jekyll processing)
+7. `git add -A`, commit if changes exist, push to GitHub
+
+**Data Flow:**
+```
+Bot state dirs:
+  trading/spot/live/v14/     → docs/data/v14-live/
+  trading/spot/paper/v14/    → docs/data/v14/
+  trading/spot/paper/v14etf/ → docs/data/v14etf/
+
+Scanner data:
+  docs/data/v14/cycle_scanner.json (from scanner)
+  docs/data/v14/daily_equity.json  (from equity generator)
+```
+
+### 6.2 Dashboard URLs
+
+| Dashboard | URL |
+|-----------|-----|
+| V14 Live (ASTER) | `https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html` |
+| V14 Paper | `https://halo-effects.github.io/adaptive-intelligence-trading/dashboardV14.html` |
+| V14-ETF Paper | `https://halo-effects.github.io/adaptive-intelligence-trading/dashboardV14ETF.html` |
+| Main Index | `https://halo-effects.github.io/adaptive-intelligence-trading/` |
+
+### 6.3 GitHub Pages Notes
+
+- Repository: `halo-effects/adaptive-intelligence-trading`
+- Rate limit: Max 10 builds/hour (sync interval set to 10 min to stay under)
+- `.nojekyll` must exist in `docs/` — sync script ensures this
+- Authentication: `AIT_GITHUB_PAT` environment variable (User scope)
+
+---
+
+## 7. Scheduled Tasks Summary
+
+| Task Name | Frequency | Script | Purpose |
+|-----------|-----------|--------|---------|
+| `AIT_CandleCollector` | Every 1 hour | `run_candle_collector.ps1` | Pull candles + refresh DCA Scores |
+| `AIT_DashboardSync` | Every 10 min | `sync_dashboard_silent.vbs` → `sync_dashboard.ps1` | Push data to GitHub Pages |
+| `V14LiveAster` | On startup | `run_v14_live_aster.py` | Live bot (ASTER/USDT, $300 real) |
+| `V14PaperBot` | On startup | `run_v14_paper.py` | Paper bot (4 coins, $10K) |
+| `V14ETFPaperBot` | On startup | `run_v14etf_paper.py` | ETF paper bot (5 coins, $10K) |
+
+---
+
+## 8. File System Layout
+
+```
+trading/
+├── README.md                           # Legacy backtester docs
+├── sync_dashboard.ps1                  # Dashboard → GitHub sync
+├── sync_dashboard_silent.vbs           # VBS wrapper for hidden execution
+├── spot/
+│   ├── collect_scanner_candles.py      # Incremental candle collector (48 coins)
+│   ├── v14_cycle_scanner.py            # DCA Cycle Scanner + scoring
+│   ├── run_candle_collector.ps1        # Pipeline wrapper (collect + scan)
+│   ├── generate_daily_equity.py        # Equity curve JSON generator
+│   ├── pull_candles.py                 # Legacy candle puller (CSV, limited coins)
+│   ├── backfill_etf_candles.py         # One-time ETF coin backfill
+│   ├── run_v14_live_aster.py           # Live bot runner
+│   ├── run_v14_paper.py                # Paper bot runner
+│   ├── run_v14etf_paper.py             # ETF paper bot runner
+│   ├── exchange_client.py              # Exchange abstraction layer
+│   ├── data/
+│   │   ├── candles.db                  # SQLite candle database (~212 MB)
+│   │   └── collector.log               # Candle collector pipeline log
+│   ├── live/
+│   │   └── v14/                        # Live bot state (status.json, trades.csv, state.json)
+│   └── paper/
+│       ├── v14/                        # Paper bot state
+│       └── v14etf/                     # ETF paper bot state
+│
+docs/
+├── index.html                          # AIT landing page
+├── dashboardV14.html                   # V14 Paper dashboard
+├── dashboardV14ETF.html                # V14-ETF dashboard
+├── d-984ae0d4ab9dc1a5.html             # V14 Live dashboard
+├── pricing.html                        # Pricing page
+├── risk-profiles.html                  # Risk profile documentation
+├── adaptive-intelligence.html          # Product overview
+├── qb-theme.css                        # Dashboard theme
+├── .nojekyll                           # Prevents Jekyll processing
+└── data/
+    ├── v14-live/                       # Synced live bot data
+    │   ├── status.json
+    │   └── trades.csv
+    ├── v14/                            # Synced paper bot data + scanner
+    │   ├── status.json
+    │   ├── trades.csv
+    │   ├── cycle_scanner.json          # DCA Score rankings
+    │   ├── daily_equity.json           # Equity curve for calculator
+    │   └── scanner.json                # Legacy scanner output
+    └── v14etf/                         # Synced ETF bot data
+        ├── status.json
+        └── trades.csv
+```
+
+---
+
+## 9. Monitoring & Alerting
+
+### 9.1 Heartbeat Monitoring
+
+OpenClaw's heartbeat system (every 30 min) checks:
+- Bot health: `status.json` staleness (alert if > 65 min)
+- Live bot: `running` flag, drawdown threshold (> 15%), capital drift
+- Paper bots: process running, status freshness
+- Dashboard sync: task health, GitHub Pages freshness
+- Cron job health: consolidation log for failures
+
+### 9.2 Telegram Notifications
+
+All bots send real-time notifications to Telegram:
+- Order execution (buy/sell)
+- Deal completion (TP hit)
+- Position updates (new safety order layers)
+- Error conditions
+- Scanner summary (when run with Telegram enabled)
+
+Prefixes: `[V14-LIVE]`, `[V14]`, `[V14-ETF]`, `[SCANNER]`
+
+### 9.3 Alert Thresholds
+
+| Condition | Severity | Action |
+|-----------|----------|--------|
+| Bot stopped / status stale > 65 min | High | Alert Brett immediately |
+| Live bot drawdown > 15% | High | Alert Brett |
+| Live bot capital drift > 10% | Medium | Alert Brett |
+| Dashboard sync failure | Low | Note in heartbeat, auto-recovers |
+| Candle collector failure | Medium | Alert — DCA Scores will go stale |
+
+---
+
+## 10. Cloud Migration Guide
+
+### 10.1 Current Environment
+
+- **Host:** Windows 11 laptop (`LAPTOP-CLKA4E8J`)
+- **Python:** 3.12 (`C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`)
+- **Scheduling:** Windows Scheduled Tasks
+- **Process Management:** Scheduled Tasks with manual restart
+- **Database:** Local SQLite file
+- **Dashboard Hosting:** GitHub Pages (free)
+
+### 10.2 Cloud Target Architecture
+
+For production deployment on a cloud server (Linux VPS or container):
+
+**Compute:**
+- 1 vCPU, 2GB RAM minimum (bots are lightweight)
+- Persistent storage for `candles.db` (~250 MB, growing)
+
+**Scheduling Replacement:**
+| Windows | Linux/Cloud |
+|---------|-------------|
+| Windows Scheduled Tasks | `cron` or `systemd.timer` |
+| VBS hidden wrappers | Not needed (cron runs headless) |
+| PowerShell scripts | Bash scripts or direct Python calls |
+
+**Process Management:**
+| Current | Cloud |
+|---------|-------|
+| Scheduled Task (on startup) | `systemd` service units |
+| Manual PID kill for restart | `systemctl restart v14-live` |
+| No auto-restart on crash | `Restart=on-failure` in systemd |
+
+**Example systemd unit (live bot):**
+```ini
+[Unit]
+Description=V14 Live Trading Bot (ASTER/USDT)
+After=network.target
+
+[Service]
+Type=simple
+User=ait
+WorkingDirectory=/opt/ait
+ExecStart=/usr/bin/python3 -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill
+Restart=on-failure
+RestartSec=30
+Environment=AIT_TG_TOKEN=xxx
+Environment=AIT_TG_CHAT_ID=xxx
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Example crontab:**
+```cron
+# Candle collector + scanner (hourly)
+0 * * * * cd /opt/ait && python3 trading/spot/collect_scanner_candles.py && python3 -m trading.spot.v14_cycle_scanner --no-telegram >> /var/log/ait/collector.log 2>&1
+
+# Dashboard sync (every 10 min)
+*/10 * * * * cd /opt/ait && bash scripts/sync_dashboard.sh >> /var/log/ait/dashboard_sync.log 2>&1
+```
+
+**Database Migration:**
+- SQLite works fine at current scale (48 coins, 1h candles)
+- If scaling beyond ~200 coins or adding 1m/5m candles: consider PostgreSQL or TimescaleDB
+- Migration path: `sqlite3 candles.db .dump | psql ait_candles`
+
+**Environment Variables (required):**
+```
+AIT_GITHUB_PAT=...          # GitHub push access
+AIT_TG_TOKEN=...            # Telegram bot token
+AIT_TG_CHAT_ID=...          # Telegram chat ID
+# Exchange API keys stored in .env files per bot
+```
+
+**Dashboard Sync (Linux):**
+Replace `sync_dashboard.ps1` with a bash equivalent:
+```bash
+#!/bin/bash
+REPO_DIR="/tmp/ait-dashboard-sync"
+# ... same logic: git pull, copy files, commit, push
+```
+
+### 10.3 Migration Checklist
+
+- [ ] Provision cloud server (VPS or container)
+- [ ] Install Python 3.12+, git, ccxt
+- [ ] Copy workspace (`trading/`, `docs/`)
+- [ ] Copy `candles.db` (or backfill fresh)
+- [ ] Set environment variables
+- [ ] Create systemd units for each bot
+- [ ] Create cron jobs for collector + sync
+- [ ] Set up log rotation (`/etc/logrotate.d/ait`)
+- [ ] Verify Telegram notifications work
+- [ ] Verify GitHub Pages sync works
+- [ ] Set up monitoring (uptime check on bot status endpoints)
+- [ ] DNS/firewall: no inbound ports needed (all outbound to exchanges + GitHub)
+
+---
+
+## 11. Future: Capital Management System
+
+**Status:** In design (2026-03-05)
+
+The next phase uses the DCA Score as the **source of truth** for automated capital deployment:
+
+1. **Capital Router** — Allocates fresh deposits across coins proportional to DCA Score
+2. **Portfolio Rebalancer** — Shifts capital from low-scoring to high-scoring coins
+3. **New Account Onboarding** — Auto-generates optimal portfolio from current scanner rankings
+4. **Dynamic Sizing** — Adjusts position sizes based on score confidence and drawdown risk
+
+The DCA Score pipeline (Section 4) must be accurate and up-to-date before this system can be built. The hourly candle collection and scoring pipeline established in this spec provides that foundation.
+
+---
+
+## Appendix A: Backfill Scripts
+
+These are one-time scripts used during initial setup, not part of the recurring pipeline:
+
+| Script | Purpose |
+|--------|---------|
+| `pull_candles.py` | Legacy: pulls 5m candles to CSV for limited coins (Aster + HL spot) |
+| `backfill_etf_candles.py` | One-time: backfills LTC, ADA, HBAR 1h candles + daily candles from Binance |
+
+---
+
+## Appendix B: Known Issues
+
+| Issue | Impact | Workaround |
+|-------|--------|------------|
+| MKR candles stopped Sept 2025 | MKR excluded from scanner rankings | Needs manual backfill or removal from universe |
+| ASTER candles not in hourly pipeline | ASTER data may lag | Live bot self-collects; scanner marks as immature (< 6mo) |
+| Exit code 1 on stderr output | PowerShell treats Python stderr as error | Non-blocking; scripts complete successfully despite error code |
+
+---
+
+## Appendix C: Revision History
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2026-03-05 | 1.0 | Initial V14 system spec. Documents full pipeline from candle collection through DCA scoring to dashboard sync. Includes cloud migration guide. |
