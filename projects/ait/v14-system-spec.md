@@ -222,7 +222,100 @@ The scanner produces a ranked list per window with:
 - `lowest_dd` — Lowest maximum drawdown
 - `most_capital_free` — Highest capital freedom
 
-### 4.6 Maturity Threshold
+### 4.6 DCA Trend Score (Score Momentum)
+
+**Added:** 2026-03-05  
+**Purpose:** Track whether a coin's DCA Score is improving, stable, or deteriorating over time.
+
+A coin scoring 85 today but declining from 95 last week is a worse allocation target than a coin scoring 70 and rising from 40. The Trend Score captures this momentum.
+
+#### 4.6.1 Score History
+
+**File:** `trading/spot/data/score_history.json`
+
+Every scanner run appends a daily snapshot of all coin DCA scores to a rolling history file:
+- Stores up to **180 days** (6 months) of daily snapshots
+- De-duplicates same-day runs (last run of the day wins)
+- Tracks: `dca_score`, `deals_per_week`, `max_drawdown_pct`, `realized_pnl`, `capital_freedom`, `mature` flag
+- Uses the `bear` window scores (longest backtest) for trend analysis
+
+#### 4.6.2 Trend Computation
+
+After recording the snapshot, the scanner computes trend slopes over three windows:
+
+| Window | Weight | What it captures |
+|--------|--------|-----------------|
+| 7d slope | 50% | Recent momentum (highest weight) |
+| 14d slope | 30% | Medium-term trajectory |
+| 30d slope | 20% | Longer-term structural trend |
+
+**Slope calculation:** `(latest_score - earliest_score_in_window) / abs(earliest_score)`
+
+**Composite Trend Multiplier:**
+```
+Weighted change = Σ(slope × weight) / Σ(weights)
+Trend Multiplier = clamp(1.0 + weighted_change, 0.3, 1.5)
+```
+
+| Direction | Condition | Multiplier Range | Meaning |
+|-----------|-----------|-----------------|---------|
+| **Accelerating** | Change > +5% | 1.05x – 1.5x | Score improving, coin cycling better |
+| **Stable** | Change ±5% | 0.95x – 1.05x | Consistent performance |
+| **Declining** | Change < -5% | 0.3x – 0.95x | Score deteriorating, coin cycling worse |
+
+#### 4.6.3 Dashboard Integration
+
+All three dashboards (V14 Live, V14 Paper, V14-ETF) display a **TREND** column in the Live Opportunity table:
+
+| Indicator | Color | Direction | Tooltip |
+|-----------|-------|-----------|---------|
+| ↗ | Green (profit color) | Accelerating | "Score accelerating (1.35x)" |
+| → | Gray (text2 color) | Stable | "Score stable (1.02x)" |
+| ↘ | Red (loss color) | Declining | "Score declining (0.65x)" |
+
+Hovering over the arrow reveals the exact trend multiplier. Trend data requires ≥3 daily snapshots before arrows appear (shows `--` until then).
+
+#### 4.6.4 Scanner Output
+
+Trend scores are included in `cycle_scanner.json` under the `trend_scores` key:
+
+```json
+{
+  "trend_scores": {
+    "HBAR": {
+      "trend_7d": 0.125,
+      "trend_14d": 0.085,
+      "trend_30d": -0.032,
+      "trend_multiplier": 1.078,
+      "direction": "accelerating"
+    }
+  }
+}
+```
+
+The scanner also prints a trend table to the console after rankings:
+```
+======================================================================
+  DCA Trend Scores (score momentum)
+======================================================================
+Coin     Direction          7d      14d      30d   Mult
+----------------------------------------------------------------------
+SOL      accelerating    +18.2%   +12.5%    +5.3%  1.35x
+HBAR     stable           +3.1%    +1.8%    -0.5%  1.02x
+LTC      declining       -12.4%    -8.2%    -3.1%  0.65x
+```
+
+#### 4.6.5 Future Use: Capital Allocation
+
+The Trend Multiplier is designed to feed directly into the Portfolio Capital Management System (see `projects/ait-product/portfolio-capital-management.md`):
+
+```
+Allocation Weight = Base DCA Score × Trend Multiplier
+```
+
+This ensures coins with rising DCA efficiency receive more capital, while coins with falling efficiency are gradually starved of new capital — providing natural portfolio rotation without forced position closures.
+
+### 4.7 Maturity Threshold
 
 Coins with fewer than 6 months of 1h candle history are classified as **immature**. They are still scanned and tracked internally but are excluded from the published rankings to prevent misleading scores based on limited data. This threshold is configurable via `MIN_HISTORY_MONTHS`.
 
@@ -438,6 +531,7 @@ trading/
 │   ├── exchange_client.py              # Exchange abstraction layer
 │   ├── data/
 │   │   ├── candles.db                  # SQLite candle database (~212 MB)
+│   │   ├── score_history.json          # DCA Score history (180-day rolling, for trend calc)
 │   │   └── collector.log               # Candle collector pipeline log
 │   ├── live/
 │   │   └── v14/                        # Live bot state (status.json, trades.csv, state.json)
@@ -606,18 +700,25 @@ REPO_DIR="/tmp/ait-dashboard-sync"
 
 ---
 
-## 11. Future: Capital Management System
+## 11. Future: Portfolio Capital Management System
 
-**Status:** In design (2026-03-05)
+**Status:** In design (2026-03-05)  
+**Design Document:** `projects/ait-product/portfolio-capital-management.md`
 
-The next phase uses the DCA Score as the **source of truth** for automated capital deployment:
+The next phase scales V14 from single-coin bots to a multi-coin portfolio on Hyperliquid perps ($100K+ target). The system uses DCA Score + Trend Score (Section 4.6) as the **source of truth** for automated capital deployment.
 
-1. **Capital Router** — Allocates fresh deposits across coins proportional to DCA Score
-2. **Portfolio Rebalancer** — Shifts capital from low-scoring to high-scoring coins
-3. **New Account Onboarding** — Auto-generates optimal portfolio from current scanner rankings
-4. **Dynamic Sizing** — Adjusts position sizes based on score confidence and drawdown risk
+**Key components:**
+1. **Score-Weighted Allocator** — Allocates capital proportional to `DCA Score × Trend Multiplier`, with concentration caps (15-20% per coin, 45% top-3)
+2. **Three-Pool Capital Structure** — Active Pool (70-80%), Reserve Pool (15-20%), Cash Buffer (5-10%)
+3. **Correlation Gate** — Halts new entries when >60% of coins are at L4+ simultaneously
+4. **Natural Portfolio Rotation** — Trend score gates entry (not exit): coins with declining scores don't receive new capital after cycle completion
 
-The DCA Score pipeline (Section 4) must be accurate and up-to-date before this system can be built. The hourly candle collection and scoring pipeline established in this spec provides that foundation.
+**Locked decisions:**
+- Exchange: Hyperliquid perps
+- Leverage: 1.0x (zero liquidation risk)
+- Grid: Fixed High profile (12 layers, 1.5% dev) — unchanged from current V14
+
+The DCA Score pipeline (Section 4) and Trend Score history (Section 4.6) provide the data foundation. Score history collection began 2026-03-05; trend arrows will appear on dashboards after 3 daily snapshots.
 
 ---
 
@@ -651,3 +752,4 @@ These are one-time scripts used during initial setup, not part of the recurring 
 |------|---------|---------|
 | 2026-03-05 | 1.0 | Initial V14 system spec. Documents full pipeline from candle collection through DCA scoring to dashboard sync. Includes cloud migration guide. |
 | 2026-03-05 | 1.1 | Added Section 5.4 (Exchange Interaction Safety): sell verification/rollback, startup + periodic balance reconciliation, order execution flow diagram. Added Section 6.3 (Dashboard Data Integrity): W/L counter fallback logic, trade log recovery procedures. Updated Appendix B with 3 resolved incidents from 2026-03-05. |
+| 2026-03-05 | 1.2 | Added Section 4.6 (DCA Trend Score): score history tracking, 7d/14d/30d trend computation, dashboard trend arrows (↗→↘). Updated Section 11 to reference portfolio-capital-management.md design doc. Added score_history.json to file layout. |
