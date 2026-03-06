@@ -280,6 +280,17 @@ class V14PortfolioPaperBot:
         self._start_time = datetime.now(timezone.utc)
         self._last_rebalance_date = None
 
+        # Tier / approved-symbol tracking
+        # _approved_symbols: set of coin symbols the current rebalance approved for T1 entry.
+        # Coins NOT in this set are blocked from new T1 entries — existing open positions
+        # continue running and exit gracefully on their own TP/SL.
+        self._approved_symbols: set = set()
+        self._tier_coin_cap: int = self.router.tier_coin_cap
+        self._prev_tier_coin_cap: int = self._tier_coin_cap
+
+        # Current equity snapshot (updated each write-status cycle)
+        self._current_equity: float = self.capital
+
         # CFGI / Fear & Greed
         self._cfgi_market: Optional[float] = None
         self._cfgi_last_poll: float = 0.0
@@ -302,19 +313,57 @@ class V14PortfolioPaperBot:
         stdout_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
         root.addHandler(stdout_handler)
 
+    def _compute_current_equity(self) -> float:
+        """Sum engine equities plus unallocated capital for a live equity snapshot."""
+        total = 0.0
+        allocated = 0.0
+        for sym, engine in self.engines.items():
+            try:
+                st = engine.get_status()
+                total += st.get("equity", 0.0)
+                allocated += engine.initial_capital
+            except Exception:
+                pass
+        unallocated = max(0.0, self.capital - allocated)
+        return total + unallocated if total > 0 else self.capital
+
     def _check_and_rebalance(self, current_date_utc: datetime):
         today = current_date_utc.date()
         if self._last_rebalance_date == today:
             return
-            
+
         logger.info(f"Triggering daily rebalance for {today}")
         scanner_data = self.router.load_scanner_json(str(SCANNER_PATH))
-        allocations = self.router.rebalance_daily(scanner_data)
-        
+
+        # Pass current equity so the router can adjust the tier cap dynamically
+        current_equity = self._current_equity
+        allocations = self.router.rebalance_daily(scanner_data, current_equity=current_equity)
+
+        # Detect tier change and alert
+        new_tier = self.router.tier_coin_cap
+        if new_tier != self._prev_tier_coin_cap:
+            direction = "dropped" if new_tier < self._prev_tier_coin_cap else "increased"
+            msg = (
+                f"⚠️ [V14-PM] Tier {direction}: {self._prev_tier_coin_cap} → {new_tier} coins "
+                f"(equity=${current_equity:.2f})\n"
+                f"New T1 entries blocked for coins outside top-{new_tier}. "
+                f"Existing positions will exit gracefully."
+            )
+            logger.warning(msg)
+            send_telegram(msg)
+            self._prev_tier_coin_cap = new_tier
+        self._tier_coin_cap = new_tier
+
+        # Update approved symbols — only these coins may receive new T1 (layer-1) entries
+        self._approved_symbols = set(allocations.keys())
+        logger.info(f"Approved symbols for T1 entry: {sorted(self._approved_symbols)}")
+
         for sym, alloc in allocations.items():
             if sym not in self.engines:
-                logger.info(f"Creating new V14Engine for {sym} (capital={alloc} initial, funded dynamically)")
-                self.engines[sym] = V14LifecycleEngine(symbol=sym, capital=alloc, profile=self.profile, leverage=self.leverage)
+                logger.info(f"Creating new V14Engine for {sym} (initial alloc=${alloc:.2f})")
+                self.engines[sym] = V14LifecycleEngine(
+                    symbol=sym, capital=alloc, profile=self.profile, leverage=self.leverage
+                )
                 self.engines[sym]._live_mode = True
             else:
                 eng = self.engines[sym]._engine
@@ -322,11 +371,23 @@ class V14PortfolioPaperBot:
                     invested = eng.long_cost + eng.short_cost
                     new_cash = max(0.0, alloc - invested)
                     eng.capital = max(eng.capital, new_cash)
-        
+
         self._last_rebalance_date = today
 
+    def _is_t1_entry(self, symbol: str, action_type: str) -> bool:
+        """Return True if this BUY/SHORT_OPEN would be a layer-1 (first) entry for this symbol."""
+        key = f"{symbol}:long" if action_type == "BUY" else f"{symbol}:short"
+        return key not in self.tracker._open_deals
+
     def _process_actions(self, symbol: str, actions: List[dict], ts: datetime):
-        """Intercepts actions. If BUY/SHORT_OPEN, requests capital. If rejected, rolls back."""
+        """Intercepts actions. If BUY/SHORT_OPEN, requests capital. If rejected, rolls back.
+
+        Tier enforcement:
+        - T1 (layer-1) entries are blocked for symbols not in self._approved_symbols.
+        - DCA add-on layers (L2+) on existing positions are always allowed — we never
+          strand an open position without capital to defend it.
+        - SELL / SHORT_CLOSE always passes through so positions can exit gracefully.
+        """
         valid_actions = []
         for act in actions:
             action_type = act.get("action", "")
@@ -336,6 +397,17 @@ class V14PortfolioPaperBot:
             
             # The engine already mutated its state. We act as the "bouncer" and rollback if denied.
             if action_type in ("BUY", "SHORT_OPEN"):
+                # Tier gate: block T1 entries for out-of-tier coins
+                if self._is_t1_entry(symbol, action_type):
+                    if self._approved_symbols and symbol not in self._approved_symbols:
+                        logger.info(
+                            f"Tier gate: blocking T1 entry for {symbol} "
+                            f"(not in approved top-{self._tier_coin_cap}). "
+                            f"Position will be allowed to exit naturally."
+                        )
+                        self.engines[symbol].reject_action(act)
+                        continue
+
                 # Which layer is this?
                 layer = 1
                 key = f"{symbol}:long" if action_type == "BUY" else f"{symbol}:short"
@@ -348,21 +420,18 @@ class V14PortfolioPaperBot:
                 
                 if granted <= 0:
                     logger.warning(f"Router denied capital for {symbol} {action_type}. Rolling back.")
-                    # Rollback the engine trade
                     self.engines[symbol].reject_action(act)
-                    # Do not pass this action forward
                     continue
                 elif granted < cost:
-                    logger.warning(f"Router granted partial capital for {symbol}. Modifying action.")
-                    # Technically rolling back and re-submitting partial is complex. 
-                    # If granted is > 0 but < cost, for simplicity in paper we reject it, 
-                    # OR we could just log it and rollback.
-                    logger.warning(f"Rejecting {symbol} because partial fill handling is unsupported in this version.")
+                    logger.warning(
+                        f"Router granted partial capital for {symbol} (${granted:.2f} of ${cost:.2f}). "
+                        f"Rejecting — partial fills not supported."
+                    )
                     self.engines[symbol].reject_action(act)
-                    self.router.return_capital(symbol, granted) # Return what we just took
+                    self.router.return_capital(symbol, granted)
                     continue
                 
-                logger.info(f"Router approved {action_type} for {symbol}: ${granted:.2f}")
+                logger.info(f"Router approved {action_type} for {symbol} L{layer}: ${granted:.2f}")
                 valid_actions.append(act)
                 
             elif action_type in ("SELL", "SHORT_CLOSE"):
@@ -472,6 +541,9 @@ class V14PortfolioPaperBot:
 
         symbols = list(self.engines.keys())
 
+        # Keep equity snapshot fresh for next rebalance tier check
+        self._current_equity = total_equity if total_equity > 0 else self.capital
+
         status = {
             "running": True,
             "mode": "paper",
@@ -496,6 +568,8 @@ class V14PortfolioPaperBot:
             "fear_greed_index": self._cfgi_market,
             "last_update": datetime.now(timezone.utc).isoformat(),
             "timeframe": self.timeframe,
+            "tier_coin_cap": self._tier_coin_cap,
+            "approved_symbols": sorted(self._approved_symbols),
             "router": {
                 "active_cash": round(self.router.active_pool_cash, 2),
                 "reserve_cash": round(self.router.reserve_pool_cash, 2),

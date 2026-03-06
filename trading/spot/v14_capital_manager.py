@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger("V14CapitalManager")
 logger.setLevel(logging.INFO)
@@ -13,12 +13,31 @@ if not logger.handlers:
     logger.addHandler(ch)
 
 
+# ---------------------------------------------------------------------------
+# Equity-tiered coin cap
+# ---------------------------------------------------------------------------
+# Format: (min_equity_inclusive, max_coins)
+# Evaluated top-down; first match wins.
+EQUITY_TIER_CAPS = [
+    (50_000, 10),   # $50K+ → up to 10 coins
+    (25_000,  5),   # $25K–$50K → up to 5 coins
+    (10_000,  4),   # $10K–$25K → up to 4 coins
+    ( 5_000,  3),   # $5K–$10K  → up to 3 coins
+    ( 1_000,  2),   # $1K–$5K   → up to 2 coins
+    (   100,  1),   # $100–$1K  → 1 coin
+]
+
+
 class CapitalRouter:
     """
     Capital Router for V14 Engine.
     Manages the distribution of capital between active trading (75%) 
     and reserve holdings (25%), dynamic allocation based on DCA Score,
     and strict risk caps.
+
+    Tier-aware: max coins allowed scales with current portfolio equity.
+    On a tier drop the cap is enforced on new T1 entries only — existing
+    positions are allowed to exit gracefully (handled by the runner).
     """
     def __init__(self, initial_capital: float):
         self.total_equity = initial_capital
@@ -35,9 +54,21 @@ class CapitalRouter:
         self.active_allocations: Dict[str, float] = {}
         self.reserve_allocations: Dict[str, float] = {}
 
+        # Tier state (updated on each rebalance)
+        self.tier_coin_cap: int = self.get_tier_coin_cap(self.total_equity)
+
         logger.info(f"Initialized CapitalRouter with ${self.total_equity:.2f} total equity.")
         logger.info(f"Active Pool (75%): ${self.active_pool_total:.2f}")
         logger.info(f"Reserve Pool (25%): ${self.reserve_pool_total:.2f}")
+        logger.info(f"Tier coin cap: {self.tier_coin_cap} coins")
+
+    @staticmethod
+    def get_tier_coin_cap(equity: float) -> int:
+        """Return the max allowed simultaneous coin positions for the given equity level."""
+        for threshold, cap in EQUITY_TIER_CAPS:
+            if equity >= threshold:
+                return cap
+        return 0  # Below $100 — no new positions
 
     def load_scanner_json(self, filepath: str) -> List[Dict[str, Any]]:
         """
@@ -72,19 +103,46 @@ class CapitalRouter:
             logger.error(f"Failed to load scanner JSON from {filepath}: {e}")
             return []
 
-    def rebalance_daily(self, scanner_rankings: List[Dict[str, Any]]) -> Dict[str, float]:
+    def rebalance_daily(
+        self,
+        scanner_rankings: List[Dict[str, Any]],
+        current_equity: Optional[float] = None,
+    ) -> Dict[str, float]:
         """
         Processes the daily scanner data, applies rules, and returns target allocations.
-        
+
         Rules:
         - Hurdle rate: DCA Score >= 5.0
-        - Max 10 coins
+        - Max coins: determined by equity tier (see EQUITY_TIER_CAPS)
         - Proportional weighting by DCA Score
         - Risk Cap: Max 20% of Active Pool per coin
         - Sidelines: Leftover active pool cash remains unallocated
+
+        If current_equity is provided it overrides self.total_equity for tier
+        calculation and updates pool totals accordingly.
         """
         logger.info("Starting daily rebalance...")
-        
+
+        # Update equity snapshot and derive tier cap
+        if current_equity is not None and current_equity > 0:
+            prev_equity = self.total_equity
+            self.total_equity = current_equity
+            self.active_pool_total = self.total_equity * 0.75
+            self.reserve_pool_total = self.total_equity * 0.25
+            if abs(current_equity - prev_equity) > 1.0:
+                logger.info(f"Equity updated: ${prev_equity:.2f} → ${current_equity:.2f}")
+
+        prev_cap = self.tier_coin_cap
+        self.tier_coin_cap = self.get_tier_coin_cap(self.total_equity)
+        if self.tier_coin_cap != prev_cap:
+            direction = "▼ DOWN" if self.tier_coin_cap < prev_cap else "▲ UP"
+            logger.warning(
+                f"Tier coin cap changed {direction}: {prev_cap} → {self.tier_coin_cap} "
+                f"(equity=${self.total_equity:.2f})"
+            )
+
+        logger.info(f"Equity tier: ${self.total_equity:.2f} → max {self.tier_coin_cap} coins")
+
         # 1. Filter: hurdle rate >= 5.0
         qualifying_coins = []
         for coin_data in scanner_rankings:
@@ -102,32 +160,38 @@ class CapitalRouter:
         # 2. Sort descending by score
         qualifying_coins.sort(key=lambda x: x["dca_score"], reverse=True)
         
-        # 3. Max 10 coins
-        top_coins = qualifying_coins[:10]
+        # 3. Apply tier coin cap (never exceeds cap regardless of how many qualify)
+        max_coins = self.tier_coin_cap
+        top_coins = qualifying_coins[:max_coins]
         
         if not top_coins:
-            logger.warning("No coins met the >= 5.0 hurdle rate. All capital goes to sidelines.")
+            if max_coins == 0:
+                logger.warning(f"Equity ${self.total_equity:.2f} is below $100 minimum. No positions allowed.")
+            else:
+                logger.warning("No coins met the >= 5.0 hurdle rate. All capital goes to sidelines.")
             return {}
 
         # 4. Calculate total score
         total_score = sum(c["dca_score"] for c in top_coins)
         
-        # 5. Proportional weighting & 20% max cap
-        max_cap = 0.20 * self.active_pool_total
+        # 5. Proportional weighting & 20% max cap per coin
+        max_cap_per_coin = 0.20 * self.active_pool_total
         target_allocations = {}
         
         for c in top_coins:
             raw_allocation = (c["dca_score"] / total_score) * self.active_pool_total
-            final_allocation = min(raw_allocation, max_cap)
+            final_allocation = min(raw_allocation, max_cap_per_coin)
             target_allocations[c["symbol"]] = final_allocation
-            logger.debug(f"{c['symbol']}: Score {c['dca_score']} -> Final Allocation ${final_allocation:.2f}")
+            logger.debug(f"{c['symbol']}: Score {c['dca_score']:.2f} → ${final_allocation:.2f}")
 
         # 6. Sidelines cash routing
         total_allocated = sum(target_allocations.values())
         sidelines_cash = self.active_pool_total - total_allocated
         
-        logger.info(f"Rebalance complete. {len(top_coins)} coins allocated.")
-        logger.info(f"Total Target Allocation: ${total_allocated:.2f} | Sidelines Cash (Buffer): ${sidelines_cash:.2f}")
+        logger.info(
+            f"Rebalance complete: {len(top_coins)}/{max_coins} coin slots filled. "
+            f"Allocated: ${total_allocated:.2f} | Sidelines: ${sidelines_cash:.2f}"
+        )
         
         return target_allocations
 

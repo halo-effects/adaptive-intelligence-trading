@@ -1,8 +1,9 @@
 # AIT Portfolio & Capital Management System — Design Document
 
-**Date**: 2026-03-05
-**Status**: Design / Pre-Implementation
-**Author**: Brett + Gee Gee
+**Date**: 2026-03-05  
+**Last Updated**: 2026-03-06  
+**Status**: ✅ Live — Paper trading on Hyperliquid ($50K, 10 coins)  
+**Author**: Brett + Gee Gee  
 **Depends on**: V14 DCA Engine, V14 Cycle Scanner, ROUTER v2 Signal Stack
 
 ---
@@ -23,8 +24,13 @@ Scale the V14 DCA grid strategy from a single-coin $300 live bot to a multi-coin
 | **Leverage** | 1.0x | Zero liquidation risk — same safety as spot |
 | **Grid profile** | High (12 layers, 1.5% dev, 1.5x mult, 1.5% TP) | Best tested profile on V14 |
 | **Grid type** | Fixed (not adaptive) | Fixed beat adaptive on 4/5 coins in V13 sweep |
-| **Coin universe** | Hyperliquid perps only | Aster may/may not be included |
+| **Coin universe** | Hyperliquid perps only | Dynamic — selected daily by cycle scanner scores |
 | **Timeframe** | 1h candles | Dominated 15m on all coins tested |
+| **Paper capital** | $50K | Reset from $10K on 2026-03-06 (see §5.2 — too diluted at 10 coins) |
+| **Runner** | `trading/spot/run_v14_portfolio_paper.py` | Live as of 2026-03-05 |
+| **Capital manager** | `trading/spot/v14_capital_manager.py` | `CapitalRouter` class |
+| **Scheduled task** | `V14PMPaperBot` (Windows Task Scheduler) | Restarts automatically on reboot |
+| **Dashboard** | `docs/dashboardV14PM.html` | Live on GitHub Pages |
 
 ### Why 1.0x Leverage (No Liquidation)
 - At 1.0x: **zero liquidation risk, ever.** Position is fully collateralized.
@@ -54,20 +60,22 @@ After L12, the bot holds and waits for TP (1.5% above weighted avg entry). In a 
 
 ## 3. Capital Architecture
 
-### 3.1 Three-Pool Structure
+### 3.1 Two-Pool Structure (Implemented)
+
+> **Note**: The original 3-pool design (Active / Reserve / Cash Buffer) was simplified to a 2-pool model during implementation. The Cash Buffer concept was folded into sidelines cash within the active pool.
 
 ```
-$100K Total Capital
-├── Active Pool    (70-80%)  → Allocated to coins with active/pending DCA positions
-├── Reserve Pool   (15-20%)  → Shared buffer for deep corrections across portfolio
-└── Cash Buffer    (5-10%)   → Never deployed (emergency / new opportunities)
+Total Capital
+├── Active Pool  (75%)  → Score-weighted DCA positions
+└── Reserve Pool (25%)  → Deep correction buffer (L6+ layers)
+    └── Sidelines Cash  → Undeployed portion of Active Pool (leftover after allocation caps)
 ```
 
-| Pool | Size ($100K) | Purpose | When it deploys |
-|------|-------------|---------|-----------------|
-| Active | $70-80K | Score-weighted allocation to individual coin engines | Always (base orders + SOs) |
-| Reserve | $15-20K | Shared insurance across all coins for deep grid fills | When multiple coins hit L6+ simultaneously |
-| Cash Buffer | $5-10K | Untouchable emergency fund | Never (or manual override only) |
+| Pool | Allocation | Purpose | When it deploys |
+|------|-----------|---------|-----------------|
+| Active | 75% | Score-weighted per-coin engines; base orders + SOs L1–L5 | Always |
+| Reserve | 25% | Shared buffer across all coins; supplements deep layers | Coins hitting L6+ |
+| Sidelines | Variable | Unallocated active pool cash (after 20% cap per coin) | Never forced — available for re-allocation next rebalance |
 
 ### 3.2 Why a Shared Reserve Pool (Not Per-Coin Reserves)
 
@@ -77,14 +85,14 @@ Better: shared reserve pool across portfolio. Rationale:
 - The probability of ALL coins hitting L12 simultaneously is much lower than any single coin doing so
 - Crypto is correlated, but not perfectly — coins enter DCA cycles at different times
 - In a broad crash, the reserve deploys progressively as coins fill deeper layers
-- More capital-efficient: shared $20K reserve vs $8K × 10 coins = $80K siloed
+- More capital-efficient: shared $12.5K reserve (at $50K) vs ~$4K × 10 coins = $40K siloed
 
 **Progressive release schedule:**
 ```
 Normal:          Reserve = 100% idle
 Mild correction: 1-3 coins at L4-L6 → Reserve starts supplementing
 Broad correction: 5+ coins at L8+ → Reserve fully committed
-Black swan:      All coins at L12 → Cash Buffer is last line of defense
+Black swan:      All coins at L12 → No further capital; hold and wait for TP
 ```
 
 ---
@@ -125,18 +133,24 @@ Trend Multiplier:
 - Keeps 180 days of rolling history
 - De-duplicates same-day snapshots
 
-### 4.3 Allocation Formula
+### 4.3 Allocation Formula (Implemented)
+
+> **Note**: The Trend Score multiplier from the original design has not yet been wired into the live allocation. The current implementation uses Base DCA Score only with a hurdle rate gate.
 
 ```
-Raw Weight = Base DCA Score × Trend Multiplier
+Current (live):
+  Allocation = (DCA Score / Sum of qualifying scores) × Active Pool
+  Subject to: Max 20% of Active Pool per coin
 
-Allocation % = Raw Weight / Sum(all Raw Weights) × Active Pool
-
-Subject to:
-  - Max per coin: 15-20% of total portfolio
-  - Min per coin: 3-5% (below this, don't trade it)
-  - Max top-3 concentration: 45%
+Planned (next iteration):
+  Raw Weight = Base DCA Score × Trend Multiplier
+  Allocation = Raw Weight / Sum(all Raw Weights) × Active Pool
+  Subject to: Max 20% of Active Pool per coin
 ```
+
+**Hurdle rate**: DCA Score ≥ 5.0. Coins below this threshold are excluded from the rebalance entirely and go to sidelines.
+
+**Tier cap**: Applied before proportional weighting — only top-N qualifying coins by score receive allocations, where N is determined by equity tier (see §5.2).
 
 **Example** ($100K, 8 coins, Active Pool = $75K):
 
@@ -179,7 +193,35 @@ HBAR has a higher base score than SOL (72 vs 70), but SOL gets more capital beca
 | Reserve floor | ≥15% | Always have ammo for corrections |
 | Cash buffer | ≥5% | Untouchable emergency fund |
 
-### 5.2 Correlation Gate
+### 5.2 Equity-Tiered Coin Cap
+
+The maximum number of simultaneous coin positions is governed by current portfolio equity. This prevents capital dilution on smaller accounts — a $10K account running 10 coins produces underpowered positions that can't DCA meaningfully.
+
+| Equity Range | Max Coins | Rationale |
+|---|---|---|
+| < $100 | 0 | Below minimum viable position size |
+| $100 – $1K | 1 | Single best scorer only |
+| $1K – $5K | 2 | Top 2 scorers |
+| $5K – $10K | 3 | Top 3 scorers |
+| $10K – $25K | 4 | Top 4 scorers |
+| $25K – $50K | 5 | Top 5 scorers |
+| $50K+ | 10 | Full universe (up to 10 scorers) |
+
+**Tier evaluation**: Computed at each daily rebalance using current portfolio equity. The tier cap is applied *after* the hurdle rate filter (DCA Score ≥ 5.0) and *before* proportional weighting, so only the top-N qualifying coins receive allocations.
+
+**Tier drop behavior (graceful degradation)**:
+- When equity drops to a lower tier, the PM does **not** force-close any open positions.
+- Existing DCA positions continue running and exit naturally via their normal TP.
+- New T1 (layer-1) entries are **blocked** for coins outside the current top-N approved set.
+- DCA add-on layers (L2+) on existing open positions are **always allowed** — a position is never stranded without capital to defend it.
+- When a position exits via TP, freed capital is reallocated only to the top-N coins at the current tier cap.
+- A Telegram alert fires on any tier change (▼ drop or ▲ rise).
+
+**Tier rise behavior**: When equity crosses a tier boundary upward, the next daily rebalance expands `approved_symbols` to include additional top scorers. New T1 entries are opened on the next qualifying signal.
+
+**Implementation**: `CapitalRouter.get_tier_coin_cap(equity)` + `rebalance_daily(current_equity=...)` in `trading/spot/v14_capital_manager.py`. The runner tracks `_approved_symbols` and enforces the gate in `_process_actions()`.
+
+### 5.3 Correlation Gate
 
 Crypto is highly correlated during crashes. When the portfolio is broadly stressed:
 
@@ -192,7 +234,7 @@ IF >60% of active coins are at L4+ simultaneously:
 
 This prevents the system from opening fresh L1 positions in new coins while most of the portfolio is deep underwater and the Reserve Pool is being consumed.
 
-### 5.3 No Liquidation Triggers (Spot-Like Behavior)
+### 5.4 No Liquidation Triggers (Spot-Like Behavior)
 
 - At 1.0x leverage on Hyperliquid perps: **no liquidation possible**
 - No stop-loss on individual positions
@@ -360,41 +402,51 @@ The Portfolio Manager is a **new layer** above the V14 DCA engines:
 
 ## 8. Implementation Roadmap
 
-### Phase 1: Data Collection (NOW — implemented)
+### Phase 1: Data Collection ✅ Complete
 - [x] Score history tracking in cycle scanner (`score_history.json`)
 - [x] Trend score computation (7d/14d/30d slope + composite multiplier)
-- [ ] Schedule scanner to run daily (build history dataset)
-- [ ] Dashboard: add trend score column to scanner output
+- [x] Scanner scheduled daily (`AIT_DashboardSync` task, every 10 min)
+- [ ] Dashboard: add trend score column to scanner output *(deferred)*
 
-### Phase 2: Portfolio Manager Prototype
-- [ ] Build allocator module (score + trend → per-coin capital targets)
-- [ ] Build risk manager (concentration caps, correlation gate)
-- [ ] Build pool manager (Active/Reserve/Buffer tracking)
-- [ ] Wire into V14-ETF paper bot as first integration test
+### Phase 2: Portfolio Manager Prototype ✅ Complete (2026-03-05)
+- [x] `CapitalRouter` class — Active/Reserve pool tracking, `rebalance_daily()`, `request_capital()`, `return_capital()`
+- [x] Equity-tiered coin cap — `get_tier_coin_cap()`, tier-aware `rebalance_daily()` (2026-03-06)
+- [x] Score-weighted allocation with 20% max cap per coin
+- [x] Hurdle rate gate (DCA Score ≥ 5.0)
+- [x] T1 entry gate — blocks new layer-1 entries for out-of-tier coins
+- [x] Graceful degradation — existing positions run to TP on tier drop
+- [x] Telegram alerts on tier changes
+- [x] `run_v14_portfolio_paper.py` — live runner with daily rebalance, capital routing, action interception
+- [ ] Trend Score multiplier wired into allocation *(next iteration)*
+- [ ] Correlation gate (halt new entries when >60% of coins at L4+) *(not yet built)*
 
-### Phase 3: Paper Testing
-- [ ] Run multi-coin paper bot on Hyperliquid with dynamic allocation
+### Phase 3: Paper Testing 🔄 In Progress (since 2026-03-05)
+- [x] Live paper bot running on Hyperliquid — $50K, 10 coins, High profile
+- [x] `dashboardV14PM.html` — live on GitHub Pages with tier cap badge
 - [ ] Test flash crash scenarios (replay historical data)
-- [ ] Test correlation gate triggers
+- [ ] Test correlation gate triggers *(gate not yet built)*
 - [ ] Compare: static allocation vs score-weighted vs score+trend weighted
-- [ ] Minimum 30 days paper trading before live
+- [ ] Minimum 30 days paper trading before live consideration
 
-### Phase 4: Live Deployment
-- [ ] Migrate from Aster to Hyperliquid perps
-- [ ] Start with $10K (10% of target) to validate
-- [ ] Scale to $100K after 30+ days of stable live operation
-- [ ] Full monitoring: Telegram alerts, dashboard, drift checks
+### Phase 4: Live Deployment 🔒 Locked (pending paper results)
+- [ ] Evaluate paper results after 30+ days
+- [ ] Wire Trend Score multiplier into allocation before going live
+- [ ] Build correlation gate
+- [ ] Start live with $10K, scale after validation
+- [ ] Full monitoring: Telegram alerts ✅, dashboard ✅, drift checks *(pending)*
 
 ---
 
 ## 9. Open Questions
 
-1. **Optimal number of coins**: 5-8 feels right for $100K. More = better diversification but thinner positions. Less = more concentration but deeper grids per coin.
-2. **Rebalancing frequency**: Daily (on scanner run) vs weekly? More frequent = more responsive but more churn.
-3. **Reserve Pool release rules**: Linear release or tiered (e.g., 25% at L6 average, 50% at L8, 100% at L10)?
-4. **SHORT_DCA capital**: When ROUTER flips to SHORT_DCA for a coin, does it get the same allocation? Or different (shorts are riskier in crypto)?
-5. **Circuit breaker on single-coin crash**: Force-close at -30% single candle? Or let the grid hold?
-6. **Macro risk switch**: Should the system reduce overall Active Pool size based on macro indicators (CFGI, BTC dominance, etc.)?
+1. ~~**Optimal number of coins**~~ **Resolved (2026-03-06)**: Equity-tiered cap. See §5.2.
+2. **Rebalancing frequency**: Daily (current). Weekly would be less responsive but reduce churn. Monitor how aggressively the daily rebalance rotates coins and revisit after 30 days of data.
+3. **Reserve Pool release rules**: Currently L6+ triggers reserve draw. Tiered release (25% at L6, 50% at L8, 100% at L10) would be more controlled — not yet implemented.
+4. **SHORT_DCA capital**: When ROUTER flips a coin to SHORT_DCA, does it keep the same allocation? Shorts carry different risk profiles in crypto. *Not yet encountered in paper run.*
+5. **Circuit breaker on single-coin crash**: Force-close at -30% single candle? Currently the grid holds and waits for TP at any depth. Consider as a future risk control.
+6. **Macro risk switch**: Reduce Active Pool when CFGI < 20 for > 30 days or BTC dominance spikes? Not implemented. Could be a meaningful bear-market defense.
+7. **Trend Score multiplier**: Wired for computation but not yet feeding allocation. Should boost fast-accelerating coins and penalize declining scores. Priority before live deployment.
+8. **Correlation gate**: Not yet built. When >60% of active coins hit L4+ simultaneously, halt new T1 entries for idle coins. Needed for broad crash scenarios.
 
 ---
 
@@ -405,9 +457,15 @@ The Portfolio Manager is a **new layer** above the V14 DCA engines:
 | Exchange | Hyperliquid perps | 2026-03-05 |
 | Leverage | 1.0x (zero liquidation) | 2026-03-05 |
 | Grid type | Fixed (not adaptive) | 2026-02-28 |
-| Grid profile | High (12L, 1.5% dev) | 2026-02-28 |
-| Allocation method | Score + Trend weighted | 2026-03-05 |
-| Entry/exit rule | Trend gates entry, not exit | 2026-03-05 |
+| Grid profile | High (12L, 1.5% dev, 1.5x mult, 1.5% TP) | 2026-02-28 |
+| Pool split | 75% Active / 25% Reserve (no separate cash buffer) | 2026-03-05 |
+| Allocation method | DCA Score proportional, 20% max cap per coin | 2026-03-05 |
+| Hurdle rate | DCA Score ≥ 5.0 to qualify for allocation | 2026-03-05 |
+| Entry/exit rule | Tier gate blocks new T1 entries; existing positions exit naturally | 2026-03-05 |
+| Rebalance cadence | Daily (on first new candle of each UTC day) | 2026-03-05 |
+| Max coins | Equity-tiered cap — 1 to 10 coins based on equity (see §5.2) | 2026-03-06 |
+| Paper capital | $50K (reset from $10K — underpowered at 10 coins) | 2026-03-06 |
+| Trend multiplier | Computed but not yet wired into allocation (planned pre-live) | pending |
 
 ---
 
