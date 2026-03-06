@@ -1,5 +1,10 @@
 # V14 DCA-Only Engine — Architecture Specification
 
+**Last Updated**: 2026-03-06  
+**Status**: ✅ Live (ASTER/USDT spot) + 🔄 Paper (V14, V14-ETF, V14-PM on Hyperliquid)
+
+---
+
 ## Why V14: The Pivot from Lump-Sum to DCA
 
 ### Problem Statement
@@ -60,11 +65,13 @@ LONG_DCA ←→ ROUTER ←→ SHORT_DCA
 ### DCA Grid Parameters (from V13 sweep results)
 - **Timeframe**: 1h (dominated 15m on all 5 coins tested)
 - **Take Profit**: 1.5%
-- **Deviation**: 2.5% between safety orders
-- **SO Multiplier**: 2.5× volume per layer
-- **Max Safety Orders**: 8
+- **Deviation**: 2.5% between safety orders (sweep baseline)
+- **SO Multiplier**: 2.5× volume per layer (sweep baseline)
+- **Max Safety Orders**: 8 (sweep baseline)
 - **Base Order**: 8% of available capital (90% utilized, 10% reserve)
 - **Fixed params beat adaptive** on 4/5 coins
+
+> **Note**: The above are sweep baseline values. Live deployment uses the **profile system** (see §Profiles below). The High profile (12 layers, 1.5% dev, 1.5x mult) is the current production choice across all live and paper bots.
 
 ### Capital Flow
 ```
@@ -107,11 +114,89 @@ Expected for first pass. Clear structural issues identified:
 - Increase capital utilization (larger base orders or more aggressive layers)
 - Only switch direction on conviction-level signals, not minor structure changes
 
+## Profiles
+
+The V14 engine uses a named profile system rather than hardcoded grid parameters. Profiles are defined in `trading/spot/v14_lifecycle_engine.py` (`V14_PROFILES`).
+
+| Profile | Layers | Deviation | SO Mult | TP | Leverage | Use Case |
+|---------|--------|-----------|---------|-----|----------|----------|
+| **Low** | 6 | 1.0% | 1.2x | 1.0% | 1.0x | Conservative / small capital |
+| **Medium** | 10 | 1.5% | 1.5x | 1.5% | 1.5x | Standard paper testing |
+| **High** | 12 | 1.5% | 1.5x | 1.5% | 1.0x | **Production (all live/paper bots)** |
+
+**High profile grid depth** (from L1 entry, 1.5% deviation):
+
+| Layer | Drop from Entry |
+|-------|----------------|
+| L1 | — (base order: 40% of allocation) |
+| L6 | -7.5% |
+| L9 | -12.0% |
+| **L12** | **-16.5% (fully deployed)** |
+
+After L12, the bot holds and waits for TP (1.5% above weighted avg entry). No liquidation risk at 1.0x leverage.
+
+---
+
 ## Base Engine
 - **Cloned from**: `v13_router_engine_v2.py` (ROUTER v2 with conviction + top detection)
-- **File**: `trading/spot/backtest_results/v13/v14_dca_engine.py`
+- **Core engine**: `trading/spot/v14_lifecycle_engine.py` (`V14LifecycleEngine`)
+- **Live engine**: `trading/spot/v14_live_engine.py`
 - **Inherits**: V13SignalPack, HybridDetector2D (bottom conviction), 2D divergence (top detection)
 - **1h DCA sweep results**: `projects/ait-product/dca-optimization-baseline.md`
+
+---
+
+## Current Deployment
+
+### Live Bot — ASTER/USDT (Spot)
+| Field | Value |
+|-------|-------|
+| Exchange | Binance (spot) |
+| Capital | $300 real USDT |
+| Profile | High (1.5x leverage on this bot) |
+| Runner | `trading/spot/run_v14_live_aster.py` |
+| Scheduled Task | `V14LiveAster` |
+| Status file | `trading/spot/live/v14/status.json` |
+
+### Paper Bot — V14 (Hyperliquid — HBAR/ATOM/LINK/NEAR)
+| Field | Value |
+|-------|-------|
+| Exchange | Hyperliquid (perps) |
+| Capital | $10K paper |
+| Profile | Medium (1.5x leverage) |
+| Coins | HBAR/USDT, ATOM/USDT, LINK/USDC, NEAR/USDT |
+| Runner | `trading/spot/run_v14_paper.py` |
+| Scheduled Task | `V14PaperBot` |
+| Status file | `trading/spot/paper/v14/status.json` |
+
+### Paper Bot — V14-ETF (Hyperliquid — SOL/XRP/LTC/HBAR/ADA)
+| Field | Value |
+|-------|-------|
+| Exchange | Hyperliquid (perps) |
+| Capital | $10K paper |
+| Profile | High (1.0x leverage) |
+| Coins | SOL/USDT, XRP/USDT, LTC/USDT, HBAR/USDT, ADA/USDT |
+| Runner | `trading/spot/run_v14etf_paper.py` |
+| Scheduled Task | `V14ETFPaperBot` |
+| Status file | `trading/spot/paper/v14etf/status.json` |
+| Dashboard | `docs/dashboardV14ETF.html` |
+
+### Paper Bot — V14-PM (Hyperliquid — Portfolio Manager)
+| Field | Value |
+|-------|-------|
+| Exchange | Hyperliquid (perps) |
+| Capital | $50K paper (reset from $10K on 2026-03-06) |
+| Profile | High (1.0x leverage) |
+| Coins | Dynamic — up to 10, selected daily by cycle scanner |
+| Runner | `trading/spot/run_v14_portfolio_paper.py` |
+| Capital manager | `trading/spot/v14_capital_manager.py` (`CapitalRouter`) |
+| Scheduled Task | `V14PMPaperBot` |
+| Status file | `trading/spot/paper/v14_portfolio/status.json` |
+| Dashboard | `docs/dashboardV14PM.html` |
+
+The PM is a layer above the V14 engines — see `projects/ait-product/portfolio-capital-management.md` for the full PM spec including pool architecture, equity-tiered coin caps, daily rebalance logic, and graceful tier degradation rules.
+
+---
 
 ## Research Foundation
 This engine stands on extensive V13 research:
@@ -123,10 +208,18 @@ This engine stands on extensive V13 research:
 - Full top detection system (OB93 arm + 2D divergence + 35d timeout)
 - 79% of V13 DCA phases exit to MARKUP → confirms structural long bias, supports directional DCA concept
 
+---
+
 ## Status
 - [x] Architecture spec (this document)
 - [x] V14 engine v0.1 built and tested
-- [ ] Fix phase stickiness (remove ranging exit, conviction-only switches)
-- [ ] Tune capital utilization
-- [ ] Backtest vs V13 baseline
-- [ ] Paper bot deployment
+- [x] Phase stickiness fixed (ranging exit removed, conviction-only switches)
+- [x] Capital utilization tuned (profile system — High profile, 12 layers)
+- [x] Live bot deployed — ASTER/USDT (2026-02-xx)
+- [x] Paper bot — V14 (HBAR/ATOM/LINK/NEAR) deployed (2026-02-28)
+- [x] Paper bot — V14-ETF (SOL/XRP/LTC/HBAR/ADA) deployed (2026-03-02)
+- [x] Paper bot — V14-PM (Portfolio Manager, dynamic coins) deployed (2026-03-05)
+- [x] Equity-tiered coin cap added to PM (2026-03-06)
+- [ ] Trend Score multiplier wired into PM allocation *(planned pre-live)*
+- [ ] Correlation gate for broad market stress *(planned pre-live)*
+- [ ] 30+ days paper data → evaluate live deployment at scale
