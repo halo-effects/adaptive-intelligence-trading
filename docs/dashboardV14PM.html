@@ -489,7 +489,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th title="DCA Score = Realized PnL ? (1 - DD%) ? Liquid Capital" style="cursor:help">DCA SCORE</th><th title="Score trend: &#x2197; accelerating &#x2192; stable &#x2198; declining" style="cursor:help">TREND</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="DCA Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">DCA SCORE</th><th title="Score trend: &#x2197; accelerating &#x2192; stable &#x2198; declining" style="cursor:help">TREND</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -619,7 +619,7 @@ function renderStats(){
   if(deals===0 && trades.length>0) deals=trades.length;
   var totalFees=S.total_fees||0;
   $('vRPnl').innerHTML='<span style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</span>';
-  $('vRPnlSub').textContent=deals+' completed deals'+(totalFees>0?' � after '+fUsd(totalFees)+' fees':'');
+  $('vRPnlSub').textContent=deals+' completed deals'+(totalFees>0?' · after '+fUsd(totalFees)+' fees':'');
 
   var syms=S.symbols||Object.keys(S.coins||{});
   var totalUpnl=0, totalInv=0;
