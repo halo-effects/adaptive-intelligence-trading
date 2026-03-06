@@ -280,6 +280,10 @@ class V14PortfolioPaperBot:
         self._start_time = datetime.now(timezone.utc)
         self._last_rebalance_date = None
 
+        # CFGI / Fear & Greed
+        self._cfgi_market: Optional[float] = None
+        self._cfgi_last_poll: float = 0.0
+
         self._setup_logging()
 
     def _capture_incident(self, trade: dict, symbol: str):
@@ -377,6 +381,30 @@ class V14PortfolioPaperBot:
         if valid_actions:
             self.tracker.process_actions(symbol, valid_actions, ts)
 
+    def _poll_cfgi(self):
+        """Poll CFGI API for market fear & greed index (once per hour)."""
+        now = time.time()
+        if now - self._cfgi_last_poll < 3600:
+            return
+        try:
+            from trading.spot.cfgi_client import CFGIClient
+            import os as _os
+            api_key = _os.environ.get("CFGI_API_KEY")
+            if not api_key:
+                return
+            client = CFGIClient(api_key)
+            data = client.get_current(["MARKET"], period=4, fields="cfgi")
+            market_data = data.get("MARKET", {})
+            if isinstance(market_data, dict):
+                self._cfgi_market = market_data.get("cfgi", market_data.get("value"))
+            elif isinstance(market_data, (int, float)):
+                self._cfgi_market = float(market_data)
+            self._cfgi_last_poll = now
+            logger.info("CFGI updated: market=%s", self._cfgi_market)
+        except Exception as e:
+            logger.warning("CFGI poll failed: %s", e)
+            self._cfgi_last_poll = now
+
     def _write_status(self):
         """Write combined status.json from all engines for dashboard."""
         coins = {}
@@ -404,6 +432,12 @@ class V14PortfolioPaperBot:
             total_deals += st.get("deals_completed", 0)
             total_won += engine.deals_won
             max_dd = max(max_dd, st.get("max_drawdown_pct", 0))
+
+        # Add unallocated capital (portion not assigned to any engine)
+        allocated_to_engines = sum(eng.initial_capital for eng in self.engines.values())
+        unallocated = max(0, self.capital - allocated_to_engines)
+        total_equity += unallocated
+        total_cash += unallocated
 
         pnl_pct = ((total_equity - self.capital) / self.capital * 100
                     if self.capital > 0 else 0.0)
@@ -459,7 +493,7 @@ class V14PortfolioPaperBot:
             "win_rate": round(win_rate, 1),
             "max_drawdown_pct": round(max_dd, 2),
             "uptime_hours": round(uptime_h, 2),
-            "fear_greed_index": None,
+            "fear_greed_index": self._cfgi_market,
             "last_update": datetime.now(timezone.utc).isoformat(),
             "timeframe": self.timeframe,
             "router": {
@@ -572,6 +606,10 @@ class V14PortfolioPaperBot:
                         engine._last_candle_ts = ts_ms
 
                 self.tracker.save_csv()
+                try:
+                    self._poll_cfgi()
+                except Exception as e:
+                    logger.warning(f"CFGI poll error: {e}")
                 self._write_status()
 
                 elapsed = time.time() - cycle_start

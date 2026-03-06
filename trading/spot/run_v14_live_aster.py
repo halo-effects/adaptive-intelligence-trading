@@ -556,6 +556,10 @@ class V14LiveBot:
         self._last_recon_time: float = 0
         self._recon_interval: float = 300  # 5 minutes
 
+        # CFGI / Fear & Greed
+        self._cfgi_market: Optional[float] = None
+        self._cfgi_last_poll: float = 0.0
+
         # Setup logging
         self._setup_logging()
 
@@ -845,6 +849,12 @@ class V14LiveBot:
                 # Periodic balance reconciliation
                 self._maybe_reconcile()
 
+                # Periodic CFGI poll
+                try:
+                    self._poll_cfgi()
+                except Exception as e:
+                    logger.warning(f"CFGI poll error: {e}")
+
                 # Write status & trades
                 try:
                     self._write_status()
@@ -1043,6 +1053,30 @@ class V14LiveBot:
                 f"⚠️ {TG_PREFIX} Startup reconciliation failed: {str(e)[:200]}"
             )
 
+    def _poll_cfgi(self):
+        """Poll CFGI API for market fear & greed index (once per hour)."""
+        now = time.time()
+        if now - self._cfgi_last_poll < 3600:
+            return
+        try:
+            from trading.spot.cfgi_client import CFGIClient
+            import os as _os
+            api_key = _os.environ.get("CFGI_API_KEY")
+            if not api_key:
+                return
+            client = CFGIClient(api_key)
+            data = client.get_current(["MARKET"], period=4, fields="cfgi")
+            market_data = data.get("MARKET", {})
+            if isinstance(market_data, dict):
+                self._cfgi_market = market_data.get("cfgi", market_data.get("value"))
+            elif isinstance(market_data, (int, float)):
+                self._cfgi_market = float(market_data)
+            self._cfgi_last_poll = now
+            logger.info("CFGI updated: market=%s", self._cfgi_market)
+        except Exception as e:
+            logger.warning("CFGI poll failed: %s", e)
+            self._cfgi_last_poll = now
+
     def _maybe_reconcile(self):
         """Periodically reconcile engine state with exchange balances."""
         now = time.time()
@@ -1177,6 +1211,7 @@ class V14LiveBot:
         uptime_h = (datetime.now(timezone.utc) - self._start_time).total_seconds() / 3600
         st["uptime_hours"] = round(uptime_h, 2)
         st["last_update"] = datetime.now(timezone.utc).isoformat()
+        st["fear_greed_index"] = self._cfgi_market
 
         path = self.output_dir / "status.json"
         tmp = path.with_suffix(".tmp")

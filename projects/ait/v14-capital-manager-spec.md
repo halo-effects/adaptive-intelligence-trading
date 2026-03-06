@@ -88,3 +88,68 @@ Assume the `active_pool` has $10,000.
 - `total_allocated = sum(final_allocation for all coins)`
 - `sidelines_cash = active_pool - total_allocated`
 - The `sidelines_cash` is explicitly left unallocated to act as a buffer/cash drag, ensuring risk rules are not violated just to deploy capital.
+
+
+---
+
+## Dashboard
+
+**File:** docs/dashboardV14PM.html
+**Live URL:** https://halo-effects.github.io/adaptive-intelligence-trading/dashboardV14PM.html
+
+### Data Sources (served via GitHub Pages)
+| Path | Content | Updated by |
+|------|---------|------------|
+| docs/data/v14-pm/status.json | Bot health, equity, per-coin state, router pool info | un_v14_portfolio_paper.py every tick |
+| docs/data/v14-pm/trades.csv | Completed deal log | Same |
+| docs/data/v14/cycle_scanner.json | Full 44-coin ranked opportunity table | 14_cycle_scanner.py (daily manual or cron) |
+
+### Status JSON — Key Fields
+`json
+{
+  "running": true,
+  "leverage": 1.0,
+  "equity": 10000.0,
+  "cash": 9999.99,
+  "coins": { "ZRO/USDT": { "layers": 0, "invested": 0, ... } },
+  "router": {
+    "active_cash": 7500.0,
+    "reserve_cash": 2500.0,
+    "total_active_allocated": 0,
+    "total_reserve_allocated": 0
+  }
+}
+`
+
+### Dashboard Behaviour Notes
+- **Leverage badge** reads S.leverage from status JSON dynamically — does not infer from profile name.
+- **Opportunity table** pulls all rankings from cycle_scanner.json (all mature coins), not just active PM coins. Active PM coins are highlighted in the table.
+- **HYPE coin card** uses label "HYPE" (not "Hyperliquid") to prevent LONG DCA badge overflow.
+
+---
+
+## Performance Comparison Log
+
+**Script:** 	rading/spot/pm_comparison_log.py
+**Output:** docs/data/v14/pm_comparison.json
+**Schedule:** AIT_PMComparisonLog — Windows Scheduled Task, daily at 9:10 AM PST (after PM rebalance)
+
+Captures a daily snapshot comparing V14 PM vs V14 Paper (same $10K starting capital):
+
+`json
+{
+  "date": "2026-03-06",
+  "v14_paper":  { "equity": 69220.00, "pnl_pct": 592.20, "deals": 374, "win_rate": 97.6 },
+  "v14_pm":     { "equity": 9999.99,  "pnl_pct": 0.0,    "deals": 0,   "win_rate": 0.0 },
+  "delta":      { "equity_usd": -59220.01, "pnl_pct": -592.20, "deals": -374 },
+  "pm_allocation": {
+    "active_pool": 7500.0,
+    "reserve": 2500.0,
+    "coins": [
+      { "symbol": "ZRO/USDT", "rank": 1, "dca_score": 64.56, "invested": 0, "layers": 0 }
+    ]
+  }
+}
+`
+
+**Interpretation:** Delta starts large (V14 Paper has weeks of head start). Track **rate of PnL growth** month-over-month. After 30 days the allocation rotation story becomes clear — daily coin rankings and capital shifts are logged so you can correlate PM performance with rotation decisions.
