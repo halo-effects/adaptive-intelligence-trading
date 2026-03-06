@@ -38,7 +38,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .header-badge.trend-bull{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
 .header-badge.trend-bear{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
 .header-badge.leverage{background:rgba(99,102,241,.12);color:var(--accent2);border:1px solid rgba(99,102,241,.25)}
-.header-coins{font-size:.7rem;color:var(--text2)}
+.header-badge.tier{background:rgba(168,85,247,.12);color:#c084fc;border:1px solid rgba(168,85,247,.25)}
 .header-status-col{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .header-status{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:500}
 .status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
@@ -392,7 +392,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
       <span class="header-badge leverage" id="hdrLeverage">1.0&times; Leverage</span>
       <span class="header-badge" id="hdrRegime">--</span>
       <span class="header-badge" id="hdrTrend">--</span>
-      <span class="header-coins" id="hdrCoins">--</span>
+      <span class="header-badge tier" id="hdrTier">-- slots</span>
     </div>
     <div class="header-status-col">
       <div class="header-status"><span id="statusDot" class="status-dot stopped"></span><span id="statusLabel">Loading...</span></div>
@@ -602,8 +602,9 @@ function render(){
   var lev=S.leverage||1;
   $('hdrLeverage').textContent=lev.toFixed(1)+'\u00D7 Leverage';
 
-  var syms=S.symbols||Object.keys(S.coins||{});
-  $('hdrCoins').textContent=syms.join(', ')+' \u00B7 '+(S.timeframe||'1h');
+  var tierCap=S.tier_coin_cap||'--';
+  var activeCoinCount=(S.symbols||Object.keys(S.coins||{})).length;
+  $('hdrTier').textContent=activeCoinCount+'/'+tierCap+' coin slots';
 
   var fns=[renderStats,renderRiskProfile,renderPortfolioAlloc,renderPositions,renderAIPanel,renderCompounding,renderMacro,renderCapDonut,renderFlowDiagram,renderBottomBar];
   fns.forEach(function(fn){try{fn()}catch(e){console.warn(fn.name,e)}});
