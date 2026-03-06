@@ -370,9 +370,9 @@ def _history_months(conn: sqlite3.Connection, symbol: str) -> float:
     return (row[1] - row[0]) / (1000 * 60 * 60 * 24 * 30.44)
 
 
-def scan_all(coins: list[str], windows: list[str], top_n: Optional[int] = None) -> dict:
+def scan_all(coins: list[str], windows: list[str], top_n: Optional[int] = None, as_of_ms: Optional[int] = None) -> dict:
     """Run full scan across all coins and windows."""
-    now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    now_ms = as_of_ms or int(datetime.now(timezone.utc).timestamp() * 1000)
 
     conn = sqlite3.connect(str(DB_PATH))
 
@@ -430,7 +430,7 @@ def scan_all(coins: list[str], windows: list[str], top_n: Optional[int] = None) 
 
     # Build output
     output = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.fromtimestamp(now_ms / 1000, tz=timezone.utc).isoformat(),
         "windows": {},
         "coins_scanned": coins_scanned,
         "coins_mature": coins_scanned - coins_immature,
@@ -753,6 +753,9 @@ def main():
     parser.add_argument("--top", type=int, help="Show only top N results")
     parser.add_argument("--no-telegram", action="store_true", help="Skip Telegram notification")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
+    parser.add_argument("--as-of", type=str, help="Run as if date is YYYY-MM-DD (for historical snapshots)")
+    parser.add_argument("--backfill-history", type=int, metavar="DAYS",
+                        help="Backfill N days of score history snapshots (runs scanner N times with past dates)")
     args = parser.parse_args()
 
     level = logging.DEBUG if args.verbose else logging.INFO
@@ -786,7 +789,28 @@ def main():
                 f"SO_STEP_MULT={SO_STEP_MULT}, SO_VOL_MULT={SO_VOL_MULT}, "
                 f"TP={TP_PCT:.1%}, MAX_LAYERS={MAX_LAYERS}")
 
-    output = scan_all(coins, windows, top_n=args.top)
+    # Handle --backfill-history: run scanner for N past days to build trend history
+    if args.backfill_history:
+        days = args.backfill_history
+        logger.info(f"Backfilling {days} days of score history...")
+        for d in range(days, 0, -1):
+            past_dt = datetime.now(timezone.utc) - timedelta(days=d)
+            past_ms = int(past_dt.timestamp() * 1000)
+            logger.info(f"  Backfill: scanning as-of {past_dt.strftime('%Y-%m-%d')}...")
+            hist_output = scan_all(coins, ["30d"], as_of_ms=past_ms)
+            append_score_history(hist_output)
+        logger.info(f"Backfill complete. Running current scan now...")
+
+    # Determine as-of timestamp
+    as_of_ms = None
+    if args.as_of:
+        as_of_dt = datetime.strptime(args.as_of, "%Y-%m-%d").replace(
+            hour=18, tzinfo=timezone.utc
+        )
+        as_of_ms = int(as_of_dt.timestamp() * 1000)
+        logger.info(f"Running as-of {args.as_of} (ts={as_of_ms})")
+
+    output = scan_all(coins, windows, top_n=args.top, as_of_ms=as_of_ms)
 
     for w in windows:
         print_table(output, w, top_n=args.top)

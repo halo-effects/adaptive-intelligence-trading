@@ -135,7 +135,7 @@ Trend Multiplier:
 
 ### 4.3 Allocation Formula (Implemented)
 
-> **Note**: The Trend Score multiplier from the original design has not yet been wired into the live allocation. The current implementation uses Base DCA Score only with a hurdle rate gate.
+> **✅ Implemented 2026-03-06**: The Trend Score multiplier is now wired into the live allocation. `rebalance_daily()` computes `Adjusted Score = Base DCA Score × Trend Multiplier` for ranking, filtering, and proportional weighting. Declining coins (mult < 1.0) get less capital; accelerating coins get more. Collapsed scores (mult → 0) effectively gate entry.
 
 ```
 Current (live):

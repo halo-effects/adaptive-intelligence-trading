@@ -73,32 +73,44 @@ class CapitalRouter:
     def load_scanner_json(self, filepath: str) -> List[Dict[str, Any]]:
         """
         Utility to read cycle_scanner.json and return the rankings.
+        Also enriches each ranking entry with trend_multiplier if available.
         """
         try:
             with open(filepath, 'r') as f:
                 data = json.load(f)
             
+            rankings = []
             # Navigate the windows structure from cycle_scanner.json
             if "windows" in data:
                 if "30d" in data["windows"]:
-                    return data["windows"]["30d"]["rankings"]
+                    rankings = data["windows"]["30d"]["rankings"]
                 elif "bear" in data["windows"]:
-                    return data["windows"]["bear"]["rankings"]
-            
-            # Use '30d' window if available, otherwise 'bear', or fallback to root list
-            if "30d" in data:
-                return data["30d"]
+                    rankings = data["windows"]["bear"]["rankings"]
+            elif "30d" in data:
+                rankings = data["30d"]
             elif "bear" in data:
-                return data["bear"]
+                rankings = data["bear"]
             elif isinstance(data, list):
-                return data
-            
-            # Fallback scan of dict
-            for key, val in data.items():
-                if isinstance(val, list):
-                    return val
-            
-            return []
+                rankings = data
+            else:
+                for key, val in data.items():
+                    if isinstance(val, list):
+                        rankings = val
+                        break
+
+            # Enrich rankings with trend multipliers from trend_scores
+            trend_scores = data.get("trend_scores", {})
+            if trend_scores:
+                for entry in rankings:
+                    coin = entry.get("coin", entry.get("symbol", "").split("/")[0])
+                    if coin in trend_scores:
+                        td = trend_scores[coin]
+                        entry["trend_multiplier"] = td.get("trend_multiplier", 1.0)
+                        entry["trend_direction"] = td.get("direction", "stable")
+                    # If no trend data, default multiplier is 1.0 (neutral)
+                logger.info(f"Trend scores loaded for {len(trend_scores)} coins")
+
+            return rankings
         except Exception as e:
             logger.error(f"Failed to load scanner JSON from {filepath}: {e}")
             return []
@@ -143,22 +155,35 @@ class CapitalRouter:
 
         logger.info(f"Equity tier: ${self.total_equity:.2f} → max {self.tier_coin_cap} coins")
 
-        # 1. Filter: hurdle rate >= 5.0
+        # 1. Filter: hurdle rate >= 5.0, apply trend multiplier
         qualifying_coins = []
         for coin_data in scanner_rankings:
             symbol = coin_data.get("symbol") or coin_data.get("coin")
-            score = coin_data.get("dca_score", 0.0)
+            base_score = coin_data.get("dca_score", 0.0)
+            trend_mult = coin_data.get("trend_multiplier", 1.0)
+            trend_dir = coin_data.get("trend_direction", "stable")
             
             try:
-                score_float = float(score)
+                base_score_float = float(base_score)
+                trend_mult_float = float(trend_mult)
             except (ValueError, TypeError):
                 continue
+            
+            # Trend-adjusted score: Base DCA Score × Trend Multiplier
+            # Collapsed scores (mult near 0) effectively gate entry
+            adjusted_score = base_score_float * trend_mult_float
                 
-            if score_float >= 5.0:
-                qualifying_coins.append({"symbol": symbol, "dca_score": score_float})
+            if base_score_float >= 5.0:
+                qualifying_coins.append({
+                    "symbol": symbol,
+                    "dca_score": base_score_float,
+                    "trend_multiplier": trend_mult_float,
+                    "trend_direction": trend_dir,
+                    "adjusted_score": adjusted_score,
+                })
         
-        # 2. Sort descending by score
-        qualifying_coins.sort(key=lambda x: x["dca_score"], reverse=True)
+        # 2. Sort descending by trend-adjusted score (not raw score)
+        qualifying_coins.sort(key=lambda x: x["adjusted_score"], reverse=True)
         
         # 3. Apply tier coin cap (never exceeds cap regardless of how many qualify)
         max_coins = self.tier_coin_cap
@@ -171,27 +196,33 @@ class CapitalRouter:
                 logger.warning("No coins met the >= 5.0 hurdle rate. All capital goes to sidelines.")
             return {}
 
-        # 4. Calculate total score
-        total_score = sum(c["dca_score"] for c in top_coins)
+        # 4. Calculate total adjusted score
+        total_score = sum(c["adjusted_score"] for c in top_coins)
         
-        # 5. Proportional weighting & 20% max cap per coin
+        # 5. Proportional weighting by adjusted score & 20% max cap per coin
         max_cap_per_coin = 0.20 * self.active_pool_total
         target_allocations = {}
         
         for c in top_coins:
-            raw_allocation = (c["dca_score"] / total_score) * self.active_pool_total
+            raw_allocation = (c["adjusted_score"] / total_score) * self.active_pool_total
             final_allocation = min(raw_allocation, max_cap_per_coin)
             target_allocations[c["symbol"]] = final_allocation
-            logger.debug(f"{c['symbol']}: Score {c['dca_score']:.2f} → ${final_allocation:.2f}")
+            logger.debug(
+                f"{c['symbol']}: Base={c['dca_score']:.1f} × Trend={c['trend_multiplier']:.2f} "
+                f"= Adj={c['adjusted_score']:.1f} → ${final_allocation:.2f}"
+            )
 
         # 6. Sidelines cash routing
         total_allocated = sum(target_allocations.values())
         sidelines_cash = self.active_pool_total - total_allocated
         
-        logger.info(
-            f"Rebalance complete: {len(top_coins)}/{max_coins} coin slots filled. "
-            f"Allocated: ${total_allocated:.2f} | Sidelines: ${sidelines_cash:.2f}"
-        )
+        logger.info(f"Rebalance complete. {len(top_coins)}/{max_coins} coin slots filled.")
+        for c in top_coins:
+            logger.info(
+                f"  {c['symbol']}: Base={c['dca_score']:.1f} × Trend={c['trend_multiplier']:.2f} "
+                f"({c['trend_direction']}) = {c['adjusted_score']:.1f} → ${target_allocations[c['symbol']]:.2f}"
+            )
+        logger.info(f"Total Target Allocation: ${total_allocated:.2f} | Sidelines Cash (Buffer): ${sidelines_cash:.2f}")
         
         return target_allocations
 
