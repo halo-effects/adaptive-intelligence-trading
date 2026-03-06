@@ -33,8 +33,12 @@
 - **Scheduled Task**: V14ETFPaperBot
 
 ### V14 PM (Portfolio Manager) Paper Bot (Hyperliquid) - LIVE
-- **Strategy**: Dynamic capital rotation. $10K paper. Funds up to 20% of cash into top DCA scorers daily (from `cycle_scanner.json`); leaves remainder as a risk buffer to defend Capital Freedom.
+- **Strategy**: Dynamic capital rotation with trend-adjusted scoring. $50K paper. 10 coin slots.
+- **Allocation**: `Adjusted Score = Base DCA Score × Trend Multiplier` (1.5x for accelerating, 0.36x-0.8x for declining)
+- **Profile**: High, 12 layers, 1.0x leverage (no liquidation risk)
+- **Trend data**: 45 coins with 7-day backfilled score history. Scanner supports `--backfill-history N` and `--as-of YYYY-MM-DD`.
 - **Dashboard**: dashboardV14PM.html
+- **Scheduled Task**: V14PMPaperBot (uses `--fresh` flag — starts clean on reboot)
 
 ## Bear Market Coin Research & DCA Cycle Scanner
 - **Scanner**: 	rading/spot/v14_cycle_scanner.py - rolling window analysis (7d/14d/30d/bear)

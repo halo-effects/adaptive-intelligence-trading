@@ -417,7 +417,8 @@ The Portfolio Manager is a **new layer** above the V14 DCA engines:
 - [x] Graceful degradation — existing positions run to TP on tier drop
 - [x] Telegram alerts on tier changes
 - [x] `run_v14_portfolio_paper.py` — live runner with daily rebalance, capital routing, action interception
-- [ ] Trend Score multiplier wired into allocation *(next iteration)*
+- [x] Trend Score multiplier wired into allocation — `Adjusted Score = Base DCA Score × Trend Multiplier` (2026-03-06)
+- [x] Score history backfill via `--backfill-history N` / `--as-of YYYY-MM-DD` flags on scanner (2026-03-06)
 - [ ] Correlation gate (halt new entries when >60% of coins at L4+) *(not yet built)*
 
 ### Phase 3: Paper Testing 🔄 In Progress (since 2026-03-05)
@@ -430,7 +431,7 @@ The Portfolio Manager is a **new layer** above the V14 DCA engines:
 
 ### Phase 4: Live Deployment 🔒 Locked (pending paper results)
 - [ ] Evaluate paper results after 30+ days
-- [ ] Wire Trend Score multiplier into allocation before going live
+- [x] ~~Wire Trend Score multiplier into allocation before going live~~ Done (2026-03-06)
 - [ ] Build correlation gate
 - [ ] Start live with $10K, scale after validation
 - [ ] Full monitoring: Telegram alerts ✅, dashboard ✅, drift checks *(pending)*
@@ -445,7 +446,7 @@ The Portfolio Manager is a **new layer** above the V14 DCA engines:
 4. **SHORT_DCA capital**: When ROUTER flips a coin to SHORT_DCA, does it keep the same allocation? Shorts carry different risk profiles in crypto. *Not yet encountered in paper run.*
 5. **Circuit breaker on single-coin crash**: Force-close at -30% single candle? Currently the grid holds and waits for TP at any depth. Consider as a future risk control.
 6. **Macro risk switch**: Reduce Active Pool when CFGI < 20 for > 30 days or BTC dominance spikes? Not implemented. Could be a meaningful bear-market defense.
-7. **Trend Score multiplier**: Wired for computation but not yet feeding allocation. Should boost fast-accelerating coins and penalize declining scores. Priority before live deployment.
+7. ~~**Trend Score multiplier**~~: **Resolved (2026-03-06)**. `Adjusted Score = Base DCA Score × Trend Multiplier` is live in `rebalance_daily()`. Accelerating coins get up to 1.5x boost; declining coins penalized down to 0.36x. All 45 scanner coins have trend data via 7-day backfill.
 8. **Correlation gate**: Not yet built. When >60% of active coins hit L4+ simultaneously, halt new T1 entries for idle coins. Needed for broad crash scenarios.
 
 ---
@@ -465,7 +466,8 @@ The Portfolio Manager is a **new layer** above the V14 DCA engines:
 | Rebalance cadence | Daily (on first new candle of each UTC day) | 2026-03-05 |
 | Max coins | Equity-tiered cap — 1 to 10 coins based on equity (see §5.2) | 2026-03-06 |
 | Paper capital | $50K (reset from $10K — underpowered at 10 coins) | 2026-03-06 |
-| Trend multiplier | Computed but not yet wired into allocation (planned pre-live) | pending |
+| Trend multiplier | Live — `Adjusted Score = Base × Trend Mult` in rebalance_daily() | 2026-03-06 |
+| Score backfill | `--backfill-history N` / `--as-of YYYY-MM-DD` on scanner for instant trend data | 2026-03-06 |
 
 ---
 

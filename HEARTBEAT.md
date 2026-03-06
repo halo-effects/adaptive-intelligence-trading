@@ -35,13 +35,14 @@
 - Dashboard: `docs/dashboardV14ETF.html`
 
 ### V14 PM (Portfolio Manager) Paper Bot — LIVE as of 2026-03-05
-- **Capital**: $10K paper. Dynamic allocation (up to 20% cash to top DCA scorers daily).
+- **Capital**: $50K paper. 10 coin slots (equity-tiered). Dynamic allocation with trend multiplier.
 - **Profile**: High, 12 layers, **1.0x leverage** (no leverage), Hyperliquid perps (longs + shorts)
-- **Coins**: ZRO/SNX/HYPE/HBAR/INJ (dynamically selected by cycle scanner daily)
+- **Allocation**: `Adjusted Score = Base DCA Score × Trend Multiplier` — accelerating coins boosted up to 1.5x, declining penalized down to 0.36x
+- **Coins**: Dynamically selected by cycle scanner daily (all 45 scanned coins eligible)
 - Check `trading/spot/paper/v14_portfolio/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
 - Scheduled Task: `V14PMPaperBot` (at login)
-- Entry point: `python -u -m trading.spot.run_v14_portfolio_paper --capital 10000 --profile high --leverage 1.0`
+- Entry point: `python -u -m trading.spot.run_v14_portfolio_paper --capital 50000 --profile high --leverage 1.0 --fresh`
 - Dashboard: `docs/dashboardV14PM.html`
 
 ### V14 DCA Cycle Scanner

@@ -220,6 +220,6 @@ This engine stands on extensive V13 research:
 - [x] Paper bot — V14-ETF (SOL/XRP/LTC/HBAR/ADA) deployed (2026-03-02)
 - [x] Paper bot — V14-PM (Portfolio Manager, dynamic coins) deployed (2026-03-05)
 - [x] Equity-tiered coin cap added to PM (2026-03-06)
-- [ ] Trend Score multiplier wired into PM allocation *(planned pre-live)*
+- [x] Trend Score multiplier wired into PM allocation (2026-03-06) — `Adjusted Score = Base × Trend Mult` in `rebalance_daily()`
 - [ ] Correlation gate for broad market stress *(planned pre-live)*
 - [ ] 30+ days paper data → evaluate live deployment at scale
