@@ -100,14 +100,14 @@ class V14LifecycleEngine:
     - Provides persistence via snapshot/restore
     """
 
-    def __init__(self, symbol: str, capital: float, profile: str = 'medium'):
+    def __init__(self, symbol: str, capital: float, profile: str = 'medium', leverage: float = None):
         self.symbol = symbol
         self.initial_capital = capital
         self.profile = profile
         self.coin = symbol.split('/')[0] if '/' in symbol else symbol
 
-        # Leverage from profile
-        self.leverage = V14_PROFILES.get(profile, V14_PROFILES['medium'])['leverage']
+        # Leverage from profile, with optional override
+        self.leverage = leverage if leverage is not None else V14_PROFILES.get(profile, V14_PROFILES['medium'])['leverage']
 
         # Create config
         self._config = _make_v14_config(profile, capital)

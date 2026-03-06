@@ -255,6 +255,7 @@ class V14PortfolioPaperBot:
         output_dir: Optional[Path] = None,
         start_date: str = DEFAULT_START_DATE,
         leverage: float = None,
+        fresh: bool = False,
     ):
         self.capital = capital
         self.exchange = exchange
@@ -264,6 +265,7 @@ class V14PortfolioPaperBot:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.start_date = start_date
         self.leverage = leverage if leverage is not None else V14_PROFILES.get(profile, V14_PROFILES['medium'])['leverage']
+        self.fresh = fresh
 
         self.router = CapitalRouter(initial_capital=self.capital)
         self.engines: Dict[str, V14LifecycleEngine] = {}
@@ -308,7 +310,7 @@ class V14PortfolioPaperBot:
         for sym, alloc in allocations.items():
             if sym not in self.engines:
                 logger.info(f"Creating new V14Engine for {sym} (capital={alloc} initial, funded dynamically)")
-                self.engines[sym] = V14LifecycleEngine(symbol=sym, capital=alloc, profile=self.profile)
+                self.engines[sym] = V14LifecycleEngine(symbol=sym, capital=alloc, profile=self.profile, leverage=self.leverage)
                 self.engines[sym]._live_mode = True
             else:
                 eng = self.engines[sym]._engine
@@ -375,14 +377,140 @@ class V14PortfolioPaperBot:
         if valid_actions:
             self.tracker.process_actions(symbol, valid_actions, ts)
 
+    def _write_status(self):
+        """Write combined status.json from all engines for dashboard."""
+        coins = {}
+        total_equity = 0.0
+        total_cash = 0.0
+        total_realized = 0.0
+        total_fees = 0.0
+        total_deals = 0
+        total_won = 0
+        max_dd = 0.0
+
+        for sym, engine in self.engines.items():
+            try:
+                st = engine.get_status()
+            except Exception as e:
+                logger.error(f"get_status failed for {sym}: {e}")
+                continue
+
+            if "coins" in st:
+                coins.update(st["coins"])
+            total_equity += st.get("equity", 0)
+            total_cash += st.get("cash", 0)
+            total_realized += st.get("total_realized_pnl", 0)
+            total_fees += st.get("total_fees", 0)
+            total_deals += st.get("deals_completed", 0)
+            total_won += engine.deals_won
+            max_dd = max(max_dd, st.get("max_drawdown_pct", 0))
+
+        pnl_pct = ((total_equity - self.capital) / self.capital * 100
+                    if self.capital > 0 else 0.0)
+        win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
+        uptime_h = (datetime.now(timezone.utc) - self._start_time).total_seconds() / 3600
+
+        # Read trades.csv for accurate deal counts
+        csv_path = self.output_dir / "trades.csv"
+        if csv_path.exists():
+            try:
+                with open(csv_path, 'r') as f:
+                    reader = csv.DictReader(f)
+                    csv_trades = list(reader)
+                if csv_trades:
+                    total_deals = len(csv_trades)
+                    total_won = sum(1 for t in csv_trades if float(t.get('pnl', 0)) > 0)
+                    win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
+            except Exception:
+                pass
+
+        # Derive regime from router state
+        regime = "RANGING"
+        trend_direction = "neutral"
+        long_count = sum(1 for c in coins.values()
+                         if c.get("lifecycle_phase") == "LONG_DCA")
+        short_count = sum(1 for c in coins.values()
+                          if c.get("lifecycle_phase") == "SHORT_DCA")
+        if long_count > short_count:
+            trend_direction = "bullish"
+        elif short_count > long_count:
+            trend_direction = "bearish"
+
+        symbols = list(self.engines.keys())
+
+        status = {
+            "running": True,
+            "mode": "paper",
+            "engine": "v14-pm",
+            "profile": self.profile,
+            "leverage": self.leverage,
+            "exchange": self.exchange,
+            "capital": self.capital,
+            "equity": round(total_equity, 2),
+            "cash": round(total_cash, 2),
+            "pnl_pct": round(pnl_pct, 2),
+            "coins": coins,
+            "symbols": symbols,
+            "regime": regime,
+            "trend_direction": trend_direction,
+            "total_realized_pnl": round(total_realized, 2),
+            "total_fees": round(total_fees, 2),
+            "deals_completed": total_deals,
+            "win_rate": round(win_rate, 1),
+            "max_drawdown_pct": round(max_dd, 2),
+            "uptime_hours": round(uptime_h, 2),
+            "fear_greed_index": None,
+            "last_update": datetime.now(timezone.utc).isoformat(),
+            "timeframe": self.timeframe,
+            "router": {
+                "active_cash": round(self.router.active_pool_cash, 2),
+                "reserve_cash": round(self.router.reserve_pool_cash, 2),
+                "total_active_allocated": round(sum(
+                    self.router.active_allocations.values()
+                ), 2),
+                "total_reserve_allocated": round(sum(
+                    self.router.reserve_allocations.values()
+                ), 2),
+            },
+        }
+
+        path = self.output_dir / "status.json"
+        tmp = path.with_suffix(".tmp")
+        try:
+            with open(tmp, "w") as f:
+                json.dump(status, f, indent=2, default=str)
+            tmp.replace(path)
+        except Exception as e:
+            logger.error(f"Failed to write status.json: {e}")
+
     def run_live(self):
         import ccxt
         logger.info("Starting V14 Portfolio live trading loop")
+        if self.fresh:
+            logger.info("FRESH mode: will skip historical candles, trading from NOW only")
         exchange = ccxt.hyperliquid()
         exchange.load_markets()
 
         last_candle_ts: Dict[str, int] = {}
         
+        # In fresh mode, seed last_candle_ts to skip all historical candles
+        if self.fresh:
+            now_ms = int(time.time() * 1000)
+            # Pre-seed all engines: fetch latest candle for each coin and skip to it
+            for sym in list(self.engines.keys()):
+                base = sym.split('/')[0]
+                hl_sym = f"{base}/USDC:USDC"
+                try:
+                    ohlcv = exchange.fetch_ohlcv(hl_sym, self.timeframe, limit=2)
+                    if ohlcv:
+                        # Set to the second-to-last candle so we only process the current/latest
+                        latest_closed = ohlcv[-2][0] if len(ohlcv) > 1 else ohlcv[-1][0]
+                        last_candle_ts[sym] = latest_closed
+                        self.engines[sym]._last_candle_ts = latest_closed
+                        logger.info(f"FRESH: Skipping history for {sym}, starting from ts={latest_closed}")
+                except Exception as e:
+                    logger.warning(f"FRESH: Failed to seed {sym}: {e}")
+
         while not self._shutdown:
             try:
                 cycle_start = time.time()
@@ -444,6 +572,7 @@ class V14PortfolioPaperBot:
                         engine._last_candle_ts = ts_ms
 
                 self.tracker.save_csv()
+                self._write_status()
 
                 elapsed = time.time() - cycle_start
                 sleep_time = max(1, LIVE_POLL_INTERVAL - elapsed)
@@ -477,13 +606,15 @@ def main():
     parser.add_argument("--profile", type=str, default="medium")
     parser.add_argument("--leverage", type=float, default=None)
     parser.add_argument("--exchange", type=str, default="hyperliquid")
+    parser.add_argument("--fresh", action="store_true", help="Start fresh — skip historical candles, trade from now only")
     args = parser.parse_args()
 
     bot = V14PortfolioPaperBot(
         capital=args.capital,
         exchange=args.exchange,
         profile=args.profile,
-        leverage=args.leverage
+        leverage=args.leverage,
+        fresh=args.fresh,
     )
     bot.run()
 

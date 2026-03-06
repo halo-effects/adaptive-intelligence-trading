@@ -99,6 +99,9 @@ def load_daily(coin, db_path=None):
     db.close()
     df['dt'] = pd.to_datetime(df['timestamp'], unit='ms')
     df.set_index('dt', inplace=True)
+    # Deduplicate index — duplicate timestamps cause InvalidIndexError downstream
+    if not df.index.is_unique:
+        df = df[~df.index.duplicated(keep='last')]
     df.attrs['symbol'] = best
     return df
 

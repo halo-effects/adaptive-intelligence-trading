@@ -216,12 +216,18 @@ class V14DCAEngine:
         return False
 
     def _price(self, date):
-        """Get daily close price."""
+        """Get daily close price (always returns scalar)."""
         if date in self.daily.index:
-            return self.daily.loc[date, 'close']
+            val = self.daily.loc[date, 'close']
+            if isinstance(val, pd.Series):
+                val = val.iloc[-1]
+            return float(val)
         prior = self.daily.index[self.daily.index <= date]
         if len(prior):
-            return self.daily.loc[prior[-1], 'close']
+            val = self.daily.loc[prior[-1], 'close']
+            if isinstance(val, pd.Series):
+                val = val.iloc[-1]
+            return float(val)
         return np.nan
 
     def _change_phase(self, date, new_phase, reason=''):
