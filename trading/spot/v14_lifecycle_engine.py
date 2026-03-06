@@ -610,6 +610,81 @@ class V14LifecycleEngine:
         logger.info(f"V14Engine state restored for {self.symbol}, phase={eng.phase}")
 
     # -----------------------------------------------------------------------
+    # Rollback for Portfolio Router
+    # -----------------------------------------------------------------------
+    
+    def reject_action(self, action_dict: dict):
+        """
+        Roll back the state of the engine for a specific action (e.g. BUY rejected by router).
+        This is used by the portfolio runner when capital is denied.
+        """
+        if self._engine is None:
+            return
+            
+        eng = self._engine
+        action_type = action_dict.get('action')
+        reason = action_dict.get('reason', '')
+        
+        # We only support rolling back recent BUY or SHORT_OPEN actions
+        if action_type not in ('BUY', 'SHORT_OPEN'):
+            logger.warning(f"Cannot reject action type {action_type} for {self.symbol}")
+            return
+            
+        # Find the trade in the engine's trade list
+        trade_idx = -1
+        for i in range(len(eng.trades)-1, -1, -1):
+            if eng.trades[i].get('action') == reason and eng.trades[i].get('date') == action_dict.get('date'):
+                trade_idx = i
+                break
+                
+        if trade_idx == -1:
+            logger.warning(f"Could not find trade {reason} to reject for {self.symbol}")
+            return
+            
+        trade = eng.trades.pop(trade_idx)
+        amount = trade['amount']
+        coins = trade['coins']
+        price = trade['price']
+        
+        if action_type == 'BUY':
+            # Rollback long
+            eng.capital += amount
+            eng.long_coins -= coins
+            eng.long_cost -= amount
+            if eng.long_coins <= 1e-8:
+                eng.long_coins = 0
+                eng.long_cost = 0
+                eng.long_avg_entry = 0
+                eng.long_layers = 0
+                eng.long_tp = 0
+            else:
+                eng.long_avg_entry = eng.long_cost / eng.long_coins
+                eng.long_layers -= 1
+                # Restore TP roughly
+                eng.long_tp = eng.long_avg_entry * (1 + eng.cfg.DCA_TP_PCT)
+            eng.long_trades -= 1
+            logger.info(f"{self.symbol}: Rejected BUY, rolled back {coins} coins @ ${price}. Refunded ${amount}.")
+            
+        elif action_type == 'SHORT_OPEN':
+            # Rollback short
+            eng.capital += amount
+            eng.short_coins -= coins
+            eng.short_cost -= amount
+            if eng.short_coins <= 1e-8:
+                eng.short_coins = 0
+                eng.short_cost = 0
+                eng.short_avg_entry = 0
+                eng.short_layers = 0
+                eng.short_tp = 0
+            else:
+                eng.short_avg_entry = eng.short_cost / eng.short_coins
+                eng.short_layers -= 1
+                # Restore TP roughly
+                eng.short_tp = eng.short_avg_entry * (1 - eng.cfg.DCA_TP_PCT)
+            eng.short_trades -= 1
+            logger.info(f"{self.symbol}: Rejected SHORT_OPEN, rolled back {coins} coins @ ${price}. Refunded ${amount}.")
+
+    # -----------------------------------------------------------------------
     # Feed daily (for signal context on restore)
     # -----------------------------------------------------------------------
 

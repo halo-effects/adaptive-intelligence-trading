@@ -34,6 +34,11 @@
 - Scheduled Task: `V14ETFPaperBot` (created 2026-03-02)
 - Dashboard: `docs/dashboardV14ETF.html`
 
+### V14 PM (Portfolio Manager) Paper Bot — LIVE as of 2026-03-05
+- **Capital**: $10K paper. Dynamic allocation (up to 20% cash to top DCA scorers daily).
+- Dashboard: `docs/dashboardV14PM.html`
+- Monitor status and state alongside V14 and V14ETF. Watch how it defends Capital Freedom.
+
 ### V14 DCA Cycle Scanner
 - New tool: `trading/spot/v14_cycle_scanner.py` — scores coins by DCA cycle velocity
 - Output: `docs/data/v14/cycle_scanner.json`

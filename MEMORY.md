@@ -32,6 +32,10 @@
 - **Status/State**: 	rading/spot/paper/v14etf/
 - **Scheduled Task**: V14ETFPaperBot
 
+### V14 PM (Portfolio Manager) Paper Bot (Hyperliquid) - LIVE
+- **Strategy**: Dynamic capital rotation. $10K paper. Funds up to 20% of cash into top DCA scorers daily (from `cycle_scanner.json`); leaves remainder as a risk buffer to defend Capital Freedom.
+- **Dashboard**: dashboardV14PM.html
+
 ## Bear Market Coin Research & DCA Cycle Scanner
 - **Scanner**: 	rading/spot/v14_cycle_scanner.py - rolling window analysis (7d/14d/30d/bear)
 - **Metric**: DCA Cycle Velocity (Score = Realized_PnL * (1 - MaxDD%) * Capital_Freedom)

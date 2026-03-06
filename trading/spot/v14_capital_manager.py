@@ -47,6 +47,13 @@ class CapitalRouter:
             with open(filepath, 'r') as f:
                 data = json.load(f)
             
+            # Navigate the windows structure from cycle_scanner.json
+            if "windows" in data:
+                if "30d" in data["windows"]:
+                    return data["windows"]["30d"]["rankings"]
+                elif "bear" in data["windows"]:
+                    return data["windows"]["bear"]["rankings"]
+            
             # Use '30d' window if available, otherwise 'bear', or fallback to root list
             if "30d" in data:
                 return data["30d"]
