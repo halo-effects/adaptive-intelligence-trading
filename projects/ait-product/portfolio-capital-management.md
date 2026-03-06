@@ -138,19 +138,21 @@ Trend Multiplier:
 > **✅ Implemented 2026-03-06**: The Trend Score multiplier is now wired into the live allocation. `rebalance_daily()` computes `Adjusted Score = Base DCA Score × Trend Multiplier` for ranking, filtering, and proportional weighting. Declining coins (mult < 1.0) get less capital; accelerating coins get more. Collapsed scores (mult → 0) effectively gate entry.
 
 ```
-Current (live):
-  Allocation = (DCA Score / Sum of qualifying scores) × Active Pool
-  Subject to: Max 20% of Active Pool per coin
-
-Planned (next iteration):
-  Raw Weight = Base DCA Score × Trend Multiplier
-  Allocation = Raw Weight / Sum(all Raw Weights) × Active Pool
+Live (current):
+  Adjusted Score = Base DCA Score × Trend Multiplier
+  Allocation = (Adjusted Score / Sum of qualifying adjusted scores) × Active Pool
   Subject to: Max 20% of Active Pool per coin
 ```
 
-**Hurdle rate**: DCA Score ≥ 5.0. Coins below this threshold are excluded from the rebalance entirely and go to sidelines.
+Real trend multipliers from scanner (2026-03-06 example):
+- ZRO: Base 68.9 × 1.30 (accelerating) = **89.3** → top allocation
+- HYPE: Base 19.1 × 1.50 (accelerating) = **28.6**
+- SNX: Base 41.0 × 0.36 (declining) = **14.7** → penalized despite high base score
+- COMP: Base ~18 × 0.58 (declining) = **10.5** → penalized
 
-**Tier cap**: Applied before proportional weighting — only top-N qualifying coins by score receive allocations, where N is determined by equity tier (see §5.2).
+**Hurdle rate**: Base DCA Score ≥ 5.0. Applied before trend multiplication — coins below this are excluded entirely.
+
+**Tier cap**: Applied after hurdle rate — only top-N by adjusted score receive allocations, where N is determined by equity tier (see §5.2).
 
 **Example** ($100K, 8 coins, Active Pool = $75K):
 
