@@ -145,6 +145,43 @@ Steve's 3-check is **actively firing** for:
 
 Pi Cycle is NOT active for any coin.
 
+## Macro Confirmation Signals (Index-Level)
+
+*Added 2026-03-08 — sourced from Americana (YouTube) + independent analysis*
+
+The per-coin conviction stack (§Signal Stack above) detects bottoms at the individual asset level. These macro signals provide **portfolio-level confirmation** that the broader crypto market is bottoming. When both per-coin AND macro signals align, conviction is highest.
+
+### Macro Signal Checklist
+
+| # | Signal | Current Status (Mar 2026) | Notes |
+|---|--------|--------------------------|-------|
+| 1 | **TOTAL market cap oversold on 3D + weekly** | ✅ Active | Historically marks cycle bottoms. 3D bullish divergence forming with rising momentum. |
+| 2 | **TOTAL2 (ex-BTC) oversold on 3D** | ✅ Active | Same oversold levels as prior cycle bottoms. Momentum rising on 3D. |
+| 3 | **TOTAL3 (ex-BTC/ETH) oversold on weekly** | ✅ Active | Most oversold reading in current cycle. Past cycles: this level = relief + bottom formation. |
+| 4 | **OTHERS/BTC building momentum + structure** | ✅ Active | Alt-relative-to-BTC turning up — precursor to alt season. |
+| 5 | **ETH/BTC turning up on monthly momentum** | ✅ Active | First monthly momentum upturn since Nov 2020. Major macro shift signal. |
+| 6 | **BTC.D (dominance) bearish monthly momentum** | ✅ Active | First bearish month of momentum since Nov 2020. Capital rotation from BTC → alts. |
+
+### Interpretation
+
+- **All 6 macro signals active simultaneously** as of early March 2026
+- Historical precedent: every time TOTAL/TOTAL2/TOTAL3 hit these oversold levels together, it marked accumulation zones
+- The ETH/BTC + BTC.D flip is particularly significant — Nov 2020 was the last time this happened, preceding the 2021 alt season
+- **Not confirmed until upward price action materializes** — signals indicate setup, not trigger
+- These are observational/directional — not yet wired into any bot logic
+
+### How This Relates to AIT
+
+- **PM Bot**: Trend multiplier will naturally accelerate allocation into coins that start cycling as the bottom plays out
+- **Conviction Stack**: Per-coin 4/5 signals (RSI, StochRSI, CFGI) already firing for BTC/ETH/SOL as of Feb 2026 — macro alignment increases confidence
+- **Potential future use**: Macro conviction score could gate portfolio-level risk parameters (e.g., increase Active Pool % from 75% → 85% when macro bottom confirmed)
+
+### Source
+- [Americana — "All TOTAL indexes just hit historic oversold zones"](https://youtube.com/shorts/i3_B6HLZg5I) (Mar 7, 2026)
+- Cross-referenced with existing conviction stack signals firing since Feb 2026
+
+---
+
 ## Outstanding Items
 
 1. **One trigger per cycle lock** — needs implementation
