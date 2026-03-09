@@ -27,11 +27,10 @@ from pathlib import Path
 import sys
 
 # Import V14 DCA engine and dependencies
-_V13_DIR = Path(__file__).parent / 'backtest_results' / 'v13'
-sys.path.insert(0, str(_V13_DIR))
-from v14_dca_engine import V14DCAEngine, V14Config, Phase
-from v13_signals import V13SignalPack
-from v13_router_engine_v2 import HybridDetector2D
+# Import V14 DCA engine and dependencies (clean package — no sys.path manipulation)
+from trading.spot.engine.v14_dca_engine import V14DCAEngine, V14Config, Phase
+from trading.spot.engine.v13_signals import V13SignalPack
+from trading.spot.engine.v13_router_engine_v2 import HybridDetector2D
 
 logger = logging.getLogger(__name__)
 
