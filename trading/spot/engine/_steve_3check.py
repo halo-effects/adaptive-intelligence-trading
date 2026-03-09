@@ -16,7 +16,9 @@ from pathlib import Path
 from .v13_phase_backtest_v8 import V13BacktestV8, V13Config, Phase
 from .v13_signals import V13SignalPack
 
-DB_PATH = Path(__file__).resolve().parent.parent.parent / 'data' / 'candles.db'
+# Use AIT_CANDLES_DB env var if set; fall back to default
+_default_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'candles.db'
+DB_PATH = Path(os.environ.get('AIT_CANDLES_DB', str(_default_path)))
 
 
 class Steve3CheckDetector:

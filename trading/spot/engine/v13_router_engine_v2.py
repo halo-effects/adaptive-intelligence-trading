@@ -30,6 +30,7 @@ Locked parameters (2026-02-28):
 """
 
 import sys
+import os
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -42,7 +43,9 @@ from ._steve_3check import Steve3CheckDetector
 
 import sqlite3
 
-DB_PATH = Path(__file__).resolve().parent.parent.parent / 'data' / 'candles.db'
+# Use AIT_CANDLES_DB env var if set; fall back to default
+_default_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'candles.db'
+DB_PATH = Path(os.environ.get('AIT_CANDLES_DB', str(_default_path)))
 
 
 class HybridDetector2D:
