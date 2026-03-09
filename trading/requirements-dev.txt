@@ -1,0 +1,10 @@
+# AIT V14PM — Development / Backtest Dependencies
+# These are NOT needed on the production server.
+# Install: pip install -r requirements.txt -r requirements-dev.txt
+
+-r requirements.txt
+
+matplotlib==3.10.8  # Chart generation for backtest result analysis
+scipy==1.17.0       # Statistical analysis in backtest research scripts
+scikit-learn==1.8.0 # ML utilities used in signal research
+plotly==6.5.2       # Interactive charts in backtest notebooks

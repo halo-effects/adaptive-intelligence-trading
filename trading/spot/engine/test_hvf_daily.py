@@ -1,3 +1,4 @@
+import os
 """
 Test Francis Hunt's HVF (Harmonic Volume Factor) / Vuvuzela pattern on daily candles
 at known DCA transition points.
@@ -10,7 +11,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "candles.db"
+DB_PATH = Path(os.environ.get('AIT_CANDLES_DB', str(Path(__file__).resolve().parent.parent / "data" / "candles.db")))
 
 # ── HVF Detection (upgraded for daily) ──────────────────────────────────────
 

@@ -23,9 +23,8 @@ import numpy as np
 from pathlib import Path
 from collections import defaultdict
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from v13_signals import V13SignalPack
-from test_hvf_daily import (
+from .v13_signals import V13SignalPack
+from .test_hvf_daily import (
     composite_hvf_score, detect_swing_points, hvf_harmonic_pattern
 )
 

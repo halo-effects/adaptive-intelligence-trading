@@ -1,12 +1,18 @@
 """
-V13 Phase-Riding Backtest v8 — Signal-Driven Architecture
+V13 ROUTER Engine v1 — Refactored from V13 Phase Backtest v8
+
+Architectural refactor: centralizes all transition logic into an always-on
+ROUTER orchestration layer. Phase.FLAT renamed to Phase.ROUTER.
+Signal computation centralized in _compute_router_signals().
+
+MUST produce 100% identical results to v8 (pure refactor, no behavior changes).
 
 ALL transitions use matrix-validated signals (no fixed timers):
-  DCA → MARKUP:    HH_HL + Fib_support (94.0 score, 100% acc, 20% FP)
-  MARKUP → FLAT:   3-layer exit defense (2W OB93 / 1W OB85 / 1W K<50 failsafe)
-  FLAT routing:    HVF-driven (>0.4 = stay flat, <0.2 for 7d = DCA)
-  DCA → MARKDOWN:  ADX>20 + Fib_break (94.0 score, 100% acc, 20% FP)
-  MARKDOWN → DCA:  HH_HL + Fib_support (structure turns bullish)
+  DCA -> MARKUP:    HH_HL + Fib_support (94.0 score, 100% acc, 20% FP)
+  MARKUP -> ROUTER: 3-layer exit defense (2W OB93 / 1W OB85 / 1W K<50 failsafe)
+  ROUTER routing:   HVF-driven (>0.4 = stay router, <0.2 for 7d = DCA)
+  DCA -> MARKDOWN:  ADX>20 + Fib_break (94.0 score, 100% acc, 20% FP)
+  MARKDOWN -> DCA:  HH_HL + Fib_support (structure turns bullish)
 
 Capital allocation:
   MARKUP:   T1=60%, T2=20%, T3=10%, 10% reserve (front-loaded)
@@ -14,7 +20,7 @@ Capital allocation:
   DCA:      8% base order, 1.5x SO mult, 1.5% TP, max 8 layers
 
 Usage:
-    python v13_phase_backtest_v8.py
+    python v13_router_engine_v1.py
 """
 
 import sys
@@ -30,7 +36,7 @@ from test_hvf_daily import (
 )
 
 
-# ── Fibonacci Levels ───────────────────────────────────────────────────
+# -- Fibonacci Levels -------------------------------------------------------
 
 FIB_RATIOS = [0.236, 0.382, 0.5, 0.618, 0.786]
 FIB_TOLERANCE = 0.03  # 3% proximity
@@ -101,83 +107,83 @@ def price_broke_fib_support(price, fib_levels):
     return False
 
 
-# ── Configuration ──────────────────────────────────────────────────────
+# -- Configuration -----------------------------------------------------------
 
 class V13Config:
-    """V13 v8 backtest configuration — signal-driven, no fixed timers."""
+    """V13 Router v1 configuration -- signal-driven, no fixed timers."""
 
-    # ─ Top Detection (StochRSI) ─
+    # - Top Detection (StochRSI) -
     OB_THRESHOLD_2W = 93       # Primary top signal
     EARLY_WARNING_1W = 97      # 1W early warning threshold
     FAILSAFE_1W = 50           # 1W failsafe exit threshold
     FAILSAFE_WINDOW_WEEKS = 2  # Weeks after early warning before failsafe arms
     OB_FALLBACK_1W = 85        # Fallback when 2W never reaches OB
 
-    # ─ DCA Transition Signals ─
-    # DCA→MARKUP: HH_HL + Fib_support
+    # - DCA Transition Signals -
+    # DCA->MARKUP: HH_HL + Fib_support
     HH_HL_LOOKBACK = 2         # Consecutive higher highs needed
-    # DCA→MARKDOWN: ADX>20 + Fib_break
+    # DCA->MARKDOWN: ADX>20 + Fib_break
     ADX_THRESHOLD = 20         # ADX trend confirmation
 
-    # ─ Markup Entry Gate (markup only — markdown gate removed) ─
+    # - Markup Entry Gate (markup only -- markdown gate removed) -
     SMA200_OVEREXTENSION = 20    # Don't enter markup if >20% above 200-SMA (stored as pct, not decimal)
 
-    # ─ Markup/Markdown Ranging Exit (normal exit) ─
+    # - Markup/Markdown Ranging Exit (normal exit) -
     PHASE_ADX_RANGING = 20         # ADX below this = ranging
-    PHASE_ADX_SUSTAINED_DAYS = 21  # Must stay below for 21 consecutive days (longer than FLAT's 14d)
+    PHASE_ADX_SUSTAINED_DAYS = 21  # Must stay below for 21 consecutive days (longer than ROUTER's 14d)
 
-    # ─ Markup Failure Detection ─
+    # - Markup Failure Detection -
     MARKUP_FAIL_DD_PCT = 0.25      # 25% drawdown from entry = failed markup
     MARKUP_FAIL_ADX = 25           # ADX must confirm downtrend (not just a dip)
 
-    # ─ FLAT Phase (post-top/post-markdown evaluation) ─
-    FLAT_MIN_EVAL_DAYS = 14        # Min days before ANY transition allowed
-    FLAT_MAX_EVAL_DAYS = 42        # Max days before defaulting to DCA (6 weeks)
-    FLAT_ADX_RANGING = 20          # ADX below this = ranging confirmed
-    FLAT_ADX_SUSTAINED_DAYS = 14   # Must stay below for this many consecutive days
+    # - ROUTER Phase (post-top/post-markdown evaluation) -
+    ROUTER_MIN_EVAL_DAYS = 14        # Min days before ANY transition allowed
+    ROUTER_MAX_EVAL_DAYS = 42        # Max days before defaulting to DCA (6 weeks)
+    ROUTER_ADX_RANGING = 20          # ADX below this = ranging confirmed
+    ROUTER_ADX_SUSTAINED_DAYS = 14   # Must stay below for this many consecutive days
     HVF_LOOKBACK = 44              # Days of data for HVF computation
 
-    # ─ Capital Allocation: MARKUP ─
-    TIER1_PCT = 0.60           # Entry — heavy at lowest price
+    # - Capital Allocation: MARKUP -
+    TIER1_PCT = 0.60           # Entry -- heavy at lowest price
     TIER2_PCT = 0.20           # Confirmation add
     TIER3_PCT = 0.10           # Momentum add
     TIER2_DELAY_WEEKS = 1
     TIER3_DELAY_WEEKS = 2
 
-    # ─ Capital Allocation: SHORTS (same as markup) ─
+    # - Capital Allocation: SHORTS (same as markup) -
     SHORT_TIER1_PCT = 0.60
     SHORT_TIER2_PCT = 0.20
     SHORT_TIER3_PCT = 0.10
     SHORT_TIER2_DELAY_WEEKS = 1
     SHORT_TIER3_DELAY_WEEKS = 2
 
-    # ─ DCA Engine ─
+    # - DCA Engine -
     DCA_BO_PCT = 0.08          # 8% base order
     DCA_SO_DEVIATION = 0.025   # 2.5% between layers
     DCA_SO_MULTIPLIER = 1.5    # Volume multiplier
     DCA_TP_PCT = 0.015         # 1.5% take profit
     DCA_MAX_LAYERS = 8
 
-    # ─ General ─
-    MIN_PHASE_DAYS = 3         # 3-day minimum — prevent same-day edge cases
+    # - General -
+    MIN_PHASE_DAYS = 3         # 3-day minimum -- prevent same-day edge cases
     CAPITAL = 10000
     START_DATE = '2020-10-01'  # Full backtest period
     END_DATE = '2026-02-25'
 
 
-# ── Phase State ────────────────────────────────────────────────────────
+# -- Phase State -------------------------------------------------------------
 
 class Phase:
     DCA = 'DCA'
     MARKUP = 'MARKUP'
-    FLAT = 'FLAT'        # Post-top, HVF-driven routing
+    ROUTER = 'ROUTER'      # Post-top, HVF-driven routing (was FLAT in v8)
     MARKDOWN = 'MARKDOWN'
 
 
-# ── Backtest Engine ────────────────────────────────────────────────────
+# -- Backtest Engine ---------------------------------------------------------
 
-class V13BacktestV8:
-    """V13 v8 — Pure signal-driven phase riding."""
+class V13RouterV1:
+    """V13 Router v1 -- Pure signal-driven phase riding with centralized router."""
 
     def __init__(self, pack: V13SignalPack, config: V13Config = None):
         self.pack = pack
@@ -185,7 +191,7 @@ class V13BacktestV8:
         self.coin = pack.coin
         self.daily = pack.daily
 
-        # ─ State ─
+        # - State -
         self.phase = Phase.DCA
         self.capital = self.cfg.CAPITAL
         self.phase_start_date = None
@@ -210,10 +216,10 @@ class V13BacktestV8:
         self.markup_cycles_completed = 0
         self.shorts_enabled = False
 
-        # FLAT ranging confirmation
+        # ROUTER ranging confirmation
         self.adx_below_20_streak = 0
-        self.flat_from_top = False      # Did we enter FLAT from a top signal?
-        self.flat_from_markdown = False  # Did we enter FLAT from markdown?
+        self.router_from_top = False      # Did we enter ROUTER from a top signal?
+        self.router_from_markdown = False  # Did we enter ROUTER from markdown?
 
         # (HVF used for logging only, not routing)
 
@@ -258,7 +264,7 @@ class V13BacktestV8:
         self.ob85_1w = set(
             df_1w[(prev >= self.cfg.OB_FALLBACK_1W) & (df_1w['K'] < self.cfg.OB_FALLBACK_1W)].index)
 
-    # ── Price & Signal Helpers ─────────────────────────────────────────
+    # -- Price & Signal Helpers ----------------------------------------------
 
     def _price(self, date):
         mask = self.daily.index <= date
@@ -290,7 +296,7 @@ class V13BacktestV8:
             return 0.0
         window = self.daily.iloc[max(0, idx - self.cfg.HVF_LOOKBACK):idx + 1]
         result = composite_hvf_score(window)
-        # Returns (composite, vuvu, vol_comp, price_comp) — all may be Series
+        # Returns (composite, vuvu, vol_comp, price_comp) -- all may be Series
         composite = result[0]
         if hasattr(composite, 'iloc'):
             return float(composite.iloc[-1]) if len(composite) > 0 else 0.0
@@ -311,7 +317,7 @@ class V13BacktestV8:
             eq += short_pnl + self.short_cost
         return eq
 
-    # ── Position Management ────────────────────────────────────────────
+    # -- Position Management -------------------------------------------------
 
     def _buy(self, date, pct, tier):
         price = self._price(date)
@@ -386,7 +392,7 @@ class V13BacktestV8:
         self.short_tier = 0
         return pnl_pct
 
-    # ── DCA Engine ─────────────────────────────────────────────────────
+    # -- DCA Engine ----------------------------------------------------------
 
     def _dca_tick(self, date, price):
         if np.isnan(price):
@@ -479,7 +485,7 @@ class V13BacktestV8:
         self.dca_cost = 0
         self.dca_last_buy = None
 
-    # ── Phase Transitions ──────────────────────────────────────────────
+    # -- Phase Transitions ---------------------------------------------------
 
     def _change_phase(self, date, new_phase, reason):
         old = self.phase
@@ -493,7 +499,7 @@ class V13BacktestV8:
             'equity': self._total_equity(date), 'price': self._price(date)
         })
         # Track completed markup cycles
-        if old == Phase.MARKUP and new_phase == Phase.FLAT:
+        if old == Phase.MARKUP and new_phase == Phase.ROUTER:
             self.markup_cycles_completed += 1
             if not self.shorts_enabled:
                 self.shorts_enabled = True
@@ -503,29 +509,62 @@ class V13BacktestV8:
                 })
         # Reset ADX streak on any phase change
         self.adx_below_20_streak = 0
-        # Track FLAT entry context
-        if new_phase == Phase.FLAT:
-            self.flat_from_top = (old == Phase.MARKUP and 'OB' in reason or 'failsafe' in reason.lower() or 'Failsafe' in reason)
-            self.flat_from_markdown = (old == Phase.MARKDOWN)
+        # Track ROUTER entry context
+        if new_phase == Phase.ROUTER:
+            self.router_from_top = (old == Phase.MARKUP and 'OB' in reason or 'failsafe' in reason.lower() or 'Failsafe' in reason)
+            self.router_from_markdown = (old == Phase.MARKDOWN)
         # Open short T1 when entering MARKDOWN
         if new_phase == Phase.MARKDOWN and self.shorts_enabled and self.capital > 0:
             self._open_short(date, self.cfg.SHORT_TIER1_PCT, 1)
 
-    # ── Phase Logic ────────────────────────────────────────────────────
+    # -- Centralized Router Signal Computation -------------------------------
 
-    def _check_dca(self, date, price):
+    def _compute_router_signals(self, date, price):
+        """Compute the full signal stack once per tick."""
+        return {
+            'hh_hl': self._hh_hl(date),
+            'lh_ll': self.pack.structure.lh_ll_streak(date, self.cfg.HH_HL_LOOKBACK),
+            'adx': self._adx(date),
+            'cfgi': self._cfgi(date),
+            'fib_levels': self._fib_levels(date),
+            'price': price,
+            'date': date,
+            'days_in_phase': (date - self.phase_start_date).days if self.phase_start_date else 0,
+            # StochRSI signals (precomputed sets, just check membership)
+            'ob_2w_93': self._signal_near(date, self.ob_exits_2w),
+            'ob_1w_85': self._signal_near(date, self.ob85_1w),
+            'early_warning_1w': self._signal_near(date, self.early_warnings_1w),
+            'failsafe_1w': self._signal_near(date, self.failsafe_1w),
+            # SMA200
+            'sma200_overext': self.pack.sma200.overextension_at(date),
+        }
+
+    # -- Router Evaluate (main dispatch) -------------------------------------
+
+    def _router_evaluate(self, date, price):
+        """Compute signals once and dispatch to phase-specific handler."""
+        signals = self._compute_router_signals(date, price)
+        if self.phase == Phase.DCA:
+            self._router_check_dca(date, price, signals)
+        elif self.phase == Phase.MARKUP:
+            self._router_check_markup(date, price, signals)
+        elif self.phase == Phase.ROUTER:
+            self._router_check_router(date, price, signals)
+        elif self.phase == Phase.MARKDOWN:
+            self._router_check_markdown(date, price, signals)
+
+    # -- Phase Logic (router-aware) ------------------------------------------
+
+    def _router_check_dca(self, date, price, signals):
         """DCA phase: run DCA engine + check for MARKUP or MARKDOWN transition."""
         self._dca_tick(date, price)
 
-        # DCA → MARKUP: HH_HL + Fib_support
-        # SMA200 gate REMOVED — bull runs start from above 200-SMA; gate blocked
-        # legitimate markup entries for ETH/SOL during entire 2020-2021 bull run.
-        # Same reasoning as MARKDOWN gate removal (see below).
-        hh = self._hh_hl(date)
-        fib = self._fib_levels(date)
+        # DCA -> MARKUP: HH_HL + Fib_support
+        hh = signals['hh_hl']
+        fib = signals['fib_levels']
         if hh and price_near_fib_support(price, fib):
-            overext = self.pack.sma200.overextension_at(date)
-            cfgi = self._cfgi(date)
+            overext = signals['sma200_overext']
+            cfgi = signals['cfgi']
             cfgi_ok = not np.isnan(cfgi) and cfgi > 40
             note = f'HH_HL+Fib_support'
             if cfgi_ok:
@@ -541,17 +580,12 @@ class V13BacktestV8:
             self.peak_2w_k = 0
             return
 
-        # DCA → MARKDOWN: LH_LL + ADX>20 + Fib_break
-        # Mirrors MARKUP entry: HH_HL + Fib_support → LH_LL + Fib_break
-        # LH_LL gate added to match MARKUP's structure confirmation requirement.
-        # SMA200 gate REMOVED — crashes start from above 200-SMA; gate delayed
-        # legitimate shorts by 2 weeks for BTC/ETH/SOL/BNB to save one XRP edge case.
-        # Failure detector (25% rise + ADX>25) handles bad shorts instead.
-        lh_ll = self.pack.structure.lh_ll_streak(date, self.cfg.HH_HL_LOOKBACK)
-        adx = self._adx(date)
+        # DCA -> MARKDOWN: LH_LL + ADX>20 + Fib_break
+        lh_ll = signals['lh_ll']
+        adx = signals['adx']
         if lh_ll and not np.isnan(adx) and adx > self.cfg.ADX_THRESHOLD:
             if price_broke_fib_support(price, fib):
-                overext = self.pack.sma200.overextension_at(date)
+                overext = signals['sma200_overext']
                 note = f'LH_LL+ADX={adx:.0f}+Fib_break'
                 if not np.isnan(overext):
                     note += f' (SMA200={overext*100:+.0f}%)'
@@ -560,7 +594,7 @@ class V13BacktestV8:
                 self._change_phase(date, Phase.MARKDOWN, note)
                 return
 
-    def _check_markup(self, date, price):
+    def _router_check_markup(self, date, price, signals):
         """MARKUP phase: tier adds + top detection."""
         # Let DCA TPs hit naturally (graceful exit)
         if self.dca_coins > 0:
@@ -571,104 +605,100 @@ class V13BacktestV8:
         if not np.isnan(k_2w) and k_2w > self.peak_2w_k:
             self.peak_2w_k = k_2w
 
-        # Layer 1: Early warning — 1W crosses below 97
-        if self._signal_near(date, self.early_warnings_1w) and self.early_warning_date is None:
+        # Layer 1: Early warning -- 1W crosses below 97
+        if signals['early_warning_1w'] and self.early_warning_date is None:
             self.early_warning_date = date
             self.trades.append({
                 'date': date, 'action': f'EARLY_WARNING_1W_97 (2W_peak={self.peak_2w_k:.0f})',
                 'price': price, 'amount': 0, 'coins': 0, 'phase': self.phase
             })
 
-        # Layer 2: Primary exit — 2W OB93
-        if self._signal_near(date, self.ob_exits_2w):
+        # Layer 2: Primary exit -- 2W OB93
+        if signals['ob_2w_93']:
             pnl = self._sell_all(date, 'PRIMARY_2W_OB93')
             if self.dca_coins > 0:
                 self._dca_close(date, 'TOP_EXIT')
-            self._change_phase(date, Phase.FLAT, f'2W OB93 exit, pnl={pnl:+.1f}%')
+            self._change_phase(date, Phase.ROUTER, f'2W OB93 exit, pnl={pnl:+.1f}%')
             self._reset_top_state()
             return
 
-        # Layer 2b: Fallback — 1W OB85 when 2W never reached OB
+        # Layer 2b: Fallback -- 1W OB85 when 2W never reached OB
         if self.peak_2w_k < self.cfg.OB_THRESHOLD_2W and self.early_warning_date:
-            if self._signal_near(date, self.ob85_1w):
+            if signals['ob_1w_85']:
                 pnl = self._sell_all(date, f'FALLBACK_1W_OB85 (2W_peak={self.peak_2w_k:.0f})')
                 if self.dca_coins > 0:
                     self._dca_close(date, 'TOP_EXIT')
-                self._change_phase(date, Phase.FLAT,
+                self._change_phase(date, Phase.ROUTER,
                     f'1W OB85 fallback (2W peak={self.peak_2w_k:.0f}<93), pnl={pnl:+.1f}%')
                 self._reset_top_state()
                 return
 
-        # Layer 3: Failsafe — 1W K<50 after armed
+        # Layer 3: Failsafe -- 1W K<50 after armed
         if self.early_warning_date and not self.failsafe_armed:
             if (date - self.early_warning_date).days >= self.cfg.FAILSAFE_WINDOW_WEEKS * 7:
                 self.failsafe_armed = True
-        if self.failsafe_armed and self._signal_near(date, self.failsafe_1w):
+        if self.failsafe_armed and signals['failsafe_1w']:
             pnl = self._sell_all(date, 'FAILSAFE_1W_K50')
             if self.dca_coins > 0:
                 self._dca_close(date, 'TOP_EXIT')
-            self._change_phase(date, Phase.FLAT, f'Failsafe 1W K<50, pnl={pnl:+.1f}%')
+            self._change_phase(date, Phase.ROUTER, f'Failsafe 1W K<50, pnl={pnl:+.1f}%')
             self._reset_top_state()
             return
 
-        # Layer 4: Ranging exit (normal exit) — trend ran out of steam
-        # ADX < 20 sustained = markup trend is done, time to sell and go to FLAT
-        # Requires min 14 days in phase to avoid firing on entry noise
-        days_in = (date - self.phase_start_date).days if self.phase_start_date else 0
+        # Layer 4: Ranging exit (normal exit) -- trend ran out of steam
+        days_in = signals['days_in_phase']
         if days_in >= 14:
-            adx = self._adx(date)
+            adx = signals['adx']
             if not np.isnan(adx) and adx < self.cfg.PHASE_ADX_RANGING:
                 self.adx_below_20_streak += 1
                 if self.adx_below_20_streak >= self.cfg.PHASE_ADX_SUSTAINED_DAYS:
                     pnl = self._sell_all(date, f'MARKUP_RANGING (ADX<{self.cfg.PHASE_ADX_RANGING} for {self.adx_below_20_streak}d)')
                     if self.dca_coins > 0:
                         self._dca_close(date, 'RANGING_EXIT')
-                    self._change_phase(date, Phase.FLAT,
-                        f'Markup ranging: ADX<{self.cfg.PHASE_ADX_RANGING} for {self.adx_below_20_streak}d, sell -> FLAT -> DCA')
+                    self._change_phase(date, Phase.ROUTER,
+                        f'Markup ranging: ADX<{self.cfg.PHASE_ADX_RANGING} for {self.adx_below_20_streak}d, sell -> ROUTER -> DCA')
                     self._reset_top_state()
                     return
             else:
                 self.adx_below_20_streak = 0
 
-        # Layer 5: Markup failure — safety net BELOW top signals
-        # Only fires when markup has clearly failed (big drawdown + confirmed downtrend)
-        # Does NOT override top signals — they always get checked first above
+        # Layer 5: Markup failure -- safety net BELOW top signals
         if self.entry_price > 0:
             dd_from_entry = (price - self.entry_price) / self.entry_price
             if dd_from_entry < -self.cfg.MARKUP_FAIL_DD_PCT:
-                adx = self._adx(date)
+                adx = signals['adx']
                 if not np.isnan(adx) and adx > self.cfg.MARKUP_FAIL_ADX:
                     pnl = self._sell_all(date, f'MARKUP_FAIL (dd={dd_from_entry*100:.0f}%, ADX={adx:.0f})')
                     if self.dca_coins > 0:
                         self._dca_close(date, 'MARKUP_FAIL')
-                    self._change_phase(date, Phase.FLAT,
+                    self._change_phase(date, Phase.ROUTER,
                         f'Markup failed: {dd_from_entry*100:.0f}% below entry, ADX={adx:.0f} confirms downtrend')
                     self._reset_top_state()
                     return
 
         # Tier adds
-        self._check_markup_tiers(date, price)
+        self._router_check_markup_tiers(date, price, signals)
 
-    def _check_markup_tiers(self, date, price):
+    def _router_check_markup_tiers(self, date, price, signals):
         if self.tier >= 3 or self.phase_start_date is None:
             return
         weeks_in = (date - self.phase_start_date).days / 7
 
         if self.tier == 1 and weeks_in >= self.cfg.TIER2_DELAY_WEEKS:
-            cfgi = self._cfgi(date)
+            cfgi = signals['cfgi']
             if (self.entry_price > 0 and price >= self.entry_price and
                 not np.isnan(cfgi) and cfgi > 40):
                 self._buy(date, self.cfg.TIER2_PCT, 2)
 
         elif self.tier == 2 and weeks_in >= self.cfg.TIER3_DELAY_WEEKS:
-            adx = self._adx(date)
-            hh = self._hh_hl(date)
+            adx = signals['adx']
+            hh = signals['hh_hl']
             if (self.entry_price > 0 and price >= self.entry_price and
                 not np.isnan(adx) and adx > 25 and hh):
                 self._buy(date, self.cfg.TIER3_PCT, 3)
 
-    def _check_flat(self, date, price):
-        """FLAT phase behavior depends on HOW we got here:
+    def _router_check_router(self, date, price, signals):
+        """ROUTER phase behavior depends on HOW we got here:
         
         1. From TOP SIGNAL (blow-off top): Conductor waits for phase detection.
            Market is heading down -> check for MARKDOWN entry (ADX+Fib_break).
@@ -680,88 +710,84 @@ class V13BacktestV8:
         3. From MARKDOWN (shorts closed): Go to DCA.
            Same as ranging exit -> accumulate while waiting for direction.
         """
-        adx = self._adx(date)
-        days_flat = (date - self.phase_start_date).days if self.phase_start_date else 0
+        adx = signals['adx']
+        days_router = signals['days_in_phase']
 
-        # Minimum eval period for all FLAT exits
-        if days_flat < self.cfg.FLAT_MIN_EVAL_DAYS:
+        # Minimum eval period for all ROUTER exits
+        if days_router < self.cfg.ROUTER_MIN_EVAL_DAYS:
             return
 
         # PATH 1: Entered from TOP SIGNAL -> conductor checks for MARKDOWN
-        if self.flat_from_top:
-            fib = self._fib_levels(date)
+        if self.router_from_top:
+            fib = signals['fib_levels']
             # Check for MARKDOWN: LH_LL + ADX>20 + Fib_break (mirrors MARKUP's HH_HL gate)
-            lh_ll = self.pack.structure.lh_ll_streak(date, self.cfg.HH_HL_LOOKBACK)
+            lh_ll = signals['lh_ll']
             if lh_ll and not np.isnan(adx) and adx > self.cfg.ADX_THRESHOLD:
                 if price_broke_fib_support(price, fib):
-                    overext = self.pack.sma200.overextension_at(date)
-                    note = f'FLAT->MARKDOWN: Post-top, LH_LL+ADX={adx:.0f}+Fib_break'
+                    overext = signals['sma200_overext']
+                    note = f'ROUTER->MARKDOWN: Post-top, LH_LL+ADX={adx:.0f}+Fib_break'
                     if not np.isnan(overext):
                         note += f' (SMA200={overext*100:+.0f}%)'
-                    note += f' (flat {days_flat}d)'
+                    note += f' (router {days_router}d)'
                     self._change_phase(date, Phase.MARKDOWN, note)
                     return
             
             # If no markdown signal after max eval, fall through to DCA
-            # (maybe the top wasn't followed by a crash)
-            if days_flat >= self.cfg.FLAT_MAX_EVAL_DAYS:
+            if days_router >= self.cfg.ROUTER_MAX_EVAL_DAYS:
                 self._change_phase(date, Phase.DCA,
-                    f'FLAT->DCA: Post-top, no markdown signal after {days_flat}d')
+                    f'ROUTER->DCA: Post-top, no markdown signal after {days_router}d')
             return
 
         # PATH 2 & 3: Entered from RANGING EXIT or MARKDOWN
-        # NOTE: FLAT->MARKUP direct path tested but REVERTED (2026-02-26).
+        # NOTE: ROUTER->MARKUP direct path tested but REVERTED (2026-02-26).
         # HH_HL+Fib fires on bear market rallies without bias filter, causing
         # ETH -225% and BTC -140% regression. Needs 3D candle bias system first.
         # TODO(2C.19): Re-enable once bias trigger (2C.17) is implemented.
 
         # Wait for ADX ranging -> DCA
-        # Track ADX below ranging threshold
-        if not np.isnan(adx) and adx < self.cfg.FLAT_ADX_RANGING:
+        if not np.isnan(adx) and adx < self.cfg.ROUTER_ADX_RANGING:
             self.adx_below_20_streak += 1
         else:
             self.adx_below_20_streak = 0
 
-        ranging_confirmed = self.adx_below_20_streak >= self.cfg.FLAT_ADX_SUSTAINED_DAYS
+        ranging_confirmed = self.adx_below_20_streak >= self.cfg.ROUTER_ADX_SUSTAINED_DAYS
 
         if not ranging_confirmed:
             return
 
         # Ranging confirmed -> go to DCA
         self._change_phase(date, Phase.DCA,
-            f'FLAT->DCA: Ranging confirmed (ADX<{self.cfg.FLAT_ADX_RANGING} for {self.adx_below_20_streak}d, flat {days_flat}d)')
+            f'ROUTER->DCA: Ranging confirmed (ADX<{self.cfg.ROUTER_ADX_RANGING} for {self.adx_below_20_streak}d, router {days_router}d)')
         self.adx_below_20_streak = 0
 
-    def _check_markdown(self, date, price):
-        """MARKDOWN phase: hold shorts through spring. Only exit to FLAT when
+    def _router_check_markdown(self, date, price, signals):
+        """MARKDOWN phase: hold shorts through spring. Only exit to ROUTER when
         downtrend is exhausted (ADX < 20 sustained = ranging confirmed).
         Per Brett: "Until price reaches meaningful support, we don't sell shorts." """
-        # MARKDOWN → FLAT: ADX trend exhaustion (downtrend dying)
-        # Shorts close automatically in _change_phase when leaving MARKDOWN
-        adx = self._adx(date)
-        days_in = (date - self.phase_start_date).days if self.phase_start_date else 0
+        # MARKDOWN -> ROUTER: ADX trend exhaustion (downtrend dying)
+        adx = signals['adx']
+        days_in = signals['days_in_phase']
         if days_in >= 14:  # Give markdown 2 weeks minimum
             if not np.isnan(adx) and adx < self.cfg.PHASE_ADX_RANGING:
                 self.adx_below_20_streak += 1
                 if self.adx_below_20_streak >= self.cfg.PHASE_ADX_SUSTAINED_DAYS:
-                    self._change_phase(date, Phase.FLAT,
-                        f'MARKDOWN->FLAT: Ranging (ADX<{self.cfg.PHASE_ADX_RANGING} for {self.adx_below_20_streak}d, markdown {days_in}d)')
+                    self._change_phase(date, Phase.ROUTER,
+                        f'MARKDOWN->ROUTER: Ranging (ADX<{self.cfg.PHASE_ADX_RANGING} for {self.adx_below_20_streak}d, markdown {days_in}d)')
                     return
             else:
                 self.adx_below_20_streak = 0
 
-        # Markdown failure detector — MIRROR of markup failure
-        # If price rises significantly above short entry + ADX confirms uptrend against us
+        # Markdown failure detector -- MIRROR of markup failure
         if self.short_entry > 0 and self.short_coins > 0:
             rise_from_entry = (price - self.short_entry) / self.short_entry
             if rise_from_entry > self.cfg.MARKUP_FAIL_DD_PCT:  # Same threshold, mirrored
-                adx = self._adx(date)
+                adx = signals['adx']
                 if not np.isnan(adx) and adx > self.cfg.MARKUP_FAIL_ADX:
-                    self._change_phase(date, Phase.FLAT,
+                    self._change_phase(date, Phase.ROUTER,
                         f'MARKDOWN_FAIL: price +{rise_from_entry*100:.0f}% above short entry, ADX={adx:.0f} confirms uptrend')
                     return
 
-        # Short tier adds — MIRROR of markup tiers (symmetric per Brett's spec)
+        # Short tier adds -- MIRROR of markup tiers (symmetric per Brett's spec)
         if self.short_tier >= 3 or self.phase_start_date is None:
             return
         weeks_in = (date - self.phase_start_date).days / 7
@@ -769,7 +795,7 @@ class V13BacktestV8:
         if self.short_tier == 1 and weeks_in >= self.cfg.SHORT_TIER2_DELAY_WEEKS:
             # T2: price must be below entry (trend continuing) + CFGI < 40 (fear)
             if self.shorts_enabled and self.capital > 0:
-                cfgi = self._cfgi(date)
+                cfgi = signals['cfgi']
                 if (self.short_entry > 0 and price <= self.short_entry and
                     not np.isnan(cfgi) and cfgi < 40):
                     self._open_short(date, self.cfg.SHORT_TIER2_PCT, 2)
@@ -777,7 +803,7 @@ class V13BacktestV8:
         elif self.short_tier == 2 and weeks_in >= self.cfg.SHORT_TIER3_DELAY_WEEKS:
             # T3: price below entry + ADX>25 + LH/LL structure
             if self.shorts_enabled and self.capital > 0:
-                adx = self._adx(date)
+                adx = signals['adx']
                 lh_ll = self.pack.structure.lh_ll_streak(date, 2) if hasattr(self.pack.structure, 'lh_ll_streak') else False
                 if (self.short_entry > 0 and price <= self.short_entry and
                     not np.isnan(adx) and adx > 25 and lh_ll):
@@ -788,7 +814,7 @@ class V13BacktestV8:
         self.failsafe_armed = False
         self.peak_2w_k = 0
 
-    # ── Main Loop ──────────────────────────────────────────────────────
+    # -- Main Loop -----------------------------------------------------------
 
     def run(self):
         start = pd.Timestamp(self.cfg.START_DATE)
@@ -821,30 +847,16 @@ class V13BacktestV8:
                     self._dca_tick(date, price)
                 continue
 
-            if self.phase == Phase.DCA:
-                self._check_dca(date, price)
-            elif self.phase == Phase.MARKUP:
-                self._check_markup(date, price)
-            elif self.phase == Phase.FLAT:
-                self._check_flat(date, price)
-            elif self.phase == Phase.MARKDOWN:
-                self._check_markdown(date, price)
+            self._router_evaluate(date, price)
 
-        # Mark open positions at end (don't close — exclude from P&L)
+        # Mark open positions at end (don't close -- exclude from P&L)
         self._open_at_end = {
             'markup_coins': self.position_coins,
             'markup_entry': self.entry_price,
-            'markup_tier': self.tier,
             'dca_coins': self.dca_coins,
             'dca_cost': self.dca_cost,
-            'dca_avg_entry': self.dca_avg_entry,
-            'dca_layers': self.dca_layers,
-            'dca_tp': self.dca_tp,
             'short_coins': self.short_coins,
             'short_entry': self.short_entry,
-            'short_cost': self.short_cost,
-            'short_tier': self.short_tier,
-            'capital_before_close': self.capital,  # save capital BEFORE force-closes
         }
         # Close for equity calc but flag as open
         if self.position_coins > 0:
@@ -883,7 +895,7 @@ class V13BacktestV8:
         # Simpler: find equity just before the last open position was entered
         last_completed_phase = None
         for p in reversed(self.phase_log):
-            if 'OPEN_END' not in p.get('reason', '') and p['to'] in (Phase.FLAT, Phase.DCA):
+            if 'OPEN_END' not in p.get('reason', '') and p['to'] in (Phase.ROUTER, Phase.DCA):
                 last_completed_phase = p
                 break
         closed_equity = last_completed_phase['equity'] if last_completed_phase else final
@@ -899,7 +911,7 @@ class V13BacktestV8:
             'phase_changes': len(self.phase_log) - 1,
             'time_markup_pct': sum(1 for e in self.equity_curve if e['phase'] == Phase.MARKUP) / total * 100,
             'time_dca_pct': sum(1 for e in self.equity_curve if e['phase'] == Phase.DCA) / total * 100,
-            'time_flat_pct': sum(1 for e in self.equity_curve if e['phase'] == Phase.FLAT) / total * 100,
+            'time_router_pct': sum(1 for e in self.equity_curve if e['phase'] == Phase.ROUTER) / total * 100,
             'time_markdown_pct': sum(1 for e in self.equity_curve if e['phase'] == Phase.MARKDOWN) / total * 100,
             'total_trades': len(self.trades),
             'closed_trades': len(trades_pnl), 'wins': len(wins), 'losses': len(losses),
@@ -913,7 +925,7 @@ class V13BacktestV8:
         }
 
 
-# ── Runner ─────────────────────────────────────────────────────────────
+# -- Runner ------------------------------------------------------------------
 
 def print_results(r):
     if r is None:
@@ -931,7 +943,7 @@ def print_results(r):
     print(f"  Phase Changes:    {r['phase_changes']}")
     print(f"  Time MARKUP:      {r['time_markup_pct']:.0f}%")
     print(f"  Time DCA:         {r['time_dca_pct']:.0f}%")
-    print(f"  Time FLAT:        {r['time_flat_pct']:.0f}%")
+    print(f"  Time ROUTER:      {r['time_router_pct']:.0f}%")
     print(f"  Time MARKDOWN:    {r['time_markdown_pct']:.0f}%")
     print(f"  Closed Trades:    {r['closed_trades']} ({r['wins']}W / {r['losses']}L, {r['win_rate']:.0f}%)")
     if r['wins']:
@@ -954,8 +966,8 @@ def print_results(r):
 
 def main():
     print("=" * 80)
-    print("  V13 v8 PHASE-RIDING BACKTEST")
-    print("  Signal-driven: HH_HL+Fib (markup), ADX+Fib (markdown), HVF routing (flat)")
+    print("  V13 ROUTER ENGINE v1")
+    print("  Signal-driven: HH_HL+Fib (markup), ADX+Fib (markdown), HVF routing (router)")
     print("  Period: Oct 2024 -> Feb 2026 (one full cycle)")
     print("  Coins: BTC, ETH, SOL")
     print("=" * 80)
@@ -972,7 +984,7 @@ def main():
     print(f"    Markup entry:     HH_HL({config.HH_HL_LOOKBACK}) + Fib_support({FIB_TOLERANCE:.0%} tol)")
     print(f"    Markdown entry:   ADX>{config.ADX_THRESHOLD} + Fib_break")
     print(f"    Markup failure:   >{config.MARKUP_FAIL_DD_PCT:.0%} DD + ADX>{config.MARKUP_FAIL_ADX} (safety net)")
-    print(f"    FLAT ranging:     ADX<{config.FLAT_ADX_RANGING} for {config.FLAT_ADX_SUSTAINED_DAYS}d + {config.FLAT_MIN_EVAL_DAYS}d min eval")
+    print(f"    ROUTER ranging:   ADX<{config.ROUTER_ADX_RANGING} for {config.ROUTER_ADX_SUSTAINED_DAYS}d + {config.ROUTER_MIN_EVAL_DAYS}d min eval")
     print(f"    Min phase hold:   {config.MIN_PHASE_DAYS} days")
 
     coins = ['ZEC', 'DOGE']
@@ -987,7 +999,7 @@ def main():
             print(f"  SKIP: {e}")
             continue
 
-        bt = V13BacktestV8(pack, config)
+        bt = V13RouterV1(pack, config)
         result = bt.run()
         if result:
             print_results(result)
