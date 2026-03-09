@@ -8,6 +8,7 @@ _Date: 2026-03-09 | Auditor: Gee Gee_
 | Severity | Count | Status |
 |----------|-------|--------|
 | 🔴 Critical (breaks on Linux) | 1 | Fix required |
+| 🔴 Critical (crashes all bots) | 1 | ✅ Fixed 2026-03-09 |
 | 🟠 High (cloud migration blocker) | 3 | Fix required |
 | 🟡 Medium (inconsistency / cosmetic) | 3 | Fix recommended |
 | 🟢 Low / Not an issue | 5 | Document only |
@@ -24,6 +25,18 @@ On a Linux cloud server this script cannot run at all — PowerShell is not the 
 and these paths don't exist.
 **Fix:** Create `trading/spot/run_candle_collector.sh` as the Linux equivalent. 
 The `.ps1` stays for Windows. Migration guide documents which to use per platform.
+
+### C2 — `_steve_3check.py` wrong DB path (3 parents instead of 2) — ✅ FIXED
+**File:** `trading/spot/engine/_steve_3check.py`, line 20
+**Issue:** `Path(__file__).resolve().parent.parent.parent / 'data' / 'candles.db'` resolved to
+`trading/data/candles.db` (empty 0-byte file) instead of `trading/spot/data/candles.db` (214 MB).
+The file lives at `trading/spot/engine/`, so 3 parents goes to `trading/` not `trading/spot/`.
+This caused `sqlite3.OperationalError: no such table: candles_daily` on every bot startup,
+silently crashing the Live, PM, and ETF bots repeatedly since at least March 3.
+**Root cause:** The Steve 3-Check bottom detector was added to the `engine/` subdirectory but
+the relative path assumed it was one level higher.
+**Fix applied 2026-03-09:** Changed `.parent.parent.parent` to `.parent.parent`.
+Also covered by H1 fix (`AIT_CANDLES_DB` env var standardization).
 
 ---
 

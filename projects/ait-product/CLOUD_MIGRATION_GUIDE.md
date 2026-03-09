@@ -631,6 +631,7 @@ Complete every item in order. Do not proceed to Section 11 until all pass.
 - [ ] `candles_daily` has rows (run `build_daily_candles.py` if empty)
 - [ ] Candle collector runs successfully: `bash trading/spot/run_candle_collector.sh`
 - [ ] `docs/data/v14/cycle_scanner.json` exists and has rankings
+- [ ] Score history backfilled (`--backfill-history 7`) — trend multipliers require ≥3 snapshots
 
 ### 10.3 Configuration
 - [ ] `/home/ait/ait/trading/spot/live/v14pm/.env` filled in and `chmod 600`
@@ -758,6 +759,11 @@ bash trading/spot/run_candle_collector.sh
 
 # Manual scanner run
 python -u -m trading.spot.v14_cycle_scanner
+
+# Backfill score history for trend data (run once after fresh deployment)
+# The PM needs ≥3 daily snapshots for trend multipliers to compute.
+# This generates genuine historical snapshots from candle DB data:
+python -u -m trading.spot.v14_cycle_scanner --backfill-history 7 --no-telegram
 ```
 
 ### 12.2 Updating the Bot

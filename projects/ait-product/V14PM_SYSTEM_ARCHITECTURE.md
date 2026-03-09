@@ -404,7 +404,38 @@ All state is written to JSON after every cycle:
 }
 ```
 
-### 6.3 Startup Reconciliation
+### 6.3 Equity Calculation (V14PM)
+
+The PM runner computes equity from ground truth, not engine internals:
+
+```
+Equity = Capital + Realized PnL - Fees + Unrealized PnL
+```
+
+- **Realized PnL** is sourced from `trades.csv` (source of truth across restarts),
+  falling back to engine-reported values for the current session.
+- **Unrealized PnL** is summed from each engine's per-coin status.
+- **Uptime / Daily ROI** uses the earliest trade timestamp from `trades.csv`,
+  not the process start time, so metrics survive restarts.
+
+> **Why not sum engine equities?** Daily rebalance can inject cash into engines
+> (via `eng.capital = max(eng.capital, new_alloc - invested)`) without updating
+> `initial_capital`. Summing engine equities + unallocated capital double-counts
+> the injected cash. The ground-truth formula avoids this entirely.
+
+### 6.4 Trade History Preservation
+
+`TradeTracker.load_existing()` is called on startup to load historical trades from
+`trades.csv` into memory. This ensures:
+- Deal counts and win rates include all historical trades
+- Realized PnL reflects cumulative performance, not just the current session
+- `save_csv()` appends new trades without overwriting history
+
+**Important:** Do not use `--fresh` on restarts — it skips candle backfill (correct)
+but also creates fresh engines that lose position state. Use `--skip-backfill` instead
+for the live bot. The PM scheduled task omits `--fresh`.
+
+### 6.5 Startup Reconciliation
 
 On every restart, the engine reconciles with the live exchange:
 1. Load `state.json` (restored position state)
@@ -476,13 +507,18 @@ At midnight UTC, the PM runner:
 6. Identifies new entrants above hurdle
 7. Adjusts allocations proportionally
 
-### 7.4 Current Paper Performance (2026-03-09)
+### 7.4 Current Paper Performance (2026-03-09, corrected)
 
 - **Capital:** $50,000 paper
-- **Equity:** $50,677.97 (+1.36%)
-- **Realized PnL:** $669.09 | Win rate: 100% | Drawdown: 0.0%
-- **Active coins:** ZRO, TAO, NEAR, PENDLE, STX, DOT, INJ, ENS, HYPE, ATOM (10/10 slots)
-- **Regime:** RANGING — all positions at layer 1 (DCA grids early stage)
+- **Equity:** ~$50,480 (+0.96%)
+- **Realized PnL:** $479.65 | Win rate: 100% (20 deals) | Drawdown: 0.0%
+- **Active coins:** ZRO, NEAR, DOT, PENDLE, INJ, ENS, TAO, HYPE, JUP, SNX (10/10 slots)
+- **Regime:** RANGING — DCA grids cycling TPs in sideways market
+- **Daily ROI:** ~0.39%
+
+> **Note:** Earlier equity figures (~$54K) were inflated by a bug in `_write_status()` that
+> double-counted capital when daily rebalance increased engine allocations. Fixed 2026-03-08.
+> See CODE_AUDIT_FINDINGS.md §C2 for the related `_steve_3check.py` DB path bug.
 
 ---
 
@@ -591,10 +627,10 @@ All tasks run as the current user. Working directory: `C:\Users\Never\.openclaw\
 
 | Task Name | Trigger | Entry Point | Purpose |
 |-----------|---------|-------------|---------|
-| `V14LiveAster` | At logon | `run_v14_live_aster.py` | V14 live bot |
-| `V14PaperBot` | At logon | `run_v14_paper.py` | V14 paper bot |
-| `V14ETFPaperBot` | At logon | `run_v14etf_paper.py` | V14-ETF paper bot |
-| `V14PMPaperBot` | At logon | `run_v14_portfolio_paper.py` | V14PM paper bot |
+| `V14LiveAster` | At boot | `run_v14_live_aster.py --confirm --skip-backfill` | V14 live bot |
+| `V14PaperBot` | At boot | `run_v14_paper.py` | V14 paper bot |
+| `V14ETFPaperBot` | At boot | `run_v14etf_paper.py` | V14-ETF paper bot |
+| `V14PMPaperBot` | At logon | `run_v14_portfolio_paper.py` | V14PM paper bot (no `--fresh`) |
 | `V14CycleScanner` | Daily | `v14_cycle_scanner.py` | DCA score refresh |
 | `AIT_CandleCollector` | Hourly | `run_candle_collector.ps1` | Candle + scanner pipeline |
 | `AIT_DashboardSync` | Every 10 min | `sync_dashboard_silent.vbs` | Push data to GitHub Pages |
@@ -675,7 +711,7 @@ python -u -m trading.spot.run_v14_portfolio_paper \
   --profile high \
   --leverage 1.0 \
   --exchange hyperliquid \
-  --fresh           # Use only on first launch; omit for restarts
+  # --fresh         # First launch ONLY — skips backfill. OMIT on restarts (preserves trade history)
 ```
 
 ### V14PM Live Bot (production)
@@ -707,6 +743,8 @@ bash trading/spot/run_candle_collector.sh
 ```bash
 python -u -m trading.spot.v14_cycle_scanner
 python -u -m trading.spot.v14_cycle_scanner --no-telegram  # Silent mode
+python -u -m trading.spot.v14_cycle_scanner --backfill-history 7  # Backfill 7 days of score snapshots
+python -u -m trading.spot.v14_cycle_scanner --as-of 2026-03-01    # Run as if it were a past date
 ```
 
 ---
@@ -746,6 +784,8 @@ matplotlib, scipy, scikit-learn, plotly  # Backtest analysis only
 | SQLite for candles.db | Zero-dependency, portable, sufficient for 1.5M rows at current scale |
 | CCXT abstraction layer | Exchange-agnostic; swap Hyperliquid for any CCXT-supported exchange |
 | `--skip-backfill` on restart | State.json already warm; avoids unnecessary API calls on reconnect |
+| Ground-truth equity calc | `Capital + Realized - Fees + Unrealized` from trades.csv; avoids engine internal drift |
+| `load_existing()` on startup | Trade history survives restarts; CSV is source of truth for realized PnL |
 
 ---
 
