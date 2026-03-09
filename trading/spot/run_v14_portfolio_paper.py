@@ -237,6 +237,11 @@ class TradeTracker:
                     self._existing_keys.add(key)
                     if row["deal_id"] > self._deal_counter:
                         self._deal_counter = row["deal_id"]
+            # Track earliest trade time for accurate uptime/daily ROI
+            if self.trades:
+                earliest = min(t.get("open_time", "") for t in self.trades)
+                if earliest:
+                    self.earliest_trade_time = earliest
             logger.info(f"Loaded {len(self.trades)} existing trades from CSV")
         except Exception as e:
             logger.warning(f"Failed to load existing trades: {e}")
@@ -274,11 +279,24 @@ class V14PortfolioPaperBot:
         self.tracker.load_existing()  # Preserve trade history across restarts
         self.tracker.on_losing_trade = self._capture_incident
 
+        # Use earliest trade time for accurate uptime/daily ROI across restarts
+        if hasattr(self.tracker, 'earliest_trade_time') and self.tracker.earliest_trade_time:
+            try:
+                self._trading_start_time = datetime.fromisoformat(self.tracker.earliest_trade_time)
+                if self._trading_start_time.tzinfo is None:
+                    self._trading_start_time = self._trading_start_time.replace(tzinfo=timezone.utc)
+                logger.info(f"Trading start time set from CSV history: {self._trading_start_time.isoformat()}")
+            except Exception:
+                pass
+
         self._incidents_dir = self.output_dir / "incidents"
         self._incidents_dir.mkdir(parents=True, exist_ok=True)
 
         self._shutdown = False
         self._start_time = datetime.now(timezone.utc)
+        # _trading_start_time may already be set from CSV history above; don't overwrite
+        if not hasattr(self, '_trading_start_time') or self._trading_start_time is None:
+            self._trading_start_time = self._start_time
         self._last_rebalance_date = None
 
         # Tier / approved-symbol tracking
@@ -522,7 +540,7 @@ class V14PortfolioPaperBot:
         pnl_pct = ((total_equity - self.capital) / self.capital * 100
                     if self.capital > 0 else 0.0)
         win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
-        uptime_h = (datetime.now(timezone.utc) - self._start_time).total_seconds() / 3600
+        uptime_h = (datetime.now(timezone.utc) - self._trading_start_time).total_seconds() / 3600
 
         # Read trades.csv for accurate deal counts and historical realized PnL
         # (engines lose state on restart; trades.csv is the source of truth)
