@@ -45,6 +45,14 @@
 - **Metric**: DCA Cycle Velocity (Score = Realized_PnL * (1 - MaxDD%) * Capital_Freedom)
 - **Goal**: Capital rotation - shift capital toward actively cycling coins in real-time
 
+## AIT Product Direction
+- **V14PM is the MVP** — the product Brett will sell to customers and integrate with Hyperliquid for live trading
+- V14 Paper + V14-ETF Paper = demo accounts (show DCA engine performance to prospects)
+- V14 Live (Aster) = live proof-of-concept with real capital ($300)
+- Dashboards = customer-facing demo surface
+- Migration target = V14PM on Hyperliquid mainnet, production Linux cloud server
+- Paper bots must stay running throughout migration — they are the demo
+
 ## Active Projects
 - **LLM Engine Config**: Gemini 2.5 Pro as primary, Claude Opus/Sonnet for specific coding/analytics tasks via sub-agents or session overrides.
 - **TrustedBusinessReviews.com Migration**: WordPress -> static HTML. Malware cleanup in progress.

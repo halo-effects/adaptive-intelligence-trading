@@ -7,7 +7,8 @@
 - Alert if: `running` is false, drawdown > 15%, or status.json stale (>65 min)
 - **Capital: $300** real USDT. Alert if balance drifts significantly.
 - Profile: High, 12 layers, 1.5% TP, 1.5x leverage
-- Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "V14LiveAster"` (task not yet created)
+- Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "V14LiveAster"`
+- Scheduled Task: `V14LiveAster` (at boot) — confirmed exists as of 2026-03-09
 - Manual restart: `python -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill`
 - Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
 - Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
