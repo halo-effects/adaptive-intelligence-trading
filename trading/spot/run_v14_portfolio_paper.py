@@ -142,6 +142,7 @@ class TradeTracker:
                             "pnl": round(pnl, 4),
                             "return_pct": round(ret_pct, 2),
                             "duration_h": round(duration_h, 1),
+                            "recorded_at": datetime.now(timezone.utc).isoformat(),
                         }
                         self.trades.append(trade_record)
                         if pnl < 0 and self.on_losing_trade:
@@ -189,6 +190,7 @@ class TradeTracker:
                             "pnl": round(pnl, 4),
                             "return_pct": round(ret_pct, 2),
                             "duration_h": round(duration_h, 1),
+                            "recorded_at": datetime.now(timezone.utc).isoformat(),
                         }
                         self.trades.append(trade_record)
                         if pnl < 0 and self.on_losing_trade:
@@ -212,6 +214,7 @@ class TradeTracker:
                 writer = csv.DictWriter(f, fieldnames=[
                     "deal_id", "symbol", "open_time", "close_time", "regime",
                     "layers", "invested", "pnl", "return_pct", "duration_h",
+                    "recorded_at",
                 ], extrasaction='ignore')
                 writer.writeheader()
                 writer.writerows(unique)
@@ -271,6 +274,10 @@ class V14PortfolioPaperBot:
         self.start_date = start_date
         self.leverage = leverage if leverage is not None else V14_PROFILES.get(profile, V14_PROFILES['medium'])['leverage']
         self.fresh = fresh
+        # If fresh mode, record start time as floor for candle processing.
+        # Any candle that closed before this timestamp is skipped — for ALL engines,
+        # including ones created later by rebalance. This prevents phantom trades.
+        self._fresh_floor_ms = int(time.time() * 1000) if fresh else 0
 
         self.router = CapitalRouter(initial_capital=self.capital)
         self.engines: Dict[str, V14LifecycleEngine] = {}
@@ -691,6 +698,14 @@ class V14PortfolioPaperBot:
                         candle_end = ts_ms + 3600_000
                         if candle_end > now_ms:
                             break
+
+                        # FRESH MODE FLOOR: skip any candle that closed before bot started.
+                        # This catches new engines created by rebalance mid-run that
+                        # would otherwise replay all 200 historical candles.
+                        if self._fresh_floor_ms and candle_end < self._fresh_floor_ms:
+                            last_candle_ts[sym] = ts_ms
+                            engine._last_candle_ts = ts_ms
+                            continue
 
                         ts_dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
                         self._check_and_rebalance(ts_dt)
