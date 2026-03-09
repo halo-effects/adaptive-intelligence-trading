@@ -15,7 +15,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "data" / "candles.db"
+DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(Path(__file__).parent / "data" / "candles.db")))
 
 # Coins to backfill: (db_symbol, binance_symbol, approx_start_date)
 # We use early start dates - Binance will just return from when data is available

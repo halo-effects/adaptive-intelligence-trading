@@ -51,13 +51,25 @@ class SpotExchangeClient:
         api_key = config.get("apiKey") or os.environ.get(defaults.get("env_key", ""), "")
         secret = config.get("secret") or os.environ.get(defaults.get("env_secret", ""), "")
 
-        # If env vars empty, try Windows registry (mirrors aster_trader.py logic)
+        # If env vars empty, try Windows registry (Windows-only fallback)
+        # On Linux/cloud servers, env vars MUST be set — winreg is not available.
         if not api_key:
             api_key, secret = self._try_winreg(defaults)
 
         exchange_class = getattr(ccxt, self.exchange_name, None)
         if exchange_class is None:
             raise ValueError(f"Unknown exchange: {self.exchange_name}")
+
+        # Validate credentials at init time (fail-fast).
+        # Prevents silent unauthenticated connection that only fails at order execution.
+        requires_auth = defaults.get('requires_auth', True)
+        if requires_auth and not api_key:
+            env_key = defaults.get('env_key', 'API_KEY')
+            raise ValueError(
+                f"No API credentials found for {self.exchange_name}. "
+                f"Set the {env_key} environment variable. "
+                f"On Linux, Windows Registry fallback is unavailable."
+            )
 
         params: Dict[str, Any] = {
             "enableRateLimit": True,
@@ -77,7 +89,7 @@ class SpotExchangeClient:
         logger.info("Connected to %s (authenticated=%s)", self.exchange_name, bool(api_key))
 
     def _try_winreg(self, defaults: dict) -> Tuple[str, str]:
-        """Try reading credentials from Windows registry."""
+        """Try reading credentials from Windows registry (Windows-only, silent no-op on Linux)."""
         try:
             import winreg
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as k:

@@ -19,7 +19,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "data" / "candles.db"
+DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(Path(__file__).parent / "data" / "candles.db")))
 
 def init_db(conn):
     """Ensure tables exist."""

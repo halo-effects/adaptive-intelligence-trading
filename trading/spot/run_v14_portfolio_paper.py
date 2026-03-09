@@ -34,12 +34,12 @@ from trading.spot.incident_schema import create_incident_report
 # Constants
 # ---------------------------------------------------------------------------
 
-DB_PATH = _WORKSPACE / "trading" / "spot" / "data" / "candles.db"
+DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(_WORKSPACE / "trading" / "spot" / "data" / "candles.db")))
 DEFAULT_OUTPUT_DIR = _WORKSPACE / "trading" / "spot" / "paper" / "v14_portfolio"
 DEFAULT_START_DATE = "2024-10-01"
 DEFAULT_CAPITAL = 10000.0
 LIVE_POLL_INTERVAL = 60  # seconds
-SCANNER_PATH = _WORKSPACE / "docs" / "data" / "v14" / "cycle_scanner.json"
+SCANNER_PATH = Path(os.environ.get("AIT_SCANNER_JSON", str(_WORKSPACE / "docs" / "data" / "v14" / "cycle_scanner.json")))
 
 logger = logging.getLogger("v14_portfolio_paper")
 

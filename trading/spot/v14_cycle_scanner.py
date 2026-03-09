@@ -66,7 +66,7 @@ COINS = [
 # ─── Data Paths ─────────────────────────────────────────────────────────────
 
 WORKSPACE = Path(__file__).resolve().parent.parent.parent
-DB_PATH = WORKSPACE / "trading" / "spot" / "data" / "candles.db"
+DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(WORKSPACE / "trading" / "spot" / "data" / "candles.db")))
 OUTPUT_PATH = WORKSPACE / "docs" / "data" / "v14" / "cycle_scanner.json"
 SCORE_HISTORY_PATH = WORKSPACE / "trading" / "spot" / "data" / "score_history.json"
 

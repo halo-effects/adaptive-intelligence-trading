@@ -29,7 +29,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("candle_collector")
 
-DB_PATH = Path(__file__).parent / "data" / "candles.db"
+DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(Path(__file__).parent / "data" / "candles.db")))
 
 # ── Scanner universe ────────────────────────────────────────────────────────
 # Must match v14_cycle_scanner.py COINS list.

@@ -62,7 +62,7 @@ HL_PRICE_MAP = {
     "ADA/USDT": "ADA/USDC:USDC",
 }
 
-DB_PATH = _WORKSPACE / "trading" / "spot" / "data" / "candles.db"
+DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(_WORKSPACE / "trading" / "spot" / "data" / "candles.db")))
 DEFAULT_OUTPUT_DIR = _WORKSPACE / "trading" / "spot" / "paper" / "v14etf"
 DEFAULT_START_DATE = "2024-10-01"
 DEFAULT_CAPITAL = 10000.0

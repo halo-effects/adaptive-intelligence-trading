@@ -54,7 +54,7 @@ DEFAULT_PROFILE = "high"
 DEFAULT_START_DATE = "2025-10-01"
 LIVE_POLL_INTERVAL = 65  # seconds (slightly over 1 min to avoid rate limits)
 
-DB_PATH = _WORKSPACE / "trading" / "spot" / "data" / "candles.db"
+DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(_WORKSPACE / "trading" / "spot" / "data" / "candles.db")))
 
 logger = logging.getLogger("v14_live")
 
