@@ -84,3 +84,13 @@ Check-Task -Name "V14 Paper Bot" -TaskName "V14PaperBot" `
 Check-Task -Name "V14-ETF Paper Bot" -TaskName "V14ETFPaperBot" `
     -StatusFile "$env:USERPROFILE\.openclaw\workspace\trading\spot\paper\v14etf\status.json" `
     -StaleMinutes 120
+
+# ---------- 4. V14-PM Portfolio Paper Bot ----------
+Check-Task -Name "V14-PM Paper Bot" -TaskName "V14PMPaperBot" `
+    -StatusFile "$env:USERPROFILE\.openclaw\workspace\trading\spot\paper\v14_portfolio\status.json" `
+    -StaleMinutes 120
+
+# ---------- 5. V14 Live Bot (Aster - REAL MONEY) ----------
+Check-Task -Name "V14 Live Bot (Aster)" -TaskName "V14LiveAster" `
+    -StatusFile "$env:USERPROFILE\.openclaw\workspace\trading\spot\live\v14\status.json" `
+    -StaleMinutes 120
