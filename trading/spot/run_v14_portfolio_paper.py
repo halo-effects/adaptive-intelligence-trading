@@ -271,6 +271,7 @@ class V14PortfolioPaperBot:
         self.engines: Dict[str, V14LifecycleEngine] = {}
         
         self.tracker = TradeTracker(self.output_dir, leverage=self.leverage)
+        self.tracker.load_existing()  # Preserve trade history across restarts
         self.tracker.on_losing_trade = self._capture_incident
 
         self._incidents_dir = self.output_dir / "incidents"
@@ -314,18 +315,21 @@ class V14PortfolioPaperBot:
         root.addHandler(stdout_handler)
 
     def _compute_current_equity(self) -> float:
-        """Sum engine equities plus unallocated capital for a live equity snapshot."""
-        total = 0.0
-        allocated = 0.0
+        """Compute equity from ground truth: capital + realized - fees + unrealized."""
+        total_realized = 0.0
+        total_fees = 0.0
+        total_unrealized = 0.0
         for sym, engine in self.engines.items():
             try:
                 st = engine.get_status()
-                total += st.get("equity", 0.0)
-                allocated += engine.initial_capital
+                total_realized += st.get("total_realized_pnl", 0.0)
+                total_fees += st.get("total_fees", 0.0)
+                for coin_data in st.get("coins", {}).values():
+                    total_unrealized += coin_data.get("unrealized_pnl", 0.0)
             except Exception:
                 pass
-        unallocated = max(0.0, self.capital - allocated)
-        return total + unallocated if total > 0 else self.capital
+        equity = self.capital + total_realized - total_fees + total_unrealized
+        return equity if equity > 0 else self.capital
 
     def _check_and_rebalance(self, current_date_utc: datetime):
         today = current_date_utc.date()
@@ -502,18 +506,26 @@ class V14PortfolioPaperBot:
             total_won += engine.deals_won
             max_dd = max(max_dd, st.get("max_drawdown_pct", 0))
 
-        # Add unallocated capital (portion not assigned to any engine)
-        allocated_to_engines = sum(eng.initial_capital for eng in self.engines.values())
-        unallocated = max(0, self.capital - allocated_to_engines)
-        total_equity += unallocated
-        total_cash += unallocated
+        # Compute equity from ground truth: capital + realized - fees + unrealized
+        # (Engine-internal equity can drift due to rebalance cash injections)
+        total_unrealized = sum(
+            coin_data.get("unrealized_pnl", 0) for coin_data in coins.values()
+        )
+        total_equity = self.capital + total_realized - total_fees + total_unrealized
+
+        # Cash = capital not currently invested in open positions
+        total_invested = sum(
+            coin_data.get("invested", 0) for coin_data in coins.values()
+        )
+        total_cash = self.capital + total_realized - total_fees - total_invested
 
         pnl_pct = ((total_equity - self.capital) / self.capital * 100
                     if self.capital > 0 else 0.0)
         win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
         uptime_h = (datetime.now(timezone.utc) - self._start_time).total_seconds() / 3600
 
-        # Read trades.csv for accurate deal counts
+        # Read trades.csv for accurate deal counts and historical realized PnL
+        # (engines lose state on restart; trades.csv is the source of truth)
         csv_path = self.output_dir / "trades.csv"
         if csv_path.exists():
             try:
@@ -524,6 +536,16 @@ class V14PortfolioPaperBot:
                     total_deals = len(csv_trades)
                     total_won = sum(1 for t in csv_trades if float(t.get('pnl', 0)) > 0)
                     win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
+                    # Use CSV realized PnL if it exceeds engine-reported
+                    # (covers historical trades from before a restart)
+                    csv_realized = sum(float(t.get('pnl', 0)) for t in csv_trades)
+                    if csv_realized > total_realized:
+                        total_realized = csv_realized
+                        # Recompute equity with CSV-based realized
+                        total_equity = self.capital + total_realized - total_fees + total_unrealized
+                        total_cash = self.capital + total_realized - total_fees - total_invested
+                        pnl_pct = ((total_equity - self.capital) / self.capital * 100
+                                    if self.capital > 0 else 0.0)
             except Exception:
                 pass
 
