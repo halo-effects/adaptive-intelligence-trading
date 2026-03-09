@@ -1,6 +1,6 @@
 """
 Runner for V13 Coin Scanner.
-Usage: python -u -m trading.spot.run_scanner_v13
+Usage: python -u -m trading.spot.run_v14_scanner
 """
 import sys
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -11,7 +11,7 @@ from pathlib import Path
 workspace = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(workspace))
 
-from trading.spot.coin_scanner_v13 import run_scanner, print_summary, ALL_TOKENS
+from trading.spot.coin_scanner import run_scanner, print_summary, ALL_TOKENS
 
 
 def main():

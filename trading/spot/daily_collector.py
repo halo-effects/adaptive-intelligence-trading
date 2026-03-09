@@ -15,11 +15,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-V13_DIR = str(Path(__file__).resolve().parent / 'backtest_results' / 'v13')
-sys.path.insert(0, V13_DIR)
 
-from build_daily_candles import aggregate_daily, compute_indicators
-from v13_signals import V13SignalPack
+from trading.spot.engine.build_daily_candles import aggregate_daily, compute_indicators
+from trading.spot.engine.v13_signals import V13SignalPack
 
 DB_PATH = Path(__file__).resolve().parent / 'data' / 'candles.db'
 
@@ -149,7 +147,7 @@ def collect_cfgi(conn, cfgi_tokens):
                 continue
 
             # Find symbol for this token
-            from trading.spot.coin_scanner_v13 import ALL_TOKENS
+            from trading.spot.coin_scanner import ALL_TOKENS
             symbol = ALL_TOKENS.get(token, f"{token}/USDT")
 
             # Check if already exists
@@ -344,11 +342,11 @@ def _nan_to_none(v):
 def run_collector(tokens=None):
     """Run the full daily collection pipeline."""
     if tokens is None:
-        from trading.spot.coin_scanner_v13 import ALL_TOKENS, CFGI_TOKENS
+        from trading.spot.coin_scanner import ALL_TOKENS, CFGI_TOKENS
         tokens = ALL_TOKENS
         cfgi_tokens = CFGI_TOKENS
     else:
-        from trading.spot.coin_scanner_v13 import CFGI_TOKENS
+        from trading.spot.coin_scanner import CFGI_TOKENS
         cfgi_tokens = [c for c in tokens.keys() if c in CFGI_TOKENS]
 
     conn = sqlite3.connect(str(DB_PATH))

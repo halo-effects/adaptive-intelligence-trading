@@ -17,12 +17,10 @@ import numpy as np
 import pandas as pd
 
 # Add v13 modules to path
-V13_DIR = str(Path(__file__).resolve().parent / 'backtest_results' / 'v13')
-sys.path.insert(0, V13_DIR)
 
-from build_daily_candles import aggregate_daily, compute_indicators
-from v13_signals import V13SignalPack
-from v13_phase_backtest_v8 import V13BacktestV8, V13Config
+from trading.spot.engine.build_daily_candles import aggregate_daily, compute_indicators
+from trading.spot.engine.v13_signals import V13SignalPack
+from trading.spot.engine.v13_phase_backtest_v8 import V13BacktestV8, V13Config
 
 DB_PATH = Path(__file__).resolve().parent / 'data' / 'candles.db'
 
