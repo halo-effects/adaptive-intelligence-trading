@@ -15,12 +15,14 @@ Usage:
 """
 
 import argparse
+import atexit
 import csv
 import json
 import logging
 import os
 import signal
 import sqlite3
+import subprocess
 import sys
 import time
 import traceback
@@ -69,6 +71,51 @@ DEFAULT_CAPITAL = 10000.0
 LIVE_POLL_INTERVAL = 60  # seconds
 
 logger = logging.getLogger("v14_paper")
+
+# ---------------------------------------------------------------------------
+# Single-instance guard (PID lock)
+# ---------------------------------------------------------------------------
+
+def _is_pid_running(pid: int) -> bool:
+    """Return True if a process with the given PID is currently running."""
+    try:
+        import psutil
+        if psutil.pid_exists(pid):
+            proc = psutil.Process(pid)
+            return proc.is_running() and proc.status() != psutil.STATUS_ZOMBIE
+        return False
+    except ImportError:
+        pass
+    # Fallback: Windows tasklist
+    try:
+        result = subprocess.run(
+            ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+            capture_output=True, text=True, timeout=5
+        )
+        return str(pid) in result.stdout
+    except Exception:
+        return False
+
+def acquire_pid_lock(pid_file: Path) -> bool:
+    """
+    Try to acquire a PID lock file. Returns True if OK to proceed.
+    Returns False if another instance is already running.
+    Registers an atexit handler to remove the PID file on clean exit.
+    """
+    if pid_file.exists():
+        try:
+            old_pid = int(pid_file.read_text().strip())
+            if old_pid != os.getpid() and _is_pid_running(old_pid):
+                logger.warning(
+                    f"V14-ETF bot already running (PID {old_pid}). "
+                    f"Remove {pid_file} manually if the process is stale."
+                )
+                return False
+        except (ValueError, OSError):
+            pass  # Stale or corrupt PID file — proceed
+    pid_file.write_text(str(os.getpid()))
+    atexit.register(lambda: pid_file.unlink(missing_ok=True))
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -848,8 +895,8 @@ class V14PaperBot:
     def _write_status(self):
         """Write combined status.json from all engines."""
         coins = {}
-        total_equity = 0.0
-        total_cash = 0.0
+        # Note: do NOT accumulate per-engine equity here — it drifts on restart.
+        # Equity is always derived from the capital-based formula below.
         total_realized = 0.0
         total_fees = 0.0
         total_deals = 0
@@ -868,17 +915,13 @@ class V14PaperBot:
                 # Inject per-coin CFGI
                 if sym in self._cfgi_coins and sym in coins:
                     coins[sym]["cfgi"] = round(self._cfgi_coins[sym], 1)
-            total_equity += st.get("equity", 0)
-            total_cash += st.get("cash", 0)
+            # Collect fees and deal counts from engines (CSV overrides below)
             total_realized += st.get("total_realized_pnl", 0)
             total_fees += st.get("total_fees", 0)
             total_deals += st.get("deals_completed", 0)
             total_won += engine.deals_won
             max_dd = max(max_dd, st.get("max_drawdown_pct", 0))
 
-        pnl_pct = ((total_equity - self.capital) / self.capital * 100
-                    if self.capital > 0 else 0.0)
-        win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
         uptime_h = (datetime.now(timezone.utc) - self._start_time).total_seconds() / 3600
 
         # Read trades.csv as source of truth for deal counts AND realized PnL
@@ -892,22 +935,20 @@ class V14PaperBot:
                 if csv_trades:
                     total_deals = len(csv_trades)
                     total_won = sum(1 for t in csv_trades if float(t.get('pnl', 0)) > 0)
-                    win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
                     # CSV is always truth for realized PnL
-                    csv_realized = sum(float(t.get('pnl', 0)) for t in csv_trades)
-                    total_realized = csv_realized
-                    # Recompute equity from ground truth
-                    total_unrealized = sum(
-                        coin_data.get("unrealized_pnl", 0) for coin_data in coins.values()
-                    )
-                    total_equity = self.capital + total_realized - total_fees + total_unrealized
-                    total_cash = self.capital + total_realized - total_fees - sum(
-                        coin_data.get("invested", 0) for coin_data in coins.values()
-                    )
-                    pnl_pct = ((total_equity - self.capital) / self.capital * 100
-                                if self.capital > 0 else 0.0)
+                    total_realized = sum(float(t.get('pnl', 0)) for t in csv_trades)
             except Exception as e:
                 logger.warning("Failed to read trades.csv for deal counts: %s", e)
+
+        # Always compute equity from the capital-based formula — never from per-engine sum.
+        # Per-engine equity drifts when engines restart with reset capital state.
+        total_unrealized = sum(c.get("unrealized_pnl", 0) for c in coins.values())
+        total_invested = sum(c.get("invested", 0) for c in coins.values())
+        total_equity = self.capital + total_realized - total_fees + total_unrealized
+        total_cash = self.capital + total_realized - total_fees - total_invested
+        win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
+        pnl_pct = ((total_equity - self.capital) / self.capital * 100
+                    if self.capital > 0 else 0.0)
 
         # Derive regime from market CFGI
         fgi = self._cfgi_market
@@ -975,6 +1016,16 @@ class V14PaperBot:
 
     def run(self, backfill_only=False, skip_backfill=False, fresh=False):
         """Full pipeline: backfill then live."""
+        # Single-instance guard — prevent multiple simultaneous runs
+        pid_file = self.output_dir / "bot.pid"
+        if not acquire_pid_lock(pid_file):
+            logger.error("Startup aborted: another V14-ETF instance is already running.")
+            try:
+                send_telegram("⚠️ [V14-ETF] Startup blocked — another instance already running. Check for duplicate scheduled tasks.")
+            except Exception:
+                pass
+            sys.exit(0)
+
         def _shutdown_handler(signum, frame):
             logger.info(f"Received signal {signum}, shutting down...")
             self._shutdown = True
