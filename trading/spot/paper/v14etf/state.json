@@ -1,15 +1,15 @@
 {
-  "saved_at": "2026-03-10T21:04:33.397748+00:00",
+  "saved_at": "2026-03-10T22:03:45.573974+00:00",
   "capital": 10000.0,
-  "cash": 5361.832469988989,
+  "cash": 3854.5972469533363,
   "per_coin_cash": {
     "SOL/USDT": 348.0342977882417,
     "XRP/USDT": 1454.6557518510979,
     "LTC/USDT": 490.08998796450555,
-    "HBAR/USDT": 1558.0366806687598,
+    "HBAR/USDT": 50.801457633107276,
     "ADA/USDT": 1511.0157517163866
   },
-  "deal_counter": 29,
+  "deal_counter": 32,
   "open_deals": {
     "SOL/USDT:long": {
       "deal_id": 19,
@@ -27,14 +27,6 @@
       "layers": 4,
       "invested": 1548.1943492152059
     },
-    "HBAR/USDT:long": {
-      "deal_id": 27,
-      "symbol": "HBAR/USDT",
-      "open_time": "2026-03-10T01:00:00+00:00",
-      "regime": "LONG_DCA",
-      "layers": 1,
-      "invested": 666.6206548902115
-    },
     "ADA/USDT:long": {
       "deal_id": 28,
       "symbol": "ADA/USDT",
@@ -50,6 +42,14 @@
       "regime": "LONG_DCA",
       "layers": 1,
       "invested": 622.8718485558209
+    },
+    "HBAR/USDT:long": {
+      "deal_id": 32,
+      "symbol": "HBAR/USDT",
+      "open_time": "2026-03-04T16:00:00+00:00",
+      "regime": "LONG_DCA",
+      "layers": 4,
+      "invested": 1556.1098863757754
     }
   },
   "engines": {
@@ -94,9 +94,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-10",
       "_live_mode": true,
-      "_last_candle_ts": 1773172800000,
+      "_last_candle_ts": 1773176400000,
       "start_time": 1772470983.714947,
-      "current_price": 86.183
+      "current_price": 85.665
     },
     "XRP/USDT": {
       "symbol": "XRP/USDT",
@@ -139,9 +139,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-10",
       "_live_mode": true,
-      "_last_candle_ts": 1773172800000,
+      "_last_candle_ts": 1773176400000,
       "start_time": 1772470983.920671,
-      "current_price": 1.3889
+      "current_price": 1.3826
     },
     "LTC/USDT": {
       "symbol": "LTC/USDT",
@@ -184,11 +184,55 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-10",
       "_live_mode": true,
-      "_last_candle_ts": 1773172800000,
+      "_last_candle_ts": 1773176400000,
       "start_time": 1772470984.06251,
-      "current_price": 53.933
+      "current_price": 53.57
     },
-    "HBAR/USDT": {},
+    "HBAR/USDT": {
+      "symbol": "HBAR/USDT",
+      "initial_capital": 2000.0,
+      "profile": "high",
+      "leverage": 1.5,
+      "phase": "LONG_DCA",
+      "capital": 491.5490734105573,
+      "phase_start_date": "2026-03-02 14:00:00",
+      "long_coins": 15658.312548919755,
+      "long_avg_entry": 0.09937915605619516,
+      "long_layers": 4,
+      "long_last_buy": "2026-03-07 19:00:00",
+      "long_tp": 0.10086984339703807,
+      "long_cost": 1556.1098863757754,
+      "long_trades": 3,
+      "long_wins": 3,
+      "long_pnl": 48.417535085531,
+      "short_coins": 0.0,
+      "short_avg_entry": 0.0,
+      "short_layers": 0,
+      "short_last_sell": null,
+      "short_tp": 0.0,
+      "short_cost": 0.0,
+      "short_trades": 0,
+      "short_wins": 0,
+      "short_pnl": 0.0,
+      "early_warning_date": null,
+      "failsafe_armed": false,
+      "peak_2w_k": 5.828106403826343,
+      "ob93_armed": false,
+      "ob93_armed_date": null,
+      "unwinding": false,
+      "top_detected": false,
+      "conviction_fired": false,
+      "markup_cycles_completed": 0,
+      "total_fees": 1.2157035537901968,
+      "adx_below_20_streak": 0,
+      "router_from_top": false,
+      "router_from_markdown": false,
+      "_last_daily_date": "2026-03-10",
+      "_live_mode": true,
+      "_last_candle_ts": 1773176400000,
+      "start_time": 1773178813.737847,
+      "current_price": 0.095249
+    },
     "ADA/USDT": {
       "symbol": "ADA/USDT",
       "initial_capital": 2000.0,
@@ -230,9 +274,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-10",
       "_live_mode": true,
-      "_last_candle_ts": 1773172800000,
+      "_last_candle_ts": 1773176400000,
       "start_time": 1772470984.551725,
-      "current_price": 0.26327
+      "current_price": 0.26148
     }
   }
 }
