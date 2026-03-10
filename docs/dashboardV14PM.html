@@ -924,9 +924,15 @@ function renderCompounding(){
   var growth=cap>0?((eq-cap)/cap*100):0;
   var days=1;
   if(trades&&trades.length>1){
-    var first=new Date(trades[0].open_time);
-    var last=new Date(trades[trades.length-1].close_time||trades[trades.length-1].open_time);
-    days=Math.max((last-first)/(1000*60*60*24),1);
+    var earliest=new Date(trades[0].open_time);
+    var latest=new Date(trades[0].close_time||trades[0].open_time);
+    for(var i=1;i<trades.length;i++){
+      var od=new Date(trades[i].open_time);
+      var cd=new Date(trades[i].close_time||trades[i].open_time);
+      if(od<earliest) earliest=od;
+      if(cd>latest) latest=cd;
+    }
+    days=Math.max((latest-earliest)/(1000*60*60*24),1);
   } else if(S.uptime_hours>24){ days=S.uptime_hours/24; }
   var dailyRate=rpnl/days;
   var monthlyProj=dailyRate*30;
