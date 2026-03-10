@@ -470,7 +470,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 <!-- 8. LIVE OPPORTUNITY DASHBOARD -->
 <div class="flow-section">
   <h2 style="text-align:center;font-size:1.15rem;color:var(--text);margin-bottom:4px">&#x1F4CA; Live Opportunity Dashboard</h2>
-  <div class="flow-sub" style="text-align:center">Capital is centrally routed to top coins based on live DCA Scores</div>
+  <div class="flow-sub" style="text-align:center">Capital is centrally routed to top coins based on live Trade Scores</div>
 
   <!-- Phase Flow Diagram -->
   <div class="phase-flow" id="phaseFlow"></div>
@@ -1164,9 +1164,11 @@ function renderFlowDiagram(){
     h+='<td>'+phaseHtml+'</td>';
     h+='<td style="text-align:center">'+scoreHtml+'</td>';
     var trendHtml='<span style="color:var(--text3)">--</span>';
-    if(rd.trend){var td=rd.trend;var tdir=td.direction;var tmult=td.trend_multiplier;if(tdir==='accelerating'){trendHtml='<span style="color:var(--profit);font-size:1.2rem" title="Score accelerating ('+tmult.toFixed(2)+'x)">&#x2197;</span>'}else if(tdir==='declining'){trendHtml='<span style="color:var(--loss);font-size:1.2rem" title="Score declining ('+tmult.toFixed(2)+'x)">&#x2198;</span>'}else{trendHtml='<span style="color:var(--text2);font-size:1.2rem" title="Score stable ('+tmult.toFixed(2)+'x)">&#x2192;</span>'}}
+    var tradeScoreHtml=rd.tradeScore!=null?'<span style="font-weight:800;font-size:1.05rem;color:var(--accent2)">'+rd.tradeScore.toFixed(1)+'</span>':'<span style="color:var(--text3)">--</span>';
+    if(rd.trend){var td=rd.trend;var tdir=td.direction;var tmult=td.trend_multiplier;if(tdir==='accelerating'){trendHtml='<span style="color:var(--profit)">'+tmult.toFixed(2)+'&times; <span style="font-size:1.1rem">&#x2197;</span></span>'}else if(tdir==='declining'){trendHtml='<span style="color:var(--loss)">'+tmult.toFixed(2)+'&times; <span style="font-size:1.1rem">&#x2198;</span></span>'}else{trendHtml='<span style="color:var(--text2)">'+tmult.toFixed(2)+'&times; <span style="font-size:1.1rem">&#x2192;</span></span>'}}
     h+='<td style="text-align:center">'+trendHtml+'</td>';
-    h+='<td style="text-align:center">'+dealsHtml+'</td>';
+    h+='<td style="text-align:center">'+tradeScoreHtml+'</td>';
+h+='<td style="text-align:center">'+dealsHtml+'</td>';
     h+='<td style="text-align:center">'+cycleHtml+'</td>';
     h+='<td style="text-align:center">'+capHtml+'</td>';
     h+='<td style="text-align:center">'+ddHtml+'</td>';
