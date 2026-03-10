@@ -262,6 +262,12 @@ UNI, ATOM, NEAR, HBAR, INJ, FIL, RUNE, CRV, SNX, COMP
 
 ### 4.4 Signal Stack (`trading.spot.engine`)
 
+> **Naming note:** The signal module is called `v13_signals.py` and the class is `V13SignalPack`
+> for historical reasons — it was written during V13 development. It is **not** V13 trading logic.
+> It's a shared signal/indicator library (StochRSI, ADX, structure detection) used by both V13 and V14
+> engines. Renaming to `SignalPack` is planned but deferred to avoid touching all importers while
+> bots are running.
+
 All signals are computed from `candles_daily` data:
 
 | Signal | Module | Purpose |

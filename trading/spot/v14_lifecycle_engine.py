@@ -132,6 +132,7 @@ class V14LifecycleEngine:
         self._last_candle_ts: int = 0  # Last processed 1h candle timestamp (ms)
         self.current_price: float = 0.0
         self.start_time: float = datetime.now(timezone.utc).timestamp()
+        self._warmed_up: bool = False  # Engine must see a daily boundary before trading
 
         logger.info(f"V14Engine initialized for {symbol}, capital=${capital:,.0f}, "
                     f"profile={profile}, leverage={self.leverage}x")
@@ -241,15 +242,22 @@ class V14LifecycleEngine:
                 if np.isnan(daily_close):
                     daily_close = price  # fallback
 
-                # Run full daily tick
+                # Run full daily tick (router evaluates direction, signals compute)
                 actions.extend(self._run_daily_tick(prev_date_ts, daily_close))
+
+                # Engine is now warmed up — router has set direction, signals are loaded
+                if not self._warmed_up:
+                    self._warmed_up = True
+                    logger.info(f"{self.symbol} warmup complete — router direction set, "
+                                f"phase={self._engine.phase.name}, trading enabled")
 
                 # Clear old candles (keep current day only)
                 self._candles_1h = [c for c in self._candles_1h
                                     if c['timestamp'].strftime('%Y-%m-%d') == current_date]
             else:
                 # Between daily: run DCA grid for hourly TP responsiveness
-                if self._live_mode:
+                # BUT only if warmed up (router has set direction at least once)
+                if self._live_mode and self._warmed_up:
                     date_ts = pd.Timestamp(ts.replace(tzinfo=None))
                     old_trade_count = len(self._engine.trades)
 
@@ -265,6 +273,9 @@ class V14LifecycleEngine:
                         self._engine._short_dca_tick(date_ts, price)
 
                     actions.extend(self._extract_new_actions(old_trade_count))
+                elif self._live_mode and not self._warmed_up:
+                    # Accumulating candles, tracking price, but not trading yet
+                    pass
 
         except Exception as e:
             logger.error(f"V14Engine tick error for {self.symbol}: {e}", exc_info=True)
@@ -589,6 +600,9 @@ class V14LifecycleEngine:
         # Bottom detection
         eng.top_detected = state.get('top_detected', False)
         eng.conviction_fired = state.get('conviction_fired', False)
+
+        # Restored engines are already warmed up — they were trading before the restart
+        self._warmed_up = True
 
         # Cycle tracking
         eng.markup_cycles_completed = state.get('markup_cycles_completed', 0)

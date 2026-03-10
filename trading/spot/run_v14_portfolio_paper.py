@@ -767,6 +767,45 @@ class V14PortfolioPaperBot:
         self._check_and_rebalance(datetime.now(timezone.utc))
         self.run_live()
 
+def _acquire_pid_lock(lock_path: Path) -> bool:
+    """Acquire a PID lock file. Returns True if lock acquired, False if another instance is running."""
+    if lock_path.exists():
+        try:
+            old_pid = int(lock_path.read_text().strip())
+            # Check if the old process is still alive
+            try:
+                os.kill(old_pid, 0)  # Signal 0 = just check existence
+                # Process exists — is it actually a PM bot?
+                import subprocess
+                result = subprocess.run(
+                    ["wmic", "process", "where", f"ProcessId={old_pid}", "get", "CommandLine"],
+                    capture_output=True, text=True, timeout=5
+                )
+                if "run_v14_portfolio_paper" in result.stdout:
+                    return False  # Another PM bot is genuinely running
+                else:
+                    logger.warning(f"Stale PID lock (PID {old_pid} exists but isn't a PM bot). Overwriting.")
+            except OSError:
+                logger.warning(f"Stale PID lock (PID {old_pid} no longer running). Overwriting.")
+        except (ValueError, IOError):
+            logger.warning("Corrupt PID lock file. Overwriting.")
+
+    # Write our PID
+    lock_path.write_text(str(os.getpid()))
+    return True
+
+
+def _release_pid_lock(lock_path: Path):
+    """Release the PID lock file if it belongs to us."""
+    try:
+        if lock_path.exists():
+            stored_pid = int(lock_path.read_text().strip())
+            if stored_pid == os.getpid():
+                lock_path.unlink()
+    except Exception:
+        pass
+
+
 def main():
     parser = argparse.ArgumentParser(description="V14 Portfolio Paper Trading Bot")
     parser.add_argument("--capital", type=float, default=DEFAULT_CAPITAL)
@@ -776,14 +815,30 @@ def main():
     parser.add_argument("--fresh", action="store_true", help="Start fresh — skip historical candles, trade from now only")
     args = parser.parse_args()
 
-    bot = V14PortfolioPaperBot(
-        capital=args.capital,
-        exchange=args.exchange,
-        profile=args.profile,
-        leverage=args.leverage,
-        fresh=args.fresh,
-    )
-    bot.run()
+    # PID lock — prevent duplicate instances
+    output_dir = Path(DEFAULT_OUTPUT_DIR)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = output_dir / "bot.pid"
+
+    if not _acquire_pid_lock(lock_path):
+        old_pid = lock_path.read_text().strip()
+        logger.error(f"Another PM bot instance is already running (PID {old_pid}). Exiting.")
+        sys.exit(1)
+
+    logger.info(f"PID lock acquired: {lock_path} (PID {os.getpid()})")
+
+    try:
+        bot = V14PortfolioPaperBot(
+            capital=args.capital,
+            exchange=args.exchange,
+            profile=args.profile,
+            leverage=args.leverage,
+            fresh=args.fresh,
+        )
+        bot.run()
+    finally:
+        _release_pid_lock(lock_path)
+        logger.info("PID lock released.")
 
 if __name__ == "__main__":
     main()
