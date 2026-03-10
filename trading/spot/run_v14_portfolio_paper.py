@@ -413,7 +413,8 @@ class V14PortfolioPaperBot:
                 saved_ts = state.get("last_candle_ts", {}).get(sym, 0)
                 engine._last_candle_ts = saved_ts
                 self.engines[sym] = engine
-                logger.info(f"  {sym}: phase={engine.phase.name}, last_candle_ts={saved_ts}")
+                phase_str = engine.phase.name if hasattr(engine.phase, 'name') else str(engine.phase)
+                logger.info(f"  {sym}: phase={phase_str}, last_candle_ts={saved_ts}")
             except Exception as e:
                 logger.error(f"  Failed to restore engine {sym}: {e}")
 
