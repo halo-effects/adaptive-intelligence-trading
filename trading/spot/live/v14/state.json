@@ -1,24 +1,33 @@
 {
-  "saved_at": "2026-03-10T18:04:09.144527+00:00",
+  "saved_at": "2026-03-10T19:04:14.928358+00:00",
   "capital": 300.0,
-  "cash": 317.5604524436529,
-  "deal_counter": 2,
-  "open_deals": {},
-  "last_candle_ts": 1773162000000,
+  "cash": 222.27326308341043,
+  "deal_counter": 3,
+  "open_deals": {
+    "ASTER/USDT:long": {
+      "deal_id": 3,
+      "symbol": "ASTER/USDT",
+      "open_time": "2026-03-10T18:00:00+00:00",
+      "regime": "LONG_DCA",
+      "layers": 1,
+      "invested": 95.2641171
+    }
+  },
+  "last_candle_ts": 1773165600000,
   "engine": {
     "symbol": "ASTER/USDT",
     "initial_capital": 300.0,
     "profile": "high",
     "leverage": 1.0,
     "phase": "LONG_DCA",
-    "capital": 317.5604524436529,
+    "capital": 222.27326308341043,
     "phase_start_date": "2026-03-08 16:00:00",
-    "long_coins": 0,
-    "long_avg_entry": 0,
-    "long_layers": 0,
-    "long_last_buy": null,
-    "long_tp": 0,
-    "long_cost": 0,
+    "long_coins": 135.09569865298127,
+    "long_avg_entry": 0.70519,
+    "long_layers": 1,
+    "long_last_buy": "2026-03-10 18:00:00",
+    "long_tp": 0.7157678499999999,
+    "long_cost": 95.26813573309586,
     "long_trades": 2,
     "long_wins": 2,
     "long_pnl": 3.7999108415849845,
@@ -40,14 +49,14 @@
     "top_detected": false,
     "conviction_fired": false,
     "markup_cycles_completed": 0,
-    "total_fees": 0.07635557195917028,
+    "total_fees": 0.09540919910578946,
     "adx_below_20_streak": 0,
     "router_from_top": false,
     "router_from_markdown": false,
     "_last_daily_date": "2026-03-10",
     "_live_mode": true,
-    "_last_candle_ts": 1773162000000,
+    "_last_candle_ts": 1773165600000,
     "start_time": 1773164457.345954,
-    "current_price": 0.70958
+    "current_price": 0.70426
   }
 }
