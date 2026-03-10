@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -490,7 +490,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th title="DCA Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">DCA SCORE</th><th title="Score trend: &#x2197; accelerating &#x2192; stable &#x2198; declining" style="cursor:help">TREND</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="Base Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5×) &#x2192; stable (1.0×) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score × Trend Multiplier — the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -1135,13 +1135,15 @@ function renderFlowDiagram(){
     var trendData=null;
     var coinKey=sym.split('/')[0];
     if(scannerData&&scannerData.trend_scores&&scannerData.trend_scores[coinKey]){trendData=scannerData.trend_scores[coinKey]}
+    var trendMult=trendData?trendData.trend_multiplier:1.0;
+    var tradeScore=dcaScore!=null?dcaScore*trendMult:null;
 
-    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData});
+    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData});
   });
 
   rowData.sort(function(a,b){
-    var as=a.dcaScore!=null?a.dcaScore:-999;
-    var bs=b.dcaScore!=null?b.dcaScore:-999;
+    var as=a.tradeScore!=null?a.tradeScore:-999;
+    var bs=b.tradeScore!=null?b.tradeScore:-999;
     return bs-as;
   });
 
@@ -1177,7 +1179,7 @@ function renderFlowDiagram(){
   var oppMaxPage=Math.max(0,Math.ceil(oppRows.length/ops)-1);
   oppPage=Math.min(oppPage,oppMaxPage);
   var oppPageRows=oppRows.slice(oppPage*ops,(oppPage+1)*ops);
-  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
+  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
   if(oppRows.length>ops){
     $('oppPagBar').style.display='flex';
     $('oppPagInfo').textContent='Page '+(oppPage+1)+' of '+(oppMaxPage+1);

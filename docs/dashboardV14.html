@@ -1132,14 +1132,16 @@ function renderFlowDiagram(){
     var trendData=null;
     var coinKey=sym.split('/')[0];
     if(scannerData&&scannerData.trend_scores&&scannerData.trend_scores[coinKey]){trendData=scannerData.trend_scores[coinKey]}
+    var trendMult=trendData?trendData.trend_multiplier:1.0;
+    var tradeScore=dcaScore!=null?dcaScore*trendMult:null;
 
-    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData});
+    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData});
   });
 
   // Sort by dca_score descending (nulls last)
   rowData.sort(function(a,b){
-    var as=a.dcaScore!=null?a.dcaScore:-999;
-    var bs=b.dcaScore!=null?b.dcaScore:-999;
+    var as=a.tradeScore!=null?a.tradeScore:-999;
+    var bs=b.tradeScore!=null?b.tradeScore:-999;
     return bs-as;
   });
 
@@ -1175,7 +1177,7 @@ function renderFlowDiagram(){
   var oppMaxPage=Math.max(0,Math.ceil(oppRows.length/ops)-1);
   oppPage=Math.min(oppPage,oppMaxPage);
   var oppPageRows=oppRows.slice(oppPage*ops,(oppPage+1)*ops);
-  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
+  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
   if(oppRows.length>ops){
     $('oppPagBar').style.display='flex';
     $('oppPagInfo').textContent='Page '+(oppPage+1)+' of '+(oppMaxPage+1);
