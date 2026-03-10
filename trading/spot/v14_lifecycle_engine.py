@@ -553,7 +553,27 @@ class V14LifecycleEngine:
     def restore_state(self, state: dict):
         """Restore V14 engine state from saved dict."""
         if self._engine is None:
-            return
+            # Signal pack failed during init — create a bare engine so we can restore state.
+            # Signals will refresh on the next daily boundary tick.
+            try:
+                from trading.spot.engine.v14_dca_engine import V14DCAEngine
+                self._engine = V14DCAEngine.__new__(V14DCAEngine)
+                self._engine.cfg = self._config
+                self._engine.coin = self.coin
+                self._engine.pack = None
+                self._engine.daily = pd.DataFrame()
+                self._engine.trades = []
+                self._engine.equity_curve = []
+                self._engine.phase_log = []
+                self._engine.total_fees = 0.0
+                self._engine.markup_cycles_completed = 0
+                self._engine.adx_below_20_streak = 0
+                self._engine.router_from_top = False
+                self._engine.router_from_markdown = False
+                logger.info(f"Created bare engine for {self.symbol} (signal pack unavailable, will refresh on daily tick)")
+            except Exception as e:
+                logger.error(f"Cannot create bare engine for {self.symbol}: {e}")
+                return
 
         eng = self._engine
 

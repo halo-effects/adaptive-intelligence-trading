@@ -339,6 +339,125 @@ class V14PortfolioPaperBot:
         stdout_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
         root.addHandler(stdout_handler)
 
+    # -------------------------------------------------------------------
+    # State Persistence
+    # -------------------------------------------------------------------
+
+    def _save_state(self):
+        """Save full bot state to engine_state.json for restart recovery."""
+        state = {
+            "version": 1,
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "last_rebalance_date": str(self._last_rebalance_date) if self._last_rebalance_date else None,
+            "approved_symbols": sorted(self._approved_symbols),
+            "current_equity": self._current_equity,
+            "engines": {},
+            "last_candle_ts": {},
+            "open_deals": dict(self.tracker._open_deals),
+            "router": {
+                "active_pool_cash": self.router.active_pool_cash,
+                "reserve_pool_cash": self.router.reserve_pool_cash,
+                "active_allocations": dict(self.router.active_allocations),
+                "reserve_allocations": dict(self.router.reserve_allocations),
+            },
+        }
+        for sym, engine in self.engines.items():
+            state["engines"][sym] = engine.snapshot_state()
+            state["last_candle_ts"][sym] = engine._last_candle_ts
+
+        path = self.output_dir / "engine_state.json"
+        tmp = path.with_suffix(".tmp")
+        try:
+            with open(tmp, "w") as f:
+                json.dump(state, f, indent=2, default=str)
+            tmp.replace(path)
+        except Exception as e:
+            logger.error(f"Failed to save engine state: {e}")
+
+    def _load_state(self) -> bool:
+        """Load saved engine state. Returns True if state was restored."""
+        path = self.output_dir / "engine_state.json"
+        if not path.exists():
+            logger.info("No saved engine state found — starting fresh")
+            return False
+
+        try:
+            with open(path, "r") as f:
+                state = json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to read engine state: {e}")
+            return False
+
+        if state.get("version") != 1:
+            logger.warning(f"Unknown state version {state.get('version')} — ignoring")
+            return False
+
+        saved_at = state.get("saved_at", "unknown")
+        engine_states = state.get("engines", {})
+        if not engine_states:
+            logger.info("Saved state has no engines — starting fresh")
+            return False
+
+        logger.info(f"Restoring state from {saved_at} ({len(engine_states)} engines)")
+
+        # Restore engines
+        for sym, engine_state in engine_states.items():
+            try:
+                capital = engine_state.get("initial_capital", 1000)
+                engine = V14LifecycleEngine(
+                    symbol=sym, capital=capital, profile=self.profile, leverage=self.leverage
+                )
+                engine.restore_state(engine_state)
+                engine._live_mode = True
+                # Restore last candle timestamp so candle processing resumes correctly
+                saved_ts = state.get("last_candle_ts", {}).get(sym, 0)
+                engine._last_candle_ts = saved_ts
+                self.engines[sym] = engine
+                logger.info(f"  {sym}: phase={engine.phase.name}, last_candle_ts={saved_ts}")
+            except Exception as e:
+                logger.error(f"  Failed to restore engine {sym}: {e}")
+
+        # Restore tracker open deals (in-progress trades)
+        open_deals = state.get("open_deals", {})
+        for key, deal in open_deals.items():
+            if "deal_id" in deal:
+                deal["deal_id"] = int(deal["deal_id"])
+            if "layers" in deal:
+                deal["layers"] = int(deal["layers"])
+            if "invested" in deal:
+                deal["invested"] = float(deal["invested"])
+            self.tracker._open_deals[key] = deal
+            # Ensure deal counter stays ahead
+            if deal.get("deal_id", 0) > self.tracker._deal_counter:
+                self.tracker._deal_counter = deal["deal_id"]
+        if open_deals:
+            logger.info(f"  Restored {len(open_deals)} open deals")
+
+        # Restore router state
+        router_state = state.get("router", {})
+        if router_state:
+            self.router.active_pool_cash = router_state.get("active_pool_cash", self.router.active_pool_cash)
+            self.router.reserve_pool_cash = router_state.get("reserve_pool_cash", self.router.reserve_pool_cash)
+            self.router.active_allocations = router_state.get("active_allocations", {})
+            self.router.reserve_allocations = router_state.get("reserve_allocations", {})
+
+        # Restore rebalance tracking
+        last_reb = state.get("last_rebalance_date")
+        if last_reb:
+            from datetime import date as date_type
+            try:
+                parts = last_reb.split("-")
+                self._last_rebalance_date = date_type(int(parts[0]), int(parts[1]), int(parts[2]))
+            except Exception:
+                pass
+
+        self._approved_symbols = set(state.get("approved_symbols", []))
+        self._current_equity = state.get("current_equity", self.capital)
+
+        logger.info(f"State restore complete. {len(self.engines)} engines, "
+                    f"equity=${self._current_equity:.2f}")
+        return True
+
     def _compute_current_equity(self) -> float:
         """Compute equity from ground truth: capital + realized - fees + unrealized."""
         total_realized = 0.0
@@ -740,6 +859,7 @@ class V14PortfolioPaperBot:
                 except Exception as e:
                     logger.warning(f"CFGI poll error: {e}")
                 self._write_status()
+                self._save_state()
 
                 elapsed = time.time() - cycle_start
                 sleep_time = max(1, LIVE_POLL_INTERVAL - elapsed)
@@ -763,7 +883,15 @@ class V14PortfolioPaperBot:
         signal.signal(signal.SIGINT, _shutdown_handler)
         signal.signal(signal.SIGTERM, _shutdown_handler)
 
-        # Ensure we rebalance immediately
+        # Try to restore saved state (engines, router, open deals)
+        if not self.fresh:
+            restored = self._load_state()
+        else:
+            restored = False
+            logger.info("FRESH mode — skipping state restore")
+
+        # Rebalance immediately (if engines were restored, this updates allocations;
+        # if fresh start, this creates new engines)
         self._check_and_rebalance(datetime.now(timezone.utc))
         self.run_live()
 
