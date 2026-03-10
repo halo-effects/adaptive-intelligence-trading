@@ -6,8 +6,8 @@
   "leverage": 1.0,
   "exchange": "hyperliquid",
   "capital": 50000.0,
-  "equity": 51035.58,
-  "cash": 39668.94,
+  "equity": 51033.77,
+  "cash": 39602.22,
   "pnl_pct": 2.07,
   "coins": {
     "NEAR/USDT": {
@@ -58,6 +58,22 @@
       "distance_to_liq_pct": null,
       "total_fees": 1.79
     },
+    "JUP/USDT": {
+      "state": "LONG_DCA",
+      "side": "long",
+      "layers": 6,
+      "avg_entry": 0.184052,
+      "current_price": 0.17904,
+      "unrealized_pnl": -57.89,
+      "invested": 2126.04,
+      "realized_pnl": 90.91,
+      "lifecycle_phase": "LONG_DCA",
+      "cfgi": null,
+      "next_tp_price": 0.1868125856858387,
+      "liquidation_price": null,
+      "distance_to_liq_pct": null,
+      "total_fees": 2.06
+    },
     "TAO/USDT": {
       "state": "LONG_DCA",
       "side": "long",
@@ -74,37 +90,21 @@
       "distance_to_liq_pct": null,
       "total_fees": 2.25
     },
-    "JUP/USDT": {
-      "state": "LONG_DCA",
-      "side": "long",
-      "layers": 6,
-      "avg_entry": 0.184052,
-      "current_price": 0.17904,
-      "unrealized_pnl": -56.19,
-      "invested": 2063.56,
-      "realized_pnl": 88.24,
-      "lifecycle_phase": "LONG_DCA",
-      "cfgi": null,
-      "next_tp_price": 0.1868125856858387,
-      "liquidation_price": null,
-      "distance_to_liq_pct": null,
-      "total_fees": 1.99
-    },
     "HYPE/USDC": {
       "state": "LONG_DCA",
       "side": "long",
       "layers": 1,
       "avg_entry": 35.061,
       "current_price": 34.928,
-      "unrealized_pnl": -2.6,
-      "invested": 686.45,
-      "realized_pnl": 136.31,
+      "unrealized_pnl": -2.62,
+      "invested": 690.6,
+      "realized_pnl": 137.13,
       "lifecycle_phase": "LONG_DCA",
       "cfgi": null,
       "next_tp_price": 35.586915,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 2.34
+      "total_fees": 2.36
     }
   },
   "symbols": [
@@ -114,21 +114,22 @@
     "PENDLE/USDT",
     "INJ/USDT",
     "ENS/USDT",
-    "TAO/USDT",
     "JUP/USDT",
+    "TAO/USDT",
     "HYPE/USDC",
+    "PYTH/USDT",
     "SNX/USDT"
   ],
   "regime": "RANGING",
   "trend_direction": "bullish",
   "total_realized_pnl": 1200.81,
-  "total_fees": 13.51,
+  "total_fees": 13.6,
   "deals_completed": 49,
   "win_rate": 100.0,
   "max_drawdown_pct": 9.17,
-  "uptime_hours": 204.68,
+  "uptime_hours": 92.73,
   "fear_greed_index": 49.35,
-  "last_update": "2026-03-10T12:41:01.009762+00:00",
+  "last_update": "2026-03-10T12:43:33.107727+00:00",
   "timeframe": "1h",
   "tier_coin_cap": 10,
   "approved_symbols": [
@@ -144,9 +145,9 @@
     "ZRO/USDT"
   ],
   "router": {
-    "active_cash": 26995.62,
-    "reserve_cash": 12198.09,
-    "total_active_allocated": 11216.46,
-    "total_reserve_allocated": 301.91
+    "active_cash": 26936.1,
+    "reserve_cash": 12194.53,
+    "total_active_allocated": 11279.52,
+    "total_reserve_allocated": 305.47
   }
 }
