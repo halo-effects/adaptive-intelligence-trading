@@ -40,3 +40,7 @@ _Non-negotiable rules from production incidents. Violating these causes real dam
 15. **Don't build narratives from user prompts** — let data lead. If Brett asks about DeFi coins, check the data before recommending DeFi coins. (2026-03-03)
 
 16. **Don't send half-baked replies** to messaging surfaces. Get it right first. (AGENTS.md)
+
+17. **Verify before claiming something is broken.** Check actual processes, actual data, actual files. Do not speculate or hallucinate problems — that erodes trust and compounds issues. If you don't know, say "I don't know" instead of building a theory. (2026-03-10)
+
+18. **Architecture doc is single source of truth.** `V14PM_SYSTEM_ARCHITECTURE.md` → `CLOUD_MIGRATION_GUIDE.md` → Dashboard. Dashboard is the real-world verification. If dashboard is wrong, trace back to a system bug — don't blame the data first. (2026-03-10)

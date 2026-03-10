@@ -18,12 +18,21 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
+## AIT — Trust Chain
+The V14PM system has a defined trust chain. Respect this hierarchy:
+1. **V14PM_SYSTEM_ARCHITECTURE.md** — Single source of truth for how the system works (confirmed by audit)
+2. **CLOUD_MIGRATION_GUIDE.md** — Depends on architecture doc being accurate
+3. **V14PM Dashboard** — Real-world output. Verifies the architecture doc against reality.
+4. **If dashboard ≠ architecture doc** → bug in the system, go find it and fix it
+5. **Do NOT hallucinate problems.** Verify before claiming something is broken. Check actual processes, actual data. If you don't know, say so — don't speculate.
+
 ## AIT — Current State (2026-03-10)
-- **V14PM Paper (MVP)**: $50,504 equity, 22 trades, 100% win rate, $50K capital, 10 coin slots
+- **V14PM Paper (MVP)**: $50,592 equity, 29 trades, 100% win rate, $50K capital, 10 coin slots, 10 open positions
 - **V14 Live (Aster)**: $300 real, ASTER/USDT
 - **V14 Paper**: $69K+ equity, 374+ deals | **V14-ETF Paper**: $10K+, running
 - **All 4 bots running** on Windows. Cloud migration pending (decisions: provider, capital, API wallet).
 - **Full audit complete 2026-03-10**: Fixed critical DB path bug (blind top/bottom detection), added state persistence (no more phantom trades), added daily resampling (19 blind coins now have signal data)
+- **Dashboard verified accurate** as of 2026-03-10 09:18 PDT
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.
