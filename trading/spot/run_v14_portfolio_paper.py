@@ -681,16 +681,15 @@ class V14PortfolioPaperBot:
                     total_deals = len(csv_trades)
                     total_won = sum(1 for t in csv_trades if float(t.get('pnl', 0)) > 0)
                     win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
-                    # Use CSV realized PnL if it exceeds engine-reported
-                    # (covers historical trades from before a restart)
+                    # CSV is always truth for realized PnL
+                    # (engine counters drift on restart; CSV is the ledger)
                     csv_realized = sum(float(t.get('pnl', 0)) for t in csv_trades)
-                    if csv_realized > total_realized:
-                        total_realized = csv_realized
-                        # Recompute equity with CSV-based realized
-                        total_equity = self.capital + total_realized - total_fees + total_unrealized
-                        total_cash = self.capital + total_realized - total_fees - total_invested
-                        pnl_pct = ((total_equity - self.capital) / self.capital * 100
-                                    if self.capital > 0 else 0.0)
+                    total_realized = csv_realized
+                    # Recompute equity with CSV-based realized
+                    total_equity = self.capital + total_realized - total_fees + total_unrealized
+                    total_cash = self.capital + total_realized - total_fees - total_invested
+                    pnl_pct = ((total_equity - self.capital) / self.capital * 100
+                                if self.capital > 0 else 0.0)
             except Exception:
                 pass
 

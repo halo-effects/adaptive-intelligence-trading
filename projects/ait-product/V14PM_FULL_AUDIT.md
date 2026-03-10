@@ -290,3 +290,60 @@ After all fixes:
 - 22 verified trades (unchanged across restarts)
 - Top/bottom detection now has correct 2D divergence and 3D death cross data
 - 19 previously-blind coins now have daily candle data for signal computation
+
+---
+
+## 11. Post-Audit Fixes (2026-03-10, same day)
+
+### 11.1 Problem: Engine Counter Drift Across All Bots
+
+The audit fixed V14PM state persistence and phantom trades, but a broader issue was
+discovered: **all four bot runners** reported equity and realized PnL from engine
+internal counters, not from the CSV trade ledger.
+
+**Impact:** V14 Paper reported $65K realized when the CSV showed $44K. V14-ETF showed
+$8K equity (should have been $10.8K). Engine counters drift on restart because
+`restore_state()` doesn't perfectly preserve cumulative PnL.
+
+### 11.2 Fix: CSV-as-Truth for All Runners
+
+Changed `_write_status()` in all four runners to always use `trades.csv` as the
+source of realized PnL and recompute equity from ground truth:
+
+```
+equity = capital + csv_realized_pnl - fees + unrealized_pnl
+```
+
+**Files modified:**
+- `run_v14_paper.py` — added CSV realized PnL + equity recompute
+- `run_v14etf_paper.py` — same
+- `run_v14_portfolio_paper.py` — changed conditional (`if csv > engine`) to unconditional
+- `run_v14_live_aster.py` — added full CSV truth block (had none)
+
+### 11.3 Fix: Live Bot Equity from Exchange API
+
+The V14 Live bot (Aster) now computes equity from actual exchange balances:
+```
+equity = usdt_total + base_total × current_price
+```
+This accounts for positions the engine doesn't know about (e.g., after `--fresh`
+restart where old positions still exist on the exchange).
+
+### 11.4 Fix: `--fresh` Loads Existing Trades
+
+The `--fresh` startup path in V14-ETF and Live Aster did not call
+`tracker.load_existing()`. This meant the TradeTracker had 0 trades in memory,
+and the next `save_csv()` call would overwrite the CSV with an empty file,
+destroying trade history.
+
+**Fixed in:** `run_v14etf_paper.py`, `run_v14_live_aster.py`
+(V14PM already had this correct.)
+
+### 11.5 Verification
+
+After all post-audit fixes:
+- V14 Paper: $49,988 equity, $44,461 realized (matches CSV), 380 deals
+- V14-ETF: $10,834 equity, $834 realized (matches CSV), 24 deals — was showing $8K/$0
+- V14PM: $50,627 equity, $608 realized (matches CSV), 30 deals
+- V14 Live Aster: $314 equity (matches exchange balance), $1.56 realized, 1 deal
+- All CSVs verified intact after multiple restarts with `--fresh`

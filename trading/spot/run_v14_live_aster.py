@@ -1213,6 +1213,36 @@ class V14LiveBot:
         st["last_update"] = datetime.now(timezone.utc).isoformat()
         st["fear_greed_index"] = self._cfgi_market
 
+        # Read trades.csv as source of truth for deal counts AND realized PnL
+        # (engine counters drift on restart; CSV is the ledger)
+        csv_path = self.output_dir / "trades.csv"
+        if csv_path.exists():
+            try:
+                with open(csv_path, 'r') as f:
+                    reader = csv.DictReader(f)
+                    csv_trades = list(reader)
+                if csv_trades:
+                    csv_realized = sum(float(t.get('pnl', 0)) for t in csv_trades)
+                    total_deals = len(csv_trades)
+                    total_won = sum(1 for t in csv_trades if float(t.get('pnl', 0)) > 0)
+                    win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
+                    st["total_realized_pnl"] = round(csv_realized, 2)
+                    st["deals_completed"] = total_deals
+                    st["win_rate"] = round(win_rate, 1)
+            except Exception as e:
+                logger.warning("Failed to read trades.csv for status: %s", e)
+
+        # For LIVE bot: equity = actual exchange balances (API truth)
+        # Engine-computed equity drifts on restart; exchange balance is reality.
+        if st.get("exchange_balance"):
+            eb = st["exchange_balance"]
+            price = st.get("coins", {}).get(self.symbol, {}).get("current_price", 0)
+            if price > 0:
+                exchange_equity = eb["usdt_total"] + eb["base_total"] * price
+                st["equity"] = round(exchange_equity, 2)
+                st["cash"] = round(eb["usdt_total"], 2)
+                st["pnl_pct"] = round((exchange_equity - self.capital) / self.capital * 100, 2) if self.capital > 0 else 0.0
+
         path = self.output_dir / "status.json"
         tmp = path.with_suffix(".tmp")
         with open(tmp, "w") as f:
@@ -1242,6 +1272,8 @@ class V14LiveBot:
             # Fresh start: no backfill, clean state, start LONG_DCA immediately
             logger.info("Fresh start — no backfill, entering live immediately")
             self.engine._live_mode = True
+            # Load existing trades from CSV so save_csv() doesn't overwrite history
+            self.tracker.load_existing()
             send_telegram(
                 f"🆕 {TG_PREFIX} Fresh start — ${self.capital:.0f}, "
                 f"profile={self.profile}, entering live"

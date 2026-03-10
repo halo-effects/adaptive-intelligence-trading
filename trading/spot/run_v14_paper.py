@@ -879,7 +879,8 @@ class V14PaperBot:
         win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
         uptime_h = (datetime.now(timezone.utc) - self._start_time).total_seconds() / 3600
 
-        # Read trades.csv for accurate deal counts
+        # Read trades.csv as source of truth for deal counts AND realized PnL
+        # (engine counters drift on restart; CSV is the ledger)
         csv_path = self.output_dir / "trades.csv"
         if csv_path.exists():
             try:
@@ -890,6 +891,19 @@ class V14PaperBot:
                     total_deals = len(csv_trades)
                     total_won = sum(1 for t in csv_trades if float(t.get('pnl', 0)) > 0)
                     win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0.0
+                    # CSV is always truth for realized PnL
+                    csv_realized = sum(float(t.get('pnl', 0)) for t in csv_trades)
+                    total_realized = csv_realized
+                    # Recompute equity from ground truth
+                    total_unrealized = sum(
+                        coin_data.get("unrealized_pnl", 0) for coin_data in coins.values()
+                    )
+                    total_equity = self.capital + total_realized - total_fees + total_unrealized
+                    total_cash = self.capital + total_realized - total_fees - sum(
+                        coin_data.get("invested", 0) for coin_data in coins.values()
+                    )
+                    pnl_pct = ((total_equity - self.capital) / self.capital * 100
+                                if self.capital > 0 else 0.0)
             except Exception as e:
                 logger.warning("Failed to read trades.csv for deal counts: %s", e)
 

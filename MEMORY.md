@@ -33,6 +33,9 @@ The V14PM system has a defined trust chain. Respect this hierarchy:
 - **All 4 bots running** on Windows. Cloud migration pending (decisions: provider, capital, API wallet).
 - **Full audit complete 2026-03-10**: Fixed critical DB path bug (blind top/bottom detection), added state persistence (no more phantom trades), added daily resampling (19 blind coins now have signal data)
 - **Dashboard verified accurate** as of 2026-03-10 09:18 PDT
+- **CSV-as-truth fix applied** to all 4 runners (2026-03-10 10:14 PDT)
+- **Live Aster equity** now from exchange API balances, not engine counters
+- **Architecture doc v1.2, Migration doc v1.2, Audit doc §11** all updated
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.

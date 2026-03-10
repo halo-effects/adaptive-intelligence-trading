@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading — V14PM System Architecture
-_Version: 1.1 | Date: 2026-03-10 | Status: Cloud-Ready_
+_Version: 1.2 | Date: 2026-03-10 | Status: Cloud-Ready_
 
 ---
 
@@ -528,16 +528,19 @@ and state is still restored — signals will refresh on the next daily boundary.
 > for its single engine. The PM bot does NOT use `state.json` — all its state is
 > in `engine_state.json`, which covers all 10 engines, the router, and open deals.
 
-### 6.3 Equity Calculation (V14PM)
+### 6.3 Equity Calculation (All Bots)
 
-The PM runner computes equity from ground truth, not engine internals:
+**All four bot runners** compute equity from ground truth, not engine internals:
 
 ```
-Equity = Capital + Realized PnL - Fees + Unrealized PnL
+Equity = Capital + CSV Realized PnL - Fees + Unrealized PnL
 ```
 
-- **Realized PnL** is sourced from `trades.csv` (source of truth across restarts),
-  falling back to engine-reported values for the current session.
+- **Realized PnL** is **always** sourced from `trades.csv` — the CSV is the
+  single source of truth. Engine-internal PnL counters are never used for
+  status reporting. This was standardized across all runners on 2026-03-10
+  after engine counters were found to drift on restart (one bot reported
+  $65K realized when the CSV ledger showed $44K).
 - **Unrealized PnL** is summed from each engine's per-coin status.
 - **Uptime / Daily ROI** uses the earliest trade timestamp from `trades.csv`,
   not the process start time, so metrics survive restarts.
@@ -546,6 +549,39 @@ Equity = Capital + Realized PnL - Fees + Unrealized PnL
 > (via `eng.capital = max(eng.capital, new_alloc - invested)`) without updating
 > `initial_capital`. Summing engine equities + unallocated capital double-counts
 > the injected cash. The ground-truth formula avoids this entirely.
+
+> **Bug history (fixed 2026-03-10):** Prior to this fix, equity and realized PnL
+> in status.json came from engine internal counters (`eng.long_pnl + eng.short_pnl`).
+> Deal counts and win rate were overridden from CSV, but equity and realized PnL
+> were not. On restart, engine counters could reset, inflate, or drift — producing
+> incorrect dashboard numbers while the CSV remained accurate. The fix applies to
+> all four runners: `run_v14_paper.py`, `run_v14etf_paper.py`,
+> `run_v14_portfolio_paper.py`, and `run_v14_live_aster.py`.
+
+### 6.3.1 Live Bot Equity (Exchange API)
+
+The V14 Live bot (Aster) has an additional equity source: **actual exchange balances**.
+
+```
+Live Equity = USDT Balance + (Base Coins × Current Price)
+```
+
+This is fetched from the exchange API every cycle and overrides the CSV-based
+calculation. For a live bot, the exchange balance is the ultimate truth — it
+accounts for positions the engine may not know about (e.g., after a `--fresh`
+restart where the engine forgets old positions but the exchange still holds them).
+
+The exchange balance is included in status.json as `exchange_balance`:
+```json
+{
+  "exchange_balance": {
+    "usdt_free": 79.47,
+    "usdt_total": 79.47,
+    "base_free": 331.72,
+    "base_total": 331.72
+  }
+}
+```
 
 ### 6.4 Trade History Preservation
 
@@ -560,7 +596,7 @@ Equity = Capital + Realized PnL - Fees + Unrealized PnL
 | Scenario | Command | State Behavior |
 |----------|---------|----------------|
 | **Normal restart** (reboot, crash, update) | `--capital 50000 --profile high --leverage 1.0` | Loads `engine_state.json` → all engines restored with positions, phase, indicators. No candle replay. |
-| **First launch** (new account, clean start) | `--capital 50000 --profile high --leverage 1.0 --fresh` | Skips state restore. Skips candle backfill. Engines start from NOW, trading only new candles. |
+| **First launch** (new account, clean start) | `--capital 50000 --profile high --leverage 1.0 --fresh` | Skips state restore. Skips candle backfill. Engines start from NOW, trading only new candles. **Loads existing trades.csv** to preserve history and prevent CSV overwrite. |
 | **Deliberate reset** (wipe and restart) | Delete `engine_state.json` + `trades.csv`, then `--fresh` | Full clean slate. Previous trade history lost. |
 
 **On normal restart**, `engine_state.json` contains everything needed:
@@ -691,16 +727,21 @@ At midnight UTC, the PM runner:
 ### 7.4 Current Paper Performance (2026-03-10)
 
 - **Capital:** $50,000 paper
-- **Equity:** ~$50,504 (+1.01%)
-- **Realized PnL:** $505.13 | Win rate: 100% (22 deals) | Drawdown: 0.0%
-- **Active coins:** ZRO, NEAR, DOT, PENDLE, INJ, ENS, TAO, SOL, JUP, SNX (10/10 slots)
+- **Equity:** ~$50,627 (+1.25%)
+- **Realized PnL:** $608 | Win rate: 100% (30 deals) | Drawdown: 0.0%
+- **Active coins:** 10/10 slots (dynamically selected by cycle scanner)
 - **Regime:** RANGING — DCA grids cycling TPs in sideways market
-- **State persistence:** Verified — 4 restart cycles with zero phantom trades
+- **State persistence:** Verified — multiple restart cycles with zero phantom trades
 
-> **Bug history:** Earlier equity figures (~$54K) were inflated by a `_write_status()`
-> double-counting bug. 61 trades were reduced to 22 after reconciliation (41 phantom
-> trades removed). Full audit details in `PM_AUDIT_2026-03-10.md` and
-> `V14PM_FULL_AUDIT.md`.
+**Other bots (2026-03-10, CSV-truth verified):**
+- **V14 Paper:** $49,988 equity, 380 deals, 97.6% win rate (Oct 2024 – present)
+- **V14-ETF Paper:** $10,834 equity, 24 deals, 100% win rate (Mar 2 – present)
+- **V14 Live (Aster):** $314 equity on $300 capital, +4.7%, 1 deal (exchange-verified)
+
+> **Bug history:** Earlier equity figures were inflated by engine counter drift.
+> Engine-internal realized PnL could diverge from CSV on restart — one bot reported
+> $65K when the CSV showed $44K. Fixed 2026-03-10 by making all runners use CSV
+> as the sole source of realized PnL. Full audit: `V14PM_FULL_AUDIT.md`.
 
 ---
 
@@ -976,13 +1017,86 @@ matplotlib, scipy, scikit-learn, plotly  # Backtest analysis only
 | CCXT abstraction layer | Exchange-agnostic; swap Hyperliquid for any CCXT-supported exchange |
 | State persistence via `engine_state.json` | Engines restore with positions, phases, indicators on restart; eliminates phantom trades from candle replay |
 | `--fresh` for first launch only | New deployments skip history; all subsequent restarts use engine_state.json |
-| Ground-truth equity calc | `Capital + Realized - Fees + Unrealized` from trades.csv; avoids engine internal drift |
-| `load_existing()` on startup | Trade history survives restarts; CSV is source of truth for realized PnL |
+| Ground-truth equity calc | `Capital + Realized - Fees + Unrealized` from trades.csv; avoids engine internal drift. Live bot uses exchange API balances as ultimate truth. |
+| `load_existing()` on ALL startup paths | Trade history survives restarts including `--fresh`; prevents `save_csv()` from overwriting history with empty data |
 | `resample_daily.py` in hourly pipeline | Ensures all coins have daily candles for signal computation; closes gap between 1h collector and daily-dependent signal pack |
 
 ---
 
+## 16. Future Architecture: Trade Database Migration
+
+> **Status:** Planning. Triggered when scaling to multiple live accounts on a DEX.
+
+### 16.1 Why CSV Won't Scale
+
+The current `trades.csv` per-bot design works for single-instance paper/live bots.
+It breaks when scaling to multiple accounts:
+
+| Limitation | Impact |
+|-----------|--------|
+| No concurrent writes | Multiple bot instances can't safely append to the same file |
+| No querying | Slicing by account, time range, coin, or P&L requires reading the entire file |
+| No atomicity | A crash mid-write can corrupt the CSV; databases handle this natively |
+| No cross-account reconciliation | Comparing positions across accounts needs joins, not file parsing |
+| No schema enforcement | Malformed rows silently corrupt data |
+
+### 16.2 Target Architecture
+
+```
+trades.csv (per-bot)  →  trades table (shared database)
+```
+
+**Schema extension:**
+```sql
+CREATE TABLE trades (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id      TEXT NOT NULL,       -- e.g. 'paper-v14pm', 'live-hl-main'
+    deal_id         INTEGER NOT NULL,
+    symbol          TEXT NOT NULL,
+    open_time       TEXT NOT NULL,
+    close_time      TEXT NOT NULL,
+    regime          TEXT,
+    layers          INTEGER,
+    invested        REAL,
+    pnl             REAL,
+    return_pct      REAL,
+    duration_h      REAL,
+    recorded_at     TEXT,                -- wall-clock time of recording
+    UNIQUE(account_id, symbol, open_time, close_time)
+);
+```
+
+**Database choice:**
+- **SQLite** — simplest path. `candles.db` already uses it. Trades table could
+  live in the same file. Sufficient for single-server multi-account deployment.
+- **PostgreSQL** — required if multiple servers need write access to the same
+  trade ledger (e.g., cloud bot + local bot writing to central DB). Adds
+  operational complexity (backup, auth, networking).
+
+**Recommendation:** Start with SQLite (add `trades` table to `candles.db`).
+Migrate to Postgres only when multi-server writes become a requirement.
+
+### 16.3 Migration Path
+
+1. Add `trades` table to `candles.db` schema
+2. Create `TradeStore` class (read/write/query) replacing CSV file I/O
+3. Import existing CSV data into the table (one-time migration script)
+4. Update `_write_status()` to query `TradeStore` instead of reading CSV
+5. Update `TradeTracker` to write to DB instead of CSV
+6. Keep CSV export as a read-only convenience (dashboard, debugging)
+7. Add `account_id` to all trade records for multi-account isolation
+
+### 16.4 What This Enables
+
+- **Multi-account dashboard:** Single query across all accounts for total P&L
+- **Cross-account analytics:** Which account/strategy performs best on which coins
+- **Audit trail:** Immutable trade records with `recorded_at` timestamps
+- **Reconciliation queries:** Compare DB trades vs exchange order history
+- **Portfolio-level risk:** Aggregate exposure across accounts in real time
+
+---
+
 _Document generated by Gee Gee — 2026-03-09_
-_Updated: 2026-03-10 (v1.1 — state persistence, daily resampling, signal stack detail, DB path fix)_
+_Updated: 2026-03-10 (v1.2 — CSV-as-truth for all bots, exchange API equity for live bot, --fresh loads existing trades, future trade DB architecture)_
 _Next: Cloud Migration Guide (Phase 5)_
 _Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_
