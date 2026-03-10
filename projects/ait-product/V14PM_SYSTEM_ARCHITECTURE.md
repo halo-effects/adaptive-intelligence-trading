@@ -453,6 +453,46 @@ On every restart, the engine reconciles with the live exchange:
 `--skip-backfill` flag skips historical candle replay (use for restarts — state.json
 already has valid signal context).
 
+### 6.5 Engine Warmup Period
+
+On fresh starts, each `V14LifecycleEngine` requires a **warmup period** before trading:
+
+- Engines start with `_warmed_up = False`
+- During warmup: candles are accumulated and price is tracked, but **no DCA ticks fire** (no entries)
+- At the **first daily boundary** (midnight UTC): the full daily tick runs — signal pack refreshes,
+  ROUTER evaluates direction (long vs short), signals compute. `_warmed_up` flips to `True`.
+- After warmup: hourly DCA ticks run normally, entering positions based on router-directed phase
+
+**Why:** Without warmup, engines default to `LONG_DCA` and enter L1 on the first candle they see,
+before the router has evaluated whether the market direction warrants long or short. In a bear
+market, this could mean entering 10 long positions right before the router would say "go short."
+
+**Exceptions:** Engines restored from saved state (`restore_state()`) are immediately `_warmed_up = True`
+because they were already trading with established direction before the restart.
+
+### 6.6 PID Lock (Paper Trading)
+
+The PM paper runner uses a PID lock file (`bot.pid`) to prevent duplicate instances:
+
+- On startup: checks if another PM bot is running (validates PID + command line)
+- If running: exits immediately with error log
+- On shutdown: releases lock file
+- Stale locks (dead process) are automatically overwritten
+
+This prevents the scheduled task from spawning a second instance alongside a manually started bot,
+which would cause both to write phantom trades to the same `trades.csv`.
+
+### 6.7 Trade Provenance (`recorded_at`)
+
+Every trade record includes a `recorded_at` UTC timestamp — the wall-clock time when the trade
+was actually written, distinct from `close_time` (when the trade claims to have closed).
+
+- **Real trade:** `recorded_at ≈ close_time` (within minutes)
+- **Phantom trade:** `recorded_at` is hours/days after `close_time` (backfill replay)
+
+This field is the forensic backstop: even if all other safeguards fail, phantom trades can always
+be identified and removed by comparing `recorded_at` vs `close_time`.
+
 ---
 
 ## 7. V14PM Portfolio Manager
