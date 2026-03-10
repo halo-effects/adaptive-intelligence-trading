@@ -339,7 +339,16 @@ destroying trade history.
 **Fixed in:** `run_v14etf_paper.py`, `run_v14_live_aster.py`
 (V14PM already had this correct.)
 
-### 11.5 Verification
+### 11.5 Dashboard Daily ROI Fix
+
+All 4 dashboard HTML files calculated "Avg Daily ROI" using `trades[0].open_time`
+(first CSV row), assuming the CSV was sorted by date. It wasn't — unsorted CSVs
+and a corrupt trade (deal_id 27 in V14-ETF, with close_time before open_time from
+a brief candle replay) caused daily ROI to equal total ROI, producing absurd
+projections ($306 quadrillion/year). Fixed by scanning all trades for the true
+earliest open_time and latest close_time. Corrupt trade removed from CSV.
+
+### 11.6 Verification
 
 After all post-audit fixes:
 - V14 Paper: $49,988 equity, $44,461 realized (matches CSV), 380 deals
