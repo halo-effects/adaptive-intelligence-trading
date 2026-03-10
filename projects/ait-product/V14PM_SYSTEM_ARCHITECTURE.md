@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading — V14PM System Architecture
-_Version: 1.0 | Date: 2026-03-09 | Status: Cloud-Ready_
+_Version: 1.1 | Date: 2026-03-10 | Status: Cloud-Ready_
 
 ---
 
@@ -9,8 +9,9 @@ _Version: 1.0 | Date: 2026-03-09 | Status: Cloud-Ready_
 
 V14PM (V14 Portfolio Manager) is a fully automated crypto trading system built on a
 Dynamic Dollar-Cost Averaging (DCA) engine, combined with a capital rotation portfolio
-manager. It continuously scans a universe of 44+ coins, scores them by DCA cycle
-efficiency, and dynamically allocates capital toward the highest-velocity opportunities.
+manager. It continuously scans a universe of 45 coins (66 symbol pairs), scores them
+by DCA cycle efficiency, and dynamically allocates capital toward the highest-velocity
+opportunities.
 
 The system is designed for production deployment on **Hyperliquid** (perpetuals exchange),
 though the core engine is exchange-agnostic via a CCXT abstraction layer.
@@ -91,7 +92,8 @@ trading/
     ├── run_v14_scanner.py          # Manual scanner runner
     ├── run_daily_collector.py      # Manual collector runner
     │
-    ├── collect_scanner_candles.py  # Incremental 1h candle collector
+    ├── collect_scanner_candles.py  # Incremental 1h candle collector (Step 1)
+    ├── resample_daily.py           # 1h → daily OHLCV resampling (Step 1.5)
     ├── backfill_scanner_coins.py   # Historical candle backfill
     ├── backfill_etf_candles.py     # ETF coin candle backfill
     ├── generate_daily_equity.py    # Daily equity JSON for dashboards
@@ -119,44 +121,82 @@ trading/
         ├── v14/                    # V14 paper bot state
         ├── v14etf/                 # V14-ETF paper bot state
         └── v14_portfolio/          # V14PM paper bot state
+            ├── engine_state.json     # Engine snapshots (saved every 60s)
+            ├── status.json           # Health metrics (dashboard + heartbeat)
+            ├── trades.csv            # Closed trade history (source of truth)
+            ├── bot.pid               # PID lock file (prevents duplicate instances)
+            └── bot.log               # Runtime log
 ```
 
 ---
 
 ## 3. Data Pipeline
 
-### 3.1 Candle Collection
+### 3.1 Candle Collection & Daily Resampling
 
-**Entry point:** `collect_scanner_candles.py`
+**Entry point:** `run_candle_collector.ps1` (Windows) / `run_candle_collector.sh` (Linux)
 **Schedule:** Hourly via `AIT_CandleCollector` scheduled task
 **Exchange:** Hyperliquid perps (CCXT)
-**Coverage:** 44 coins, 1h timeframe, incremental (last stored timestamp forward)
+**Coverage:** 66 symbol pairs (45 base coins × USDC/USDT), 1h timeframe, incremental
 
-**Flow:**
+**Three-step hourly pipeline:**
 ```
-Hyperliquid API
+Step 1: collect_scanner_candles.py
+  Hyperliquid API
     └─ fetch_ohlcv(symbol, '1h', since=last_stored)
-         └─ INSERT INTO candles (symbol, timeframe, timestamp, open, high, low, close, volume)
-              └─ candles.db
+         └─ INSERT INTO candles (symbol, timeframe, timestamp, O/H/L/C/V)
+
+Step 1.5: resample_daily.py
+  candles (1h)
+    └─ Aggregate to daily OHLCV (floor timestamp to midnight UTC)
+         └─ INSERT OR IGNORE INTO candles_daily (symbol, date, timestamp, O/H/L/C/V, candle_count)
+
+Step 2: v14_cycle_scanner.py
+  candles_daily → V14DCAEngine backtest per coin → cycle_scanner.json
 ```
 
-After collection, `v14_cycle_scanner.py` runs automatically to refresh DCA scores.
+**Why resample?** The candle collector writes 1h candles to the `candles` table.
+The V13SignalPack (all indicators, phase detection) reads from `candles_daily`.
+Without resampling, coins that only have Hyperliquid data would have zero daily
+candles and their engines would run blind (no signals, no phase transitions).
+
+> **History note:** Before 2026-03-10, the resampling step did not exist. 19 of 45
+> coins had 1h data but zero daily candles. Their engines ran without signal packs.
+> `resample_daily.py` was created to close this gap.
 
 ### 3.2 Database — `candles.db`
 
-**Location:** `trading/spot/data/candles.db` (214 MB, SQLite)
+**Location:** `trading/spot/data/candles.db` (~225 MB, SQLite)
 **Env var override:** `AIT_CANDLES_DB`
 
-| Table | Rows | Purpose |
+> **⚠ DB Path Warning:** All files that reference `candles.db` must resolve to
+> `trading/spot/data/candles.db`. A 0-byte file at `trading/data/candles.db`
+> previously existed and caused silent failures in two modules (`_steve_3check.py`
+> and `v13_router_engine_v2.py`) where `.parent` chains resolved to the wrong path.
+> The empty file has been renamed to prevent recurrence.
+> **Recommendation:** Centralize `DB_PATH` into a single `trading/spot/config.py`
+> module, imported by all consumers. This eliminates the class of bug entirely.
+
+| Table | Rows (approx) | Purpose |
 |-------|------|---------|
-| `candles` | 1,562,313 | 1h OHLCV for 66 coins |
-| `candles_daily` | 74,289 | Aggregated daily OHLCV + 26 indicators |
+| `candles` | 1,562,000+ | 1h OHLCV for 66 symbol pairs |
+| `candles_daily` | ~99,000 | Daily OHLCV (two sources — see below) |
 | `cfgi_daily` | 23,846 | Fear & Greed Index per coin per day |
 | `signal_snapshots` | 376 | Daily signal state snapshots |
 | `phase_transitions` | 999 | Phase change events with trigger signals |
 | `scanner_results` | 438 | Historical scanner scoring runs |
 | `trades` | 21 | Closed trade records (all bots) |
 | `trade_context` | 3,782 | Per-trade signal context at entry/exit |
+
+**`candles_daily` has two data sources:**
+1. **`build_daily_candles.py`** — aggregates 1h candles AND computes 26 indicators
+   (SMA, ADX, RSI, etc.). These rows have all indicator columns populated.
+2. **`resample_daily.py`** — simple 1h → daily OHLCV aggregation only. These rows
+   have indicator columns as NULL. Used for coins added via Hyperliquid collector
+   that `build_daily_candles.py` hasn't processed yet.
+
+Both use `INSERT OR IGNORE` — they don't overwrite each other. The V13SignalPack
+computes its own indicators from the raw OHLCV, so NULL indicator columns are fine.
 
 **Core schema:**
 ```sql
@@ -168,11 +208,12 @@ candles (
     open REAL, high REAL, low REAL, close REAL, volume REAL
 )
 
--- Daily OHLCV with pre-computed indicators
+-- Daily OHLCV (may include pre-computed indicators from build_daily_candles.py)
 candles_daily (
     symbol TEXT, date TEXT, timestamp INTEGER,
     open REAL, high REAL, low REAL, close REAL, volume REAL,
     candle_count INTEGER,
+    -- Indicator columns (populated by build_daily_candles.py, NULL from resample_daily.py):
     sma20 REAL, sma50 REAL, sma200 REAL,
     bb_width REAL, bb_pct REAL,
     atr14 REAL, atr_pct REAL,
@@ -184,11 +225,22 @@ candles_daily (
 )
 ```
 
-### 3.3 Daily Indicator Rebuild
+### 3.3 Daily Data — Two Paths
 
-`daily_collector.py` (or `build_daily_candles.py` in the engine package) aggregates
-1h candles into daily OHLCV and computes all 26 indicators. Run after candle collection
-or on demand before a scanner run.
+There are two distinct processes that populate `candles_daily`:
+
+1. **`resample_daily.py`** (runs hourly in pipeline) — Simple 1h→daily OHLCV
+   aggregation. Ensures all coins have daily candles regardless of whether they've
+   been through the full indicator build. This is the **critical** path — without it,
+   coins only available on Hyperliquid have zero daily data, and their signal packs fail.
+
+2. **`build_daily_candles.py`** (engine package) — Full aggregation + 26 indicator
+   computation (SMA, ADX, RSI, etc.). Heavier operation, used for historical backfill
+   and when pre-computed indicators are needed by `candles_daily` consumers.
+
+The V13SignalPack computes its own indicators from raw daily OHLCV, so the
+`resample_daily.py` path is sufficient for live trading. The pre-computed indicators
+in `build_daily_candles.py` are primarily used by the scanner and dashboards.
 
 ---
 
@@ -282,15 +334,50 @@ All signals are computed from `candles_daily` data:
 | HybridDetector2D | `v13_router_engine_v2.py` | Composite top/bottom detection |
 | Fear & Greed | `cfgi_client.py` | Macro sentiment gating |
 
-### 4.5 ROUTER v2 — HybridDetector2D
+### 4.5 ROUTER v2 — Phase Transition Signal Stack
 
-The top/bottom detection engine used to transition between `LONG_DCA` → `ROUTER` → 
-`SHORT_DCA` phases. Combines:
-- StochRSI overbought stack (2w K ≥ 93 threshold)
-- 3-check confirmation
+The V14DCAEngine uses a layered signal stack to detect tops and bottoms for phase
+transitions between `LONG_DCA` and `SHORT_DCA`.
+
+**Top Detection (during LONG_DCA → triggers switch to SHORT_DCA):**
+
+| Layer | Signal | Action |
+|-------|--------|--------|
+| 1: Early Warning | 1W StochRSI K crosses below 97 | Start unwinding (stop new DCA entries, let TPs hit) |
+| 2: OB93 Arm | 2W StochRSI K crosses below 93 | ARM — wait for divergence confirmation |
+| 2a: Divergence | 2D RSI bearish divergence detected | CONFIRM TOP: close all longs, switch to SHORT_DCA |
+| 2b: Timeout | 35 days armed, no divergence | TIMEOUT: close all longs, switch to SHORT_DCA |
+| 2c: OB85 Fallback | 1W K crosses below 85 (only if NOT armed) | Fallback top: close longs, switch to SHORT |
+| 3: Failsafe | 1W K crosses below 50 (after 2-week wait from early warning) | Emergency exit |
+
+**Bottom Detection (during SHORT_DCA → triggers switch to LONG_DCA):**
+
+Triple-gate prerequisite (ALL must pass before conviction scoring):
+1. **Gate 1:** 3D death cross active (3D SMA50 < 3D SMA200)
+2. **Gate 2:** 2W StochRSI exhaustion lift-off (K ≥ 5 after being pinned < 5)
+3. **Gate 3:** Conviction score ≥ 3 of 4 (see HybridDetector2D)
+
+**Conviction score components:**
+- Steve's 3-Check (2D: below SMA200 + RSI<26 + StochRSI K&D<20)
+- CFGI < 35 (extreme fear)
 - HVF exhaustion signal
-- Fibonacci extension proximity
-- ADX trend confirmation
+- Fibonacci support proximity
+
+On conviction: close all shorts, switch to LONG_DCA.
+
+**Safety net (markdown failure):**
+If price rises 25%+ against the short grid with ADX > 25, force-close shorts
+and switch to LONG_DCA regardless of conviction state.
+
+**Implementation:** `HybridDetector2D` in `v13_router_engine_v2.py` computes 2D
+divergence dates and 3D death cross state from `candles_daily` data. The Steve
+3-Check detector (`_steve_3check.py`) computes 2D indicators independently.
+
+> **Bug history (fixed 2026-03-10):** `v13_router_engine_v2.py` had a wrong DB path
+> (`.parent.parent.parent` instead of `.parent.parent`), causing it to read from an
+> empty 0-byte database. This meant top detection always timed out (never detected
+> real divergences) and bottom conviction never fired (death cross gate always failed).
+> Fixed by correcting the path. See `V14PM_FULL_AUDIT.md` §2.1 for details.
 
 ---
 
@@ -383,32 +470,63 @@ At midnight UTC (daily signal evaluation):
 
 ### 6.2 State Persistence
 
-All state is written to JSON after every cycle:
+The PM bot writes two state files every cycle (~60 seconds):
 
-**`state.json`** — Complete bot position state:
+**`engine_state.json`** — Complete engine state for restart recovery (PM-specific):
 ```json
 {
-  "phase": "LONG_DCA",
-  "layers": [...],
-  "avg_entry": 0.4821,
-  "total_invested": 12340.00,
-  "last_update": "2026-03-09T10:49:42Z"
+  "version": 1,
+  "saved_at": "2026-03-10T12:56:36Z",
+  "engines": {
+    "ZRO/USDT": { /* V14LifecycleEngine.snapshot_state() output */ },
+    "NEAR/USDT": { /* ... */ }
+  },
+  "last_candle_ts": { "ZRO/USDT": 1741608000000, ... },
+  "open_deals": { /* TradeTracker in-progress trades */ },
+  "router": {
+    "active_pool_cash": 28456.12,
+    "reserve_pool_cash": 12500.00,
+    "active_allocations": { "ZRO/USDT": 3750.00, ... },
+    "reserve_allocations": {}
+  },
+  "last_rebalance_date": "2026-03-10",
+  "approved_symbols": ["DOT/USDT", "ENS/USDT", ...],
+  "current_equity": 50505.13
 }
 ```
 
-**`status.json`** — Health metrics (read by heartbeat monitor):
+Each engine snapshot includes: phase, capital, all long/short position state
+(coins, avg entry, layers, cost, TP, PnL), top detection state (early warning,
+OB93 arm, peak 2W K, unwinding), bottom detection state (conviction, top_detected),
+cycle tracking (markup cycles, ADX streak), router routing flags, and wrapper
+state (last daily date, live mode flag, last candle timestamp, warmup status).
+
+On startup, `_load_state()` reconstructs all engines from this file. If the signal
+pack fails to load for a coin (e.g., missing daily data), a bare engine is created
+and state is still restored — signals will refresh on the next daily boundary.
+
+**`status.json`** — Health metrics (read by heartbeat monitor and dashboard):
 ```json
 {
   "running": true,
-  "symbol": "ASTER/USDT",
-  "phase": "LONG_DCA",
-  "layer_count": 4,
-  "total_invested": 312.32,
-  "unrealized_pnl_pct": -2.83,
-  "max_drawdown_pct": 2.83,
-  "last_update": "2026-03-09T10:49:42Z"
+  "mode": "paper",
+  "engine": "v14",
+  "profile": "high",
+  "leverage": 1.0,
+  "exchange": "hyperliquid",
+  "capital": 50000,
+  "equity": 50505.13,
+  "total_realized_pnl": 505.13,
+  "deals_completed": 22,
+  "win_rate": 100.0,
+  "coins": { "ZRO/USDT": {...}, "NEAR/USDT": {...}, ... },
+  "last_update": "2026-03-10T12:56:36Z"
 }
 ```
+
+> **Single-bot state.json:** The V14 Live bot (Aster) uses a simpler `state.json`
+> for its single engine. The PM bot does NOT use `state.json` — all its state is
+> in `engine_state.json`, which covers all 10 engines, the router, and open deals.
 
 ### 6.3 Equity Calculation (V14PM)
 
@@ -435,25 +553,42 @@ Equity = Capital + Realized PnL - Fees + Unrealized PnL
 `trades.csv` into memory. This ensures:
 - Deal counts and win rates include all historical trades
 - Realized PnL reflects cumulative performance, not just the current session
-- `save_csv()` appends new trades without overwriting history
+- `save_csv()` writes all trades (loaded + new) without losing history
 
-**Important:** Do not use `--fresh` on restarts — it skips candle backfill (correct)
-but also creates fresh engines that lose position state. Use `--skip-backfill` instead
-for the live bot. The PM scheduled task omits `--fresh`.
+### 6.4.1 `--fresh` vs Normal Restart
 
-### 6.5 Startup Reconciliation
+| Scenario | Command | State Behavior |
+|----------|---------|----------------|
+| **Normal restart** (reboot, crash, update) | `--capital 50000 --profile high --leverage 1.0` | Loads `engine_state.json` → all engines restored with positions, phase, indicators. No candle replay. |
+| **First launch** (new account, clean start) | `--capital 50000 --profile high --leverage 1.0 --fresh` | Skips state restore. Skips candle backfill. Engines start from NOW, trading only new candles. |
+| **Deliberate reset** (wipe and restart) | Delete `engine_state.json` + `trades.csv`, then `--fresh` | Full clean slate. Previous trade history lost. |
 
-On every restart, the engine reconciles with the live exchange:
-1. Load `state.json` (restored position state)
-2. Fetch real balances from exchange
-3. Compare engine state vs. exchange state
-4. Log drift; abort if drift exceeds threshold ($5 default)
-5. Enter trading loop
+**On normal restart**, `engine_state.json` contains everything needed:
+- Engine positions, phases, and signal state
+- Router pool cash and allocations
+- Last processed candle timestamps (no replay)
+- Open deals (in-progress trades)
 
-`--skip-backfill` flag skips historical candle replay (use for restarts — state.json
-already has valid signal context).
+**`--fresh` is ONLY for first launch.** The PM scheduled task does NOT use `--fresh`.
 
-### 6.5 Engine Warmup Period
+### 6.5 PM Startup Sequence
+
+On every PM bot restart:
+1. Acquire PID lock (`bot.pid`) — exit if another instance is running
+2. Load trade history from `trades.csv` (`TradeTracker.load_existing()`)
+3. If `--fresh`: skip state restore, proceed to step 5
+4. **State restore:** Load `engine_state.json` → reconstruct all engines with
+   positions, phases, indicators, last candle timestamps. Restore router state
+   (pool cash, allocations). Restore open deals.
+5. Run initial rebalance (`_check_and_rebalance()`) — if engines were restored,
+   this updates allocations; if fresh start, this creates new engines.
+6. Enter live trading loop
+
+> **Live bot startup (future):** Will add exchange balance reconciliation after step 4.
+> Compare engine state vs. real balances, log drift, abort if drift exceeds threshold.
+> Paper bots skip this since they don't interact with real exchange positions.
+
+### 6.5.1 Engine Warmup Period
 
 On fresh starts, each `V14LifecycleEngine` requires a **warmup period** before trading:
 
@@ -467,7 +602,7 @@ On fresh starts, each `V14LifecycleEngine` requires a **warmup period** before t
 before the router has evaluated whether the market direction warrants long or short. In a bear
 market, this could mean entering 10 long positions right before the router would say "go short."
 
-**Exceptions:** Engines restored from saved state (`restore_state()`) are immediately `_warmed_up = True`
+**Exceptions:** Engines restored from `engine_state.json` are immediately `_warmed_up = True`
 because they were already trading with established direction before the restart.
 
 ### 6.6 PID Lock (Paper Trading)
@@ -553,18 +688,19 @@ At midnight UTC, the PM runner:
 6. Identifies new entrants above hurdle
 7. Adjusts allocations proportionally
 
-### 7.4 Current Paper Performance (2026-03-09, corrected)
+### 7.4 Current Paper Performance (2026-03-10)
 
 - **Capital:** $50,000 paper
-- **Equity:** ~$50,480 (+0.96%)
-- **Realized PnL:** $479.65 | Win rate: 100% (20 deals) | Drawdown: 0.0%
-- **Active coins:** ZRO, NEAR, DOT, PENDLE, INJ, ENS, TAO, HYPE, JUP, SNX (10/10 slots)
+- **Equity:** ~$50,504 (+1.01%)
+- **Realized PnL:** $505.13 | Win rate: 100% (22 deals) | Drawdown: 0.0%
+- **Active coins:** ZRO, NEAR, DOT, PENDLE, INJ, ENS, TAO, SOL, JUP, SNX (10/10 slots)
 - **Regime:** RANGING — DCA grids cycling TPs in sideways market
-- **Daily ROI:** ~0.39%
+- **State persistence:** Verified — 4 restart cycles with zero phantom trades
 
-> **Note:** Earlier equity figures (~$54K) were inflated by a bug in `_write_status()` that
-> double-counted capital when daily rebalance increased engine allocations. Fixed 2026-03-08.
-> See CODE_AUDIT_FINDINGS.md §C2 for the related `_steve_3check.py` DB path bug.
+> **Bug history:** Earlier equity figures (~$54K) were inflated by a `_write_status()`
+> double-counting bug. 61 trades were reduced to 22 after reconciliation (41 phantom
+> trades removed). Full audit details in `PM_AUDIT_2026-03-10.md` and
+> `V14PM_FULL_AUDIT.md`.
 
 ---
 
@@ -676,7 +812,7 @@ All tasks run as the current user. Working directory: `C:\Users\Never\.openclaw\
 | `V14LiveAster` | At boot | `run_v14_live_aster.py --confirm --skip-backfill` | V14 live bot |
 | `V14PaperBot` | At boot | `run_v14_paper.py` | V14 paper bot |
 | `V14ETFPaperBot` | At boot | `run_v14etf_paper.py` | V14-ETF paper bot |
-| `V14PMPaperBot` | At logon | `run_v14_portfolio_paper.py` | V14PM paper bot (no `--fresh`) |
+| `V14PMPaperBot` | At logon | `run_v14_portfolio_paper.py --capital 50000 --profile high --leverage 1.0` | V14PM paper bot (state restored from `engine_state.json`) |
 | `V14CycleScanner` | Daily | `v14_cycle_scanner.py` | DCA score refresh |
 | `AIT_CandleCollector` | Hourly | `run_candle_collector.ps1` | Candle + scanner pipeline |
 | `AIT_DashboardSync` | Every 10 min | `sync_dashboard_silent.vbs` | Push data to GitHub Pages |
@@ -752,12 +888,21 @@ be set explicitly in the systemd service environment or `.env` file.
 
 ### V14PM Paper Bot
 ```bash
+# Normal start (restart, reboot, crash recovery):
+python -u -m trading.spot.run_v14_portfolio_paper \
+  --capital 50000 \
+  --profile high \
+  --leverage 1.0
+# Restores engine state from engine_state.json — no candle replay, no phantom trades.
+
+# First launch ONLY (new account, clean start):
 python -u -m trading.spot.run_v14_portfolio_paper \
   --capital 50000 \
   --profile high \
   --leverage 1.0 \
-  --exchange hyperliquid \
-  # --fresh         # First launch ONLY — skips backfill. OMIT on restarts (preserves trade history)
+  --fresh
+# Skips state restore and candle backfill. Engines start trading from NOW only.
+# After first cycle, engine_state.json is saved — subsequent restarts don't need --fresh.
 ```
 
 ### V14PM Live Bot (production)
@@ -829,11 +974,15 @@ matplotlib, scipy, scikit-learn, plotly  # Backtest analysis only
 | Trend multiplier [0.3, 1.5] | Momentum bias without abandoning mean-reversion; bounded to prevent extremes |
 | SQLite for candles.db | Zero-dependency, portable, sufficient for 1.5M rows at current scale |
 | CCXT abstraction layer | Exchange-agnostic; swap Hyperliquid for any CCXT-supported exchange |
-| `--skip-backfill` on restart | State.json already warm; avoids unnecessary API calls on reconnect |
+| State persistence via `engine_state.json` | Engines restore with positions, phases, indicators on restart; eliminates phantom trades from candle replay |
+| `--fresh` for first launch only | New deployments skip history; all subsequent restarts use engine_state.json |
 | Ground-truth equity calc | `Capital + Realized - Fees + Unrealized` from trades.csv; avoids engine internal drift |
 | `load_existing()` on startup | Trade history survives restarts; CSV is source of truth for realized PnL |
+| `resample_daily.py` in hourly pipeline | Ensures all coins have daily candles for signal computation; closes gap between 1h collector and daily-dependent signal pack |
 
 ---
 
 _Document generated by Gee Gee — 2026-03-09_
+_Updated: 2026-03-10 (v1.1 — state persistence, daily resampling, signal stack detail, DB path fix)_
 _Next: Cloud Migration Guide (Phase 5)_
+_Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_

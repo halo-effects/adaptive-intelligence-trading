@@ -33,6 +33,21 @@ try {
     Log "ERROR: Candle collector failed: $_"
 }
 
+# Step 1.5: Resample 1h → daily candles
+Log "Step 1.5: Resampling hourly to daily..."
+try {
+    $output = & $pythonExe -u "$workDir\trading\spot\resample_daily.py" 2>&1
+    $exitCode = $LASTEXITCODE
+    foreach ($line in $output) { Log "  $line" }
+    if ($exitCode -ne 0) {
+        Log "WARNING: Daily resample exited with code $exitCode"
+    } else {
+        Log "Step 1.5 complete."
+    }
+} catch {
+    Log "ERROR: Daily resample failed: $_"
+}
+
 # Step 2: Run DCA Scanner
 Log "Step 2: Running DCA Cycle Scanner..."
 try {

@@ -44,7 +44,7 @@ from ._steve_3check import Steve3CheckDetector
 import sqlite3
 
 # Use AIT_CANDLES_DB env var if set; fall back to default
-_default_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'candles.db'
+_default_path = Path(__file__).resolve().parent.parent / 'data' / 'candles.db'
 DB_PATH = Path(os.environ.get('AIT_CANDLES_DB', str(_default_path)))
 
 

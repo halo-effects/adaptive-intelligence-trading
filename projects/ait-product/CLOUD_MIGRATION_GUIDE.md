@@ -1,6 +1,6 @@
 # Adaptive Intelligence Trading — Cloud Migration Guide
 _V14PM Live Trading Deployment_
-_Version: 1.0 | Date: 2026-03-09 | Status: Draft — Pending Decisions_
+_Version: 1.1 | Date: 2026-03-10 | Status: Draft — Pending Decisions_
 
 **Reference:** See `V14PM_SYSTEM_ARCHITECTURE.md` for full system internals.
 
@@ -249,11 +249,17 @@ All 8 imports must pass before proceeding.
 > of `run_v14_portfolio_paper.py` with real order execution enabled.
 
 **To create it:** Copy `run_v14_portfolio_paper.py` as the starting point and:
-1. Remove paper-mode simulation logic
+1. Remove paper-mode simulation logic (TradeTracker is replaced by exchange fills)
 2. Enable `SpotExchangeClient` with `paper=False`
-3. Add `--confirm` flag requirement (safety gate)
-4. Add extra logging for real order fills
+3. Add `--confirm` flag requirement (safety gate — refuses to trade without it)
+4. Add extra logging for real order fills (price, amount, exchange order ID)
 5. Write a `--dry-run` mode that validates connectivity without placing orders
+6. **Keep state persistence** (`_save_state` / `_load_state` / `engine_state.json`) —
+   this is critical for restart recovery on the cloud server
+7. Add exchange balance reconciliation on startup — compare engine positions
+   vs real Hyperliquid positions, log drift, abort if mismatch > threshold
+8. PID lock is **not needed** — systemd guarantees single instance.
+   Remove the `_acquire_pid_lock()` / `_release_pid_lock()` code.
 
 This step is a development task — flag for completion before cutover.
 
@@ -289,18 +295,43 @@ source .venv/bin/activate
 python -c "
 import sqlite3
 conn = sqlite3.connect('trading/spot/data/candles.db')
-rows = conn.execute('SELECT COUNT(*) FROM candles').fetchone()[0]
+hourly = conn.execute('SELECT COUNT(*) FROM candles').fetchone()[0]
 daily = conn.execute('SELECT COUNT(*) FROM candles_daily').fetchone()[0]
-print(f'candles rows: {rows:,}')
-print(f'candles_daily rows: {daily:,}')
+hourly_coins = conn.execute(\"SELECT COUNT(DISTINCT symbol) FROM candles WHERE timeframe='1h'\").fetchone()[0]
+daily_coins = conn.execute('SELECT COUNT(DISTINCT symbol) FROM candles_daily').fetchone()[0]
+print(f'candles (1h): {hourly:,} rows, {hourly_coins} symbols')
+print(f'candles_daily: {daily:,} rows, {daily_coins} symbols')
+# Check for coins with 1h data but no daily data
+hourly_bases = set(r[0].split('/')[0] for r in conn.execute(\"SELECT DISTINCT symbol FROM candles WHERE timeframe='1h'\").fetchall())
+daily_bases = set(r[0].split('/')[0] for r in conn.execute('SELECT DISTINCT symbol FROM candles_daily').fetchall())
+missing = hourly_bases - daily_bases
+if missing:
+    print(f'WARNING: {len(missing)} coins have 1h but NO daily: {sorted(missing)}')
+    print('Run: python trading/spot/resample_daily.py')
+else:
+    print('All hourly coins have daily data ✓')
 conn.close()
-print('DB integrity OK')
 "
 ```
 
-Expected: 1,500,000+ candle rows, 70,000+ daily rows.
+Expected: 1,500,000+ candle rows, 90,000+ daily rows, zero missing coins.
+If any coins are missing daily data, run `resample_daily.py` (see §6.3).
 
-### 6.3 Set DB Environment Variable
+### 6.3 Ensure Daily Candles Are Complete
+
+After copying `candles.db`, run the daily resampler to ensure all coins have daily data:
+
+```bash
+cd /home/ait/ait && source .venv/bin/activate
+python trading/spot/resample_daily.py
+```
+
+This aggregates 1h candles → daily OHLCV for any coins that are missing daily data.
+The V13SignalPack (which computes all indicators for phase detection) requires daily
+candles. Without this step, engines for coins only available on Hyperliquid would run
+without signal packs — no phase transitions, no top/bottom detection.
+
+### 6.4 Set DB Environment Variable
 
 The bot resolves candles.db via `AIT_CANDLES_DB` (see Section 7). Set this to the
 absolute path on the cloud server.
@@ -396,6 +427,9 @@ ExecStart=/home/ait/ait/.venv/bin/python -u -m trading.spot.run_v14_portfolio_li
     --leverage 1.0 \
     --exchange hyperliquid \
     --confirm
+# State persistence: on restart, the bot loads engine_state.json automatically.
+# --fresh is NOT included here — it's only for the very first launch.
+# For first launch: manually run with --fresh (see Section 11.3).
 Restart=on-failure
 RestartSec=30s
 StandardOutput=append:/var/log/ait/v14pm.log
@@ -427,6 +461,11 @@ ExecStart=/bin/bash /home/ait/ait/trading/spot/run_candle_collector.sh
 StandardOutput=append:/var/log/ait/collector.log
 StandardError=append:/var/log/ait/collector.log
 ```
+
+> **Important:** `run_candle_collector.sh` must include the daily resample step.
+> The pipeline is: (1) collect 1h candles, (1.5) resample to daily, (2) run scanner.
+> See the Windows version (`run_candle_collector.ps1`) for the exact 3-step sequence.
+> The Linux script should call `python trading/spot/resample_daily.py` between steps 1 and 2.
 
 ```bash
 sudo nano /etc/systemd/system/ait-candle-collector.timer
@@ -628,7 +667,8 @@ Complete every item in order. Do not proceed to Section 11 until all pass.
 
 ### 10.2 Data
 - [ ] `candles.db` transferred and verified (1.5M+ rows)
-- [ ] `candles_daily` has rows (run `build_daily_candles.py` if empty)
+- [ ] `candles_daily` has rows for ALL scanner coins (run `resample_daily.py` after transfer)
+- [ ] Zero coins have 1h data but missing daily data (verify with §6.2 check script)
 - [ ] Candle collector runs successfully: `bash trading/spot/run_candle_collector.sh`
 - [ ] `docs/data/v14/cycle_scanner.json` exists and has rankings
 - [ ] Score history backfilled (`--backfill-history 7`) — trend multipliers require ≥3 snapshots
@@ -699,8 +739,25 @@ Choose a time when:
 
 ### 11.3 Start the Bot
 
+**First launch (one time only):**
 ```bash
-# Start the systemd service (do NOT use --fresh on subsequent restarts)
+# Manual first launch with --fresh to avoid processing historical candles:
+cd /home/ait/ait && source .venv/bin/activate
+python -u -m trading.spot.run_v14_portfolio_live \
+  --capital [INITIAL_CAPITAL] --profile high --leverage 1.0 \
+  --exchange hyperliquid --confirm --fresh
+
+# Wait for first status cycle (~60 seconds) to confirm engine_state.json is written:
+ls -la trading/spot/live/v14pm/engine_state.json
+
+# Once confirmed working, stop the manual run (Ctrl+C) and enable systemd:
+sudo systemctl start ait-v14pm.service
+```
+
+**Subsequent restarts (systemd handles automatically):**
+```bash
+# Systemd service does NOT use --fresh. On restart, the bot loads engine_state.json
+# and resumes from where it left off — no candle replay, no phantom trades.
 sudo systemctl start ait-v14pm.service
 
 # Follow logs live
@@ -777,8 +834,10 @@ git pull origin main
 sudo systemctl restart ait-v14pm
 ```
 
-**Safety:** The bot gracefully handles restarts — state.json preserves position state.
-Always use `--skip-backfill` behavior (the runner handles this automatically on restart).
+**Safety:** The bot gracefully handles restarts — `engine_state.json` preserves all
+engine positions, phases, signal state, and router allocations. On restart, the bot
+loads this file and resumes from the last processed candle. No `--fresh` or
+`--skip-backfill` flags needed.
 
 ### 12.3 Database Maintenance
 
@@ -866,9 +925,9 @@ python -u trading/spot/backfill_scanner_coins.py --coins NEW/USDT
 │   │   ├── data/candles.db             ← Migrated from Windows
 │   │   └── live/v14pm/
 │   │       ├── .env                    ← Credentials (NOT in git)
-│   │       ├── state.json              ← Bot position state
-│   │       ├── status.json             ← Health metrics
-│   │       └── trades.csv             ← Closed trade history
+│   │       ├── engine_state.json       ← Full engine state (saved every 60s, restored on restart)
+│   │       ├── status.json             ← Health metrics (dashboard + heartbeat)
+│   │       └── trades.csv              ← Closed trade history (source of truth for PnL)
 │   └── requirements.txt
 ├── docs/                               ← Dashboard data (synced to GitHub Pages)
 └── sync_dashboard.sh                   ← Linux dashboard sync
@@ -881,17 +940,20 @@ python -u trading/spot/backfill_scanner_coins.py --coins NEW/USDT
 
 ## Appendix B: Open Items (must complete before cutover)
 
-| Item | Owner | Notes |
-|------|-------|-------|
-| Create `run_v14_portfolio_live.py` | Engineering | Copy paper runner, enable real orders, add `--confirm` and `--dry-run` flags |
-| Create `sync_dashboard.sh` as git-committed file | Engineering | Template in Section 9.1 above |
-| Set up GitHub deploy key on cloud server | Ops | For dashboard sync push access |
-| Decide initial live capital | Brett | D3 — determines coin cap tier at launch |
-| Create Hyperliquid API wallet | Brett | D4 — must be done before deployment |
-| Choose cloud provider + region | Brett | D1, D2, D5 |
+| Item | Owner | Status | Notes |
+|------|-------|--------|-------|
+| Create `run_v14_portfolio_live.py` | Engineering | PENDING | Copy paper runner, enable real orders, add `--confirm`/`--dry-run`, keep state persistence, add exchange reconciliation, remove PID lock |
+| Create `run_candle_collector.sh` (Linux) | Engineering | PENDING | Must include 3-step pipeline: collect → resample_daily → scanner. Template the Windows `.ps1` version. |
+| Create `sync_dashboard.sh` as git-committed file | Engineering | PENDING | Template in Section 9.1 above |
+| Centralize `DB_PATH` into `trading/spot/config.py` | Engineering | RECOMMENDED | 6 files independently define DB_PATH. Two had wrong paths. Single import eliminates this bug class. |
+| Set up GitHub deploy key on cloud server | Ops | PENDING | For dashboard sync push access |
+| Decide initial live capital | Brett | PENDING | D3 — determines coin cap tier at launch |
+| Create Hyperliquid API wallet | Brett | PENDING | D4 — must be done before deployment |
+| Choose cloud provider + region | Brett | PENDING | D1, D2, D5 |
 
 ---
 
 _Document generated by Gee Gee — 2026-03-09_
-_Architecture reference: `V14PM_SYSTEM_ARCHITECTURE.md`_
-_Previous: `CODE_AUDIT_FINDINGS.md` | `MIGRATION_PROJECT_PLAN.md`_
+_Updated: 2026-03-10 (v1.1 — state persistence, daily resampling, first-launch procedure)_
+_Architecture reference: `V14PM_SYSTEM_ARCHITECTURE.md` (v1.1)_
+_Audit trail: `V14PM_FULL_AUDIT.md`, `PM_AUDIT_2026-03-10.md`_

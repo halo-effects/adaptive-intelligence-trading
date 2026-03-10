@@ -9,6 +9,9 @@ _Date: 2026-03-09 | Auditor: Gee Gee_
 |----------|-------|--------|
 | 🔴 Critical (breaks on Linux) | 1 | Fix required |
 | 🔴 Critical (crashes all bots) | 1 | ✅ Fixed 2026-03-09 |
+| 🔴 Critical (blind signal stack) | 1 | ✅ Fixed 2026-03-10 |
+| 🔴 Critical (phantom trades) | 1 | ✅ Fixed 2026-03-10 |
+| 🔴 Critical (missing daily data) | 1 | ✅ Fixed 2026-03-10 |
 | 🟠 High (cloud migration blocker) | 3 | Fix required |
 | 🟡 Medium (inconsistency / cosmetic) | 3 | Fix recommended |
 | 🟢 Low / Not an issue | 5 | Document only |
@@ -37,6 +40,41 @@ silently crashing the Live, PM, and ETF bots repeatedly since at least March 3.
 the relative path assumed it was one level higher.
 **Fix applied 2026-03-09:** Changed `.parent.parent.parent` to `.parent.parent`.
 Also covered by H1 fix (`AIT_CANDLES_DB` env var standardization).
+
+### C3 — `v13_router_engine_v2.py` wrong DB path (3 parents instead of 2) — ✅ FIXED
+**File:** `trading/spot/engine/v13_router_engine_v2.py`, line 47
+**Issue:** Same bug as C2. `.parent.parent.parent` resolved to `trading/data/candles.db` (0 bytes)
+instead of `trading/spot/data/candles.db` (214 MB).
+**Impact:** The `HybridDetector2D` class — which computes 2D RSI divergence dates for top detection
+and 3D SMA death cross for bottom conviction — was reading from an empty database. This caused:
+- `compute_2d_divergence_dates()` always returned empty set → OB93 top detection always timed out
+  at 35 days instead of detecting actual divergences
+- `_compute_2d_death_cross()` returned None → bottom conviction gate 1 always failed → no
+  conviction-based bottom reversals were ever detected
+- All engines in ALL bots were affected (V14 Paper, V14-ETF, V14 Live, V14PM)
+**Fix applied 2026-03-10:** Changed `.parent.parent.parent` to `.parent.parent`.
+**See:** `V14PM_FULL_AUDIT.md` §2.1 for full analysis.
+
+### C4 — No engine state persistence → phantom trades on restart — ✅ FIXED
+**File:** `trading/spot/run_v14_portfolio_paper.py`
+**Issue:** `V14LifecycleEngine` has `snapshot_state()` / `restore_state()` methods but the PM
+runner never called them. Every restart created blank engines that replayed 200 candles of
+history as if they were new, generating phantom trades. 41 phantom trades were generated across
+multiple restarts before the root cause was identified.
+**Fix applied 2026-03-10:** Added `_save_state()` (writes `engine_state.json` every 60s) and
+`_load_state()` (restores on startup). Tested 4 consecutive kill-restart cycles with zero
+phantom trades. `--fresh` no longer needed for normal restarts (only for first launch).
+**See:** `PM_AUDIT_2026-03-10.md` for full analysis.
+
+### C5 — Missing daily candle resampling pipeline — ✅ FIXED
+**Issue:** `collect_scanner_candles.py` writes 1h candles to `candles` table. `V13SignalPack`
+reads from `candles_daily`. There was NO code to bridge the gap. 19 of 45 scanner coins had
+zero daily candles — their engines ran without signal packs (no phase transitions, no top/bottom
+detection).
+**Fix applied 2026-03-10:** Created `resample_daily.py` (1h → daily OHLCV aggregation), wired
+into hourly pipeline as Step 1.5 in `run_candle_collector.ps1`. First run inserted 24,995 daily
+candles for 24 symbols.
+**See:** `V14PM_FULL_AUDIT.md` §2.2 for full analysis.
 
 ---
 
