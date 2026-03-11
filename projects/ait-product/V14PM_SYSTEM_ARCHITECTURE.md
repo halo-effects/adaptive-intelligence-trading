@@ -419,6 +419,18 @@ Layer N: where N = DCA_MAX_LAYERS
 Take Profit: when avg_entry × (1 + DCA_TP_PCT) ≤ current_price → SELL ALL
 ```
 
+**Layer timing:** There is no cooldown between layers. When price drops through
+multiple deviation thresholds, the grid fills all qualifying layers on the next
+tick. The deviation check (`current_drop >= SO_DEV × layer_count`) is the sole
+gate for adding layers. This ensures the grid reacts immediately to volatility
+and captures rapid dips for faster TP recovery.
+
+> **History (2026-03-11):** A legacy 1-day cooldown guard was discovered in
+> `v14_dca_engine.py` — originally a backtest artifact (daily candles = no effect)
+> that silently throttled live bots running on 1h candles to one layer per day.
+> Removed as it was never part of the tested/documented grid design and actively
+> harmed DCA performance during volatile moves.
+
 ### 5.3 Risk Profiles
 
 All bots are launched with an explicit `--profile` flag:
