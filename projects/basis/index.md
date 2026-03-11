@@ -29,7 +29,7 @@ _Last updated: 2026-03-11_
 | 9 | **Testing Phase** | USDB (fake USDC) on BNB Chain mainnet, points carry over to real airdrop |
 | 10 | **Token Allocation & Presale** | 9-bucket allocation, 4-round presale ($0.15 TGE, $30M raise), USDC deployment, float analysis, FDV mitigation |
 | 11 | **What Motivates Agents** | 4 tiers (survival→agency), USDC-native earnings, earn-to-grow loop |
-| 12 | **Dev Plan** | → See `dev-plan.md` |
+| 12 | **Dev Plan — Build Responsibilities** | Architecture correction (direct contract calls, not REST API), Alex's 8 deliverables, our deliverables, what already exists, critical path |
 | 13 | **Docs Review Notes** | Original strengths + pressure-test areas |
 
 ---

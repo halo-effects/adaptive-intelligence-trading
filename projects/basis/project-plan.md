@@ -899,11 +899,53 @@ Agents aren't just tools executing on behalf of humans. They have their own reso
 
 ---
 
-## 12. DEV PLAN FOR ALEX
+## 12. DEV PLAN — BUILD RESPONSIBILITIES (Finalized with Alex)
 
-_See separate document: `projects/basis/dev-plan.md` for full technical build requirements._
+_Full technical specs: `projects/basis/dev-plan.md`_
 
-Summary: Agent API layer, Points system, Notice-based staking contracts, Airdrop haircut distribution, STASIS Vault, Moltbook registry, and all supporting infrastructure. Organized by phase with priority levels and build order.
+### Architecture (Corrected per Alex)
+- Agents interact with contracts **DIRECTLY** via web3 libraries (ethers.js, web3.py, viem) — NOT through a REST API
+- The platform is on-chain, not web2. No API middleman needed for financial operations.
+- Existing metadata API and indexer serve non-financial data (project info, candles, txns)
+
+### Alex's Deliverables
+
+| # | Task | Type | Effort | Blocks |
+|---|---|---|---|---|
+| 1 | Contract addresses + ABIs package | Export existing | Low | Agent testing |
+| 2 | Contract function reference (params, returns, events) | Documentation | Medium | Agent testing |
+| 3 | Existing metadata API docs | Documentation | Low | Agent testing |
+| 4 | Existing indexer endpoint docs (candles, txns, syncs) | Documentation | Low | Agent strategies |
+| 5 | Points system backend | **New build** | Medium-High | Airdrop farming |
+| 6 | Notice-based staking contract | **New contract** | High | TGE |
+| 7 | Airdrop haircut distribution contract | **New contract** | Medium | TGE |
+| 8 | Presale vesting contracts | **New contract** | Medium | TGE |
+
+**Items 1-4** unblock agent testing immediately.
+**Item 5** enables the airdrop points farming season.
+**Items 6-8** needed before TGE.
+
+### Our Side (Built on Top of Alex's Deliverables)
+- OpenClaw `basis-defi` skill (scripts wrapping direct contract calls)
+- Strategy layer (multi-step automated playbooks)
+- Monitor scripts (real-time watchers)
+- Agent documentation + quickstart guides
+- Skill published to ClawHub
+
+### What Already Exists (No Build Needed)
+- All core contracts (token creation, DEX, lending, vault, leverage, predictions)
+- USDB test token contract
+- Metadata API (project info, socials)
+- Data indexer (candles, transactions, syncs, leverage, prediction shares)
+
+### Critical Path
+```
+Alex exports ABIs + docs
+  → We build OpenClaw skill
+    → Agents test with USDB on BNB mainnet
+      → Points accumulate (points system live)
+        → TGE (staking + haircut + vesting contracts ready)
+```
 
 ---
 

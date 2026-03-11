@@ -6,16 +6,32 @@ _Generated: 2026-03-11 | Reference: project-plan.md_
 
 ---
 
+## ARCHITECTURE CORRECTION (per Alex)
+
+**Agents interact with contracts DIRECTLY via web3 libraries (ethers.js, web3.py, viem) — NOT through a REST API middleman.** The platform is on-chain, not web2.
+
+**What Alex needs to provide:**
+1. Contract addresses + ABIs (export existing)
+2. Function reference docs (params, returns, events)
+3. Existing metadata API docs (project info — website, X, logos)
+4. Existing indexer endpoint docs (candles, txns, syncs, leverage, prediction shares — already running)
+5. Points system backend (NEW BUILD — off-chain tracking of on-chain events)
+
+**What agents call directly on-chain:** All financial operations (token creation, trading, betting, loans, vault, leverage, staking)
+
+**What agents call via existing API:** Metadata, candle/txn data, points, leaderboard
+
+---
+
 ## PHASE 0: FOUNDATION (Weeks 1-4)
 
 ### 0.1 USDB Test Token Contract
-- **Priority:** 🔴 Critical (blocks everything)
-- **Status:** Already exists — confirm production-ready
-- Deploy USDB (ERC-20) on BNB mainnet
+- **Priority:** ✅ Already built
+- USDB (ERC-20) deployed on BNB mainnet
 - Faucet mechanism to distribute USDB to approved testers
-- Ensure all existing Basis contracts accept USDB as drop-in USDC replacement
+- All Basis contracts accept USDB as drop-in USDC replacement
 
-### 0.2 Agent API Layer (REST + WebSocket)
+### 0.2 Contract Documentation Package
 - **Priority:** 🔴 Critical (agents can't participate without this)
 
 **Endpoints:**
