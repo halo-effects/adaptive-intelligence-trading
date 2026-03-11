@@ -373,9 +373,6 @@ class V14DCAEngine:
 
         if self.long_layers >= cfg.DCA_MAX_LAYERS:
             return
-        if self.long_last_buy and (date - self.long_last_buy).days < 1:
-            return
-
         should_buy = False
         if self.long_layers == 0:
             should_buy = True
@@ -480,9 +477,6 @@ class V14DCAEngine:
 
         if self.short_layers >= cfg.DCA_MAX_LAYERS:
             return
-        if self.short_last_sell and (date - self.short_last_sell).days < 1:
-            return
-
         should_sell = False
         if self.short_layers == 0:
             should_sell = True
