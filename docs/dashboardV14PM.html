@@ -1159,7 +1159,7 @@ function renderFlowDiagram(){
 
   var h='';
   rowData.forEach(function(rd){
-    var phaseHtml=rd.phase==='--'?'<span class="phase-pill" style="background:rgba(99,102,241,.1);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Scanner</span>':'<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[rd.phase]||'var(--text3)')+'"></span>'+rd.phase.replace('_',' ')+'</span>';
+    var phaseHtml=rd.phase==='--'?'<span class="phase-pill" style="background:rgba(99,102,241,.1);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Watchlist</span>':'<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[rd.phase]||'var(--text3)')+'"></span>'+rd.phase.replace('_',' ')+'</span>';
 
     var g=dcaGrade(rd.dcaScore);
     var scoreHtml=rd.dcaScore!=null?'<span style="font-weight:800;font-size:1.05rem;color:'+scoreColor(rd.dcaScore)+'">'+rd.dcaScore.toFixed(1)+'</span> <span style="font-size:.7rem;color:'+g.color+'">'+g.letter+'</span>':'<span style="color:var(--text3)">--</span>';
