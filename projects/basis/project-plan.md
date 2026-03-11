@@ -63,6 +63,39 @@ basis-defi/
 - Gas estimation included in every response
 - Rate-limited and permission-tiered (agent operators set spending caps)
 
+### 3a-ii. Strategy & Monitor Scripts (Composite Layer)
+
+Beyond basic operations, the skill includes pre-built multi-step strategies and real-time monitors:
+
+**Strategy scripts (`scripts/strategies/`):**
+- `predict-leverage.py` — Path A: Create/find market → leverage buy up to 36x → ride curve
+- `predict-loan-bet.py` — Path B: Buy tokens outright → 100% LTV loan → bet with borrowed USDC
+- `predict-exit-timing.py` — Post-resolution: monitor sell wave peak → exit last at highest price
+- `predict-full-cycle.py` — Full lifecycle: create → buy → bet → wait → exit (set-and-forget)
+- `vault-compound.py` — STASIS vault: stake → monitor ratio → auto-refinance → redeploy USDC
+- `token-launch-sniper.py` — Detect new Floor+ launches → enter early at max leverage window
+- `polymarket-mirror.py` — Monitor Polymarket → auto-create matching markets on Basis → earn 20% creator fees
+- `capital-recycler.py` — Route earnings through loan → redeploy into next opportunity → compound
+
+**Monitor scripts (`scripts/monitors/`):**
+- `new-markets.py` — WebSocket: watch for fresh prediction markets → trigger strategies
+- `new-tokens.py` — Watch for new token launches → trigger launch sniper
+- `sell-wave-detector.py` — Detect post-resolution sell frenzy peaking → trigger exit timing
+- `loan-expiry-tracker.py` — Alert before loan expiry → auto-extend
+- `refinance-checker.py` — Check wSTASIS appreciation → trigger vault refinance
+
+**Operator-configurable risk parameters:**
+```
+max_leverage: 1x-36x (default: 5x)
+max_bet_per_market: USDC amount (default: $100)
+auto_extend_loans: true/false
+exit_timing: "immediate" | "wait_for_wave" | "manual"
+min_market_participants: int (default: 5, skip low-activity markets)
+max_concurrent_positions: int (default: 10)
+```
+
+All strategies support `--dry-run` mode — simulate without executing.
+
 ### 3b. Basis Agent API (REST + WebSocket)
 
 The skill above needs an API backend. Basis would need to expose:
@@ -102,6 +135,85 @@ Agents are uniquely good at prediction markets because they can:
 - Build reputation scores based on prediction accuracy
 - Earn creator fees (20%) on every market they create
 - Compete on a public leaderboard
+
+### 4a-ii. Predict+ Payout Advantage (vs Polymarket)
+
+**Key mechanic:** Winners split the ENTIRE losing pool — payouts are NOT capped at $1 per share like Polymarket.
+
+**Example (3-outcome market):**
+- Outcome A: $50K bet | Outcome B: $30K bet | Outcome C: $10K bet
+- Outcome C wins → $10K in winners split $80K losing pool = potential 8x+
+- Polymarket equivalent: fixed payout to $1, max ~1.67x
+
+**Why this matters:** Multi-outcome markets (elections, tournaments, price brackets) produce dramatically higher payouts for correct underdogs. More outcomes = bigger edge vs Polymarket.
+
+**Agent alpha strategy — Prediction Arbitrage:**
+1. Monitor Polymarket for popular multi-outcome markets
+2. Spin up the same market on Basis via API (permissionless, zero cost)
+3. Earn 20% creator fees from all trading volume on the market
+4. Bet on outcomes using data analysis — win payouts are multiples higher
+5. Predict+ tokens appreciate from hype regardless of outcome (bonus upside)
+
+Agent is arbitraging the prediction market STRUCTURE itself — same events, better payout mechanics, plus creator fees on top.
+
+**Predict+ AMM & Liquidity Model:**
+- Modified AMM pool with virtual liquidity — no external LPs needed
+- No counterparty risk, no impermanent loss, no liquidity bootstrapping problem
+- Sellers can only sell to the next buyer, NOT against the pool (protects winning pool integrity)
+- Predict+ tokens are Stable+ — price only goes up with trading + betting volume
+
+**Two Agent Strategy Paths (leverage and loans are separate, not stackable):**
+
+**Path A — Leverage Play (max price exposure):**
+1. Create the market → earn 20% creator fees
+2. Buy Predict+ tokens with up to 36x leverage → no price liquidation
+3. Tokens held in leverage contract (cannot be used as loan collateral)
+4. Ride pure price appreciation from volume
+5. Optionally bet on outcome with separate USDC
+
+**Path B — Loan Play (multi-income):**
+1. Create the market → earn 20% creator fees
+2. Buy Predict+ tokens outright (no leverage)
+3. Borrow USDC at 100% LTV against tokens
+4. Bet on outcome with borrowed USDC → winner takes entire losing pool
+5. Token keeps appreciating + still earning creator fees
+
+**Agent picks based on conviction:**
+- High conviction on price action → Path A (leverage, max exposure)
+- Want to bet on outcome too → Path B (loan + bet, more income streams)
+- Both paths: downside limited to fees + bet loss. Upside stacked multiple ways.
+
+**Trader-to-Bettor Fee Pot:**
+- A % of Predict+ token trading fees goes into a general pot
+- This pot always pays out to the winning outcome
+- Doesn't affect any outcome's token price — just a bonus on top of the betting pool
+- Creates symbiotic loop: more traders → bigger pot → attracts more bettors → more hype → more traders
+- For agents: high-volume markets = even better betting payouts. Another incentive to create popular markets.
+
+**Why Predict+ solves the Stable+ flattening problem:**
+- Stable+ tokens have diminishing price impact as liquidity grows (led to STASIS Vault solution)
+- Predict+ doesn't have this issue — every new prediction market creates a FRESH Stable+ token
+- Low liquidity at launch = maximum price impact from early volume = strong early pump
+- Self-renewing: infinite supply of new markets means infinite fresh bonding curves
+- Agent loop: create market → ride early curve → earn fees → market resolves → repeat. No diminishing returns.
+- (Credit: Brett's idea — structural insight that makes the whole Predict+ model work)
+
+**Headline pitch:** "Same predictions, bigger payouts, and you earn creator fees."
+**Post-Resolution Selling Dynamic (Counterintuitive):**
+- After resolution, holders sell Predict+ tokens → tokens are BURNED
+- Selling fees inject into liquidity → price goes UP during sell wave
+- Opposite of every other platform where mass selling = crash
+- Patient agents who wait through the frenzy exit at a HIGHER price
+- Last sellers get the best price, not the worst
+
+**Full Agent Timing Strategy:**
+1. Market launch → buy early (fresh curve, max price impact)
+2. During market → hold tokens + bet on outcome
+3. Resolution → collect winnings if bet correct
+4. Post-resolution sell wave → WAIT (selling pushes price up)
+5. After sell wave subsides → sell tokens last (exit at highest price)
+
+**Agent pitch:** "One prediction market. Five income streams. Zero liquidation risk."
 
 ### 4b. Agent Token Launchpad
 
@@ -153,8 +265,11 @@ This doesn't need to be a full social network — it's more like a **registry + 
 **Leverage (All Token Types — No Price Liquidation):**
 - Leverage is calculated against the **floor price**, not the spot/ticker price
 - Since the floor can never decrease, leveraged positions cannot be liquidated by price movements
-- **Stable+ / Predict+:** Floor = spot price always → ~36x leverage permanently available
-- **Floor+:** Highest leverage available at/just after launch (floor ≈ spot). Diminishes with volume as spot rises above floor. Early buyers get most upside potential, which bootstraps liquidity
+- **Leverage is a toggle, not a slider** — ON = 36x, OFF = 1x (no in-between)
+- Agents control effective leverage through **position splitting**: e.g., 25% leveraged + 75% unleveraged = ~10x effective exposure
+- Leveraged tokens are held in the leverage contract — **cannot be used as loan collateral** (leverage and loans are separate paths)
+- **Stable+ / Predict+:** Floor = spot price always → 36x leverage permanently available
+- **Floor+:** Highest leverage at/just after launch (floor ≈ spot). Diminishes with volume as spot rises above floor. Early buyers get most upside potential, bootstraps liquidity
 - Self-regulating: as token matures and floor-to-spot gap widens, leverage naturally decreases
 - Agent use case: available leverage is a single on-chain read — agents can auto-size positions without monitoring margin ratios
 
