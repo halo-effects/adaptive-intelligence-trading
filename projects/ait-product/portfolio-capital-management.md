@@ -202,12 +202,12 @@ The maximum number of simultaneous coin positions is governed by current portfol
 | Equity Range | Max Coins | Rationale |
 |---|---|---|
 | < $100 | 0 | Below minimum viable position size |
-| $100 – $1K | 1 | Single best scorer only |
-| $1K – $5K | 2 | Top 2 scorers |
-| $5K – $10K | 3 | Top 3 scorers |
-| $10K – $25K | 4 | Top 4 scorers |
-| $25K – $50K | 5 | Top 5 scorers |
-| $50K+ | 10 | Full universe (up to 10 scorers) |
+| $100 – $10K | 1 | Single best scorer only |
+| $10K – $20K | 2 | Top 2 scorers |
+| $20K – $30K | 3 | Top 3 scorers |
+| $30K – $50K | 4 | Top 4 scorers |
+| $50K – $100K | 5 | Top 5 scorers |
+| $100K+ | 10 | Full universe (up to 10 scorers) |
 
 **Tier evaluation**: Computed at each daily rebalance using current portfolio equity. The tier cap is applied *after* the hurdle rate filter (DCA Score ≥ 5.0) and *before* proportional weighting, so only the top-N qualifying coins receive allocations.
 

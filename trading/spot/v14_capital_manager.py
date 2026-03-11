@@ -19,12 +19,12 @@ if not logger.handlers:
 # Format: (min_equity_inclusive, max_coins)
 # Evaluated top-down; first match wins.
 EQUITY_TIER_CAPS = [
-    (50_000, 10),   # $50K+ → up to 10 coins
-    (25_000,  5),   # $25K–$50K → up to 5 coins
-    (10_000,  4),   # $10K–$25K → up to 4 coins
-    ( 5_000,  3),   # $5K–$10K  → up to 3 coins
-    ( 1_000,  2),   # $1K–$5K   → up to 2 coins
-    (   100,  1),   # $100–$1K  → 1 coin
+    (100_000, 10),  # $100K+ -> up to 10 coins
+    ( 50_000,  5),  # $50K-$100K -> up to 5 coins
+    ( 30_000,  4),  # $30K-$50K -> up to 4 coins
+    ( 20_000,  3),  # $20K-$30K -> up to 3 coins
+    ( 10_000,  2),  # $10K-$20K -> up to 2 coins
+    (    100,  1),  # $100-$10K -> 1 coin
 ]
 
 
