@@ -558,6 +558,7 @@ class V14LiveBot:
 
         # CFGI / Fear & Greed
         self._cfgi_market: Optional[float] = None
+        self._cfgi_coins: Dict[str, float] = {}
         self._cfgi_last_poll: float = 0.0
 
         # Setup logging
@@ -1054,7 +1055,7 @@ class V14LiveBot:
             )
 
     def _poll_cfgi(self):
-        """Poll CFGI API for market fear & greed index (once per hour)."""
+        """Poll CFGI API for market + per-coin sentiment (once per hour)."""
         now = time.time()
         if now - self._cfgi_last_poll < 3600:
             return
@@ -1065,14 +1066,29 @@ class V14LiveBot:
             if not api_key:
                 return
             client = CFGIClient(api_key)
-            data = client.get_current(["MARKET"], period=4, fields="cfgi")
+
+            base = self.symbol.split("/")[0]
+            tokens = [base, "MARKET"]
+            data = client.get_current(tokens, period=4, fields="cfgi")
+
             market_data = data.get("MARKET", {})
             if isinstance(market_data, dict):
                 self._cfgi_market = market_data.get("cfgi", market_data.get("value"))
             elif isinstance(market_data, (int, float)):
                 self._cfgi_market = float(market_data)
+
+            coin_data = data.get(base, {})
+            if isinstance(coin_data, dict):
+                val = coin_data.get("cfgi", coin_data.get("value"))
+                if val is not None:
+                    self._cfgi_coins[self.symbol] = float(val)
+            elif isinstance(coin_data, (int, float)):
+                self._cfgi_coins[self.symbol] = float(coin_data)
+
             self._cfgi_last_poll = now
-            logger.info("CFGI updated: market=%s", self._cfgi_market)
+            logger.info("CFGI updated: market=%s, %s=%s",
+                        self._cfgi_market, base,
+                        self._cfgi_coins.get(self.symbol))
         except Exception as e:
             logger.warning("CFGI poll failed: %s", e)
             self._cfgi_last_poll = now
@@ -1212,6 +1228,11 @@ class V14LiveBot:
         st["uptime_hours"] = round(uptime_h, 2)
         st["last_update"] = datetime.now(timezone.utc).isoformat()
         st["fear_greed_index"] = self._cfgi_market
+
+        # Inject per-coin CFGI
+        if "coins" in st and self.symbol in self._cfgi_coins:
+            if self.symbol in st["coins"]:
+                st["coins"][self.symbol]["cfgi"] = round(self._cfgi_coins[self.symbol], 1)
 
         # Read trades.csv as source of truth for deal counts AND realized PnL
         # (engine counters drift on restart; CSV is the ledger)
