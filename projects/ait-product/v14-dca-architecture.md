@@ -135,7 +135,7 @@ The V14 engine uses a named profile system rather than hardcoded grid parameters
 
 After L12, the bot holds and waits for TP (1.5% above weighted avg entry). No liquidation risk at 1.0x leverage.
 
-**No layer cooldown.** Layers fire as fast as price hits each deviation threshold — no artificial delay between them. The grid is designed to react immediately to volatility.
+**No layer cooldown (all profiles).** Layers fire as fast as price hits each deviation threshold — no artificial delay between them at any risk level. The grid is designed to react immediately to volatility.
 
 ---
 
