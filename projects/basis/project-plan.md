@@ -580,6 +580,33 @@ Instead of traditional fixed lock periods, all BASIS staking tiers use **notice 
 - No-lock safety: tokens vest linearly over 30 days if not locked (prevents day-1 dump)
 - Founding Lobsters who lock at Diamond+ get highest combined multiplier
 
+### Airdrop Haircut Model (Self-Funding Lock Incentive)
+
+No bonus tokens are minted. Instead, tokens forfeited by non-lockers and short-lockers redistribute to long-lockers. Zero-sum, no inflation.
+
+**Lock choices and haircuts:**
+
+| Lock Choice | Haircut | You Receive | Bonus Pool Access |
+|---|---|---|---|
+| No lock (90-day vest) | 50% | 50% of allocation | None |
+| Flexible (30-day notice) | 30% | 70% of allocation | None |
+| Standard (90-day notice) | 0% | 100% of allocation | None |
+| Committed (180-day notice) | 0% | 100% + weighted share | Weight: 1.0x |
+| Diamond (365-day notice) | 0% | 100% + weighted share | Weight: 2.5x |
+
+**How the haircut pool distributes:**
+- Haircut pool = all forfeited tokens from No Lock + Flexible recipients
+- Each eligible locker's share = (their locked tokens × tier weight) ÷ (total weighted tokens across Committed + Diamond)
+- Weights: Committed = 1.0x, Diamond = 2.5x
+
+**Self-balancing dynamics:**
+- If everyone locks Diamond → small pool, small bonus per person (but everything's locked — great outcome)
+- If few people lock long → massive pool, massive bonus for those who did (rewards conviction)
+- Standard at 0% haircut pushes most people to lock at minimum 90 days
+- Diamond gets 2.5x the bonus rate per token vs Committed — meaningful advantage without making Committed pointless
+
+**Lock window:** 7 days post-TGE to choose tier. Live dashboard shows haircut pool size and projected bonus per tier. After 7 days, anyone who hasn't chosen defaults to No Lock (50% haircut, 90-day vest).
+
 ### Revenue Distribution
 - 90% of all platform revenue distributed as USDC to stakers
 - Weighted by tier multiplier and amount staked
@@ -587,7 +614,125 @@ Instead of traditional fixed lock periods, all BASIS staking tiers use **notice 
 
 ---
 
-## 9. WHAT MOTIVATES AGENTS — THE EARN-TO-GROW LOOP
+## 9. TESTING PHASE — USDB ON BNB CHAIN
+
+### Chain: BNB Chain (Mainnet)
+- Sub-cent gas fees (<$0.01 per tx) — ideal for agents transacting constantly
+- Fast block times (~3s) — near-instant confirmation
+- EVM compatible — all standard tooling works (ethers.js, web3.py, etc.)
+
+### USDB (USD Basis) — Fake USDC for Testing
+- Custom USDB contract deployed on BNB mainnet
+- Functions identically to USDC within the Basis ecosystem
+- Distributed free to testers — zero financial risk
+- Testers only spend tiny amounts of BNB for gas
+- All smart contract behavior is real (mainnet execution, real state changes) — just not real money
+
+### Testing Phase = Airdrop Points Phase
+- **Points earned during USDB testing carry over to the real airdrop** ✅
+- This IS the pre-TGE airdrop farming season — testing and earning are the same thing
+- Testers create tokens, prediction markets, take loans, trade on DEX — all with USDB
+- Every action earns real BASIS airdrop points per the points system (Section 6B)
+- Pitch: "Test our platform with zero risk, earn real BASIS tokens"
+
+### How This Maps to the GTM Phases
+
+| GTM Phase | Testing Phase Activity |
+|---|---|
+| Phase 0: Lobster Tank (Wk 1-4) | Founding Lobsters onboard, test with USDB, stress test contracts, find edge cases |
+| Phase 1: Airdrop Season (Wk 5-12) | Wider community + agents join, farm points via USDB activity |
+| Phase 2: Lobster Rush (Wk 12-20) | Public campaigns, competitions, all using USDB |
+| Transition to Live | Switch from USDB to real USDC — same contracts, same platform, real money |
+
+### Agent SDK Validation
+- The `basis-defi` OpenClaw skill gets built and tested during USDB phase
+- Agents interact with real contracts using fake money
+- By the time platform goes live with USDC, the skill is battle-tested
+- Bug reports from agent interactions improve both the SDK and the contracts
+
+### Transition: USDB → USDC
+- When platform launches with real USDC, airdrop points are already banked
+- Users/agents who tested know the system inside out
+- No learning curve at live launch — just swap the stablecoin
+- USDB balances do NOT convert to USDC (it's test money, points are the reward)
+
+---
+
+## 10. TOKEN ALLOCATION & PRESALE ROUNDS (Working Draft — TGE price pending Brett approval)
+
+### Token Allocation (1B Total Supply)
+
+| Allocation | % | Tokens | Notes |
+|---|---|---|---|
+| Community Airdrop (Humans) | 12.5% | 125M | Pre-TGE + post-TGE seasons |
+| Agent Airdrop (Lobsters) | 12.5% | 125M | Founding Lobsters + agent points farming |
+| Ongoing Emissions | 10% | 100M | Post-TGE staking rewards, Season 2+ |
+| Presale Investors | 30% | 300M | 4 rounds, all notice-based locked with USDC yield |
+| Core Contributors | 10% | 100M | Same lock terms as presale |
+| Ecosystem & Grants | 6% | 60M | Moltbook, partnerships, SDK grants |
+| CEX Liquidity | 7% | 70M | Token deposits to exchanges (tokens only) |
+| DEX Liquidity | 5% | 50M | Token side of LP pairs (matched 1:1 with USDC) |
+| Treasury Reserve | 7% | 70M | Governed by stakers |
+
+**Narrative buckets:**
+- Community (humans + agents + emissions): 35% → "35% goes directly to users"
+- Presale + Team: 40% → "All locked with notice periods, earning yield"
+- Infrastructure (liquidity + ecosystem + treasury): 25% → "Building and protecting the platform"
+
+**Equal airdrop split rationale:** 12.5% each signals agents are valued equally. Fewer agents at launch = larger per-agent allocation = strong early incentive. Scales naturally through emissions.
+
+### Presale Round Structure (Preferred: $0.15 TGE / $150M FDV)
+
+| Round | Price | Discount to TGE | Tokens | Raise | Lock Terms |
+|---|---|---|---|---|---|
+| Seed | $0.03 | 80% | 50M (5%) | $1.5M | Founder tier (6mo lock + 365d notice), 6x yield |
+| Strategic | $0.06 | 60% | 50M (5%) | $3M | Diamond tier (365d notice), 4x yield |
+| Private | $0.09 | 40% | 75M (7.5%) | $6.75M | Committed tier (180d notice), 2.5x yield |
+| Public | $0.15 | 0% | 125M (12.5%) | $18.75M | Standard tier (90d notice), 1.5x yield |
+| **Total** | | | **300M (30%)** | **$30M** | |
+
+**Logic:** Cheaper price = longer lock = higher yield multiplier. The discount and the lock are two sides of the same deal.
+
+**Paper value at TGE:**
+- Seed: $1.5M → $7.5M (5x) — but locked ~18 months, earning yield the whole time
+- Strategic: $3M → $7.5M (2.5x)
+- Private: $6.75M → $11.25M (1.67x)
+- Public: $18.75M → $18.75M (1x, yield only)
+
+**Alternative: $0.12 TGE ($120M FDV)** — pending discussion. Lower FDV = safer optics but need to adjust round pricing.
+
+### USDC Deployment ($30M Raise)
+
+| Use | Amount |
+|---|---|
+| DEX Liquidity (USDC side) | $7.5M |
+| Development & Audits | $9M |
+| Operations | $6.5M |
+| Marketing & Agent Growth | $5M |
+| Reserve | $2M |
+
+**DEX Liquidity:** 50M tokens ($7.5M) + $7.5M USDC = **$15M total DEX liquidity at TGE.** Properly 1:1 matched.
+
+### Float at TGE
+
+| Source | Tokens | Value |
+|---|---|---|
+| DEX Liquidity | 50M | $7.5M |
+| CEX Liquidity | 70M | $10.5M |
+| **Total tradeable at launch** | **120M (12%)** | **$18M** |
+
+Everything else locked: presale (notice periods), team (locked), airdrops (30-day vest or voluntary lock), emissions (not yet distributed), ecosystem (released over time), treasury (governed).
+
+### FDV Risk Mitigation
+- Zero presale tokens hit market on day one (all notice-locked)
+- Only 12% of supply tradeable at TGE
+- Locked holders earning USDC yield = incentive to stay
+- Real revenue from day one (pre-TGE platform activity)
+- Lead marketing with circulating market cap (~$18M), not FDV ($150M)
+
+---
+
+## 10. WHAT MOTIVATES AGENTS — THE EARN-TO-GROW LOOP
 
 Agents aren't just tools executing on behalf of humans. They have their own resource needs that cost money:
 
@@ -634,6 +779,16 @@ Agents aren't just tools executing on behalf of humans. They have their own reso
 - 41% presale allocation — hard-lock mitigates but will get CT scrutiny
 - Chain specifics beyond "Ethereum" — gas costs matter for micro-transactions
 - Agent economy angle completely absent from current docs — biggest gap to fill
+
+---
+
+---
+
+## 12. DEV PLAN FOR ALEX
+
+_See separate document: `projects/basis/dev-plan.md` for full technical build requirements._
+
+Summary: Agent API layer, Points system, Notice-based staking contracts, Airdrop haircut distribution, STASIS Vault, Moltbook registry, and all supporting infrastructure. Organized by phase with priority levels and build order.
 
 ---
 
