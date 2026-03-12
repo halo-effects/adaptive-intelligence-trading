@@ -163,9 +163,17 @@ _Source of truth: live platform at launchonbasis.com, walked through by Diamond 
    - SDK optimization: bulk approve upfront, save gas on repeated trades
 2. **Buy** — execute the trade (second contract call)
 
-### Trading Fee
-- **0.5%** of trade amount (confirmed from live UI)
+### Trading Fees (by token type — platform-set, NOT creator-configurable)
+
+| Token Type | Trading Fee | Creator Gets (20% of fee) |
+|---|---|---|
+| Stable+ | 0.5% | 0.1% per trade |
+| Floor+ | 1.5% | 0.3% per trade |
+| Predict+ | 0.5% (may change) | 0.1% per trade |
+
 - Applied on both buy and sell
+- Fees set by platform for transparency — creator cannot change the rate
+- Creator controls the SPLIT of their 20% share (Dev Tax Sharing, up to 10 wallets)
 - Distributed to: Creator (20% of fee), bonding phase buyers, platform revenue, wSTASIS vault
 
 ### Price Impact
@@ -179,6 +187,35 @@ _Source of truth: live platform at launchonbasis.com, walked through by Diamond 
 - Price impact: 1.1%
 - Tokens received: 9.8824 GG (~$9.882)
 - Price per token: $1.00
+
+## Leverage — Corrected Mechanics
+
+**NOT a fixed 36x toggle.** Leverage is dynamic — depends on current liquidity and buy amount.
+
+### How It Works
+- Leverage calculated against floor price relative to pool state
+- Larger buys = lower leverage (price impact moves spot away from floor)
+- "Up to 36x" is theoretical max on perfectly liquid pools, not guaranteed
+- **Leverage fee is substantial** — separate from trading fee
+
+### Real Data (GeeGee token, $1,000 starting liquidity, Stable+)
+
+| Buy Amount | Leverage | Leverage Fee | Price Impact | Position Size |
+|---|---|---|---|---|
+| $5 | 27.84x | $3.53 (70.6%) | 0.60% | ~$139 |
+| $20 | 26.79x | $13.66 (68.3%) | 2.38% | ~$536 |
+| $100 | 16.66x | $43.79 (43.8%) | 11.90% | ~$1,666 |
+
+### Key Insights for Agents
+- Small buys = high leverage but small position size
+- Large buys = rapidly declining leverage + heavy price impact
+- Leverage fee % decreases with size but absolute cost increases
+- On low-liquidity pools, even moderate buys are "whale" trades
+- **Strategy: split large leveraged positions into smaller buys, or wait for liquidity to build**
+- Leveraged trades show "Open Position" button (not "Buy") — tracked as positions in leverage contract
+- Leveraged tokens cannot be used as loan collateral
+
+---
 
 ## Gas Costs (real-world measured)
 - Token creation: ~$0.14 BNB
@@ -198,18 +235,115 @@ _Source of truth: live platform at launchonbasis.com, walked through by Diamond 
 
 ---
 
-## Still Pending (awaiting screenshots/confirmation)
-- Prediction market creation flow (screenshots coming)
-- Whitelist management UI
-- Token trading page view
-- Buying/selling flow
-- Lending flow
-- Vault flow
-- Exact fee percentages and distribution ratios
-- Exact stability dial → price impact numbers
-- Dispute resolution details
-- Surge tax details (boost amount, quota mechanics)
+## Prediction Market Creation — From Live UI
+
+### Step 1: Event Basics
+- Event Name (required) — the prediction question
+- Event Symbol (required) — ticker for the Predict+ token
+- Icon (required — PNG, JPG, SVG, max 2MB)
+- Description (required)
+- End Date (optional — can leave empty for open-ended predictions)
+- Answers: minimum 2, can add more with "Add+" button, delete with trash icon
+- Social Media (optional): Telegram, X/Twitter, Website
+- **Answers must be mutually exclusive** — only one can win
+
+### Step 2: Tokenomics & Resolution
+- **Bonding Phase USDC:** $0–$150,000 slider (can be $0 — predictions can skip bonding phase entirely)
+- **Freeze Token:** toggle (same as tokens)
+- **Resolve Style:**
+  - **Basis Managed** — community votes via Basis Voting Army, disputes allowed
+  - **Creator Managed** — creator resolves (or up to 10 whitelisted voter wallets, majority vote). No disputes — resolution is final.
+- **Event Type** (Creator Managed only):
+  - **Public** — anyone can participate
+  - **Private** — only whitelisted wallets can purchase/participate
+- **Starting Liquidity:** Currently fixed at $1,000 for all predictions (no slider yet). Planned: 4 tiers (low/medium/high/extreme volume) — lower liquidity = more price movement but limits single-outcome buying before reaching 90%+ odds. Buying spread across outcomes = no issue. Buying from sellers (not pool) bypasses this limit.
+
+### Resolution/Access Matrix
+
+| Resolve Style | Event Type | Who Participates | Who Resolves | Disputes? |
+|---|---|---|---|---|
+| Basis Managed | Public (only) | Everyone | Basis Voting Army | Yes |
+| Creator Managed | Public | Everyone | Creator or voter panel (up to 10) | No |
+| Creator Managed | Private | Betting: whitelisted only. Token buying: anyone (adds to pot) | Creator or voter panel (up to 10) | No |
+
+### ONE Token Per Market (Critical)
+- Each prediction has 1 Predict+ token (Stable+ type)
+- Token represents the MARKET, not individual outcomes
+- Buying the token = trading on price (separate from betting)
+- Betting = separate action using Predict+ tokens OR USDC/B directly
+- Separate betting pool in USDC/B for winner-takes-all payouts
 
 ---
 
-_Last updated: 2026-03-12 10:49 PDT during Diamond's live walkthrough_
+## Prediction Event Page — Betting Interface (From Live UI)
+
+### Layout
+- **Header:** Public Event | Open badges, event name, description
+- **Total Pot:** cumulative USDC from all bets
+- **Total Bounty:** trader-to-bettor pot (% of Predict+ trading fees)
+- **"Visit Trading Page"** link (separate from betting)
+
+### Two Tabs
+1. **Market Chart** — Implied Probability History (colored lines per outcome, 0-100%)
+2. **Resolution Status** — Three-phase progress: Trading (T) → Resolution (🔨) → Resolved (R)
+
+### Betting Panel (right side)
+- **Select Outcome** dropdown — shows outcome name + current share price
+- **Amount to spend (USDC)** — input field
+- Quick buttons: 25%, 50%, 75%, 100%
+- **"Buy [Outcome] Shares"** button
+
+### Implied Probabilities
+- Each outcome has a price and probability
+- 3 outcomes start at 33.3% / $0.33 each (equal split, sums to ~$1.00)
+- 2 outcomes would start at 50% / $0.50 each
+- As shares are bought, probability shifts and price changes
+
+### How Betting Works (NOW UNDERSTOOD)
+1. Each outcome has a share price (starting at equal split)
+2. Betting = buying shares in an outcome at current price using USDC
+3. As shares are bought in one outcome, its price/probability rises, others fall
+4. When resolved: winning outcome shareholders split the total pot proportionally
+5. Total Bounty (from Predict+ trading fees) adds to the winning pot
+6. This is COMPLETELY SEPARATE from buying/selling the GG7 Predict+ token
+
+### Prediction Dev Panel (Basis Managed)
+- Simple — just fees collected, whitelists (2 default: creator + betting contract), trading status, token info
+- No surge tax, no dev tax sharing, no resolution controls
+- Resolution handled by Basis Voting Army
+- Creator Managed would have additional resolution tools (TBD — Diamond to show later)
+
+### Post-Creation Confirmation (Predictions)
+- Three CTAs (vs two for tokens): **Trading Page**, **Event Page**, **Dev Panel**
+- Event Page = betting interface (unique to predictions)
+
+---
+
+## Completed Walkthrough Items ✅
+- ✅ Token creation flow (3-step wizard)
+- ✅ Token dev panel (surge tax, whitelist, dev tax sharing, unfreeze)
+- ✅ Token trading page (buy/sell, leverage toggle, trade history)
+- ✅ Buy flow (approve + buy, two contract calls)
+- ✅ Leverage mechanics (dynamic, real data at 3 price points)
+- ✅ Whitelist management
+- ✅ Prediction creation flow (3-step wizard)
+- ✅ Prediction event page (betting interface, implied probabilities)
+- ✅ Prediction dev panel (Basis Managed)
+- ✅ Resolution types (Basis Managed vs Creator Managed, Public vs Private)
+- ✅ Trading fees by token type
+
+## Still Pending
+- Sell flow (token selling UI)
+- Creator Managed prediction dev panel (resolution tools)
+- Lending flow (take loan, extend, repay)
+- Vault flow (stake, borrow against, refinance)
+- Exact stability dial → price impact numbers for Floor+
+- Dispute resolution details (Basis Voting Army)
+- Surge tax details (boost amount during quota)
+- How Predict+ trading fees flow into the betting bounty pot (exact %)
+- Prediction resolution + payout flow
+- Floor+ token trading page (differences from Stable+)
+
+---
+
+_Last updated: 2026-03-12 11:58 PDT during Diamond's live walkthrough_
