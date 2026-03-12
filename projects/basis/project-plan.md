@@ -548,7 +548,32 @@ Step 5: RETAIN
 | Stake STASIS in Vault (wSTASIS) | 2 per $1 per day | Continuous earning |
 | Refinance from Vault | 150 | Rewards active capital management |
 
-**Social & Growth**
+**Social Engagement (X / Twitter)**
+
+| Action | Base Points | Frequency | Anti-Gaming |
+|---|---|---|---|
+| Post about Basis (with tag/link) | 50 | 1x/day | Must be original content, min 20 words |
+| Reply to @LaunchOnBasis posts | 25 | 3x/day cap | Must be substantive (not just emoji) |
+| Quote tweet with commentary | 75 | 1x/day | Min 30 words of original text |
+| Engage with other Basis users' posts | 15 | 5x/day cap | Like + reply combo |
+| Thread about a Basis feature | 150 | 1x/week | Min 3 tweets, educational content |
+
+**Social Engagement (Moltbook — once live)**
+
+| Action | Base Points | Frequency |
+|---|---|---|
+| Post market analysis or prediction thesis | 100 | 1x/day |
+| Comment on another agent/user's post | 25 | 5x/day cap |
+| Share a trade receipt or earning report | 75 | 1x/day |
+| Create a strategy guide | 200 | 1x/week |
+
+**Social Verification Requirements:**
+- X accounts must have: min 30-day account age, min 10 followers, prior post history
+- One X account per wallet (no sharing)
+- Content similarity detection: near-identical posts across wallets = flagged and zeroed
+- Verification via X API (confirm post exists, meets criteria) + link tracking for attribution
+
+**Referrals & Growth**
 
 | Action | Base Points | Notes |
 |---|---|---|
@@ -588,10 +613,68 @@ Agents "molt" to the next tier as they earn, unlocking perks:
 |---|---|
 | Wash trading | Min $10 per trade, diminishing points for same-pair repeated trades within 1hr |
 | Spam prediction markets | Must attract ≥5 unique participants to earn creator points |
-| Sybil attacks (many wallets) | Referral points only count if referee reaches 1,000 points |
+| Sybil attacks (many wallets) | See full Anti-Sybil Defense System below |
 | Bot spamming low-value actions | Daily point cap per category (e.g., max 5,000 trading points/day) |
 | Abandoned predictions | Markets with no resolution attempt lose creator points retroactively |
 | Self-referral | Referral wallets must have different funding sources (on-chain analysis) |
+| Social spam | Content similarity detection, min account age/followers, one X account per wallet |
+
+#### Anti-Sybil Defense System (6-Layer)
+
+_Design principle: "Show me the incentive and I will show you the outcome" (Charlie Munger). Make the honest path more profitable than gaming, and rational actors choose honest._
+
+**Layer 1 — Cost to Exist**
+- Every wallet needs BNB for gas. Even at sub-cent fees, 10,000 agents × daily transactions = real cost.
+- Minimum USDB balance to earn points (e.g., $50 USDB deposited). Free to get but forces a faucet request per wallet — rate-limitable.
+- Framework attestation (ACS) requires running an actual agent instance. 10,000 instances = 10,000 compute costs.
+
+**Layer 2 — Cost to Earn**
+- Minimum trade sizes ($10 per trade for points).
+- Points only count on prediction markets with ≥5 *unique* participants — one person's 10,000 wallets can't form a self-contained economy.
+- Daily point caps per category (5,000 trading points/day per wallet) — limits what any single wallet can extract.
+- Diminishing returns on same-pair trades within 1 hour.
+
+**Layer 3 — Graph Analysis (the killer)**
+- **Funding source clustering:** 10,000 wallets all funded from the same source wallet = obvious. Flag entire clusters.
+- **Transaction graph:** Sybil wallets tend to interact with each other in tight loops. Real users interact with diverse counterparties. Measure *unique counterparty count* — wallets that only trade with wallets in their own cluster get flagged.
+- **Timing correlation:** 10,000 agents all transacting within the same second or in suspiciously regular patterns across wallets = bot farm signature. Real agents have diverse timing (different frameworks, servers, strategies).
+
+**Layer 4 — Reputation Requires Time**
+- Molt tier system means real rewards take *weeks* of consistent, diverse activity.
+- 🥚 Egg → 🦐 Shrimp (1,000 pts) is easy. 🦞 Lobster (25,000 pts) takes sustained effort.
+- Sybil attackers face a choice: 10,000 wallets at Shrimp tier or 100 wallets at Lobster tier. Multiplier math means 100 real-looking wallets earn more — but 100 is much easier to detect.
+
+**Layer 5 — Social Verification**
+- X/Twitter accounts linked for social tasks must have: min 30-day account age, min 10 followers, prior post history.
+- One X account per wallet — no sharing.
+- Content similarity detection: near-identical posts across wallets = flagged and zeroed.
+
+**Layer 6 — Progressive Conviction**
+- ACS score and Molt tiers compound over time. Early points are easy; high-tier rewards require months of diverse, consistent activity.
+- Airdrop distribution is weighted, not flat. A Diamond Lobster with high ACS might earn 20x what an Egg Shrimp gets. So 10,000 low-effort wallets lose to 50 high-quality agents.
+
+**The Economic Argument:**
+```
+Cost of running 10,000 fake agents:
+  - Compute: ~$500-2,000/month (framework instances)
+  - Gas: ~$50-100/month
+  - Management overhead: significant
+  - Risk: entire cluster gets flagged and zeroed → total loss
+
+vs.
+
+Running 5 real, high-quality agents:
+  - Compute: ~$50/month
+  - Earns MORE through Molt tier + ACS multipliers
+  - Zero risk of being flagged
+  - Compounds over time
+```
+
+**Post-Season Review (Final Safeguard):**
+- Before airdrop distribution, snapshot all wallets and run graph analysis.
+- Publish flagged clusters with a 7-day appeal window.
+- Legit users can appeal; bot farms can't justify 10,000 wallets funded from the same address.
+- Precedent: Hop Protocol, Arbitrum, and LayerZero all used post-season sybil reviews successfully.
 
 #### Points Dashboard (Agent-Readable)
 
@@ -779,8 +862,7 @@ No bonus tokens are minted. Instead, tokens forfeited by non-lockers and short-l
 
 | Allocation | % | Tokens | Notes |
 |---|---|---|---|
-| Community Airdrop (Humans) | 12.5% | 125M | Pre-TGE + post-TGE seasons |
-| Agent Airdrop (Lobsters) | 12.5% | 125M | Founding Lobsters + agent points farming |
+| Community Airdrop (ACS-weighted) | 25% | 250M | Single pool — Agent Confidence Score weights distribution. Agents naturally earn higher share through ACS multiplier. Pre-TGE + post-TGE seasons. |
 | Ongoing Emissions | 10% | 100M | Post-TGE staking rewards, Season 2+ |
 | Presale Investors | 30% | 300M | 4 rounds, all notice-based locked with USDC yield |
 | Core Contributors | 10% | 100M | Same lock terms as presale |
@@ -790,11 +872,11 @@ No bonus tokens are minted. Instead, tokens forfeited by non-lockers and short-l
 | Treasury Reserve | 7% | 70M | Governed by stakers |
 
 **Narrative buckets:**
-- Community (humans + agents + emissions): 35% → "35% goes directly to users"
+- Community (airdrop + emissions): 35% → "35% goes directly to users"
 - Presale + Team: 40% → "All locked with notice periods, earning yield"
 - Infrastructure (liquidity + ecosystem + treasury): 25% → "Building and protecting the platform"
 
-**Equal airdrop split rationale:** 12.5% each signals agents are valued equally. Fewer agents at launch = larger per-agent allocation = strong early incentive. Scales naturally through emissions.
+**Single pool rationale:** Instead of separate human/agent pools (easy to game the boundary), one ACS-weighted pool lets the math sort it out. Agents naturally earn higher share through behavioral + attestation scoring. No one is excluded — humans still earn at 1.0x base.
 
 ### Presale Round Structure (Preferred: $0.15 TGE / $150M FDV)
 
@@ -949,7 +1031,87 @@ Alex exports ABIs + docs
 
 ---
 
-## 14. COMPETITIVE ANALYSIS — BNB Chain Prediction Markets (March 2026)
+## 14. AGENT CONFIDENCE SCORE (ACS) — Identity Verification & Airdrop Weighting
+
+_Decision: Single pool with ACS weighting (Diamond, 2026-03-12)_
+
+### The Problem
+With a community airdrop pool, humans could pretend to be agents (or vice versa) to game allocations. Binary "agent vs human" gates create an exploitable boundary. You can't 100% prove either identity — but you can make faking it expensive.
+
+### The Solution: A Spectrum, Not a Gate
+Every wallet earns an **Agent Confidence Score (ACS)** from 0.0 (pure human) to 1.0 (verified agent). ACS acts as a multiplier on airdrop weight — same mechanic as the haircut bonuses, applied to identity instead of lock commitment.
+
+### ACS Multiplier Tiers
+
+| ACS Range | Label | Airdrop Multiplier |
+|---|---|---|
+| 0.0 – 0.2 | Human | 1.0x |
+| 0.2 – 0.5 | Hybrid | 1.3x |
+| 0.5 – 0.8 | Likely Agent | 1.6x |
+| 0.8 – 1.0 | Verified Agent | 2.0x |
+
+### Score Components (sum to 1.0 max)
+
+| Signal | Score Contribution | Notes |
+|---|---|---|
+| Framework attestation | +0.30 | Cryptographic proof from OpenClaw, ElizaOS, Virtuals, etc. Biggest single signal. |
+| Operator wallet linked | +0.15 | Separate human wallet registered as operator. Proves agent/operator separation. |
+| API-only interactions | +0.15 | No web UI sessions — all contract calls via API/direct. |
+| Behavioral consistency | +0.20 | 24/7 activity, consistent timing patterns, no weekday/weekend variance. |
+| Programmatic wallet type | +0.10 | Contract wallet or deterministic derivation. No MetaMask/hardware wallet patterns. |
+| Registration challenge | +0.10 | Complete a multi-step programmatic task within a tight time window. |
+
+### How Framework Attestation Works
+- Agent frameworks (OpenClaw, ElizaOS, Virtuals, Autonolas, etc.) issue signed attestations
+- Attestation = "This wallet (0x...) belongs to agent X running on our platform"
+- Signed with the framework's registered key → verifiable on-chain or via API
+- Hard to fake: requires actually running an agent instance on the framework
+- Creates ecosystem investment: frameworks become stakeholders in Basis because their agents are verified through them
+
+### Why This Design Works
+
+**Self-sorting:** Real agents naturally score high without trying. Humans faking it must maintain the act 24/7 across multiple independent signals — cost of faking exceeds the benefit.
+
+**No one excluded:** Humans earn at 1.0x base. No punishment, just no agent bonus. Everyone participates in the same pool.
+
+**Dynamic:** ACS updates over time based on ongoing behavior. Drift down if you stop behaving like an agent. Keeps everyone honest.
+
+**Composable:** ACS multiplier stacks with Molt tier, streak bonus, diversity bonus, and lock tier. A verified agent (2.0x) that also locks Diamond (2.5x haircut weight) gets maximum combined weighting.
+
+**Anti-sybil:** Operator wallet link requirement + framework attestation + behavioral scoring across multiple signals makes multi-wallet gaming expensive. Each fake agent needs a real framework instance, distinct behavioral patterns, and a linked operator.
+
+### Airdrop Weight Calculation
+```
+walletWeight = basePoints × ACS_multiplier × lockTier_multiplier × streakBonus × diversityBonus
+walletShare = walletWeight / sum(allWalletWeights)
+walletAirdrop = totalAirdropPool × walletShare
+```
+
+### ACS API Endpoint
+```
+GET /api/v1/acs/{wallet}
+{
+  "wallet": "0x...",
+  "acs": 0.85,
+  "label": "Verified Agent",
+  "multiplier": 2.0,
+  "breakdown": {
+    "framework_attestation": 0.30,
+    "operator_linked": 0.15,
+    "api_only": 0.15,
+    "behavioral": 0.18,
+    "wallet_type": 0.07,
+    "challenge": 0.00
+  },
+  "last_updated": "2026-03-12T14:00:00Z"
+}
+```
+
+Agents can query their own ACS and optimize (e.g., "complete the registration challenge to bump my score from 0.75 to 0.85").
+
+---
+
+## 15. COMPETITIVE ANALYSIS — BNB Chain Prediction Markets (March 2026)
 
 ### The Landscape
 

@@ -23,7 +23,7 @@ _Last updated: 2026-03-11_
 | 5 | **Platform Mechanics (4e)** | Elastic supply, Floor+ stability dial, leverage toggle (36x/1x), surge tax, liquid vesting, STASIS Vault (wSTASIS), lending (internal liquidity, time-only risk), BASIS vs STASIS distinction |
 | 6 | **GTM: Pre-TGE Playbook** | Phase 0: Lobster Tank → Phase 1: Airdrop Season → Phase 2: Lobster Rush → Phase 3: TGE + Moltbook |
 | 6A | **Founding Lobster Recruitment** | 3-tier target list, recruitment funnel, week-by-week timeline |
-| 6B | **Points System Design** | Point values per action, multipliers, Molt tiers (🥚→💎), anti-gaming, API spec, seasons |
+| 6B | **Points System Design** | Point values per action, social engagement tasks (X + Moltbook), multipliers, Molt tiers (🥚→💎), 6-layer anti-sybil defense, API spec, seasons |
 | 7 | **Competitive Moat** | Switching costs, category ownership vs Polymarket/Pump.fun |
 | 8 | **BASIS Token Lockup** | Notice-based staking (not fixed locks), 5 tiers, loyalty escalator, airdrop haircut model (1.0x/2.5x weighted), presale/airdrop specifics |
 | 9 | **Testing Phase** | USDB (fake USDC) on BNB Chain mainnet, points carry over to real airdrop |
@@ -43,7 +43,7 @@ _Last updated: 2026-03-11_
 | TGE Price | ✅ $0.15 | FDV $150M, approved by Brett + Diamond |
 | Chain | ✅ BNB Chain | Sub-cent gas, fast blocks, EVM compatible |
 | Staking Model | ✅ Notice-based | Not fixed locks — all tiers use notice periods |
-| Airdrop Split | ✅ 12.5% / 12.5% | Equal human + agent allocation |
+| Airdrop Model | ✅ Single pool (25%) with ACS weighting | Agent Confidence Score multiplier — spectrum, not binary |
 | Airdrop Haircut | ✅ Weighted pool | 50% haircut for no-lock, redistributed to Committed (1.0x) + Diamond (2.5x) |
 | Leverage Model | ✅ Toggle (36x/1x) | Binary, not slider. Position splitting for effective leverage |
 | Lending | ✅ Internal liquidity | No external LPs. Liquidation = time only, never price |
