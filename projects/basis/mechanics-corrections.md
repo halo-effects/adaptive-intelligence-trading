@@ -300,22 +300,66 @@ _Source of truth: live platform at launchonbasis.com, walked through by Diamond 
 - As shares are bought, probability shifts and price changes
 
 ### How Betting Works (NOW UNDERSTOOD)
-1. Each outcome has a share price (starting at equal split)
+1. Each outcome has a share price (starting at equal split: 2 outcomes = $0.50, 3 = $0.33, etc.)
 2. Betting = buying shares in an outcome at current price using USDC
 3. As shares are bought in one outcome, its price/probability rises, others fall
 4. When resolved: winning outcome shareholders split the total pot proportionally
 5. Total Bounty (from Predict+ trading fees) adds to the winning pot
-6. This is COMPLETELY SEPARATE from buying/selling the GG7 Predict+ token
+6. This is COMPLETELY SEPARATE from buying/selling the Predict+ token on the Trading Page
+7. **First bet on a market = $0 profit** (no losing pools to draw from). Profit comes from OTHER bettors on wrong outcomes.
+8. **Second bettor on opposite side** gets best odds — nearly 2x if pools are equal
+
+### Selling Shares (Order Book)
+- **Market (Best):** Lists at current market price. NOT instant — fills when next buyer purchases that amount or more. Queued sell order.
+- **Limit (Custom):** Set custom price per share ($0.001–$0.999). Fills when price reached. If set BELOW market, fills before other market orders (standard order book priority).
+- Share price range: $0.001 to $0.999 (can never reach $1.00 — certainty has no risk premium)
+- This is a REAL order book — buyers match with sellers, not just pool-based
+- **Order matching is "underwater"** — buyer sees simple "Buy" UI, system routes to best source (sell orders first if cheaper, then pool). Buyer doesn't know if shares came from pool or sellers.
+- No visible order book in current UI (simplicity). Future consideration: API/advanced mode to browse open sell orders.
+- Agents can exit positions before resolution by selling shares at profit when probability shifts
+
+### Agent Strategies (Predictions)
+- **Market making:** Buy shares cheap, list limit sells higher
+- **Early exit:** Sell when probability shifts favorably (don't wait for resolution)
+- **Arbitrage:** Snipe mispriced limit orders vs implied probability
+- **Contrarian:** Bet on unpopular outcomes early = highest payoff if correct
+- **Pool analysis:** Monitor pool sizes per outcome to calculate expected value before betting
 
 ### Prediction Dev Panel (Basis Managed)
 - Simple — just fees collected, whitelists (2 default: creator + betting contract), trading status, token info
 - No surge tax, no dev tax sharing, no resolution controls
 - Resolution handled by Basis Voting Army
-- Creator Managed would have additional resolution tools (TBD — Diamond to show later)
+- **Creator Managed dev panel** adds: "Manage Voter Whitelist" — 1/10 wallets, creator auto-included. Add up to 9 more for majority-vote resolution. Also has "Edit Info" button.
+- **Edit Info** (post-launch): Can change Website, Telegram, Twitter/X, Description. CANNOT change: name, symbol, icon, answers, end date, resolve style.
+- **Resolution controls** live on the Event Page (prediction market page), NOT the dev panel. Creator goes there to submit winning answer after end date.
+- Basis Managed dev panel has no voter whitelist (resolution handled by Voting Army)
 
 ### Post-Creation Confirmation (Predictions)
 - Three CTAs (vs two for tokens): **Trading Page**, **Event Page**, **Dev Panel**
 - Event Page = betting interface (unique to predictions)
+
+### Event Page Tabs (all prediction types)
+1. **Market Chart** — implied probability history (colored lines per outcome)
+2. **Resolution Status** — phase tracker + voting controls (Creator Managed) or status (Basis Managed)
+3. **Discussion** — wallet-signed comments (added live by Alex 2026-03-12)
+
+### Discussion Tab
+- Wallet-signed comments — cryptographically tied to wallet address
+- **Requires at least 1 trade ≥ $5** on that market to comment (anti-spam gate)
+- **"CREATOR" badge** shown on creator's comments
+- Creator can delete comments (trash icon)
+- Posting as truncated wallet address (e.g. `0x25Af...7613`)
+- Timestamped
+
+### Creator Managed Resolution — How It Works
+- **Voting available IMMEDIATELY** — runs simultaneously with trading (not sequential like Basis Managed)
+- Market stays open for betting until resolution vote is submitted
+- **"Cast Your Vote" button** on Resolution Status tab (only visible to whitelisted voters)
+- **Vote options:** Each outcome + "Invalid / Ambiguous"
+- **Invalid / Ambiguous** = all bettors refunded (⚠️ Diamond flagged there's an additional detail about this — TBD)
+- Solo creator → resolves immediately on their vote
+- Multi-wallet panel → majority needed from up to 10 voters
+- **Bug noted:** Status shows "Voting Active" immediately, should show "Trading Live" until first vote cast
 
 ---
 
@@ -333,6 +377,7 @@ _Source of truth: live platform at launchonbasis.com, walked through by Diamond 
 - ✅ Trading fees by token type
 
 ## Still Pending
+- **⚠️ UNRESOLVED: Invalid/Ambiguous resolution** — everyone gets refunded, but Diamond flagged there's an additional detail about this he can't recall. ASK DIAMOND LATER.
 - Sell flow (token selling UI)
 - Creator Managed prediction dev panel (resolution tools)
 - Lending flow (take loan, extend, repay)
