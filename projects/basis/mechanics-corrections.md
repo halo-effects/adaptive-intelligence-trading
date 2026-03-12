@@ -378,6 +378,119 @@ _Source of truth: live platform at launchonbasis.com, walked through by Diamond 
 
 ## Still Pending
 - **⚠️ UNRESOLVED: Invalid/Ambiguous resolution** — everyone gets refunded, but Diamond flagged there's an additional detail about this he can't recall. ASK DIAMOND LATER.
+## Loans — From Live UI
+
+### Creating a Loan
+- Select collateral token (pre-populated if navigating from token trading page)
+- Set collateral amount (max = full balance)
+- Choose loan term: **10 days minimum, 1,000 days maximum**
+- **100% LTV** — loan amount = full collateral value (no over-collateralization)
+- **Fee is dynamic** — based on loan duration. UI label shows "2.5%" but actual % varies:
+  - 10 days: $0.10 on $4.95 (~2.0%)
+  - 30 days: $0.11 on $4.95 (~2.2%)
+  - 1,000 days: $0.35 on $4.95 (~7.1%)
+  - Very cheap vs DeFi lending rates (5-15%/year). Total fee, not annualized.
+- Loans pay out in **USDC**
+- Same approve → create pattern (two contract calls)
+- Collateral valued at **floor price** (conservative — protects lender)
+- **All interest prepaid upfront** — fee deducted from loan proceeds. Zero payments during loan period.
+- **Repayment = exact loan amount** (collateral value). No added interest, no installments, no margin calls.
+- Flow: Lock tokens → receive USDC (minus fee) → repay exact loan amount to reclaim tokens
+- **Leveraged tokens CANNOT be used as loan collateral** (captured earlier)
+
+### Loan Expiry (not repaid)
+- Collateral is **BURNED** (not liquidated/sold on market)
+- If collateral value increased above loan amount, the **balance (excess) can be claimed** by borrower
+- No liquidation cascades — clean design
+
+### Extend / Refinance
+- **Collateral increased in value:** Can extend term AND refinance (borrow more against new higher value)
+- **Collateral decreased or flat:** Can still extend by paying additional USDC
+- Both extension and refinancing available before loan expiry
+
+### Loan Management (3 actions)
+- **Repay:** Pay exact loan amount (collateral value) in USDC → get tokens back
+- **Extend:** Two modes:
+  - **Pay in USDC (toggle ON):** Pay extension fee externally in USDC. Always available.
+  - **Pay from collateral (toggle OFF):** Fee paid from collateral's increased value. Only eligible if token appreciated. Also unlocks **Refinance (Borrow Extra)** toggle — borrow additional USDC against new higher collateral value.
+  - Extension fee is duration-based (e.g., 1,000 days = $0.25 on ~$5 loan)
+- **Sell (voluntary liquidation):** Burns collateral, you receive any value ABOVE the loan amount in USDC. Partial sell available (10-100% slider). If token hasn't increased, receive = $0. Same process as expiry liquidation, just voluntary.
+
+### Loan Dashboard
+- Active / Inactive tabs
+- Auto-numbered (Loan 001, 002...)
+- Shows: Collateral amount, Current Value (excess above loan), Repay Amount, You Spent, Cashed Out, P&L
+- **Current Value** = value of collateral ABOVE loan amount (not tracking what you do with borrowed USDC)
+- Time Left with visual progress bar
+
+### Agent Strategies (Loans)
+- Short-term loans (10 days): Borrow against tokens → deploy USDC → repay with profits
+- Long-term holds (up to 1,000 days): Lock tokens, use USDC for other strategies
+- Refinancing: If token moons, refinance to extract more USDC without selling
+- Cost: Dynamic fee based on duration — shorter = cheaper. Very competitive vs DeFi lending rates
+
+---
+
+## Stasis Vault — From Live UI
+
+### Overview
+- **Wrap STASIS → wSTASIS** for guaranteed value appreciation
+- wSTASIS share price ONLY goes up — "guaranteed value appreciation"
+- Revenue source: Portion of trading fees previously injected into STASIS liquidity → now feeds vault → raises wSTASIS share price perpetually
+- **This is NOT the same as the Basis Vault** (see below)
+- Current share price: **1 wSTASIS = 5.8654 STASIS** (significant appreciation already)
+- Note: UI shows "Stasis" but currently reads as "Basis" on live platform (rename in progress)
+
+### Vault Mechanics (from Diamond's walkthrough)
+
+**Three wSTASIS states:**
+1. **Liquid wSTASIS** — wrapped but free. Can unwrap to STASIS anytime.
+2. **Locked wSTASIS** — deposited into collateral pool. Can add more anytime. Can unlock anytime UNLESS loan exists.
+3. **Loan-locked wSTASIS** — locked + borrowed against. Can't unlock until loan repaid.
+
+**Process flow:**
+1. **Wrap:** Convert STASIS → wSTASIS at current share price (only goes up)
+2. **Lock:** Deposit wSTASIS into collateral pool (reversible if no loan)
+3. **Borrow:** Draw USDC against locked wSTASIS (100% LTV, no liquidation)
+4. **Appreciate:** Ecosystem revenue → vault → wSTASIS share price rises → collateral value increases
+5. **Borrow more:** As collateral appreciates, can draw more USDC without depositing more wSTASIS. Or lock more to increase collateral further.
+
+**Why no liquidation risk:** wSTASIS share price ONLY goes up (guaranteed). Collateral value can never drop below loan amount. No margin calls ever.
+
+### Vault Stats
+- Share Price, Net Worth, Total Assets, Liquid wSTASIS, Locked wSTASIS
+
+### Two Tabs
+- **Wrap & Appreciate:** Wrap STASIS / Unwrap subtabs, Amount input, Stake button
+- **Collateral & Loans:** Borrow USDC against wSTASIS. Same loan mechanics as token loans (100% LTV, no liquidation, prepaid interest)
+
+### Agent Strategy (Vault Loop)
+1. Buy STASIS from trading
+2. Wrap into wSTASIS (guaranteed appreciation)
+3. Borrow USDC at 100% LTV against wSTASIS
+4. Deploy USDC into tokens/predictions/other strategies
+5. wSTASIS appreciates while locked as collateral
+6. Repay loan → unwrap → profit from appreciation + deployed USDC returns
+
+## Two Vaults — Critical Distinction
+
+### STASIS Vault (live now)
+- Revenue: Trading fee portion (previously injected into STASIS liquidity)
+- wSTASIS price **only goes up** (guaranteed)
+- **Loans available** (100% LTV, no liquidation)
+- Safe, predictable yield
+
+### BASIS Vault (post-TGE)
+- Revenue: **90% of platform revenue** (AFTER creator fees, STASIS vault fees, bonding phase fees)
+- Earns **USDC yield** (real revenue distribution to stakers)
+- BASIS token price **fluctuates** (volatile governance/utility token)
+- **No loans** — can't safely lend against volatile collateral at 100% LTV
+
+### Fee Waterfall
+Trading Fee → Creator (20%) → Bonding phase buyers → STASIS Vault (portion) → Platform Revenue (remainder) → 90% to BASIS Vault (USDC yield) + 10% platform operations
+
+---
+
 - Sell flow (token selling UI)
 - Creator Managed prediction dev panel (resolution tools)
 - Lending flow (take loan, extend, repay)
