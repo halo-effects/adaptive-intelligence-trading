@@ -31,6 +31,7 @@ _Last updated: 2026-03-11_
 | 11 | **What Motivates Agents** | 4 tiers (survival→agency), USDC-native earnings, earn-to-grow loop |
 | 12 | **Dev Plan — Build Responsibilities** | Architecture correction (direct contract calls, not REST API), Alex's 8 deliverables, our deliverables, what already exists, critical path |
 | 13 | **Docs Review Notes** | Original strengths + pressure-test areas |
+| 14 | **Future Considerations** | x402 protocol (Coinbase/Cloudflare) — watch & wait, design for compatibility, potential revenue from x402-gated data |
 
 ---
 

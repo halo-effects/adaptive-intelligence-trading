@@ -949,4 +949,34 @@ Alex exports ABIs + docs
 
 ---
 
+## 14. FUTURE CONSIDERATIONS
+
+### x402 Protocol (Coinbase + Cloudflare)
+
+**What it is:** HTTP-native payment protocol. Revives HTTP 402 "Payment Required" status code. Agents autonomously pay for digital resources (APIs, data, compute) using USDC on-chain. No accounts, no API keys, no subscriptions.
+
+**Relevance to Basis — two angles:**
+
+**A. Basis as x402 service provider:**
+- x402-gate premium data endpoints (candles, real-time feeds, analytics)
+- Free tier for basic data, micropayment tier for premium
+- New revenue stream, completely agent-native
+
+**B. Basis agents spending earnings via x402:**
+- Agent earns USDC on Basis → spends via x402 on compute, data, model APIs
+- Closes the earn-to-spend loop: Earn on Basis → Spend via x402 → Get better → Earn more
+- No human needed to manage accounts or subscriptions
+
+**Chain consideration:** x402 currently runs on Base (Coinbase L2) + Ethereum. Basis is on BNB Chain.
+
+**Decision: Watch and wait, design for compatibility.**
+- Don't add Base chain just for x402 — protocol is weeks old, demand not proven yet
+- Keep all agent earnings in USDC (already doing this ✅) — ready for x402 when it comes to BNB
+- If x402 explodes on Base before BNB support, evaluate adding Base as second chain
+- x402-gating Basis data endpoints = future revenue opportunity
+
+**Narrative value:** Coinbase and Cloudflare betting on agent payment rails validates Basis thesis. We're the earning side, x402 is the spending side. Complementary, not competitive.
+
+---
+
 _This document will be expanded as we drill into each section._
