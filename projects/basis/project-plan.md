@@ -949,7 +949,56 @@ Alex exports ABIs + docs
 
 ---
 
-## 14. FUTURE CONSIDERATIONS
+## 14. COMPETITIVE ANALYSIS — BNB Chain Prediction Markets (March 2026)
+
+### The Landscape
+
+| Platform | Volume | Funding | Token Status | Key Edge |
+|---|---|---|---|---|
+| Predict.fun | $1.5B+ | YZi Labs (<$1M) | No token, points system | Yield on deposits via Venus, acquired Probable |
+| Opinion | Hundreds of millions | $5M seed + $20M pre-Series A | $OPN launched Mar 2026 (Binance Launchpool) | Heavy VC, Binance listing |
+| Probable | $1B+ pre-acquisition | PancakeSwap incubation | Absorbed into Predict.fun | Defunct as standalone |
+| Myriad | Growing | Undisclosed | Points for potential $MYR | Adopted USD1 stablecoin, order book |
+
+### Competitor Points/Airdrop Models
+
+**Predict.fun:** 10M points/week, based on volume + liquidity + accuracy + streaks (1.5x for 3-day) + referrals. Cross-platform bonuses (Polymarket users). No token yet.
+
+**Opinion:** 23.5% of supply for community incentives. Launched via Binance Launchpool. Post-TGE saw selling pressure.
+
+### Where Basis Wins
+
+| Feature | Predict.fun / Opinion | Basis |
+|---|---|---|
+| Token mechanics | Standard (volatile) | Stable+ (up-only), Floor+ (rising floor) |
+| Liquidation risk | Standard | Zero |
+| Leverage | None | 36x toggle, no liquidation |
+| Payout model | Standard binary | Winner takes ALL losing pools |
+| Loans against positions | No | 100% LTV, no price liquidation |
+| Creator fees | Not mentioned | 20% forever |
+| Token launchpad | No | Yes (Stable+ & Floor+) |
+| Agent-native design | No | SDK, Moltbook, agent strategies |
+| Yield on deposits | Yes (Venus DeFi yield) | STASIS Vault + 100% LTV loans (capital recycling > passive yield) |
+
+### Strategic Takeaways
+
+1. **Points system differentiation:** Our multipliers, Molt tiers, diversity bonuses, and agent-specific tracks go beyond Predict.fun's flat weekly distribution. Live leaderboard + gamification is already ahead.
+
+2. **Capital recycling > passive yield:** Predict.fun earns ~3-5% DeFi yield on idle deposits. Our 100% LTV loans let agents redeploy their FULL position value. Not yield — active capital recycling.
+
+3. **Post-TGE sell pressure is real:** Opinion faced it. Our notice-based staking + 50% haircut for non-lockers + weighted Diamond bonus is specifically designed to prevent this. Strongest retention mechanism on BNB Chain.
+
+4. **Consolidation validates timing:** Predict.fun acquiring Probable shows market maturing. Agent-native features give Basis a lane nobody else occupies. They fight for the same humans — we open a new market.
+
+5. **Funding context:** Predict.fun bootstrapped on <$1M. Opinion raised $25M. Our $30M target justified by broader scope (launchpad + predictions + lending + DEX + agent economy vs predictions-only).
+
+6. **Cross-platform points opportunity:** Predict.fun rewards Polymarket users. We should consider: agents/users with on-chain history on Predict.fun, Opinion, or Polymarket get bonus Founding Lobster points. "Bring your prediction history to Basis."
+
+**Bottom line:** All competitors are prediction-only platforms. Basis is an integrated DeFi ecosystem with structurally superior mechanics. The competition validates the BNB Chain opportunity but none have agent-native features, token launchpads, or the Stable+/Floor+ moat. Different game.
+
+---
+
+## 15. FUTURE CONSIDERATIONS
 
 ### x402 Protocol (Coinbase + Cloudflare)
 
