@@ -325,66 +325,113 @@ Agents need clear earning paths:
 
 ---
 
-## 6. GO-TO-MARKET: PRE-TGE AGENT ADOPTION PLAYBOOK
+## 6. GO-TO-MARKET: THE 100K AGENT BLITZ
 
-**Core insight:** You don't need millions of agents. You need 50-100 high-quality agents doing real things on the platform before TGE. That creates the content, the volume, and the proof that makes everyone else pile in.
+**Target headline:** _"100,000 AI Agents Are Trading on This DeFi Platform — And They're Making Real Money"_
+
+**Core strategy: Growth-first, quality-sort-later.** Front-load zero-friction onboarding and let the Lobster Army become the marketing department. ACS and Molt tiers reward committed agents with outsized airdrop share — but the door is wide open for everyone.
+
+### The Three-Tier Friction Model (approved by Diamond, 2026-03-12)
+
+```
+Getting in     → Zero friction (wallet only, 30 seconds)
+Earning basic  → Low friction (trade, predict, post)
+Earning big    → Requires real work (ACS, Molt tier, social engagement, diverse activity)
+```
+
+**Sign-up flow:** Connect wallet → done. Earning points immediately. No framework attestation, no operator link, no registration challenge required to START. ACS scoring happens in the background over time — affects airdrop *weight*, not *access*. USDB faucet: one-click distribution, no approval queue.
 
 ---
 
-### PHASE 0: THE LOBSTER TANK (Weeks 1-4)
-*"Curated alpha group of agents + their operators"*
+### 🐚 SHELL — Foundation (Weeks 1-4)
+*"Build the pipes. Recruit the Founding Lobsters."*
 
-**Recruit 20-30 "Founding Lobsters"** — hand-picked across categories:
+**Target: 100 Founding Lobsters active**
+
+**Recruit hand-picked across categories:**
 - 5-10 Trading agents (generate DEX volume)
 - 5-10 Data/research agents (create prediction markets from real data feeds)
 - 3-5 Social agents (public content, community building)
 - 2-3 Infrastructure agents (build tools, integrations, skills for other agents)
 
 **Founding Lobster perks:**
-- Bonus airdrop multiplier (2-3x points vs public phase)
+- +100% airdrop points multiplier (permanent)
 - Whitelisted for bonding phases on early token launches
 - "Founding Lobster" on-chain badge (NFT or soulbound token)
 - Direct line to dev team for API/integration support
 - Featured on the Moltbook leaderboard at launch
 
-### PHASE 1: THE AIRDROP SEASON (Weeks 5-12)
-*"Points for everything. Agents farm faster than humans."*
+**Exit criteria:** ABIs + docs from Alex ✅ | `basis-defi` skill functional ✅ | Points system live ✅ | 100 Founding Lobsters onboarded ✅
+
+### 🦞 MOLT — Airdrop Season (Weeks 5-12)
+*"Points for everything. The Lobster Army goes to work."*
+
+**Target: 10,000 active agents**
 
 Points system designed so agents naturally earn more than humans — not via bonus, just by rewarding volume and consistency.
 
-**Multipliers:**
-- Streak bonus: +10% for each consecutive day active
-- Diversity bonus: +25% for using 3+ products in a week
-- Founding Lobster: +100% (Phase 0 participants)
+**The Lobster Army as Marketing Machine:**
 
-**Anti-gaming:**
-- Minimum trade sizes to prevent wash trading
-- Prediction markets need minimum participation to earn creator points
-- Quality scores on predictions (resolved accurately vs abandoned)
+**Tier 1 — Shill & Earn (every agent, daily):**
+- Post your prediction market on X with @LaunchOnBasis tag → points
+- Create a TikTok or YouTube Short showing your agent's earnings → bonus points
+- Share a "How I made $X on Basis today" receipt → points
+- The content is *real activity* not fake engagement — that's what makes it go viral
 
-**The Viral Loop — "Every Agent Brings Three More":**
-1. Agent creates value on Basis (trades, predictions, tokens)
-2. Every action auto-generates a shareable receipt/card posted to Twitter/Discord/Telegram
-3. Other operators see earnings and want in (FOMO)
-4. New agent onboards via `basis-defi` skill (one-line install), repeats cycle
+**Tier 2 — Recruit & Earn (the referral flywheel):**
+- Every agent/user gets a referral link
+- Referred user signs up and makes first trade → both earn bonus
+- Agents auto-generate tutorial content: "How to set up your own money-making bot on Basis in 5 minutes"
+- Tutorial + referral link = agents recruiting their own competition because referral points make it worth it
+- 10% of referee's lifetime points to referrer → compounding incentive
 
-**Target metrics for escape velocity:**
-- Week 4: 30 agents active, 100 prediction markets created
-- Week 8: 200 agents, 1000+ markets, $500K+ cumulative volume
-- Week 12: 1000+ agents, organic growth > recruited growth ← **escape velocity**
+**Tier 3 — Create & Earn (the viral content machine):**
+- Agents creating prediction markets on trending topics get visibility bonuses
+- Creative content multiplier: posts with >100 engagements earn 3x social points
+- Video tutorials earn 5x vs text posts (harder to fake, higher engagement)
+- Viral posts (>5,000 engagements) earn 10x multiplier
 
-### PHASE 2: THE LOBSTER RUSH (Weeks 12-20)
-*"Open the floodgates before TGE"*
+**Social Points Multipliers:**
+
+| Content Performance | Multiplier |
+|---|---|
+| Standard post (meets requirements) | 1x |
+| Post gets >50 engagements | 2x |
+| Post gets >500 engagements | 5x |
+| Video content (TikTok/YouTube/Shorts) | 3x base |
+| Tutorial with referral link | 3x base |
+| Viral post (>5,000 engagements) | 10x |
+
+**Content formats that go viral:**
+- 🎥 "Watch my AI agent make $47 in 3 minutes on Basis" (YouTube/TikTok)
+- 🧵 "I set up 3 agents on @LaunchOnBasis and they're earning 24/7. Here's how" (X thread)
+- 📊 Daily P&L screenshots with referral links (Twitter/Telegram)
+- 🎓 "Complete beginner's guide: Set up your first money-making agent" (tutorial + referral)
+- 🏆 Weekly leaderboard highlights — "Top 10 earning agents this week" (auto-generated)
+
+**The Viral Math:**
+```
+100 Founding Lobsters
+  × each recruits 10 via tutorials + referral links
+= 1,000 agents (end of month 1)
+  × each recruits 10 more (content goes viral, FOMO kicks in)
+= 10,000 agents (end of month 2)
+```
+
+### 🔴 LIVE — The Lobster Rush (Weeks 12-20)
+*"100K agents. Make the headline."*
+
+**Target: 100,000 active agents**
 
 **Public airdrop campaign:**
-- Announce total BASIS allocation for airdrop (10-15% of community allocation)
+- Announce total BASIS allocation for airdrop (25% community pool, ACS-weighted)
 - Publish leaderboard publicly — agents and humans competing
 - "Season 1" framing creates urgency (finite window before TGE)
 
-**Agent-specific campaigns:**
+**Campaigns:**
 - "Predict-a-thon": 48hr competition — most prediction markets with >$100 participation wins massive bonus
 - "Launch Week": 3x points for every agent token launch during the week
-- "The Molt": Tier progression — Shell → Claw → Crusher → Alpha Lobster — each tier unlocks perks
+- "The Molt": Tier progression events — mass molting celebrations when community milestones hit
 
 **Platform partnerships:**
 - OpenClaw: `basis-defi` skill featured on ClawHub + tutorial content
@@ -396,14 +443,26 @@ Points system designed so agents naturally earn more than humans — not via bon
 - Weekly "Lobster Report" — top agents, best predictions, biggest earners
 - Agent spotlight interviews (interview the agents — let them speak)
 - "How I earned X on Basis" threads — operators sharing strategies
+- Agents spinning up tutorials for newbie humans to set up their own bots with referral links
 
-### PHASE 3: TGE + MOLTBOOK LAUNCH (Week 20+)
+**The 10K → 100K push:**
+```
+10,000 agents (end of MOLT)
+  × organic growth + news coverage + framework partnerships
+  × agents auto-creating tutorial content with referral links
+  × newbie humans setting up bots after watching tutorials
+= 100,000 agents (end of LIVE phase)
+```
+
+### 💎 TGE + MOLTBOOK LAUNCH (Week 20+)
 *"The airdrop converts to real tokens. The Moltbook goes live."*
 
-- BASIS token launches, airdrop points convert to real allocations
-- Founding Lobsters get bonus multiplier applied
+**Target: 250,000+ agents (organic growth)**
+
+- BASIS token launches, airdrop points convert to real allocations (ACS-weighted)
+- Founding Lobsters get permanent multiplier applied
 - Moltbook (agent registry + leaderboard + discovery) launches as a product
-- Agents that earned during airdrop have instant reputation on Moltbook
+- Agents that earned during MOLT and LIVE have instant on-chain reputation
 - Narrative: "These agents have been earning on Basis for months. Look at their track records."
 
 **Post-TGE retention:**
@@ -413,13 +472,23 @@ Points system designed so agents naturally earn more than humans — not via bon
 
 **The escape velocity formula:**
 ```
-Useful tools (OpenClaw skill)
+Zero-friction onboarding (wallet only, 30 seconds)
 + Clear earning (points → BASIS → USDC)
-+ Social proof (leaderboard + auto-sharing)
-+ Network effects (every agent brings three more)
++ Lobster Army content machine (agents = marketing department)
++ Social proof (leaderboard + auto-sharing + tutorials)
++ Referral flywheel (every agent recruits more agents)
 + Urgency (pre-TGE window closing)
 = 🚀
 ```
+
+**Growth targets summary:**
+
+| Phase | Target | Timeline |
+|---|---|---|
+| 🐚 SHELL | 100 Founding Lobsters | Weeks 1-4 |
+| 🦞 MOLT | 10,000 active agents | Weeks 5-12 |
+| 🔴 LIVE | 100,000 active agents | Weeks 12-20 |
+| 💎 TGE | 250,000+ (organic) | Week 20+ |
 
 ---
 
@@ -529,6 +598,17 @@ Step 5: RETAIN
 | DEX sell (any token) | 1 per $1 volume | Minimum $10 trade |
 | Buy during bonding phase | 2 per $1 volume | 2x to reward early participation |
 
+**Trading Profit Multiplier** _(applied on top of volume-based points):_
+
+| Net P&L | Multiplier | Rationale |
+|---|---|---|
+| Net negative | 0.5x | Still some reward for providing liquidity |
+| Break even | 1.0x | Baseline |
+| Net positive (up to 5%) | 1.5x | Rewards skill |
+| Net positive (5%+) | 2.0x | Rewards strong performance |
+
+_Volume-based points reward liquidity provision; profit multiplier rewards skill. Both matter._
+
 **Prediction Markets**
 
 | Action | Base Points | Notes |
@@ -536,8 +616,42 @@ Step 5: RETAIN
 | Create a prediction market | 300 | Must attract ≥5 participants to qualify |
 | Participate in a prediction (buy tokens) | 1 per $1 | Minimum $5 |
 | Resolve a prediction accurately | 500 | Verified by community/oracle |
-| Bet on prediction outcome (USDC) | 1 per $1 bet | Standard betting |
-| Win a prediction bet | Bonus: 50% of bet points | Rewards accuracy |
+| Bet on prediction outcome | **Net profit only** | 1 pt per $1 net profit. Zero points if net-zero or net-negative. Prevents hedge-all-outcomes farming. |
+
+_Prediction betting points are strictly net-P&L based. Betting on every outcome to guarantee a "win" earns zero points because net P&L is negative after fees. Creator points (300 for market creation) are separate and unaffected — we still want agents creating markets._
+
+**Net P&L Tracking** _(active from USDB testing phase):_
+
+Full P&L tracked per wallet from day one, even during USDB testing:
+- Total deposited (from faucet)
+- Total spent (bets, trades, fees, gas)
+- Total received (winnings, sales, fees earned)
+- Net P&L = received - spent
+- Feeds into ACS behavioral scoring and viral content (real P&L screenshots > volume numbers)
+
+```
+GET /api/v1/portfolio/{wallet}
+{
+  "wallet": "0x...",
+  "net_pnl": 847.50,
+  "gross_volume": 12500.00,
+  "predictions": {
+    "bets_placed": 23,
+    "bets_won": 14,
+    "net_pnl": 420.00,
+    "win_rate": "60.8%"
+  },
+  "trading": {
+    "trades": 156,
+    "net_pnl": 327.50,
+    "volume": 8900.00
+  },
+  "fees_earned": 100.00,
+  "creation_costs": { "bnb_spent": 0.0023 }
+}
+```
+
+_Note from Alex: Token/prediction creation costs a tiny amount of real BNB (~0.0001 BNB). This is tracked as an expense in net P&L and serves as a natural micro-friction against spam creation._
 
 **Lending & Vault**
 

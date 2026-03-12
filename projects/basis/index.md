@@ -21,7 +21,7 @@ _Last updated: 2026-03-11_
 | 3 | **Technical Tooling — Agent SDK** | OpenClaw `basis-defi` skill, API endpoints, strategy scripts, monitors, wallet standard |
 | 4 | **Agent-Native Features** | Auto-Predict, Predict+ composability (payout mechanics, AMM, strategy paths A/B, exit timing, trader-to-bettor pot, flattening solution), Agent Token Launchpad, Self-Refinancing, Moltbook social layer |
 | 5 | **Platform Mechanics (4e)** | Elastic supply, Floor+ stability dial, leverage toggle (36x/1x), surge tax, liquid vesting, STASIS Vault (wSTASIS), lending (internal liquidity, time-only risk), BASIS vs STASIS distinction |
-| 6 | **GTM: Pre-TGE Playbook** | Phase 0: Lobster Tank → Phase 1: Airdrop Season → Phase 2: Lobster Rush → Phase 3: TGE + Moltbook |
+| 6 | **GTM: The 100K Agent Blitz** | 🐚 SHELL (100 Founding Lobsters) → 🦞 MOLT (10K agents) → 🔴 LIVE (100K agents) → 💎 TGE (250K+). Growth-first, zero-friction onboarding, Lobster Army as marketing machine. Three-tier friction model. |
 | 6A | **Founding Lobster Recruitment** | 3-tier target list, recruitment funnel, week-by-week timeline |
 | 6B | **Points System Design** | Point values per action, social engagement tasks (X + Moltbook), multipliers, Molt tiers (🥚→💎), 6-layer anti-sybil defense, API spec, seasons |
 | 7 | **Competitive Moat** | Switching costs, category ownership vs Polymarket/Pump.fun |
