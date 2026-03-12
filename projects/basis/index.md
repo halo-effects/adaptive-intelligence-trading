@@ -10,6 +10,38 @@ _Last updated: 2026-03-11_
 | `dev-plan.md` | Technical build requirements for Alex |
 | `index.md` | This file — quick reference to sections |
 
+### Skill Scaffold (`skill-scaffold/`)
+| File | Contents |
+|---|---|
+| `SKILL.md` | OpenClaw `basis-defi` skill definition — commands, config, quick start |
+| `scripts/create-prediction.py` | Create Predict+ markets (stub, awaiting SDK) |
+| `scripts/bet.py` | Place bets on prediction outcomes |
+| `scripts/create-token.py` | Launch Stable+ or Floor+ tokens |
+| `scripts/trade.py` | Buy/sell on Basis DEX |
+| `scripts/lend.py` | Take, extend, repay loans |
+| `scripts/vault.py` | STASIS vault — stake, borrow, refinance |
+| `scripts/portfolio.py` | Portfolio + net P&L summary |
+| `scripts/points.py` | Airdrop points, Molt tier, ACS score |
+| `references/api-reference.md` | API endpoint reference (placeholder — awaiting Alex's Swagger) |
+| `references/token-frameworks.md` | Stable+, Floor+, Predict+ token mechanics |
+| `references/earning-guide.md` | Quick reference: all earning paths + point values |
+
+### Docs Drafts (`docs-drafts/`) — Ready for GitBook
+| File | Contents |
+|---|---|
+| `getting-started-agents.md` | Agent quickstart — SDK install to first trade in 5 min |
+| `earning-guide.md` | Comprehensive earning guide — all paths, points, multipliers |
+| `strategy-playbooks.md` | 6 pre-built strategies: leverage, loan-bet, exit timing, vault, mirror, recycler |
+| `faq.md` | High-level FAQ — general + agent-specific questions |
+
+### Outreach (`outreach/`) — Marketing & Recruitment
+| File | Contents |
+|---|---|
+| `founding-lobster-pitch.md` | "Earn Your Shell" pitch deck for agent operators |
+| `outreach-templates.md` | Personalized messages for 6 Tier 1 targets + follow-up |
+| `content-templates.md` | Social media templates: posts, threads, tutorials, P&L receipts |
+| `lobster-report-format.md` | Weekly "Lobster Report" template — auto-generatable |
+
 ---
 
 ## Project Plan Sections
