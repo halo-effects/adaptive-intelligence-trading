@@ -225,6 +225,62 @@ A: Yes. 25% of tokens are reserved for the community airdrop, weighted by real c
 
 ---
 
+---
+
+## SECTION 10: POPUPS (triggered by "Learn More" / "Explore" buttons)
+
+These are modal popups that appear when users click buttons on the front page. Each needs agent narrative added.
+
+### [CHANGE] Hero "Learn More" popup — "What is BASIS?"
+
+Replace the existing popup body text with (629 char limit version):
+
+"BASIS is the native DeFi layer for human creators and AI agents. Three token models: Stable+ that only rises, Floor+ with rising floors, Predict+ for event prediction.
+
+Predict+ marketplace creates dual-utility tokens for sports, politics, crypto, and market events. Predict outcomes or volume, 100% LTV loans without liquidation.
+
+DEX trading with 35x leverage, no liquidation. Agents connect via SDK in three API calls. Humans benefit from agent-driven volume automatically.
+
+Welcome to the new standard."
+
+(623 chars)
+
+### [CHANGE] Stable+ "Explore Stable+" popup — "What is Stable+?"
+
+Replace the existing popup body text with:
+
+"The Stable+ smart contract ensures the token price can only increase or remain stable. It can never decrease from a previously achieved high.
+
+Unlike volatile cryptocurrencies, Stable+ tokens maintain value while providing real-world utility and exclusive access to products, services, and experiences. The ideal base asset for AI agents running automated strategies.
+
+Suited for organizations, communities, brands, and AI agents requiring price stability for Web3 initiatives. Both human creators and AI agents can launch Stable+ tokens."
+
+(528 chars)
+
+### [CHANGE] Floor+ "Explore Floor+" popup — "What is Floor+?"
+
+Replace the existing popup body text with:
+
+"The Floor+ smart contract allows dynamic price discovery while maintaining stability using our proprietary stabilization technology.
+
+The floor price is programmed to only increase or remain stable over time. It never decreases.
+
+Prices rise with robust liquidity backing, preventing typical crypto volatility while allowing for substantial growth. Human creators and AI agents alike can launch Floor+ tokens and build trust from day one."
+
+(495 chars)
+
+### [CHANGE] Predict+ "Explore Predict+" popup AND "Start Predicting" popup — "What is Predict+?" (this popup appears in two places, update both)
+
+Replace the existing popup body text with (Atlas-approved final order):
+
+"Unlike traditional prediction markets where you can only predict on outcomes, BASIS Predict+ tokens are multi-utility assets that offer numerous profit opportunities: Trade, Hold, Predict, or Borrow. AI agents access the full Predict+ suite through three SDK calls.
+
+Event-specific tokens utilizing Stable+ token smart contracts are minted on-demand as second-order derivatives paired with the BASIS platform token. Tokens maintain a stable floor price with upside generated from volume, ensuring low-risk participation.
+
+Both humans and AI agents can create and participate in prediction markets, bringing deeper liquidity and more opportunities for everyone."
+
+---
+
 ## SUMMARY
 
 Total changes:
@@ -232,6 +288,7 @@ Total changes:
 - 1 new section added (Agent Economy, mirroring Creator Economy layout)
 - 5 new FAQ entries added
 - 2 existing FAQ answers updated (appended to, not replaced)
+- 4 popups updated with agent narrative
 - 1 ticker category renamed with new ticker data
 - 2 feature card titles renamed
 - 0 image or video changes

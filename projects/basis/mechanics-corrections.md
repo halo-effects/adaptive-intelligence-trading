@@ -376,6 +376,42 @@ _Source of truth: live platform at launchonbasis.com, walked through by Diamond 
 - ✅ Resolution types (Basis Managed vs Creator Managed, Public vs Private)
 - ✅ Trading fees by token type
 
+## Vesting System — Full Mechanics (from Diamond, 2026-03-13)
+
+### Auto Vesting (set at token creation, Step 2: Tokenomics)
+- Toggle ON/OFF during token creation
+- When ON, all bonding phase buyers' tokens go to vesting contract automatically
+- Vesting Type: **Cliff** (all at once after period) or **Gradual** (linear release over period)
+- Vesting Period: configurable in days (default 30)
+- Creator can **extend the vesting period** before cliff hits (trust signal to community)
+
+### Normal Vesting (post-launch, via Dev Panel)
+- Same structure: Cliff or Gradual, configurable period
+- Creator sets up for specific wallets/allocations
+- Period can also be extended
+
+### Loans on Vested Tokens
+- **Stable+ tokens**: 100% LTV loans (but no vesting needed since no dump risk)
+- **Floor+ tokens**: 100% LTFP (Loan to Floor Price) — loans against guaranteed floor price
+- LTFP is effectively close to full value at launch since spot starts near floor
+- Creators access liquidity immediately without waiting for vest to expire
+
+### Loan + Vesting Interaction
+- **Active loan = tokens held** regardless of vesting schedule
+- Even gradual-release tokens stay locked while a loan is active
+- **To claim tokens: loan must be repaid first**
+- **Partial sell option**: can sell a portion of vested tokens to cover loan repayment (no external USDC needed)
+- Clean exit: partial sell to cover loan → remaining tokens released
+
+### The Full Loop (why creators never need to dump)
+1. Vest tokens → borrow against floor price for immediate liquidity
+2. Extend vesting period to build community trust
+3. Token appreciates → refinance for more USDC if needed
+4. When ready to exit: partial sell covers loan, remaining tokens released
+5. No scenario forces a creator to dump on their community
+
+---
+
 ## Still Pending
 - **⚠️ UNRESOLVED: Invalid/Ambiguous resolution** — everyone gets refunded, but Diamond flagged there's an additional detail about this he can't recall. ASK DIAMOND LATER.
 ## Loans — From Live UI
