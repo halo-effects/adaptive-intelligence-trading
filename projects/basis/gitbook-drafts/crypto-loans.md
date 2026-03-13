@@ -2,23 +2,25 @@
 
 ## Borrowing Against Your Basis Tokens
 
-Basis's integrated lending platform lets users access USDC liquidity by using their Basis Token holdings as collateral. The key innovation: **100% Loan-to-Value (LTV) ratios** with zero liquidation risk from price movements — mathematically possible because Stable+ tokens cannot decrease in value and Floor+ loans are calculated against the rising floor price.
+Basis's integrated lending platform offers a unique and flexible way for users to access liquidity (in USDC) by using their existing Basis Token holdings as collateral. A key innovation is 100% Loan-to-Value (LTV) ratios with zero liquidation risk from price movements, especially concerning price volatility of the collateral.
 
-### Loan Terms
+### Loan Terms and Loan-to-Value (LTV) Ratios
 
-| Parameter | Details |
-| --------- | ------- |
-| **Collateral Accepted** | Any Stable+ or Floor+ Basis Token |
-| **Loan Currency** | USDC |
-| **LTV — Stable+** | Up to 100% of current market value |
-| **LTV — Floor+** | Up to 100% of current **floor price** (not market price) |
-| **Loan Term** | 10 days minimum, 1,000 days maximum |
-| **Interest** | All prepaid upfront — deducted from loan proceeds |
-| **Repayment** | Exact loan amount in USDC. No added interest, no installments, no margin calls. |
+**Loan Term:** Users can select a fixed loan term ranging from **10 to 1,000 days**.
+
+**Collateral Accepted:** Any Stable+ or Floor+ Basis Token held by the user.
+
+**Loan Currency:** Loans are disbursed in USDC.
+
+**LTV for Stable+ Tokens:** Up to 100% LTV based on the current market value of the Stable+ token collateral. Since Stable+ token prices are designed not to decrease, this offers a high degree of confidence.
+
+**LTV for Floor+ Tokens:** Up to 100% LTV, but the maximum loan amount is calculated based on the token's current **floor price**, not its potentially higher fluctuating market price.
+
+* Max Loan Value (Floor+) = Number of Floor+ Tokens Collateralized \* Current Floor Price of that Token
 
 ### Loan Fees
 
-Loan fees are **dynamic based on duration** — not a flat percentage:
+Loan fees are **dynamic based on duration** — not a flat percentage. All interest is prepaid upfront and deducted from loan proceeds. You receive USDC minus the fee, and during the loan period there are zero payments due.
 
 | Loan Duration | Approximate Fee |
 | ------------- | --------------- |
@@ -30,71 +32,65 @@ Loan fees are **dynamic based on duration** — not a flat percentage:
 These are **total fees**, not annualized rates. Compared to traditional DeFi lending rates of 5–15% per year, Basis loan costs are very competitive — especially for short-term borrowing.
 {% endhint %}
 
-All interest is prepaid upfront. The fee is deducted from loan proceeds, so you receive USDC minus the fee. During the loan period, there are zero payments due.
+**Repayment:** Pay the exact loan amount (collateral value) in USDC to reclaim your tokens. No added interest, no installments, no margin calls during the loan period.
 
-### How It Works
+### No Liquidation Risk from Collateral Price Depreciation
 
-1. **Select collateral** — choose which Basis Tokens to lock
-2. **Set loan term** — 10 to 1,000 days
-3. **Approve + Create** — two contract calls (ERC-20 approve, then loan creation)
-4. **Receive USDC** — loan amount minus the prepaid fee
-5. **Repay anytime** — pay exact loan amount in USDC to reclaim tokens
+* For Stable+ collateral, since the token's price cannot decrease, the value of the collateral will not drop below the loan amount due to market volatility.
+* For Floor+ collateral, since the loan value is based on its "rising floor price," and this floor price cannot decrease, the loan remains protected against liquidation caused by the market price of the Floor+ token falling (as long as it stays above or at the floor). Liquidation only occurs if the loan is not repaid or extended by its maturity date.
 
-Collateral is valued at the **floor price** (conservative valuation that protects the lending system).
+**On non-payment at maturity:** Collateral is **burned** (not sold on the open market), eliminating liquidation cascades. If the collateral value has increased above the loan amount, the borrower can **claim the excess** (the difference between current value and loan amount).
 
-### No Liquidation from Price Movements
+### Loan Stacking Potential
 
-This is Basis's most powerful lending innovation:
-
-* **Stable+ collateral:** The token's price cannot decrease, so collateral value can never drop below the loan amount.
-* **Floor+ collateral:** The loan is based on the rising floor price, which also cannot decrease. The loan remains protected as long as the market price stays at or above the floor.
-* **Liquidation only occurs** if the loan is not repaid or extended by its maturity date — never from price depreciation.
-
-### What Happens at Loan Expiry
-
-If a loan is not repaid or extended by its maturity date:
-
-* Collateral is **burned** (not sold on the open market) — eliminating liquidation cascades
-* If the collateral value has increased above the loan amount, the borrower can **claim the excess** (the difference between current value and loan amount)
-* No market impact from forced selling
-
-### Loan Extension & Refinancing
-
-Before loan expiry, borrowers can:
-
-**Extend the term:**
-* **Pay in USDC** — pay extension fee externally (always available)
-* **Pay from collateral** — fee paid from the collateral's increased value (only if token appreciated)
-
-**Refinance (borrow more):**
-* Available when paying from collateral and the token has appreciated
-* Borrow additional USDC against the new, higher collateral value
-* Access growing value without selling positions or creating sell pressure
-
-### Loan Stacking
-
-Users can chain multiple loans: borrow USDC → purchase additional tokens → use those tokens as collateral for another loan. This creates cascading leverage. Approach with caution, understanding the cumulative fee obligations.
+Users can potentially take out multiple loans. For example, a user could borrow USDC against their Basis Token, use that USDC to purchase another Basis Token, and then use that newly acquired Basis Token as collateral for a second loan. This should be approached with caution, understanding the cumulative fee obligations.
 
 {% hint style="warning" %}
 **Leveraged tokens cannot be used as loan collateral.** Leverage and loans are separate paths — you cannot combine both on the same tokens.
 {% endhint %}
 
-### Loan Management Dashboard
+### Loan Extension with Potential Cash Out
 
-The loan dashboard shows all active and inactive loans with:
+* Borrowers have the option to extend their loan term before the maturity date.
+* **Two extension modes:**
+  * **Pay in USDC:** Pay extension fee externally in USDC. Always available.
+  * **Pay from collateral:** Fee paid from the collateral's increased value. Only available if the token has appreciated. This also unlocks **Refinancing (Borrow Extra)** — borrow additional USDC against the new, higher collateral value.
+* Extension fees are duration-based (dynamic, same structure as origination fees).
+
+#### Example Loan (Stable+ Collateral):
+
+<details>
+
+<summary>Initial Loan: 100 tokens (valued at $100) as collateral.</summary>
+
+**Loan:** $100 USDC at 100% LTV, minus ~2% fee for 10-day term = ~$98 received.
+
+After 10 days, tokens have appreciated to $150.
+
+Borrower extends for another 100 days.
+
+New Max Loan Value = $150 USDC.
+
+**Extension fees:** Dynamic based on new duration and amount.
+
+**Cash Out** = New Max Loan Value – Old Loan Balance – New Fees.
+
+The new outstanding loan becomes $150 USDC.
+
+</details>
+
+### Loan Management
+
+Three actions available for active loans:
+
+* **Repay:** Pay exact loan amount in USDC → get tokens back
+* **Extend:** Extend the term with fee payment in USDC or from collateral appreciation
+* **Sell (voluntary liquidation):** Burns collateral, you receive any value ABOVE the loan amount in USDC. Partial sell available (10–100% slider). If token hasn't increased, you receive $0.
+
+### Loan Dashboard
+
+The loan dashboard shows active and inactive loans with:
 
 * Collateral amount and current value (excess above loan amount)
 * Repay amount, total spent, cashed out, and P&L
 * Time remaining with visual progress bar
-* Three actions: **Repay**, **Extend**, **Sell** (voluntary liquidation — burns collateral, you receive value above loan amount)
-
-#### Example: Stable+ Loan
-
-1. Lock 100 tokens (valued at $100) as collateral
-2. Receive ~$98 USDC (100% LTV minus ~2% fee for a 10-day loan)
-3. After 10 days, repay $100 USDC → reclaim 100 tokens
-4. If tokens appreciated to $150 during the loan period, you can extend and refinance for additional USDC
-
-### The wSTASIS Vault — Advanced Lending
-
-For more sophisticated capital management, the **STASIS Vault** allows wrapping STASIS into wSTASIS (which only appreciates in value), then borrowing against it at 100% LTV. The vault position earns yield, serves as collateral, appreciates, and provides USDC liquidity — all simultaneously. See the [BASIS Utility Token](basis-utility-token.md) section for details on the vault.
