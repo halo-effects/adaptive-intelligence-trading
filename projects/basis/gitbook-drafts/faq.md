@@ -34,7 +34,7 @@ Floor+ tokens combine the excitement of price discovery with downside protection
 
 * **Price goes up on buys, down on sells** — unlike Stable+ which is up-only
 * **Rising Floor Protection:** The floor price only increases over time, never decreases
-* **Stability Dial:** 0% to 100% (set at creation, immutable). 0% = most volatile, 100% = most stable.
+* **Stability Dial:** 0% to ~90% (set at creation, immutable). 0% = most volatile (default). 100% stability would effectively be a Stable+ token, so the Floor+ range caps below that.
 * **100% Liquidity Backing:** Unlike traditional meme tokens with \~25% backing, every dollar at floor price is backed by real liquidity
 * **Starting Liquidity:** $100 to $10,000, creator-configurable
 
@@ -141,8 +141,8 @@ Basis's lending facility offers unprecedented terms:
 
 **For Floor+ Collateral:**
 
-* Borrow up to 100% of the **floor price** (not market price)
-* Protected as long as price stays at or above the rising floor
+* Borrow up to 100% of the **floor price** (not spot/market price)
+* Since the floor never decreases, collateral value can't drop below the loan — same zero-liquidation guarantee
 
 **Terms:**
 * 10–1,000 day loan terms
@@ -157,8 +157,8 @@ Basis's lending facility offers unprecedented terms:
 **Basis offers dynamic leverage with no liquidation risk from price movements:**
 
 * Leverage is a **toggle** (on/off) — effective leverage depends on current liquidity and buy size
-* **"Up to 36x" is the theoretical maximum** — not a fixed constant. Larger buys produce lower effective leverage.
-* Leverage is calculated against the protected floor price — since Stable+ floor = spot always, max leverage is always available for Stable+ tokens
+* **"Up to 36x" is possible in optimal conditions** — not a fixed constant. Leverage fluctuates dynamically: smaller buys get higher leverage, larger buys get lower leverage due to price impact
+* Leverage is calculated against the floor price — for Stable+ tokens (floor = spot), maximum leverage is always available. For Floor+ tokens, maximum leverage is available at launch (floor ≈ spot) but decreases as spot rises above floor
 * The leverage fee is substantial: 43–70% of collateral for small buys
 * No forced liquidation from market volatility
 
