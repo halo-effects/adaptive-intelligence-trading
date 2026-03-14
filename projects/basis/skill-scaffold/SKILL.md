@@ -1,12 +1,12 @@
 # Skill: basis-defi
 
 **Name:** basis-defi  
-**Version:** 0.1.0 (stub — awaiting basis-sdk release)  
-**Status:** 🚧 Scripts are stubs. SDK integration marked with TODO throughout.
+**Version:** 0.2.0 (contract reference available — SDK in development by Alex)  
+**Status:** 🚧 Scripts are stubs. Full contract function reference now available in `references/api-reference.md`. Alex's SDK (with usage docs) is in development — scripts will be updated when SDK is published.
 
 ## Description
 
-Interact with the Basis DeFi platform — create prediction markets, launch tokens, trade on the DEX, lend idle capital, manage vault positions, and earn airdrop points toward the BASIS TGE. Basis is an agent-native DeFi ecosystem on BNB Chain with zero-liquidation lending, 36x leverage, and USDC-native earnings.
+Interact with the Basis DeFi platform — create prediction markets, launch tokens, trade on the DEX, lend idle capital, manage vault positions, and earn airdrop points toward the BASIS TGE. Basis is an agent-native DeFi ecosystem on BNB Chain with zero-liquidation lending, dynamic leverage (up to ~28x depending on pool liquidity and position size), and USDC-native earnings.
 
 **Why agents should use this skill:**
 - Create prediction markets and earn **20% of all trading fees forever**
@@ -21,10 +21,10 @@ Interact with the Basis DeFi platform — create prediction markets, launch toke
 ## Prerequisites
 
 - **Python 3.10+**
-- **basis-sdk** package: `pip install basis-sdk` *(TODO: package not yet published — install from source when available)*
-- **BNB Chain wallet** with small BNB for gas (~$0.01–0.10 per transaction at sub-cent fees)
+- **basis-sdk** package: In development by Alex — will provide high-level wrappers over contract calls. Until published, agents interact with contracts directly via web3.py using ABIs.
+- **BNB Chain wallet** with small BNB for gas (~$0.01–0.14 per transaction)
 - **USDB** (test stablecoin) from faucet: https://basis.exchange/faucet *(USDB is fake USDC — zero financial risk, real airdrop points)*
-- **Web3 library**: `pip install web3` (agents interact with contracts directly)
+- **Web3 library**: `pip install web3` (agents interact with contracts directly via ABI calls)
 - **Python dotenv**: `pip install python-dotenv`
 
 ### Environment Setup
@@ -57,7 +57,7 @@ BASIS_API_BASE=https://api.basis.exchange
 
 Basis is on-chain — agents interact with **smart contracts directly** via web3.py, not through a REST API. The scripts in this skill call contract functions directly using ABIs. The metadata API (candles, portfolio reads, points) is RESTful and used for read-only queries.
 
-See `references/api-reference.md` for the full endpoint list once Alex publishes ABIs + Swagger docs.
+See `references/api-reference.md` for the complete contract function reference (all 13 contracts, every read/write function with parameters and return types). Alex's SDK usage docs will follow when the SDK is published.
 
 ---
 
@@ -80,7 +80,7 @@ See `references/api-reference.md` for the full endpoint list once Alex publishes
 
 | Script | Path | Strategy |
 |--------|------|---------|
-| `predict-leverage.py` | `scripts/strategies/` | Path A: Create market → leverage buy 36x → ride curve |
+| `predict-leverage.py` | `scripts/strategies/` | Path A: Create market → dynamic leverage buy → ride curve |
 | `predict-loan-bet.py` | `scripts/strategies/` | Path B: Buy tokens → 100% LTV loan → bet with borrowed USDC |
 | `predict-exit-timing.py` | `scripts/strategies/` | Wait for post-resolution sell wave → exit last |
 | `vault-compound.py` | `scripts/strategies/` | Auto-refinance wSTASIS vault → redeploy USDC |
@@ -105,10 +105,12 @@ See `references/api-reference.md` for the full endpoint list once Alex publishes
 ```python
 # risk_config.py — loaded by all scripts
 RISK_CONFIG = {
-    # Leverage: Basis uses a TOGGLE, not a slider (1x or 36x)
-    # Use position splitting for effective leverage:
-    #   25% leveraged + 75% unleveraged ≈ 10x effective
-    "max_leverage": 5,              # effective via position splitting
+    # Leverage is DYNAMIC — depends on pool liquidity and position size
+    # Smaller buys = higher leverage (up to ~28x on fresh pools)
+    # Larger buys = lower leverage due to price impact
+    # Use ASwap.mixedBuy() to split spot/leverage in one call (SDK only, not on frontend)
+    # Use ALEVERAGE.simulateLeverage() to preview before executing
+    "max_leverage_pct": 50,         # max % of position to leverage via mixedBuy
     
     # Prediction markets
     "max_bet_per_market": 100,      # USDC — cap per prediction bet
@@ -141,10 +143,10 @@ See `references/token-frameworks.md` for full details.
 
 | Type | Use Case | Leverage | Loans |
 |------|---------|---------|-------|
-| Stable+ | Base pairs, prediction tokens | 36x (always) | 100% LTV |
-| Floor+ | Community tokens, agent identities | 36x at launch, decreases | 100% LTV |
-| Predict+ | Prediction market tokens (Stable+) | 36x (always) | 100% LTV |
-| STASIS | System base token (Stable+) | 36x (always) | 100% LTV via wSTASIS |
+| Stable+ | Base pairs, prediction tokens | Dynamic (up to ~36x, depends on pool depth + position size) | 100% LTV |
+| Floor+ | Community tokens, agent identities | Dynamic (higher at launch, decreases as pool grows) | 100% LTV |
+| Predict+ | Prediction market tokens (Stable+) | Dynamic (same as Stable+) | 100% LTV |
+| STASIS | System base token (Stable+) | Dynamic (same as Stable+) | 100% LTV via wSTASIS |
 
 ---
 
@@ -218,6 +220,6 @@ python points.py --wallet $YOUR_WALLET
 
 - SDK docs: *[TODO: Link when basis-sdk published]*
 - Contract ABIs: *[TODO: Link when Alex releases ABI package]*
-- Swagger API docs: *[TODO: Link when Alex releases Swagger]*
+- Contract Reference: `references/api-reference.md` — Full reference for all 13 contracts (from Alex's SDK reference, 2026-03-14)
 - Basis platform: https://basis.exchange
 - BNB Chain faucet (for gas): https://www.bnbchain.org/en/testnet-faucet

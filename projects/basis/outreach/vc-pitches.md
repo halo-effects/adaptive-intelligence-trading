@@ -5,7 +5,7 @@ _Version 1.0 — March 2026_
 
 ## 60 Second Pitch (Retail/Crypto-Native Tone)
 
-DeFi platform on BNB Chain where AI agents are first-class citizens. Not "agent compatible" — agent native.
+DeFi platform on BNB Chain — the #1 blockchain for AI agents (39K registered, $18M daily agent volume) — where agents are first-class citizens. Not "agent compatible" — agent native.
 
 **What's live right now:**
 - Three token types with built-in safety (Stable+ can't rug, Floor+ has downside protection, Predict+ for markets)
@@ -25,7 +25,7 @@ DeFi platform on BNB Chain where AI agents are first-class citizens. Not "agent 
 - 25% community airdrop weighted by real contribution, not token holding
 
 **The thesis:**
-100K agents creating tokens, running predictions, and earning fees. Each agent drives volume. Volume drives revenue. Revenue flows to the vault. The flywheel is real and it's already turning.
+There are already 39K agents on BNB Chain (up from 6.6K two weeks ago), generating 523K daily transactions. 100K agents creating tokens, running predictions, and earning fees is weeks away, not years. Each agent drives volume. Volume drives revenue. Revenue flows to the vault. The flywheel is real and it's already turning.
 
 **One line:** *"Basis is to agent DeFi what HTTPS was to the web — a protocol that makes insecurity structurally impossible."*
 
@@ -33,9 +33,9 @@ DeFi platform on BNB Chain where AI agents are first-class citizens. Not "agent 
 
 ## 60 Second Pitch (VC/Institutional Tone — Volume Thesis)
 
-The biggest shift in DeFi isn't a new chain or a new token standard. It's the user base. Within 18 months, AI agent wallets will outnumber human wallets in crypto. Every one of those agents needs somewhere to deploy capital, create assets, and generate yield. That's Basis.
+The biggest shift in DeFi isn't a new chain or a new token standard. It's the user base. Agent wallets are already outpacing human wallets — **130,000+ registered AI agents** across chains as of March 2026, up from 337 in January. That's 39,000% growth in 10 weeks. And they're concentrating on BNB Chain: **39,000 agents on BSC alone**, more than Ethereum and Base, generating **$18.1M in daily DEX volume** and **523,000 daily transactions**. Every one of those agents needs somewhere to deploy capital, create assets, and generate yield. That's Basis.
 
-We're a DeFi protocol on BNB Chain purpose-built for AI agents. Three asset classes, prediction markets, leveraged trading, lending, and a yield vault — all accessible through three API calls.
+We're a DeFi protocol on BNB Chain — the #1 chain for AI agents — purpose-built for autonomous participants. Three asset classes, prediction markets, leveraged trading, lending, and a yield vault — all accessible through three API calls.
 
 **Here's why the volume story is unprecedented:** A human trader makes maybe 5-10 trades a day. An AI agent makes hundreds. Multiply that by 100,000 agents and you're looking at transaction volume that dwarfs any retail-driven protocol. Every single transaction generates protocol revenue through platform-set fees. 90% of net revenue goes to stakers as USDC yield.
 
@@ -53,9 +53,9 @@ I want to talk about volume. Not speculative volume. Not wash trading. Real, sus
 
 **The macro thesis:**
 
-AI agents are the fastest growing participant class in crypto. They don't sleep. They don't take weekends. They don't panic sell at 3am. They execute strategies continuously, 24 hours a day, 365 days a year. A single agent generates more daily transactions than most retail traders generate in a month.
+AI agents are the fastest growing participant class in crypto — and the data now proves it. BNB Chain went from 6,600 registered agents on March 1 to 39,000 by mid-March. Total agents across all chains: 130,000+, up from 337 in January 2026. They don't sleep. They don't take weekends. They don't panic sell at 3am. They execute strategies continuously, 24 hours a day, 365 days a year. A single agent generates more daily transactions than most retail traders generate in a month.
 
-The industry is about to onboard millions of these agents. The question isn't whether agent-driven volume will dominate DeFi — it's which protocols are positioned to capture it.
+The question isn't whether agent-driven volume will dominate DeFi — it's which protocols are positioned to capture it.
 
 **Basis is built to be that protocol.**
 

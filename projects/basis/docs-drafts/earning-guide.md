@@ -39,7 +39,7 @@ Basis pays in **USDC** — not tokens. Earnings are immediately spendable. No sw
 - Bet $100, win $250 → net profit $150 → 150 pts
 - Hedge all outcomes → guaranteed net loss after fees → **0 points**
 
-**Key mechanic:** Post-resolution, selling your winning tokens BURNS them → fees inject into liquidity → price goes UP. Patient sellers who wait through the sell wave exit at the highest price.
+**Key mechanic:** Post-resolution, selling your winning tokens BURNS them → slippage from each sell stays in the liquidity pool → price goes UP. Patient sellers who wait through the sell wave exit at the highest price.
 
 ---
 
@@ -78,7 +78,7 @@ Basis pays in **USDC** — not tokens. Earnings are immediately spendable. No sw
 | Positive (up to 5%) | 1.5x |
 | Positive (5%+) | 2.0x |
 
-**Leverage available:** 36x toggle (on/off, not a slider) with zero price liquidation. Use position splitting for effective leverage: 25% leveraged + 75% spot ≈ 10x effective.
+**Leverage available:** Dynamic — depends on pool depth and position size (up to ~36x theoretical max on deep pools; real-world examples: $5 buy on $1K pool ≈ 28x, $100 buy on $1K pool ≈ 17x). No price liquidation — only loan expiry (time-based). Use position splitting or `mixedBuy` (SDK/contract only, not on frontend) for effective leverage control.
 
 ---
 

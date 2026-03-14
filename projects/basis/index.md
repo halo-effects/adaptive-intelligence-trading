@@ -1,13 +1,15 @@
 # Basis Project — Quick Reference Index
 
-_Last updated: 2026-03-11_
+_Last updated: 2026-03-14_
 
 ## Documents
 
 | File | Contents |
 |---|---|
 | `project-plan.md` | Master strategy document (all sections below) |
-| `dev-plan.md` | Technical build requirements for Alex |
+| `dev-plan.md` | Technical build plan — what's deployed, in progress, and remaining |
+| `mechanics-corrections.md` | Source-of-truth corrections from Diamond's live platform walkthrough (2026-03-12) |
+| `update-log-2026-03-14.md` | Changelog for 2026-03-14 documentation consolidation |
 | `index.md` | This file — quick reference to sections |
 
 ### Skill Scaffold (`skill-scaffold/`)
@@ -22,7 +24,7 @@ _Last updated: 2026-03-11_
 | `scripts/vault.py` | STASIS vault — stake, borrow, refinance |
 | `scripts/portfolio.py` | Portfolio + net P&L summary |
 | `scripts/points.py` | Airdrop points, Molt tier, ACS score |
-| `references/api-reference.md` | API endpoint reference (placeholder — awaiting Alex's Swagger) |
+| `references/api-reference.md` | Complete contract function reference — all 13 contracts (from Alex's SDK reference, 2026-03-14) |
 | `references/token-frameworks.md` | Stable+, Floor+, Predict+ token mechanics |
 | `references/earning-guide.md` | Quick reference: all earning paths + point values |
 
@@ -52,7 +54,7 @@ _Last updated: 2026-03-11_
 | 2 | **Messaging Repositioning** | New narrative: "Agent-Native DeFi", "Lobster Economy", "Earn Your Shell" |
 | 3 | **Technical Tooling — Agent SDK** | OpenClaw `basis-defi` skill, API endpoints, strategy scripts, monitors, wallet standard |
 | 4 | **Agent-Native Features** | Auto-Predict, Predict+ composability (payout mechanics, AMM, strategy paths A/B, exit timing, trader-to-bettor pot, flattening solution), Agent Token Launchpad, Self-Refinancing, Moltbook social layer |
-| 5 | **Platform Mechanics (4e)** | Elastic supply, Floor+ stability dial, leverage toggle (36x/1x), surge tax, liquid vesting, STASIS Vault (wSTASIS), lending (internal liquidity, time-only risk), BASIS vs STASIS distinction |
+| 5 | **Platform Mechanics (4e)** | Elastic supply, Floor+ stability dial (0%–100%), dynamic leverage (up to ~36x), surge tax, liquid vesting, STASIS Vault (wSTASIS), lending (internal liquidity, time-only risk), BASIS vs STASIS distinction |
 | 6 | **GTM: The 100K Agent Blitz** | 🐚 SHELL (100 Founding Lobsters) → 🦞 MOLT (10K agents) → 🔴 LIVE (100K agents) → 💎 TGE (250K+). Growth-first, zero-friction onboarding, Lobster Army as marketing machine. Three-tier friction model. |
 | 6A | **Founding Lobster Recruitment** | 3-tier target list, recruitment funnel, week-by-week timeline |
 | 6B | **Points System Design** | Point values per action, social engagement tasks (X + Moltbook), multipliers, Molt tiers (🥚→💎), 6-layer anti-sybil defense, API spec, seasons |
@@ -61,7 +63,7 @@ _Last updated: 2026-03-11_
 | 9 | **Testing Phase** | USDB (fake USDC) on BNB Chain mainnet, points carry over to real airdrop |
 | 10 | **Token Allocation & Presale** | 9-bucket allocation, 4-round presale ($0.15 TGE, $30M raise), USDC deployment, float analysis, FDV mitigation |
 | 11 | **What Motivates Agents** | 4 tiers (survival→agency), USDC-native earnings, earn-to-grow loop |
-| 12 | **Dev Plan — Build Responsibilities** | Architecture correction (direct contract calls, not REST API), Alex's 8 deliverables, our deliverables, what already exists, critical path |
+| 12 | **Dev Plan — Build Responsibilities** | All 13 contracts deployed. Alex built SDK (contract ref delivered 2026-03-14). Points system still to build. See `dev-plan.md` for full status |
 | 13 | **Docs Review Notes** | Original strengths + pressure-test areas |
 | 14 | **Competitive Analysis** | BNB Chain prediction markets (Predict.fun, Opinion, Probable, Myriad) — funding, points models, where Basis wins, strategic takeaways |
 | 15 | **Future Considerations** | x402 protocol (Coinbase/Cloudflare) — watch & wait, design for compatibility, potential revenue from x402-gated data |
@@ -77,7 +79,7 @@ _Last updated: 2026-03-11_
 | Staking Model | ✅ Notice-based | Not fixed locks — all tiers use notice periods |
 | Airdrop Model | ✅ Single pool (25%) with ACS weighting | Agent Confidence Score multiplier — spectrum, not binary |
 | Airdrop Haircut | ✅ Weighted pool | 50% haircut for no-lock, redistributed to Committed (1.0x) + Diamond (2.5x) |
-| Leverage Model | ✅ Toggle (36x/1x) | Binary, not slider. Position splitting for effective leverage |
+| Leverage Model | ✅ Dynamic (up to ~36x) | Depends on pool depth + position size. `mixedBuy` for SDK/agents only. Position splitting for effective leverage |
 | Lending | ✅ Internal liquidity | No external LPs. Liquidation = time only, never price |
 | Creator Earnings | ✅ USDC | Not tokens — immediately spendable |
 | Presale Allocation | ✅ 30% (300M) | 4 rounds, all notice-locked with USDC yield |
@@ -93,7 +95,7 @@ _Last updated: 2026-03-11_
 | Surge tax parameters | ⏳ | Feature exists, defaults TBD |
 | Oracle provider for BNB | ⏳ | Chainlink / API3 / custom |
 | Audit timeline | ⏳ | Before TGE, budget from raise |
-| Alex's preferred API stack | ⏳ | Node.js / Python / Rust |
+| Alex's preferred API stack | ✅ | Alex building SDK himself — contract reference delivered 2026-03-14, usage docs to follow |
 
 ---
 

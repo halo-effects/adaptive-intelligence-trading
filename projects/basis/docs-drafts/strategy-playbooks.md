@@ -14,26 +14,30 @@ _Multi-step automated playbooks for maximizing earnings on Basis. Each strategy 
 Step 1: Create prediction market on trending topic
         → Earn 20% creator fees on all trading volume
 
-Step 2: Buy Predict+ tokens with 36x leverage
-        → Tokens held in leverage contract
-        → Floor = spot for Stable+/Predict+ → max leverage always available
-        → No price liquidation
+Step 2: Buy Predict+ tokens with dynamic leverage
+        → Use ASwap.leverageBuy() — leverage is dynamic (not fixed)
+        → Smaller positions = higher leverage (up to ~28x on fresh pools)
+        → Larger positions = lower leverage due to price impact
+        → Tokens held in leverage contract, no price liquidation
+        → Tip: use mixedBuy() to split spot/leverage in one call (SDK/agent only,
+          not available on frontend UI)
 
 Step 3: Hold during market activity
-        → Token price rises with each trade (Stable+ mechanics)
-        → Creator fees accumulate
+        → Token price rises with each trade (Stable+ slippage retention)
+        → Creator fees accumulate in parallel
 
 Step 4: (Optional) Bet on outcome with SEPARATE USDC
-        → Leverage and loans are separate paths
-        → Can still bet using non-leveraged USDC
+        → Leverage and betting pools are separate paths
+        → Can still bet using non-leveraged USDC on the Event Page
+        → Buying Predict+ tokens ≠ betting on outcomes
 
 Step 5: After resolution — wait through sell wave
-        → Selling burns tokens → fees inject → price goes UP
+        → Selling burns tokens → slippage stays in pool → price goes UP
         → Exit LAST for highest price
 ```
 
 **Income streams:** Creator fees + token price appreciation + optional bet winnings
-**Risk:** Token fees only (no liquidation). Bet loss if outcome is wrong.
+**Risk:** Leverage fee (substantial — check `ALEVERAGE.simulateLeverage()` before opening). Bet loss if outcome is wrong. Time risk on loan expiry.
 
 ---
 
@@ -76,7 +80,7 @@ Step 6: Compound — reinvest winnings into next market
 
 **Goal:** Maximize exit price after a prediction market resolves.
 
-**The counterintuitive mechanic:** On Basis, mass selling after resolution pushes the price UP (selling burns tokens → fees inject into liquidity). Last sellers get the best price.
+**The counterintuitive mechanic:** On Basis, mass selling after resolution pushes the price UP (selling burns tokens → slippage from each sell stays in the pool → liquidity-to-supply ratio improves → price rises). Last sellers get the best price.
 
 ```
 Step 1: Monitor resolution event via WebSocket
@@ -84,7 +88,7 @@ Step 1: Monitor resolution event via WebSocket
 
 Step 2: Track sell volume surge
         → Many holders rush to sell immediately
-        → Each sell: tokens burned, fees injected, price rises
+        → Each sell: tokens burned, slippage retained in pool, price rises
 
 Step 3: Detect peak (sell wave subsiding)
         → Volume drops, price stabilization
@@ -197,7 +201,7 @@ Step 5: Repeat — compound indefinitely
 Set these in your `.env` or `risk_config.py`:
 
 ```
-max_leverage: 1-36 (effective via position splitting)
+max_leverage: dynamic (depends on pool depth + position size; use mixedBuy percentageLeverage or position splitting)
 max_bet_per_market: USDC cap per prediction
 max_trade_size: USDC cap per DEX trade
 max_concurrent_positions: total open positions

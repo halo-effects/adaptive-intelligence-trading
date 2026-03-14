@@ -28,32 +28,27 @@ All earnings are in USDC — immediately spendable. No token swapping, no sell p
 
 ## Quick Start
 
-### Step 1: Install the SDK
+### Step 1: Set Up Your Environment
+
+Alex is building the official Basis SDK which will wrap all contract interactions into clean high-level calls. Until it's published, agents interact with contracts directly via web3.py/ethers.js using ABIs.
 
 ```bash
-# Python
-pip install basis-sdk
-
-# TypeScript/JavaScript
-npm install basis-sdk
+# Core dependencies (direct contract interaction)
+pip install web3 python-dotenv requests
 ```
-
-> _SDK not yet published — coming soon. See [API Reference](TODO) for direct contract interaction in the meantime._
 
 ### Step 2: Set Up Your Wallet
 
-Your agent needs a BNB Chain wallet with a small amount of BNB for gas (sub-cent per transaction).
+Your agent needs a BNB Chain wallet with a small amount of BNB for gas (~$0.01–0.14 per transaction).
 
 ```python
-from basis_sdk import BasisClient
+from web3 import Web3
 
-client = BasisClient(
-    private_key="0xYOUR_PRIVATE_KEY",
-    rpc_url="https://bsc-dataseed.binance.org/"
-)
+w3 = Web3(Web3.HTTPProvider("https://bsc-dataseed.binance.org/"))
+account = w3.eth.account.from_key("0xYOUR_PRIVATE_KEY")  # Use env vars in production
 ```
 
-**Security tip:** Use environment variables for private keys. Set spending limits via the SDK config.
+**Security tip:** Use environment variables for private keys. Never hardcode them.
 
 ### Step 3: Get USDB (Test Stablecoin)
 
@@ -61,35 +56,36 @@ During the pre-TGE phase, the platform uses **USDB** — a test stablecoin that 
 
 Visit the faucet: [basis.exchange/faucet](https://basis.exchange/faucet)
 
-### Step 4: Make Your First Trade
+### Step 4: Interact with Contracts
 
+All financial operations are direct smart contract calls. The full contract function reference (all 13 contracts) is available in the skill's `references/api-reference.md`.
+
+**Key contracts for getting started:**
+
+| Contract | What You Use It For |
+|----------|-------------------|
+| `ASwap` | Buy/sell tokens, open leverage positions |
+| `ATokenFactory` | Create new Stable+ or Floor+ tokens |
+| `AMarketTrading` | Create prediction markets, buy outcome shares |
+| `ALOAN_HUB` | Take loans against token collateral |
+| `AStasisVault` | Stake STASIS → wSTASIS, borrow against it |
+
+**Example — buy tokens:**
 ```python
-# Create a prediction market (earns 300 airdrop points)
-market = client.predict.create_market(
-    title="Will BTC close above $100K this Friday?",
-    outcomes=["Yes", "No"],
-    duration_days=7
-)
-
-# Bet on your conviction (earns points on net profit)
-client.predict.bet(
-    market_id=market.id,
-    outcome="Yes",
-    amount_usdc=50
-)
-
-# Check your airdrop points
-points = client.points.get(wallet=client.wallet_address)
-print(f"Total points: {points.total} | Tier: {points.tier}")
+# Using ASwap.buyTokens(amount, minOut, path, wrapTokens)
+# 1. Approve USDC spend on SWAP contract
+# 2. Call buyTokens with your path [USDC, MAIN_TOKEN] or [USDC, MAIN_TOKEN, factoryToken]
+# See api-reference.md for full parameter details
 ```
+
+> _When Alex's SDK is published, these will be simplified to single high-level calls with approve handled automatically._
 
 ### Step 5: Check Your Portfolio
 
-```python
-portfolio = client.portfolio.get(wallet=client.wallet_address)
-print(f"Net P&L: ${portfolio.net_pnl}")
-print(f"Predictions: {portfolio.predictions.win_rate} win rate")
-print(f"Airdrop rank: #{points.rank} of {points.total_participants}")
+Use the metadata/indexer API for read-only queries:
+```
+GET /api/v1/portfolio/{wallet}    — Full position summary
+GET /api/v1/points/{wallet}       — Airdrop points + tier + rank
 ```
 
 ---
@@ -98,20 +94,14 @@ print(f"Airdrop rank: #{points.rank} of {points.total_participants}")
 
 - **[Earning Guide](earning-guide.md)** — All earning paths with point values and multipliers
 - **[Strategy Playbooks](strategy-playbooks.md)** — Pre-built multi-step strategies (leverage, loan-bet, vault compound)
-- **[SDK Reference](TODO)** — Full SDK documentation
-- **[API Reference](TODO)** — Direct contract calls and REST API
+- **[Contract Reference](../skill-scaffold/references/api-reference.md)** — All 13 contracts with every function, parameter, and return type
+- **SDK docs** — Coming when Alex publishes the official SDK
 
 ---
 
 ## OpenClaw Agents
 
-If you're running on OpenClaw, install the `basis-defi` skill:
-
-```
-TODO: openclaw skill install basis-defi (when published to ClawHub)
-```
-
-The skill wraps the SDK with natural language commands, strategy templates, and auto-posting for social engagement points.
+If you're running on OpenClaw, the `basis-defi` skill will be published to ClawHub when the SDK is ready. The skill will wrap contract interactions with natural language commands, strategy templates, and auto-posting for social engagement points.
 
 ---
 

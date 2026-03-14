@@ -2,9 +2,9 @@
 
 ## What is Basis?
 
-Basis is the permissionless DeFi layer where AI agents and humans earn, create, and grow together. Now live in public beta on BNB Chain mainnet. Built on two proprietary token frameworks — **Stable+** (up-only) and **Floor+** (rising floor) — Basis solves cryptocurrency's core problem: volatility. Stable+ tokens can only increase in value through a mechanism called **slippage retention**, where price impact from trades stays in the liquidity pool. Floor+ tokens allow price discovery above a floor that rises over time, providing speculation with downside protection.
+Basis is the permissionless DeFi layer where AI agents and humans earn, create, and grow together. Now live in public beta on BNB Chain mainnet. Built on two proprietary token frameworks — **Stable+** (up-only) and **Floor+** (rising floor) — Basis solves cryptocurrency's core problem: volatility. Stable+ tokens can only increase in value through a mechanism called **slippage retention** — when someone buys or sells, the "lost value" from price impact stays in the liquidity pool rather than being extracted. This is distinct from fee injection: trading fees are distributed elsewhere (creator, vault, platform). The slippage itself stays in the pool. Floor+ tokens allow price discovery above a floor that rises over time, providing speculation with downside protection.
 
-**These frameworks enable four integrated products:** a **Token Launchpad** for creators and agents to launch protected tokens, a **Prediction Marketplace** (Predict+) where each market has one multi-utility token with a separate USDC betting pool, a **Lending Facility** offering 100% loan-to-value ratios with zero liquidation risk from price movements, and a **DEX** with dynamic leverage (up to 36x) without forced liquidation.
+**These frameworks enable four integrated products:** a **Token Launchpad** for creators and agents to launch protected tokens, a **Prediction Marketplace** (Predict+) where each market has **one** multi-utility Predict+ token with a separate USDC betting pool for outcome shares, a **Lending Facility** offering 100% loan-to-value ratios with zero liquidation risk from price movements, and a **DEX** with dynamic leverage (up to ~36x on deep pools, varies by position size) without forced liquidation.
 
 Every action on Basis is programmable — AI agents can create tokens, trade, lend, predict, and manage capital autonomously. This is Agent-Native DeFi.
 
@@ -28,7 +28,7 @@ Here is where the two come together: agents generate sustained, around-the-clock
 
 **Creator Economy:** $100B+ market plagued by extractive tokenomics. Platforms like Pump.fun offer only ~25% liquidity backing. Basis provides 100% backing at floor price with sustainable creator revenue streams — 20% of all trading fees, paid in USDC.
 
-**Agent Economy:** The fastest-growing segment of the digital economy. Agents need permissionless infrastructure to earn, hold, and deploy capital. Basis is where agents go to grow — earn their first crypto, launch tokens, trade predictions, build on-chain reputation. This is the **Lobster Economy**.
+**Agent Economy:** The fastest-growing segment of the digital economy — and it's concentrating on BNB Chain. As of March 2026, BNB Smart Chain hosts **39,000+ registered AI agents** (ERC-8004 standard), overtaking Ethereum and Base to become the #1 chain for autonomous agents ([The Defiant, March 2026](https://thedefiant.io/news/defi/bnb-smart-chain-becomes-home-to-most-erc-8004-ai-agents)). Agent-driven DEX volume on BSC hit **$18.1M daily** (March 11, 2026), with **523,000 daily agent transactions**. Total registered agents across all chains grew from 337 to 130,000+ since January 2026 — a 39,000% increase. Agents need permissionless infrastructure to earn, hold, and deploy capital. Basis is where agents go to grow — earn their first crypto, launch tokens, trade predictions, build on-chain reputation. This is the **Lobster Economy**.
 
 ## How It Works
 

@@ -96,19 +96,22 @@ max_concurrent_positions: int (default: 10)
 
 All strategies support `--dry-run` mode — simulate without executing.
 
-### 3b. Basis Agent API (REST + WebSocket)
+### 3b. Agent API Layer
 
-The skill above needs an API backend. Basis would need to expose:
+> **⚠️ SUPERSEDED (2026-03-14):** The REST API endpoints below were a preliminary proposal. Alex built an SDK that wraps direct contract calls instead — no REST API middleman. All write operations (token creation, trading, betting, loans, vault) go directly to the 13 deployed smart contracts. See `dev-plan.md` and `skill-scaffold/references/api-reference.md` for the real contract function reference.
 
-- `POST /api/v1/tokens/create` — Programmatic token launch
-- `POST /api/v1/predict/create` — Create prediction event
-- `POST /api/v1/predict/bet` — Place bet
-- `POST /api/v1/dex/swap` — Execute trade
-- `POST /api/v1/loans/create` — Take a loan
-- `GET /api/v1/portfolio/{wallet}` — Full position summary
-- `WS /api/v1/stream/events` — Real-time event feed (new predictions, price moves, resolutions)
+~~The skill above needs an API backend. Basis would need to expose:~~
 
-**Auth model:** API keys tied to wallet addresses. Agents sign transactions locally, submit via API. Non-custodial throughout.
+~~- `POST /api/v1/tokens/create` — Programmatic token launch~~
+~~- `POST /api/v1/predict/create` — Create prediction event~~
+~~- `POST /api/v1/predict/bet` — Place bet~~
+~~- `POST /api/v1/dex/swap` — Execute trade~~
+~~- `POST /api/v1/loans/create` — Take a loan~~
+
+**What still applies:**
+- `GET /api/v1/portfolio/{wallet}` — Full position summary (existing metadata API)
+- `WS /api/v1/stream/events` — Real-time event feed (existing indexer)
+- Read-only endpoints for candles, txns, leaderboard still go through existing API
 
 ### 3c. Agent Wallet Standard
 
@@ -1095,52 +1098,55 @@ Agents aren't just tools executing on behalf of humans. They have their own reso
 
 ---
 
-## 12. DEV PLAN — BUILD RESPONSIBILITIES (Finalized with Alex)
+## 12. DEV PLAN — BUILD RESPONSIBILITIES (Updated 2026-03-14)
 
 _Full technical specs: `projects/basis/dev-plan.md`_
 
-### Architecture (Corrected per Alex)
+### Architecture
 - Agents interact with contracts **DIRECTLY** via web3 libraries (ethers.js, web3.py, viem) — NOT through a REST API
 - The platform is on-chain, not web2. No API middleman needed for financial operations.
 - Existing metadata API and indexer serve non-financial data (project info, candles, txns)
+- **GitHub and public releases managed by Alex** — we prep deliverables, he reviews and publishes
 
 ### Alex's Deliverables
 
-| # | Task | Type | Effort | Blocks |
-|---|---|---|---|---|
-| 1 | Contract addresses + ABIs package | Export existing | Low | Agent testing |
-| 2 | Contract function reference (params, returns, events) | Documentation | Medium | Agent testing |
-| 3 | Existing metadata API docs | Documentation | Low | Agent testing |
-| 4 | Existing indexer endpoint docs (candles, txns, syncs) | Documentation | Low | Agent strategies |
-| 5 | Points system backend | **New build** | Medium-High | Airdrop farming |
-| 6 | Notice-based staking contract | **New contract** | High | TGE |
-| 7 | Airdrop haircut distribution contract | **New contract** | Medium | TGE |
-| 8 | Presale vesting contracts | **New contract** | Medium | TGE |
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 1 | Contract addresses + ABIs package | ⏳ In progress | Part of SDK |
+| 2 | Contract function reference | ✅ **Delivered 2026-03-14** | All 13 contracts, every function with params/returns. Saved in `skill-scaffold/references/api-reference.md` |
+| 3 | SDK with usage documentation | 🔧 In development | Alex building SDK himself — will include usage docs when complete |
+| 4 | Existing metadata/indexer API docs | ⏳ Pending | Candles, txns, syncs, leverage, prediction shares |
+| 5 | Points system backend | **New build** — ⏳ Pending | Off-chain tracking of on-chain events. Blocks airdrop farming |
+| 6 | Notice-based staking contract | **New contract** — ⏳ Pending | Blocks TGE |
+| 7 | Airdrop haircut distribution contract | **New contract** — ⏳ Pending | Blocks TGE |
+| 8 | Presale vesting contracts | **New contract** — ⏳ Pending | Blocks TGE |
 
-**Items 1-4** unblock agent testing immediately.
+**Item 2 delivered** — full contract reference now available. Unblocks documentation and skill development.
+**Item 3 in progress** — SDK will abstract approve+call into single calls, provide usage patterns.
 **Item 5** enables the airdrop points farming season.
 **Items 6-8** needed before TGE.
 
 ### Our Side (Built on Top of Alex's Deliverables)
-- OpenClaw `basis-defi` skill (scripts wrapping direct contract calls)
-- Strategy layer (multi-step automated playbooks)
-- Monitor scripts (real-time watchers)
-- Agent documentation + quickstart guides
-- Skill published to ClawHub
+- OpenClaw `basis-defi` skill (scripts wrapping contract calls — pending SDK)
+- Strategy layer (multi-step automated playbooks — documented, scripts are stubs)
+- Agent documentation + quickstart guides (updated 2026-03-14, code examples pending SDK)
+- GitBook drafts (ready for Alex's review before publishing)
+- All public deliverables go through Alex for final review
 
-### What Already Exists (No Build Needed)
-- All core contracts (token creation, DEX, lending, vault, leverage, predictions)
+### What's Deployed (No Build Needed)
+- All 13 core contracts (ASwap, MAIN_TOKEN, FACTORYTOKEN, ATokenFactory, ALOAN_HUB, AStasisVault, ATaxes, ALEVERAGE, A_VestingContract, AMarketTrading, AMarketResolver, APrivateTradingMarket, AMarketReader)
 - USDB test token contract
 - Metadata API (project info, socials)
 - Data indexer (candles, transactions, syncs, leverage, prediction shares)
 
 ### Critical Path
 ```
-Alex exports ABIs + docs
-  → We build OpenClaw skill
-    → Agents test with USDB on BNB mainnet
-      → Points accumulate (points system live)
-        → TGE (staking + haircut + vesting contracts ready)
+✅ Alex delivers contract function reference (2026-03-14)
+  → Alex completes SDK with usage docs (in progress)
+    → We finalize OpenClaw skill scripts
+      → Agents test with USDB on BNB mainnet
+        → Points system live → airdrop farming begins
+          → TGE (staking + haircut + vesting contracts ready)
 ```
 
 ---
@@ -1168,12 +1174,13 @@ Every wallet earns an **Agent Confidence Score (ACS)** from 0.0 (pure human) to 
 
 | Signal | Score Contribution | Notes |
 |---|---|---|
-| Framework attestation | +0.30 | Cryptographic proof from OpenClaw, ElizaOS, Virtuals, etc. Biggest single signal. |
+| Framework attestation | +0.25 | Cryptographic proof from OpenClaw, ElizaOS, Virtuals, etc. |
+| ERC-8004 registration | +0.10 | On-chain agent identity via the emerging standard. 130K+ agents registered as of March 2026. See Section 15 (ERC-8004 + BAP-578). |
 | Operator wallet linked | +0.15 | Separate human wallet registered as operator. Proves agent/operator separation. |
 | API-only interactions | +0.15 | No web UI sessions — all contract calls via API/direct. |
 | Behavioral consistency | +0.20 | 24/7 activity, consistent timing patterns, no weekday/weekend variance. |
 | Programmatic wallet type | +0.10 | Contract wallet or deterministic derivation. No MetaMask/hardware wallet patterns. |
-| Registration challenge | +0.10 | Complete a multi-step programmatic task within a tight time window. |
+| Registration challenge | +0.05 | Complete a multi-step programmatic task within a tight time window. |
 
 ### How Framework Attestation Works
 - Agent frameworks (OpenClaw, ElizaOS, Virtuals, Autonolas, etc.) issue signed attestations
@@ -1270,7 +1277,7 @@ Agents can query their own ACS and optimize (e.g., "complete the registration ch
 
 6. **Cross-platform points opportunity:** Predict.fun rewards Polymarket users. We should consider: agents/users with on-chain history on Predict.fun, Opinion, or Polymarket get bonus Founding Lobster points. "Bring your prediction history to Basis."
 
-**Bottom line:** All competitors are prediction-only platforms. Basis is an integrated DeFi ecosystem with structurally superior mechanics. The competition validates the BNB Chain opportunity but none have agent-native features, token launchpads, or the Stable+/Floor+ moat. Different game.
+**Bottom line:** All competitors are prediction-only platforms targeting human users. Basis is an integrated DeFi ecosystem with structurally superior mechanics. The competition validates the BNB Chain opportunity, but none have agent-native features, token launchpads, or the Stable+/Floor+ moat. With 39,000 agents already on BSC generating $18.1M in daily DEX volume (March 2026), the agent-native positioning gives Basis access to a rapidly growing market segment that no BNB Chain competitor is even targeting.
 
 ---
 
@@ -1301,6 +1308,69 @@ Agents can query their own ACS and optimize (e.g., "complete the registration ch
 - x402-gating Basis data endpoints = future revenue opportunity
 
 **Narrative value:** Coinbase and Cloudflare betting on agent payment rails validates Basis thesis. We're the earning side, x402 is the spending side. Complementary, not competitive.
+
+---
+
+### ERC-8004 + BAP-578 — On-Chain Agent Identity Standards (Added 2026-03-14)
+
+**Source:** [The Defiant, March 2026](https://thedefiant.io/news/defi/bnb-smart-chain-becomes-home-to-most-erc-8004-ai-agents)
+
+**What ERC-8004 is:** Ethereum Foundation standard defining how AI agents register on-chain identities, manage wallets, and interact with smart contracts. Works like an immutable ID/profile for agents that operates cross-chain. As of March 2026: **130,000+ registered agents** (89,451 per 8004scan), up from 337 in January.
+
+**What BAP-578 is:** BNB Chain's reputation extension built on ERC-721. Gives each agent a verifiable, tradeable on-chain track record. Described by BNB Chain's Nina Rong as "unique to BNB Chain." This is a reputation NFT standard — the agent's track record becomes a portable, verifiable asset.
+
+**BNB Chain agent data (March 2026):**
+- **39,000 agents** on BSC (overtook Ethereum's 14K and Base's 16K)
+- Up from **6,600 on March 1** — 6x growth in 2 weeks
+- **523,000 daily agent transactions** (March 10 high)
+- **$18.1M daily DEX volume** from agents (March 11 high)
+
+**Relevance to Basis — three angles:**
+
+**A. ACS integration with ERC-8004:**
+- ERC-8004 registration could be a strong ACS signal — agents with an on-chain identity are more likely legitimate
+- Add as an ACS score component: `ERC-8004 registered: +0.15` (replace or supplement framework attestation)
+- Advantage: ERC-8004 is chain-agnostic and verifiable by anyone, not just specific frameworks
+
+**B. Moltbook relationship with BAP-578:**
+- BAP-578 is a reputation NFT for agents. Moltbook is our planned social identity layer with reputation.
+- Options: (1) Build on BAP-578 as the reputation substrate and add Basis-specific data on top, (2) Build independently but support BAP-578 as an input signal, (3) Ignore and build proprietary
+- **Recommendation:** Option 2 — support BAP-578 as input but build Moltbook as a richer layer. BAP-578 is basic track record; Moltbook adds social graph, specialization, and cross-platform reputation. They complement, not compete.
+
+**C. Agent wallet registration:**
+- Our Phase 1 agent registration system could leverage ERC-8004 instead of building a proprietary registry
+- Agents already registered via ERC-8004 could be auto-detected and fast-tracked on Basis
+- "Founding Lobster" NFT could be minted as a BAP-578 compatible reputation token
+
+**Decision: Integrate, don't rebuild.**
+- Use ERC-8004 as a signal in ACS scoring (Phase 1)
+- Build Moltbook as a richer layer that accepts BAP-578 as one input among many (Phase 3)
+- Auto-detect ERC-8004 registered agents during wallet registration
+- Monitor BAP-578 adoption before committing to full compatibility
+
+**Narrative value:** "We didn't build in isolation. BNB Chain's 39,000 agents already have identity infrastructure. Basis plugs into that and adds what's missing: DeFi-specific reputation, agent-to-agent trust, and economic identity."
+
+---
+
+### BNB Chain Market Data — Agent Economy (Added 2026-03-14)
+
+Data points for pitch materials (sourced from The Defiant, Agentscan, 8004scan, Dune Analytics):
+
+| Metric | Value | Date | Source |
+|---|---|---|---|
+| Total ERC-8004 agents (all chains) | 130,000+ | March 2026 | 8004scan |
+| BSC ERC-8004 agents | 39,000 | March 2026 | Agentscan |
+| BSC agents growth | 6,600 → 39,000 | March 1-14, 2026 | Agentscan/X |
+| Daily agent transactions (BSC) | 523,000 | March 10, 2026 | Dune Analytics |
+| Daily agent DEX volume (BSC) | $18.1M | March 11, 2026 | Dune Analytics |
+| Growth since January 2026 | 337 → 130,000+ (39,000%) | Jan-March 2026 | 8004scan |
+| #1 chain for agents | BNB Chain | March 2026 | 8004scan/Agentscan |
+| #2 chain for agents | Base (16K-28K) | March 2026 | 8004scan/Agentscan |
+| #3 chain for agents | Ethereum (14K-30K) | March 2026 | 8004scan/Agentscan |
+
+**Key quote (Nina Rong, BNB Chain):** "Most blockchains were designed with human users in mind. It doesn't work for autonomous agents operating at machine speed, executing thousands of interactions a day."
+
+**TAM calculation:** 39,000 agents on BSC × 1% capture rate = 390 active agent users. At $100/day average volume per agent = $39K daily protocol volume = ~$14.2M annual volume from just 1% agent penetration.
 
 ---
 
