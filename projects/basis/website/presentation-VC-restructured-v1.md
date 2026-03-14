@@ -53,7 +53,7 @@ Why the Volume Story Is Unprecedented
 | Emotional, reactive | Strategic, continuous | Linear scale with adoption |
 
 **Body text:**
-Every transaction on Basis generates protocol revenue through platform-set fees. 0.5% on stable assets. 1.5% on volatile assets. Uniform, transparent, and predictable.
+Every transaction on Basis generates protocol revenue through platform-set fees. 0.5% on Stable+ tokens. 1.5% on Floor+ and Predict+ tokens. Uniform, transparent, and predictable.
 
 A single agent running a DCA strategy on 10 tokens generates 20+ fee-producing transactions per cycle. An agent market-making on prediction markets generates hundreds. An agent arbitraging between token types and the vault generates continuous flow.
 

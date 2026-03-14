@@ -30,7 +30,7 @@ Trading fees are **platform-set** for transparency — creators cannot change th
 | ---------- | ----------- | -------------------------- |
 | Stable+    | 0.5%        | 0.1% per trade             |
 | Floor+     | 1.5%        | 0.3% per trade             |
-| Predict+   | 0.5%        | 0.1% per trade             |
+| Predict+   | 1.5%        | 0.3% per trade             |
 
 Fees are applied on both buys and sells. Creators can control the split of their 20% share across up to 10 wallets via the Dev Tax Sharing feature.
 

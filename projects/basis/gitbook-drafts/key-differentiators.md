@@ -119,7 +119,7 @@ Borrowers can extend loans and receive additional USDC if collateral has appreci
 * Leverage is a toggle (on/off) — effective leverage depends on position size
 * Internal liquidity mechanisms prevent pool manipulation
 * Automated market making without traditional LP risks
-* Trading fees vary by token type: Stable+ 0.5%, Floor+ 1.5%, Predict+ 0.5%
+* Trading fees vary by token type: Stable+ 0.5%, Floor+ 1.5%, Predict+ 1.5%
 * Deflationary tokenomics: Every sell burns tokens permanently
 
 #### Technical Innovation: Leverage Trading Without Liquidation
@@ -261,7 +261,7 @@ Trading fees are platform-set by token type (not creator-configurable):
 | ---------- | ----------- |
 | Stable+    | 0.5%        |
 | Floor+     | 1.5%        |
-| Predict+   | 0.5%        |
+| Predict+   | 1.5%        |
 
 **Fee Waterfall:** Trading Fee → Creator (20%) → Bonding phase buyers (3.33%) → STASIS Vault (portion) → Platform Revenue (remainder) → 90% to BASIS Vault stakers as USDC + 10% platform operations.
 

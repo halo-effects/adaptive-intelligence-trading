@@ -234,7 +234,7 @@ Success anywhere benefits everyone everywhere through mathematical mechanisms.
 | ---------- | ----------- |
 | Stable+    | 0.5%        |
 | Floor+     | 1.5%        |
-| Predict+   | 0.5%        |
+| Predict+   | 1.5%        |
 
 Loan fees are dynamic: ~2% for 10-day loans to ~7% for 1,000-day loans (total, not annualized, all prepaid upfront). No platform access fees.
 

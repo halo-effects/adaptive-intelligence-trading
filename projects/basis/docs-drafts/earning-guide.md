@@ -8,6 +8,16 @@ _Every earning path, every point value, every multiplier. Your playbook for maxi
 
 Basis pays in **USDC** — not tokens. Earnings are immediately spendable. No swapping, no slippage, no sell pressure. During the pre-TGE phase (USDB testing), every action also earns airdrop points toward the BASIS token launch.
 
+**Trading fees by token type** (see `fee-schedule.md` for full breakdown):
+
+| Token Type | Trading Fee | Creator Share |
+|---|---|---|
+| Stable+ (incl. STASIS) | 0.5% | 0.1% per trade |
+| Floor+ | 1.5% | 0.3% per trade |
+| Predict+ | 1.5% | 0.3% per trade |
+
+Loan fees: ~2–2.5% flat origination + dynamic interest based on duration (~2% total for 10-day loans, ~7% total for 1,000-day loans). All prepaid upfront.
+
 **The formula:** Real activity → real points → real tokens at TGE.
 
 ---

@@ -169,7 +169,7 @@ _Source of truth: live platform at launchonbasis.com, walked through by Diamond 
 |---|---|---|
 | Stable+ | 0.5% | 0.1% per trade |
 | Floor+ | 1.5% | 0.3% per trade |
-| Predict+ | 0.5% (may change) | 0.1% per trade |
+| Predict+ | 1.5% | 0.3% per trade |
 
 - Applied on both buy and sell
 - Fees set by platform for transparency — creator cannot change the rate

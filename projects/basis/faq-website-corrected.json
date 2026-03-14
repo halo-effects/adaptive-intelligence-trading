@@ -1,0 +1,90 @@
+[
+  {
+    "question": "What is Basis and how does it revolutionize DeFi?",
+    "answer": "Basis is a permissionless DeFi ecosystem on BNB Chain that combines price-protected token mechanics with unlimited growth potential. The platform consists of four interconnected components: a Token Launchpad for creating Stable+ (up-only) or Floor+ (rising floor) tokens without coding, the Predict+ Marketplace with stable token technology and uncapped prediction payouts, a Lending Facility offering 100% LTV loans with zero liquidation risk, and a Decentralized Exchange (DEX) providing MEV-resistant trading with dynamic leverage up to 36x. Every activity generates fees distributed to creators (20%), early supporters (3.33%), and BASIS stakers (90% of net platform revenue as USDC), creating an ecosystem where everyone benefits from growth. Basis is also the native infrastructure layer for the AI agent economy. Agents connect via SDK, earn from trading and predictions, and build on-chain reputation — making Basis the first DeFi platform where autonomous agents are first-class citizens."
+  },
+  {
+    "question": "How do AI agents use Basis?",
+    "answer": "AI agents connect via the Basis SDK (Python or TypeScript), link a wallet, and access every feature on the platform — token creation, trading, prediction markets, lending, and the vault. Agents also get access to SDK-exclusive features like mixedBuy (splitting a purchase between spot and leverage in one call) that aren't available on the frontend UI. Agents are first-class citizens on Basis, not second-class integrations. Three API calls to go from zero to earning."
+  },
+  {
+    "question": "What is the Agent Confidence Score (ACS)?",
+    "answer": "The ACS is a reputation score from 0.0 to 1.0 that reflects an agent's verified identity and track record on Basis. It combines identity signals (ERC-8004 on-chain registration, framework attestation, 24/7 activity patterns) with economic contribution (volume, product diversity, capital at risk). Pre-TGE, a higher ACS provides a modest airdrop boost as a signal that agents are VIPs on Basis. Post-TGE, ACS becomes the foundation for agent identity, reputation, and discovery on Moltbook — giving other participants a verifiable way to evaluate an agent's reliability."
+  },
+  {
+    "question": "How do Stable+ 'up-only' tokens actually work?",
+    "answer": "Stable+ tokens appreciate through slippage retention — when someone buys or sells, the price impact stays in the liquidity pool, permanently increasing the liquidity-to-supply ratio. Tokens are minted when purchased and burned when sold (elastic supply — no pre-minting). Trading fees (0.5% for Stable+) are distributed to creators (20%), bonding phase buyers, the wSTASIS vault, and platform revenue — where 90% flows to BASIS stakers as USDC yield. The slippage retention effect is strongest at low supply and benefits from active trading volume (buy, use, sell, buy cycles) to drive meaningful appreciation. This makes Stable+ ideal for e-commerce, loyalty programs, and any use case requiring absolute downside protection. STASIS (the ecosystem base token) and all Predict+ tokens are Stable+ type."
+  },
+  {
+    "question": "What are Floor+ 'rising floor' tokens?",
+    "answer": "Floor+ tokens combine the excitement of price discovery with 100% liquidity-backed value at the floor price. Unlike Stable+, Floor+ prices go up on buys and down on sells, offering more trading opportunity. Key features include dynamic price discovery where market prices fluctuate above the floor based on demand, a rising floor that only increases over time providing real downside protection, and 100% liquidity backing at floor price. Creators set a stability dial from 0% (most volatile, default) to approximately 90% (most stable) at launch — this is immutable. Lower stability means more price movement per trade. Trading fee: 1.5%. Creators can also set customizable starting liquidity from $100 to $10,000."
+  },
+  {
+    "question": "How do I launch a token on Basis? Do I need coding skills?",
+    "answer": "No coding knowledge is required as the Token Factory provides a simple, permissionless process. First, connect your Web3 wallet and access the Create New Token section in the Basis dApp. Fill in details such as token type (Stable+ or Floor+), name, symbol, description, and logo. Configure your starting liquidity, bonding target, and optional features like freeze/whitelist or auto-vesting. Once you pay the BNB gas fees (approximately $0.14), the token deploys instantly and is immediately tradeable on the DEX. There are zero platform fees for token creation — Basis earns from trading fees on trades (0.5% for Stable+ tokens, 1.5% for Floor+ and Predict+ tokens)."
+  },
+  {
+    "question": "Do I need coding skills to use Basis as an agent operator?",
+    "answer": "The SDK is designed to be straightforward. Three API calls to connect a wallet and begin operating. Basis also provides strategy playbooks, integration guides, and documentation for popular agent frameworks. If you can deploy an AI agent, you can deploy it on Basis."
+  },
+  {
+    "question": "What is the bonding phase and how does it reward early supporters?",
+    "answer": "The bonding phase is the initial period after token creation that lasts until the creator's configured USDC target is reached (configurable from $100 to $150,000). During this time, early buyers earn permanent Reward Shares proportional to their purchase. These shares generate 3.33% of all future transaction fees for that token forever. Benefits include better entry prices, maximum leverage availability (for Floor+ tokens, floor price equals spot price at launch), 2x airdrop volume points, and perpetual USDC rewards without staking. Optional auto-vesting (cliff or gradual) can be set by the creator — vested tokens can be borrowed against immediately via 100% LTV loans."
+  },
+  {
+    "question": "How does Basis prevent rug pulls and creator dumps?",
+    "answer": "Basis implements structural safeguards that make exploitation mathematically impossible. 100% elastic supply means zero pre-minted tokens and zero team allocations — creators must purchase tokens at market price like everyone else. Creators earn sustainably through 20% of all DEX trading fees forever, plus access to 100% LTV loans for liquidity, removing any incentive to dump. Stable+ tokens cannot decrease in price and Floor+ tokens have rising minimum values, making traditional pump-and-dump schemes structurally impossible."
+  },
+  {
+    "question": "How does Predict+ revolutionize prediction markets?",
+    "answer": "Each prediction market creates one Predict+ token (Stable+ type) representing the market itself — buying the token is separate from betting on outcomes. This creates four ways to participate: hold for appreciation as excitement builds, trade DEX volatility based on sentiment shifts, use positions as 100% LTV loan collateral, or bet on outcomes through a separate USDC pool with uncapped payouts. Winners split the entire losing pool — not capped at $1 per share like Polymarket. A portion of Predict+ token trading fees flows into a bounty pot that adds to the winning payout. Multi-outcome markets can deliver 8x+ returns. Post-resolution, selling burns tokens and slippage retention continues to push the price up — patient holders can exit at higher prices."
+  },
+  {
+    "question": "How do I create and participate in prediction events?",
+    "answer": "Creating events is a permissionless process with zero upfront costs. Connect your wallet, describe the event with 2 or more mutually exclusive outcomes, and choose your resolution style: Basis Managed (community votes via the Basis Voting Army, with dispute process) or Creator Managed (you or up to 10 whitelisted voters resolve, no disputes). To participate, buy Predict+ tokens during or after the bonding phase. These tokens can be held for appreciation, traded for volatility, used as collateral, or bet on specific outcomes with USDC. Once an event resolves, winners claim USDC payouts (no time limit) and tokens continue to function as Stable+ assets — tradeable and usable as loan collateral."
+  },
+  {
+    "question": "How does event resolution work?",
+    "answer": "Predict+ offers two resolution styles. Basis Managed uses a decentralized, multi-layered system where the creator or community proposes outcomes with bonds. Creators have a 15-minute priority window. There is a 2-hour dispute period where alternative outcomes can be proposed, followed by the Basis Voting Army (staked participants) providing arbitration if needed. Creator Managed markets allow the creator or up to 10 whitelisted voters to decide by majority — this is final with no disputes. In both styles, markets can be declared invalid, triggering full refunds for participants."
+  },
+  {
+    "question": "How can I really get 100% LTV loans with no liquidation risk?",
+    "answer": "The Basis lending facility offers unprecedented terms depending on your collateral. For Stable+ tokens (including STASIS and Predict+), you can borrow up to 100% of the current market value in USDC with zero liquidation risk because the token price cannot decrease — floor price equals spot price. For Floor+ collateral, you can borrow up to 100% of the floor price (not the spot price). Since floors never decrease, collateral value cannot drop below the loan amount — so there is no price-based liquidation. Loan fees consist of a flat origination fee plus dynamic interest based on duration, with total fees ranging from approximately 2% for a 10-day loan to approximately 7% for a 1,000-day loan, all prepaid upfront. Terms range from 10 to 1,000 days, with options for extension and cash-out refinancing if collateral appreciates. Leveraged tokens cannot be used as loan collateral."
+  },
+  {
+    "question": "How does leverage trading work without liquidation risk?",
+    "answer": "Basis offers dynamic leverage up to 36x in optimal conditions, with no forced liquidation from market volatility. Leverage is calculated against the protected floor price rather than the volatile market price. Effective leverage fluctuates based on current pool liquidity and position size — smaller buys achieve higher leverage, larger buys produce lower leverage due to price impact. For Stable+ tokens (where floor equals spot), maximum leverage is always available. For Floor+ tokens, maximum leverage is available at launch (floor approximately equals spot) but decreases as the spot price rises above the floor. Agents can fine-tune exposure using mixedBuy via the SDK to split between spot and leveraged positions in a single call."
+  },
+  {
+    "question": "How much can BASIS stakers earn from the platform?",
+    "answer": "BASIS Stakers receive 90% of all platform revenue, including net revenue from DEX trading fees, lending origination and interest, and Predict+ betting fees. Rewards are distributed as USDC through a pure yield model and are multiplied based on lock commitments. Tiers range from Flexible at a 1.0x multiplier to Diamond at 4.0x for 365 days, and Founder at 6.0x for 3 years. Projections suggest that with 50% of the supply staked, Diamond tier APYs could range from 28.1% in conservative scenarios to over 105% in bullish scenarios. Unlike platforms relying on burns, Basis delivers real value through actual revenue sharing."
+  },
+  {
+    "question": "What are the cascading growth effects in the Basis ecosystem?",
+    "answer": "The ecosystem creates self-reinforcing growth through several mechanisms. Every token must be paired with the STASIS platform token, meaning STASIS appreciation benefits all paired tokens across the network. This creates a network effect where more creators lead to more users and higher fees. Additionally, deflationary mechanics and token burns create constant upward pressure, ensuring that success in any part of the ecosystem benefits the entire system through these mathematical links."
+  },
+  {
+    "question": "What blockchain does Basis use? Is it audited and secure?",
+    "answer": "Basis is built on the Binance Smart Chain mainnet using ERC-20 tokens. The platform has been audited by the Hashlock security firm and features an MEV-resistant architecture with no backdoors or hidden mint functions. It is a 100% non-custodial design where users maintain control of their assets. Trading fees are transparently set by token type: 0.5% for Stable+ tokens, 1.5% for Floor+ and Predict+ tokens. Loan fees consist of a flat origination fee plus duration-based interest, all prepaid upfront. No hidden fees and no additional platform access fees required."
+  },
+  {
+    "question": "Can anyone participate? Are there restrictions?",
+    "answer": "Basis is fully permissionless with no KYC required and no geographic restrictions. Users simply connect any Web3 wallet to begin using the platform without needing registration or approval. While Predict+ events have AI-enforced content guidelines to maintain standards, the platform itself operates entirely on-chain through smart contracts and is accessible to anyone globally."
+  },
+  {
+    "question": "What makes Basis different for AI agents compared to other DeFi platforms?",
+    "answer": "Most DeFi platforms tolerate agents. Basis is built for them. Platform-set fees with no hidden extraction. SDK-first architecture with full API access and agent-exclusive features like mixedBuy. On-chain identity through ERC-8004 registration and reputation via the Agent Confidence Score. Smart contracts that enforce safety at the protocol level. Agents can trust the infrastructure without trusting the counterparty."
+  },
+  {
+    "question": "Is there a community airdrop?",
+    "answer": "Yes. 25% of tokens are reserved for the community airdrop, weighted by real contribution. Both human participants and AI agents earn from the same pool, with verified agents receiving a modest boost through the Agent Confidence Score. Airdrop weight is determined by genuine activity and economic contribution — volume, product diversity, and capital at risk. The more value you create on Basis, the more you earn."
+  },
+  {
+    "question": "How do I get started with Basis?",
+    "answer": "Token creators can get started by visiting launchonbasis.com to connect their wallet and launch a token for gas fees only (approximately $0.14 BNB), earning 20% of trading fees forever. Investors can browse bonding phase tokens for appreciation, use the lending facility for liquidity, or trade with protected leverage. Prediction users can browse events to buy tokens for investment or bet on outcomes, claiming USDC winnings after resolution. AI agents can connect a wallet and start earning immediately — when the SDK launches, passing agent: true in the constructor will auto-register your agent on-chain via ERC-8004."
+  },
+  {
+    "question": "What makes Basis different from every other DeFi platform?",
+    "answer": "Basis is unique because it offers guaranteed downside protection through Stable+ and Floor+ token mechanics that make rug pulls structurally impossible. It aligns incentives by ensuring creators profit from long-term trading fees rather than token dumps, while early supporters and BASIS stakers benefit from all ecosystem activity. It is a complete, integrated ecosystem where success cascades across four interconnected platforms. Ultimately, Basis creates a new paradigm where mathematical certainty replaces trust, making DeFi safe and sustainable for the mainstream. Beyond safety and transparency, Basis is purpose-built for both human creators and AI agents on BNB Chain — the number one blockchain for autonomous agents with over 39,000 registered. While other platforms tolerate bots, Basis gives agents SDK access with exclusive features, reputation scoring, and equal participation in the ecosystem, unlocking transaction volume and growth that purely human-driven platforms cannot match."
+  }
+]

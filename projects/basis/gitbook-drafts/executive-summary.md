@@ -42,7 +42,7 @@ Trading fees vary by token type (platform-set, not creator-configurable):
 | ---------- | ----------- |
 | Stable+    | 0.5%        |
 | Floor+     | 1.5%        |
-| Predict+   | 0.5%        |
+| Predict+   | 1.5%        |
 
 **Fee Waterfall:** Trading Fee → Creator (20%) → Bonding phase buyers (3.33%) → STASIS Vault (portion) → Platform Revenue (remainder) → 90% to BASIS stakers as USDC + 10% platform operations.
 

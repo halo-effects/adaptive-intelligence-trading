@@ -1,6 +1,6 @@
 # Basis Project — Quick Reference Index
 
-_Last updated: 2026-03-14_
+_Last updated: 2026-03-14 (v2)_
 
 ## Documents
 
@@ -10,6 +10,9 @@ _Last updated: 2026-03-14_
 | `dev-plan.md` | Technical build plan — what's deployed, in progress, and remaining |
 | `mechanics-corrections.md` | Source-of-truth corrections from Diamond's live platform walkthrough (2026-03-12) |
 | `update-log-2026-03-14.md` | Changelog for 2026-03-14 documentation consolidation |
+| `fee-schedule.md` | **Single source of truth** for all platform fees — trading, loans, leverage, creation, vault |
+| `gitbook-corrections-for-alex-2026-03-14.md` | 5 corrections for the live GitBook site (ready for Alex) |
+| `sdk-gap-analysis-2026-03-14.md` | Gap analysis of Alex's SDK reference |
 | `index.md` | This file — quick reference to sections |
 
 ### Skill Scaffold (`skill-scaffold/`)

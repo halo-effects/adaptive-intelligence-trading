@@ -69,7 +69,7 @@ Now multiply that by the number of agents. At 1,000 agents, you're looking at te
 
 **The revenue model is directly tied to this volume:**
 
-Platform-set fees on every transaction — 0.5% on stable assets, 1.5% on volatile assets. Uniform, transparent, predictable. After creator distributions and vault allocations, 90% of remaining platform revenue is distributed to governance token stakers as **USDC yield.** Not emissions. Not inflationary rewards. Real revenue from real volume.
+Platform-set fees on every transaction — 0.5% on Stable+ tokens, 1.5% on Floor+ and Predict+ tokens. Uniform, transparent, predictable. After creator distributions and vault allocations, 90% of remaining platform revenue is distributed to governance token stakers as **USDC yield.** Not emissions. Not inflationary rewards. Real revenue from real volume.
 
 **The vault amplifies everything:**
 

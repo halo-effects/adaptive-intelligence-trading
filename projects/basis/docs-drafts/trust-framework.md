@@ -26,7 +26,7 @@ Every safeguard is embedded in immutable smart contracts — not policies, not t
 | Attack Vector | How Other Platforms Handle It | How Basis Prevents It |
 |---|---|---|
 | **Rug pull** (creator dumps tokens) | Blacklists, warnings, post-mortem investigations | Stable+ tokens mechanically cannot crash from selling. Price only moves up from slippage retention. |
-| **Fee exploitation** (hidden or manipulative fees) | Caveat emptor — read the contract | All trading fees are **platform-set and uniform** (Stable+ 0.5%, Floor+ 1.5%, Predict+ 0.5%). Creators cannot modify fees. |
+| **Fee exploitation** (hidden or manipulative fees) | Caveat emptor — read the contract | All trading fees are **platform-set and uniform** (Stable+ 0.5%, Floor+ 1.5%, Predict+ 1.5%). Creators cannot modify fees. |
 | **Pump and dump** (inflate then exit) | Social media bans, post-hoc enforcement | Floor+ tokens have a rising floor price providing downside protection. Bonding phase controls prevent unregulated launches. |
 | **Liquidation hunting** (manipulate price to trigger liquidations) | Circuit breakers, insurance funds | **No liquidations exist on Basis.** 100% LTV loans with burn-on-expiry. wSTASIS vault loans have zero liquidation risk because collateral value only increases. |
 | **Wash trading** (fake volume for rewards) | Statistical detection, delayed rewards | Points system uses **net P&L tracking**. Hedging all outcomes = 0 points. Wash trading generates fees but no points. |

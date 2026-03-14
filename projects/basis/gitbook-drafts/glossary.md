@@ -16,7 +16,7 @@ This glossary provides definitions for all key terms and concepts used throughou
 
 **Basis Ecosystem:** The permissionless DeFi platform consisting of four interconnected components: Token Launchpad, Predict+ Marketplace, Lending Facility, and Decentralized Exchange (DEX), where success anywhere benefits all participants through structured fee distribution.
 
-**DEX (Decentralized Exchange):** Basis's native decentralized exchange serving as the exclusive marketplace for all Basis Tokens. Features MEV-resistant architecture, internal liquidity mechanisms, and dynamic leverage up to 36x with no liquidation risk for Stable+ tokens. Trading fees vary by token type: Stable+ 0.5%, Floor+ 1.5%, Predict+ 0.5%.
+**DEX (Decentralized Exchange):** Basis's native decentralized exchange serving as the exclusive marketplace for all Basis Tokens. Features MEV-resistant architecture, internal liquidity mechanisms, and dynamic leverage up to 36x with no liquidation risk for Stable+ tokens. Trading fees vary by token type: Stable+ 0.5%, Floor+ 1.5%, Predict+ 1.5%.
 
 **Token Factory/Token Launchpad:** A permissionless, no-code platform allowing anyone to create branded tokens with either Stable+ (up-only) or Floor+ (rising floor) mechanics. All tokens start at $1.00 with creator-configurable starting liquidity ($100–$10,000). Gas fees only (~$0.14 BNB on BNB Chain).
 
@@ -118,7 +118,7 @@ This glossary provides definitions for all key terms and concepts used throughou
 
 #### Fee Structure (Predict+ Trading):
 
-* **Trading Fee:** 0.5% on buys and sells of the Predict+ token (platform-set)
+* **Trading Fee:** 1.5% on buys and sells of the Predict+ token (platform-set)
 * **Distribution:** Creator (20%), bonding phase buyers (3.33%), trader-to-bettor pot (portion), remainder to platform fee waterfall
 
 **Payout Mechanics:** Winners receive proportional share of losing pools plus trader-to-bettor bounty, calculated as (User's Winning Shares / Total Winning Shares) × Total Prize Pool, claimed through dApp with no time limits.
@@ -181,7 +181,7 @@ This glossary provides definitions for all key terms and concepts used throughou
 | ---------- | ----------- | ------------------- |
 | Stable+    | 0.5%        | 0.1% per trade      |
 | Floor+     | 1.5%        | 0.3% per trade      |
-| Predict+   | 0.5%        | 0.1% per trade      |
+| Predict+   | 1.5%        | 0.3% per trade      |
 
 Fees are platform-set — not creator-configurable. Creators control the split of their 20% share (up to 10 wallets via Dev Tax Sharing).
 

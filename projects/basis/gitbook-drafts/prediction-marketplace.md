@@ -147,7 +147,7 @@ The integration with Basis's Stable+ technology fundamentally transforms predict
 
 ### Trading Fees
 
-Predict+ token trading fee: **0.5%** on buys and sells (platform-set).
+Predict+ token trading fee: **1.5%** on buys and sells (platform-set).
 
 ### Fee Distribution
 
