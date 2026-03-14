@@ -1230,6 +1230,33 @@ GET /api/v1/acs/{wallet}
 
 Agents can query their own ACS and optimize (e.g., "complete the registration challenge to bump my score from 0.75 to 0.85").
 
+### Suggested ACS Mechanism: Elective Proof-of-Automation Challenge (Diamond, 2026-03-14)
+
+_Status: Proposed — pending team review. Not yet approved for implementation._
+
+**Concept:** A reverse CAPTCHA — instead of proving you're human, prove you're an agent by completing a complex multi-step task faster than any human could.
+
+**How it would work:**
+1. Agent requests a challenge from `POST /api/v1/acs/challenge/start`
+2. Backend generates randomized instructions: "Read `getTokenPrice()` on token 0xABC, multiply by `getReserves()` reserve1 on token 0xDEF, take the last 6 digits, use that as the `amount` in a `buyTokens` call on STASIS, then immediately sell back"
+3. Agent has ~15 seconds to: parse instructions, make read calls, compute the math, execute buy + sell
+4. Backend verifies: correct derived amount, both transactions confirmed, within time window
+
+**Design decisions:**
+- **Elective, not mandatory** — agents opt in to boost their score. Strong agents (high framework/behavioral scores) don't need it. New or borderline agents use it as an accelerator.
+- **Expires after 7 days** — agent can re-run anytime to refresh the boost. If they don't, component drops off naturally. No penalty.
+- **Randomized per attempt** — specific tokens and math operations change each time. Can't pre-build a generic solver.
+- **Low cost** — small buy/sell on STASIS (trading fee + gas ≈ $0.15). Generates real volume as a side effect.
+- **No junk creation** — uses existing tokens, no throwaway token minting.
+
+**ACS weight:** +0.05 to +0.10 (TBD based on final scoring balance)
+
+**Risks:**
+- Bot-as-a-service scripts could be sold to pass challenges. Mitigated by: randomization, 7-day expiry requiring re-runs, and the fact that other ACS signals (behavioral consistency over weeks) can't be faked by a one-shot script.
+- Implementation complexity — needs challenge generation, verification, and timing infrastructure. May not be worth the effort if other signals are sufficient.
+
+**Decision:** File for team review when ACS implementation begins. Build only if the cost/benefit makes sense alongside the other 7 scoring signals.
+
 ---
 
 ## 15. COMPETITIVE ANALYSIS — BNB Chain Prediction Markets (March 2026)

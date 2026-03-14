@@ -1360,5 +1360,171 @@
         }
       ]
     }
+  },
+  {
+    "date": "2026-03-14",
+    "captured_at": "2026-03-14T17:10:02.225663+00:00",
+    "v14_paper": {
+      "equity": 50745.95,
+      "pnl_pct": 407.46,
+      "pnl_usd": 40745.95,
+      "deals": 384,
+      "win_rate": 97.7,
+      "max_dd_pct": 0.0,
+      "uptime_hours": 4.6
+    },
+    "v14_pm": {
+      "equity": 50538.8,
+      "pnl_pct": 1.08,
+      "pnl_usd": 538.8,
+      "deals": 53,
+      "win_rate": 100.0,
+      "max_dd_pct": 0.0,
+      "uptime_hours": 281.2
+    },
+    "delta": {
+      "equity_usd": -207.15,
+      "pnl_pct": -406.38,
+      "deals": -331
+    },
+    "pm_allocation": {
+      "active_pool": 12053.33,
+      "reserve": 12500.0,
+      "total_invested": 26175.78,
+      "coins": [
+        {
+          "symbol": "SNX/USDT",
+          "layers": 3,
+          "invested": 3933.03,
+          "unrealized_pnl": -62.86,
+          "realized_pnl": 58.43,
+          "dca_score": 43.68,
+          "rank": 1,
+          "cf": 0.792,
+          "dd_pct": 16.3,
+          "deals_per_week": 24.1
+        },
+        {
+          "symbol": "TAO/USDT",
+          "layers": 3,
+          "invested": 4759.77,
+          "unrealized_pnl": -45.32,
+          "realized_pnl": 138.82,
+          "dca_score": 36.23,
+          "rank": 2,
+          "cf": 0.875,
+          "dd_pct": 14.3,
+          "deals_per_week": 15.5
+        },
+        {
+          "symbol": "ZRO/USDT",
+          "layers": 4,
+          "invested": 5780.16,
+          "unrealized_pnl": -226.17,
+          "realized_pnl": 14.23,
+          "dca_score": 25.31,
+          "rank": 3,
+          "cf": 0.958,
+          "dd_pct": 21.0,
+          "deals_per_week": 11.2
+        },
+        {
+          "symbol": "NEAR/USDT",
+          "layers": 3,
+          "invested": 4354.6,
+          "unrealized_pnl": -115.13,
+          "realized_pnl": 185.37,
+          "dca_score": 23.29,
+          "rank": 4,
+          "cf": 0.833,
+          "dd_pct": 13.8,
+          "deals_per_week": 10.8
+        },
+        {
+          "symbol": "DOT/USDT",
+          "layers": 1,
+          "invested": 1611.96,
+          "unrealized_pnl": -22.52,
+          "realized_pnl": 48.51,
+          "dca_score": 17.85,
+          "rank": 6,
+          "cf": 0.833,
+          "dd_pct": 12.0,
+          "deals_per_week": 8.4
+        },
+        {
+          "symbol": "INJ/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 54.46,
+          "dca_score": 17.31,
+          "rank": 7,
+          "cf": 0.833,
+          "dd_pct": 25.9,
+          "deals_per_week": 9.4
+        },
+        {
+          "symbol": "PENDLE/USDT",
+          "layers": 3,
+          "invested": 3910.61,
+          "unrealized_pnl": -110.62,
+          "realized_pnl": 58.39,
+          "dca_score": 17.27,
+          "rank": 8,
+          "cf": 0.833,
+          "dd_pct": 13.6,
+          "deals_per_week": 8.4
+        },
+        {
+          "symbol": "JUP/USDT",
+          "layers": 4,
+          "invested": 1825.65,
+          "unrealized_pnl": -81.22,
+          "realized_pnl": 0.0,
+          "dca_score": 17.18,
+          "rank": 9,
+          "cf": 0.833,
+          "dd_pct": 17.5,
+          "deals_per_week": 8.9
+        },
+        {
+          "symbol": "SOL/USDC",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 49.02,
+          "dca_score": 12.17,
+          "rank": 12,
+          "cf": 0.833,
+          "dd_pct": 12.7,
+          "deals_per_week": 6.2
+        },
+        {
+          "symbol": "ENS/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 15.21,
+          "dca_score": 11.29,
+          "rank": 13,
+          "cf": 0.833,
+          "dd_pct": 16.3,
+          "deals_per_week": 5.9
+        },
+        {
+          "symbol": "STX/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 99.54,
+          "dca_score": 6.28,
+          "rank": 27,
+          "cf": 0.833,
+          "dd_pct": 15.2,
+          "deals_per_week": 2.8
+        }
+      ]
+    }
   }
 ]
