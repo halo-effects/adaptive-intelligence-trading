@@ -695,17 +695,34 @@ def send_telegram_summary(output: dict):
     windows_available = list(output["windows"].keys())
     window_labels = "/".join(windows_available)
 
-    best_window = windows_available[-1]
-    rankings = output["windows"][best_window]["rankings"][:5]
+    # Use 30d window (matches dashboard default), fall back to bear then last available
+    best_window = "30d" if "30d" in windows_available else ("bear" if "bear" in windows_available else windows_available[-1])
+    rankings = output["windows"][best_window]["rankings"]
+
+    # Apply trend multipliers to compute Trade Score (Base DCA Score × Trend Mult)
+    trend_scores = output.get("trend_scores", {})
+    scored_rankings = []
+    for r in rankings:
+        coin = r.get("coin", r.get("symbol", "").split("/")[0])
+        dca_score = r.get("dca_score", 0.0)
+        trend_data = trend_scores.get(coin, {})
+        trend_mult = trend_data.get("trend_multiplier", 1.0)
+        trade_score = dca_score * trend_mult
+        scored_rankings.append({**r, "trend_mult": trend_mult, "trade_score": trade_score})
+
+    # Sort by Trade Score (matches dashboard Opportunity Table)
+    scored_rankings.sort(key=lambda x: x["trade_score"], reverse=True)
+    top5 = scored_rankings[:5]
 
     lines = [f"\U0001f4ca [SCANNER] DCA Cycle Rankings ({window_labels})", ""]
-    lines.append(f"Top 5 by DCA Score ({best_window}):")
+    lines.append(f"Top 5 by Trade Score ({best_window}):")
 
-    for r in rankings:
+    for i, r in enumerate(top5, 1):
+        trend_arrow = "\u2197" if r["trend_mult"] > 1.0 else ("\u2198" if r["trend_mult"] < 1.0 else "\u2192")
         lines.append(
-            f"{r['rank']}. {r['coin']} \u2014 {r['deals_per_week']:.1f} d/wk, "
+            f"{i}. {r['coin']} \u2014 {r['deals_per_week']:.1f} d/wk, "
             f"${r['realized_pnl']:+,.0f}, DD {r['max_drawdown_pct']:.0f}%, "
-            f"Score {r['dca_score']:.1f}"
+            f"Trade {r['trade_score']:.1f} (Base {r['dca_score']:.1f} \u00d7 {r['trend_mult']:.1f}x {trend_arrow})"
         )
 
     total_deals = sum(
