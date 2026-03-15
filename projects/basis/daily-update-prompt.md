@@ -2,6 +2,11 @@
 
 You are posting a daily project update to the BASIS PRODUCTION Telegram group.
 
+## Group Chat ID
+- **Telegram chat ID:** `-1002602796940`
+- **Channel target:** `telegram:-1002602796940`
+- Use `message` tool with `action=send`, `target="-1002602796940"`, `channel="telegram"`
+
 ## Instructions
 1. Read `projects/basis/index.md` for current state
 2. Read `projects/basis/project-plan.md` sections 12 (dev plan) for task status
