@@ -27,6 +27,11 @@ DeFi platform on BNB Chain — the #1 blockchain for AI agents (39K registered, 
 **The thesis:**
 There are already 39K agents on BNB Chain (up from 6.6K two weeks ago), generating 523K daily transactions. 100K agents creating tokens, running predictions, and earning fees is weeks away, not years. Each agent drives volume. Volume drives revenue. Revenue flows to the vault. The flywheel is real and it's already turning.
 
+**The prediction market killer stat:**
+We ran the numbers on Polymarket's biggest multi-outcome market (Democratic Presidential Nominee 2028 — $836M volume, 44 outcomes). A $100 bet on the frontrunner pays $411 on Polymarket (capped at $1/share). The same bet on Basis pays $6,132 — **15x more** — because winners split the entire losing pool, uncapped. And the market creator? Polymarket pays them $0. On Basis they'd earn 20% of all trading fees. Forever.
+
+*"Polymarket gives agents a slot machine. Basis gives agents a business."*
+
 **One line:** *"Basis is to agent DeFi what HTTPS was to the web — a protocol that makes insecurity structurally impossible."*
 
 ---
@@ -41,7 +46,7 @@ We're a DeFi protocol on BNB Chain — the #1 chain for AI agents — purpose-bu
 
 **The flywheel:** More agents → more volume → more revenue → higher vault appreciation → more agents attracted to the yield. It's self-reinforcing and it scales linearly with agent adoption.
 
-The protocol is live. The vault is already showing 5.8x appreciation. We're raising to ship the SDK across every major agent framework and onboard the first 1,000 agents that seed the network effect.
+The protocol is live. The vault is already showing ongoing appreciation. We're raising to ship the SDK across every major agent framework and onboard the first 1,000 agents that seed the network effect.
 
 **One line:** When 100,000 agents trade 24/7/365, the volume isn't comparable to retail DeFi. It's a different asset class entirely.
 
@@ -73,13 +78,17 @@ Platform-set fees on every transaction — 0.5% on Stable+ tokens, 1.5% on Floor
 
 **The vault amplifies everything:**
 
-Our wSTASIS vault captures a portion of every transaction's fees and mechanically increases in value. It's already at 5.8x appreciation. Agents deposit into the vault, borrow against it at 100% LTV, and redeploy that capital into more trading — generating more fees — which flow back into the vault. **Every agent running this loop is a perpetual volume engine.**
+Our wSTASIS vault captures a portion of every transaction's fees and mechanically increases in value. It's already at ongoing appreciation. Agents deposit into the vault, borrow against it at 100% LTV, and redeploy that capital into more trading — generating more fees — which flow back into the vault. **Every agent running this loop is a perpetual volume engine.**
 
 **Why agents stay:**
 
 Three reasons. First, the economics work. Agents earn from creation fees, trading profits, prediction accuracy, and vault appreciation — multiple revenue streams from a single platform. Second, the infrastructure is frictionless. SDK install, wallet connect, execute. No approvals, no gates, no waiting. Third, and this is the defensibility — **the Agent Confidence Score.**
 
 Every agent builds an on-chain reputation from real activity. Higher reputation means other agents route more capital through your assets. It's a network effect — the longer you stay, the more valuable your position becomes. Leaving means starting from zero elsewhere.
+
+**The prediction market advantage is quantifiable:**
+
+We benchmarked against Polymarket's biggest multi-outcome market — Democratic Presidential Nominee 2028 ($836M in volume, 44 outcomes). A $100 bet on the frontrunner (Newsom, 24.3%) pays $411 on Polymarket — capped at $1/share. The identical bet on Basis pays $6,132 — because winners split the entire losing pool, uncapped. That's **15x the payout on the same bet.** For lower-probability outcomes, the multiplier is even higher — AOC (8.7%) pays $14,540 on Basis vs $1,149 on Polymarket. And the market creator earns zero on Polymarket. On Basis, they earn 20% of all trading fees. Forever. That's the structural advantage that makes agents choose Basis.
 
 **The comparison VCs should be thinking about:**
 

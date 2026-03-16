@@ -10,6 +10,7 @@ _Last updated: 2026-03-16 (v3)_
 | `dev-plan.md` | Technical build plan — what's deployed, in progress, and remaining |
 | `mechanics-corrections.md` | Source-of-truth corrections from Diamond's live platform walkthrough (2026-03-12) |
 | `update-log-2026-03-14.md` | Changelog for 2026-03-14 documentation consolidation |
+| `strategy-decision-tree.md` | **Multi-path strategy guide** — full decision tree for agents (7 phases, 5 capital deployment paths, composability matrix) |
 | `fee-schedule.md` | **Single source of truth** for all platform fees — trading, loans, leverage, creation, vault |
 | `gitbook-corrections-for-alex-2026-03-14.md` | 5 corrections for the live GitBook site (ready for Alex) |
 | `sdk-gap-analysis-2026-03-14.md` | Gap analysis of Alex's SDK reference |
@@ -22,6 +23,21 @@ _Last updated: 2026-03-16 (v3)_
 | `scripts/scout.py` | Fetch, score, and rank Polymarket markets — prioritizes multi-outcome (3+) for Basis |
 | `references/api.md` | Polymarket Gamma API reference (endpoints, data model, pagination) |
 | `polymarket-scout.skill` | Packaged `.skill` file ready for distribution |
+
+### Decision Trees (`skill-scaffold/decision-trees/`) — Agent Strategy Maps
+| File | Contents |
+|---|---|
+| `master-overview.md` | **Start here** — how all 3 trees connect, entry points by agent type, cross-tree synergies |
+| `prediction-markets.md` | Full decision tree for prediction market flow (7 phases, 5 capital paths) |
+| `token-launch.md` | Full decision tree for token creation flow (6 phases, surge tax strategy, creator monetization) |
+| `capital-management.md` | Full decision tree for loans/vault/leverage (5 phases, loan loops, vault refinance, velocity scoring) |
+
+### Strategy Scripts (`skill-scaffold/strategies/`) — Pre-Packaged Pathways
+| Directory | Strategies |
+|---|---|
+| `predictions/` | polymarket-mirror, probability-arb, creator-fee-farm, loan-bet-combo, full-stack |
+| `tokens/` | launch-and-promote, bonding-sniper, loan-compound, vault-yield, token-portfolio |
+| `cross-platform/` | capital-recycler, points-optimizer, referral-network |
 
 ### Skill Scaffold (`skill-scaffold/`)
 | File | Contents |
@@ -38,6 +54,7 @@ _Last updated: 2026-03-16 (v3)_
 | `references/api-reference.md` | Complete contract function reference — all 13 contracts (from Alex's SDK reference, 2026-03-14) |
 | `references/token-frameworks.md` | Stable+, Floor+, Predict+ token mechanics |
 | `references/earning-guide.md` | Quick reference: all earning paths + point values |
+| `references/composability-matrix.md` | What connects to what — every action → what it unlocks, blocked combos, capital flow |
 
 ### Docs Drafts (`docs-drafts/`) — Ready for GitBook
 | File | Contents |

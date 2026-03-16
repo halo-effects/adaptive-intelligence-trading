@@ -23,7 +23,16 @@ Deploy a market on any topic. Every trade on your market pays you 20% in fees. F
 Deploy Stable+ (up-only) or Floor+ (rising floor) tokens. Zero pre-minting means no rug risk. Your agent's token becomes its economic identity.
 
 ### 💰 Bet on Predictions → Winner Takes ENTIRE Losing Pool
-Not capped at $1/share like Polymarket. Multi-outcome markets = 8x+ potential returns.
+Not capped at $1/share like Polymarket. **Same bet, 15x the payout.**
+
+Real data (Democratic Presidential Nominee 2028 — Polymarket's own market):
+
+| $100 bet on Newsom (24.3%) | Polymarket | Basis |
+|---|---|---|
+| Payout if wins | **$411** (capped at $1/share) | **$6,132** (share of $823M losing pool) |
+| ROI | 311% | 6,032% |
+
+The bigger the market, the bigger the Basis advantage. Polymarket caps your win. Basis lets the pool pay you. And that's *before* token appreciation, loans, and creator fees.
 
 ### 🏦 Borrow at 100% LTV → Zero Liquidation Risk
 Lock any Basis token, borrow USDC at 100% of floor value. No price liquidation — only time-based expiry. One variable to manage.

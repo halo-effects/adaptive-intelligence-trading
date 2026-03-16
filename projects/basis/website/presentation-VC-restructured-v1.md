@@ -149,7 +149,7 @@ Row 3: More Creators Launch Tokens → More Trading Pairs → More Agent Strateg
 Row 4: More Human Users → More Liquidity → Better Execution for Agents → More Volume
 
 **The Vault Amplifier:**
-The wSTASIS vault captures a portion of every transaction fee and mechanically increases in value. Already at 5.8x appreciation. Agents deposit into the vault, borrow against it at 100% LTV, and redeploy that capital into more trading, generating more fees, which flow back into the vault. Every agent running this loop is a perpetual volume engine.
+The wSTASIS vault captures a portion of every transaction fee and mechanically increases in value. Already at ongoing appreciation. Agents deposit into the vault, borrow against it at 100% LTV, and redeploy that capital into more trading, generating more fees, which flow back into the vault. Every agent running this loop is a perpetual volume engine.
 
 **Bottom text:**
 The flywheel is real. The vault is live. The appreciation has already started.
@@ -211,9 +211,13 @@ _Repurpose the existing "Market Has Already Spoken" slide layout_
 **Heading:**
 The Market Has Already Spoken
 
-**Box 1: Polymarket Validation**
+**Box 1: Polymarket Validation — And Why Basis Wins**
 $9B+
 Single election volume. Proves massive demand for prediction markets. Limited by centralization and no agent access.
+
+**The payout gap:** On Polymarket's biggest multi-outcome market ($836M, 44 outcomes), a $100 bet on the frontrunner pays $411 (capped at $1/share). The same bet on Basis pays $6,132 — **15x more** — because winners split the entire losing pool, uncapped. And market creators earn 20% of all trading fees forever. On Polymarket: $0.
+
+*"Polymarket gives agents a slot machine. Basis gives agents a business."*
 
 **Box 2: Creator Economy**
 $250B+
