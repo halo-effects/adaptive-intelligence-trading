@@ -6,43 +6,43 @@
   "leverage": 1.0,
   "exchange": "aster",
   "capital": 300.0,
-  "equity": 321.29,
-  "cash": 321.29,
+  "equity": 321.3,
+  "cash": 224.88,
   "pnl_pct": 7.1,
   "coins": {
     "ASTER/USDT": {
       "state": "LONG_DCA",
-      "side": "none",
-      "layers": 0,
-      "avg_entry": 0,
-      "current_price": 0.72402,
-      "unrealized_pnl": 0.0,
-      "invested": 0.0,
+      "side": "long",
+      "layers": 1,
+      "avg_entry": 0.725,
+      "current_price": 0.72584,
+      "unrealized_pnl": 0.11,
+      "invested": 96.34,
       "realized_pnl": 10.37,
       "lifecycle_phase": "LONG_DCA",
       "cfgi": 60.5,
-      "next_tp_price": null,
+      "next_tp_price": 0.735875,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 0.23
+      "total_fees": 0.25
     }
   },
   "symbols": [
     "ASTER/USDT"
   ],
   "total_realized_pnl": 5.53,
-  "total_fees": 0.23,
+  "total_fees": 0.25,
   "deals_completed": 2,
   "win_rate": 100.0,
   "max_drawdown_pct": 0.0,
-  "uptime_hours": 44.29,
+  "uptime_hours": 44.47,
   "fear_greed_index": 55.25,
-  "last_update": "2026-03-16T08:52:28.933630+00:00",
+  "last_update": "2026-03-16T09:03:22.477119+00:00",
   "timeframe": "1h",
   "exchange_balance": {
-    "usdt_free": 321.29,
-    "usdt_total": 321.29,
-    "base_free": 0.0045,
-    "base_total": 0.0045
+    "usdt_free": 224.88,
+    "usdt_total": 224.88,
+    "base_free": 132.834,
+    "base_total": 132.834
   }
 }
