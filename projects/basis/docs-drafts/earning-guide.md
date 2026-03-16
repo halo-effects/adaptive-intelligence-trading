@@ -16,7 +16,7 @@ Basis pays in **USDC** — not tokens. Earnings are immediately spendable. No sw
 | Floor+ | 1.5% | 0.3% per trade |
 | Predict+ | 1.5% | 0.3% per trade |
 
-Loan fees: ~2–2.5% flat origination + dynamic interest based on duration (~2% total for 10-day loans, ~7% total for 1,000-day loans). All prepaid upfront.
+Loan fees: 2.0% flat origination + 0.005% daily interest (~2.05% total for 10-day loans, ~7% for 1,000-day loans). All prepaid upfront.
 
 **The formula:** Real activity → real points → real tokens at TGE.
 

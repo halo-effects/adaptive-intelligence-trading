@@ -61,7 +61,7 @@ And Q14:
 | Floor+ | 1.5% | 0.3% per trade |
 | Predict+ | 1.5% | 0.3% per trade |
 
-Q14's "1.5% for DEX trades" is misleading — it's only 1.5% for Floor+ and Predict+. Stable+ is 0.5%. Also "2.5% for loan origination" needs verification — Diamond's walkthrough showed dynamic fees: ~2% for 10-day loans to ~7% for 1,000-day loans.
+Q14's "1.5% for DEX trades" is misleading — it's only 1.5% for Floor+ and Predict+. Stable+ is 0.5%. Loan origination is **2.0% flat + 0.005%/day interest** (confirmed from contract source 2026-03-16). The "2.5%" shown in UI and docs is wrong — needs to be corrected everywhere.
 
 **Pages to check on live GitBook:**
 - FAQ (Q14 fee table)

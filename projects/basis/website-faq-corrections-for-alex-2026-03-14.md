@@ -94,11 +94,11 @@ _The website FAQ has more/different errors than the GitBook version_
 
 **Problems:**
 - Max term is **1,000 days**, not 400
-- Need to verify "2.5% origination" and "0.005% daily interest" are still current
-- The dynamicFeePercentage and staticFeePercentage on-chain may have changed
+- ✅ Confirmed 2026-03-16: origination is **2.0%** (not 2.5%), daily interest is **0.005%**
+- Source: `staticFeePercentage = 200`, `dynamicFeePercentage = 5` on MAIN_TOKEN contract
 
 **Replace with:**
-> Loan fees consist of a flat origination fee (~2–2.5%) plus dynamic interest based on duration. Total fees range from ~2% for a 10-day loan to ~7% for a 1,000-day loan, all prepaid upfront. Terms: 10 to 1,000 days. <!-- TODO: confirm exact origination rate with Alex -->
+> Loan fees consist of a 2.0% flat origination fee plus 0.005% daily interest, all prepaid upfront. Total fees range from ~2.05% for a 10-day loan to ~7% for a 1,000-day loan. Terms: 10 to 1,000 days. _(Confirmed by Alex from contract source, 2026-03-16)_
 
 ---
 
@@ -107,10 +107,10 @@ _The website FAQ has more/different errors than the GitBook version_
 **Current text (Q14):**
 > Fees are transparently set at 1.5% for DEX trades and 2.5% for loan origination
 
-**Problem:** Only Floor+ and Predict+ are 1.5%. Stable+ is 0.5%.
+**Problem:** Only Floor+ and Predict+ are 1.5%. Stable+ is 0.5%. Loan origination is 2.0%, not 2.5%.
 
 **Replace with:**
-> Trading fees are transparently set by token type: 0.5% for Stable+ tokens, 1.5% for Floor+ and Predict+ tokens. Loan fees include a flat origination fee plus duration-based interest. No hidden fees.
+> Trading fees are transparently set by token type: 0.5% for Stable+ tokens, 1.5% for Floor+ and Predict+ tokens. Loans have a 2.0% origination fee plus 0.005% daily interest. No hidden fees.
 
 ---
 

@@ -421,11 +421,13 @@ _Source of truth: live platform at launchonbasis.com, walked through by Diamond 
 - Set collateral amount (max = full balance)
 - Choose loan term: **10 days minimum, 1,000 days maximum**
 - **100% LTV** — loan amount = full collateral value (no over-collateralization)
-- **Fee is dynamic** — based on loan duration. UI label shows "2.5%" but actual % varies:
-  - 10 days: $0.10 on $4.95 (~2.0%)
-  - 30 days: $0.11 on $4.95 (~2.2%)
-  - 1,000 days: $0.35 on $4.95 (~7.1%)
+- **Fee structure** (confirmed 2026-03-16 by Alex + Diamond):
+  - **Origination fee: 2.0% flat** (`staticFeePercentage = 200` on MAIN_TOKEN)
+  - **Interest: 0.005% per day** (`dynamicFeePercentage = 5` on MAIN_TOKEN)
+  - **Minimum loan duration: 10 days**
+  - Examples: 10-day = ~2.05%, 30-day = ~2.15%, 365-day = ~3.83%, 1,000-day = ~7.0%
   - Very cheap vs DeFi lending rates (5-15%/year). Total fee, not annualized.
+  - ⚠️ UI previously showed blended "2.5%" — should be updated to show origination + interest separately.
 - Loans pay out in **USDC**
 - Same approve → create pattern (two contract calls)
 - Collateral valued at **floor price** (conservative — protects lender)

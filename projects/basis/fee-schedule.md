@@ -1,5 +1,5 @@
 # Basis Platform Fee Schedule — Single Source of Truth
-_Last updated: 2026-03-14_
+_Last updated: 2026-03-16 — loan fees + tax rates confirmed by Alex from contract source_
 _Referenced by all project docs. Update HERE first, then propagate._
 
 ---
@@ -60,13 +60,26 @@ Trading Fee (0.5% or 1.5%)
         └── 10% → Platform operations
 ```
 
-### Questions for Alex (to complete the distribution)
+### Confirmed Values from ATaxes Contract (2026-03-16, from Alex)
 
-1. What are the current values of `injectRate()`, `devRate()`, and `presaleRate()` on ATaxes?
-2. Are these rates the same across all token types (Stable+, Floor+, Predict+)?
-3. For Predict+: what % of the fee goes to the bounty pot vs the standard waterfall?
-4. Does the distribution change during vs after the bonding phase? (i.e., does presaleRate only apply during bonding?)
-5. Is the "90% to BASIS stakers" calculated after ALL other distributions, or is there a specific `platformRate()`?
+| Variable | Value | Meaning |
+|---|---|---|
+| `_taxRateXether` (STASIS) | 50 | 0.50% trading fee |
+| `_taxRateStable` (Stable+) | 50 | 0.50% base + surge |
+| `_taxRateDefault` (Floor+) | 150 | 1.50% base + surge |
+| `_taxRatePrediction` | 150 | 1.50% |
+| `injectRate` | 16 | 16% of fee → wSTASIS Vault |
+| `devRate` | 20 | 20% of fee → Creator |
+| `presaleRate` | 4 | 4% of fee → Bonding phase buyers |
+| Platform remainder | 60% | 100% - 20% - 16% - 4% = 60% → platform revenue |
+
+**⚠️ These splits are provisional (2026-03-16).** Alex noted the distribution will likely change once the staking contract is built to fit the final staking model. Current values reflect deployed contract state, not final tokenomics.
+
+### Remaining Questions
+
+1. For Predict+: what % of the fee goes to the bounty pot vs the standard waterfall?
+2. Does `presaleRate` only apply during bonding phase, or always?
+3. Is the platform remainder (60%) split 90/10 (stakers/ops), or different?
 
 **Notes:**
 - Fees are set by the platform per token type — creators cannot change the rate
@@ -80,9 +93,19 @@ Trading Fee (0.5% or 1.5%)
 
 | Component | Rate | Notes |
 |---|---|---|
-| Origination fee | ~2–2.5% flat | One-time, on every loan. <!-- TODO: confirm exact current rate with Alex --> |
-| Interest | Dynamic, based on duration | Increases with longer loan terms |
-| **Total fee (origination + interest)** | **~2% (10-day loan) to ~7% (1,000-day loan)** | All prepaid upfront, deducted from loan proceeds |
+| Static fee (origination) | `staticFeePercentage = 200` → **2.0%** flat | One-time, on every loan. Set on MAIN_TOKEN/STASIS contract. |
+| Dynamic fee (interest) | `dynamicFeePercentage = 5` → **0.005% per day** | Scales linearly with loan duration. Set on MAIN_TOKEN/STASIS contract. |
+| **Total fee (origination + interest)** | **2.0% + (0.005% × days)** | All prepaid upfront, deducted from loan proceeds |
+
+**Example total fees:**
+| Duration | Static | Dynamic | Total |
+|---|---|---|---|
+| 10 days | 2.0% | 0.05% | **~2.05%** |
+| 30 days | 2.0% | 0.15% | **~2.15%** |
+| 365 days | 2.0% | 1.825% | **~3.83%** |
+| 1,000 days | 2.0% | 5.0% | **~7.0%** |
+
+**⚠️ Important:** Loan fees are set on the **MAIN_TOKEN / STASIS** contract, NOT on ATaxes.
 
 **Loan Terms:**
 - Duration: 10 days minimum, 1,000 days maximum
@@ -135,14 +158,21 @@ Trading Fee (0.5% or 1.5%)
 
 ---
 
-## Surge Tax (Creator-Controlled, Floor+ only)
+## Surge Tax (Creator-Controlled)
 
 | Parameter | Value |
 |---|---|
-| Quota | 7 days per 30-day rolling window |
-| Rate | Creator-set start rate → end rate (decays linearly) |
-| Max rate | Depends on hybridMultiplier |
-| Who controls | Token DEV only |
+| Quota | 7 days per rolling window (pruned history) |
+| Min duration | 1 hour |
+| Rate | Creator-set `startRate` → `endRate` (decays linearly over duration) |
+| Max rate (Stable+, multiplier=100) | 0.50% (maxRate=50) |
+| Max rate (Floor+) | Depends on hybridMultiplier: `rawMax = 1500 - ((mult-1)*1400/89)`, snapped to 50-step, min 1.0% |
+| Floor+ range | ~1.0% (multiplier=90) to 15.0% (multiplier=1) |
+| Min start rate | 0.10% (startRate ≥ 10) |
+| Who controls | Token DEV (`msg.sender == token.DEV()`) only |
+| Applies to | Stable+ and Floor+ (added on top of base tax rate). NOT separately applied to STASIS or Prediction tokens. |
+
+**Source:** `ATaxes.startSurgeTax()` — confirmed from contract code 2026-03-16.
 
 ---
 
