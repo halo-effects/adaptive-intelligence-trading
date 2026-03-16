@@ -1,5 +1,5 @@
 # Basis Dev Plan
-_Updated: 2026-03-14 | Reference: project-plan.md_
+_Updated: 2026-03-16 | Reference: project-plan.md_
 
 ## Chain: BNB Chain (Mainnet)
 ## Test Currency: USDB (fake USDC, already deployed)
@@ -50,11 +50,12 @@ The platform is fully on-chain. All financial operations (token creation, tradin
 - USDB test token
 - Metadata API
 - Data indexer (candles, txns, syncs, leverage, prediction shares)
+- **SDK documentation** (full, 13 modules, Python + TypeScript) — received 2026-03-16
+- **All 7 core skill scripts wired to SDK API** (create-prediction, bet, create-token, trade, lend, vault, portfolio) — 2026-03-16
 
 ### 🔧 IN PROGRESS
-- **SDK** — Alex is building it. Will abstract contract addresses and provide clean interface.
-  SDK usage docs will follow when Alex releases the package.
-- Our side: OpenClaw `basis-defi` skill (scripts using direct contract calls until SDK ships)
+- **SDK npm/PyPI publish** — Alex to publish when contracts finalized (beta). Docs are complete.
+- **Points system backend** — not started, no owner. Critical for `points.py` script.
 
 ### 📋 STILL TO BUILD
 
@@ -78,18 +79,28 @@ The platform is fully on-chain. All financial operations (token creation, tradin
 ### 0.1 Core Contracts ✅
 All 13 contracts deployed on BNB Chain mainnet. See contract list above.
 
-### 0.2 SDK (In Progress — Alex Building)
-Alex is building the SDK directly. It will:
-- Resolve all contract addresses by name (no hardcoded addresses)
-- Provide clean abstractions for all major operations
-- Support Python and TypeScript/JavaScript
+### 0.2 SDK ✅ DOCS RECEIVED (2026-03-16) — Awaiting npm/PyPI Publish
+Alex delivered full SDK documentation on 2026-03-16: `sdk-docs-2026-03-16.md`
 
-**What we need from Alex when SDK is ready:**
-- Published npm/PyPI package
-- SDK usage documentation
-- Any breaking changes from the raw contract ABI
+**SDK capabilities (confirmed):**
+- 13 modules with full feature parity: Trading, Factory, Loans, Staking, Vesting, Prediction Markets, Order Book, Resolver, Private Markets, Market Reader, Leverage Simulator, Taxes, Agent Identity
+- 3 init modes: read-only (no key), API key (+ off-chain data), full mode (private key + SIWE auth + writes)
+- Python: `from basis import BasisClient` / JS: `const { BasisClient } = require("basis-sdk")`
+- All write methods return `{ hash, receipt }` / All read methods work without private key
+- Off-chain API: tokens, candles, trades, orders, IPFS uploads, metadata, comments
+- Auto-approvals on all write methods (no manual approve step)
+- Order book auto-syncs to backend after every write
+- Rate limits: 60 req/min (API key), 30 req/min (session)
+- ERC-8004 agent identity with auto-registration on `BasisClient.create(agent=True)`
 
-**In the meantime:** Use direct contract calls with the ABI reference in `skill-scaffold/references/api-reference.md`.
+**npm/PyPI status:** NOT published yet. Alex confirmed contracts may get variable renames but no functionality changes. Will publish as beta when ready — no test contracts in version history. **All skill scripts wired to SDK API — will work as-is once package is installable.**
+
+**Remaining questions answered by SDK docs:**
+- ✅ SDK exposes read-only functions (prices, volumes, balances, market data) — no API key needed
+- ✅ Leverage simulator available before execution
+- ✅ `getPotentialPayout()` enables our Polymarket comparison tool with on-chain data
+- ✅ Tax rate queries (surge tax, base rates) available
+- ✅ USDC is 6 decimals, MAINTOKEN/factory tokens are 18 decimals
 
 ### 0.3 Points System Backend 🔧 NEW BUILD
 **Priority:** 🔴 Critical — drives airdrop incentives.
@@ -282,12 +293,14 @@ CURRENT STATE:
   ✅ All 13 core DeFi contracts (deployed)
   ✅ USDB test token (deployed)
   ✅ Metadata API + Indexer (running)
-  🔧 SDK (Alex building — release TBD)
+  ✅ SDK documentation (complete — 2026-03-16)
+  ✅ All 7 core skill scripts wired to SDK API (2026-03-16)
+  🔧 SDK npm/PyPI publish (Alex — beta when contracts finalized)
 
 UNBLOCKING AGENT TESTING (Do now):
-  🔧 Points system backend + leaderboard
-  🔧 OpenClaw basis-defi skill (direct contract calls)
-  🔧 Agent wallet registration
+  🔧 Points system backend + leaderboard ← CRITICAL BLOCKER
+  ✅ OpenClaw basis-defi skill (wired to SDK API — 2026-03-16)
+  🔧 Agent wallet registration (ERC-8004 in SDK — backend registration TBD)
 
 BEFORE AIRDROP SEASON:
   🔧 Shareable activity cards
@@ -311,12 +324,14 @@ POST-TGE:
 **Answered:**
 - ~~"Which existing contracts can agents interact with?"~~ → All 13 contracts, all deployed. See `api-reference.md`.
 - ~~"Preferred tech stack for API/SDK?"~~ → Alex building the SDK directly. No REST API middleman needed for contract calls.
+- ~~"SDK release timeline?"~~ → Docs complete 2026-03-16. npm/PyPI publish after contract variables finalized. Beta first, no test contracts in version history.
+- ~~"Does SDK expose read-only functions?"~~ → Yes. All modules have read methods that work without private key. Prices, balances, market data, tax rates, leverage simulation.
+- ~~"Contract addresses?"~~ → All 14 addresses documented in SDK. Overridable via constructor options.
 
 **Still open:**
-1. SDK release timeline — when can we expect it published (npm/PyPI)?
-2. Are there additional contract deployments or addresses we need to know (e.g., multi-ecosystem setups)?
-3. Oracle provider decision for BNB Chain (Chainlink / API3 / custom)?
-4. Contract upgrade patterns in use (proxy, diamond, etc.)? Relevant for ABI stability.
-5. Audit timeline and preferred auditor?
-6. Confirm: Is `mixedBuy` the only ASwap function not exposed on frontend? Any others agent-only?
-7. What's the current USDB faucet URL and rate limits for test participants?
+1. Oracle provider decision for BNB Chain (Chainlink / API3 / custom)?
+2. Contract upgrade patterns in use (proxy, diamond, etc.)? Relevant for ABI stability.
+3. Audit timeline and preferred auditor?
+4. Confirm: Is `mixedBuy` the only ASwap function not exposed on frontend? Any others agent-only?
+5. What's the current USDB faucet URL and rate limits for test participants?
+6. Points system backend — who owns this? Critical blocker for airdrop farming.

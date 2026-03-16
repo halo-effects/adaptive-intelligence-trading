@@ -1,23 +1,26 @@
 """
-vault.py — Stake STASIS in the wSTASIS Vault on Basis
+vault.py — Manage the STASIS Vault (wSTASIS) on Basis
 
-The wSTASIS vault is the "set and forget" treasury for agents. Stake STASIS,
-receive wSTASIS (wrapped ratio token). Platform fees inject into the vault as
-STASIS, increasing the STASIS:wSTASIS ratio. Only vault participants earn fees.
+The wSTASIS vault wraps STASIS into appreciating shares. Platform fees inject as
+STASIS, mechanically increasing the STASIS:wSTASIS ratio. Locked wSTASIS can be
+used as loan collateral WITHOUT leaving the vault.
+
+SDK: client.staking.buy() / sell() / lock() / unlock() / borrow() / repay()
+     client.staking.convert_to_shares() / convert_to_assets() / get_available_stasis()
 
 Key mechanics:
-- wSTASIS can be used as 100% LTV loan collateral WITHOUT leaving the vault
-- As wSTASIS appreciates, refinance loans for additional USDC (still earning, still in vault)
-- One position serves 4 functions: yield + collateral + appreciation + USDC liquidity
-- Interest on vault loans: very low single-digit APR
-- Agent manages 2 variables: (1) refinance threshold, (2) loan expiry timer
+- Wrap STASIS → wSTASIS (appreciation tracking shares)
+- Lock wSTASIS → borrow USDC against it (stays in vault, keeps earning)
+- As ratio grows, refinance for additional USDC
+- Two variables to manage: refinance threshold + loan expiry
 - Airdrop points: 2 pts per $1 per day staked; refinance = 150 pts
 
 Usage:
-    python vault.py --action stake --amount 1000
-    python vault.py --action refinance --threshold 0.05
+    python vault.py --action stake --amount 100
+    python vault.py --action lock --amount 50
+    python vault.py --action borrow --stasis-amount 50 --duration-days 30
+    python vault.py --action refinance
     python vault.py --action status
-    python vault.py --action unstake --amount 500 --dry-run
 """
 
 import argparse
@@ -28,48 +31,27 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from client_helper import get_client, token_to_raw, raw_to_token, output_result
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Manage STASIS Vault (wSTASIS) on Basis — stake, refinance, earn"
+        description="Manage STASIS Vault (wSTASIS) on Basis — stake, lock, borrow, refinance"
     )
-    parser.add_argument(
-        "--action",
-        required=True,
-        choices=["stake", "unstake", "refinance", "status"],
-        help="Vault action: stake | unstake | refinance | status"
-    )
-    parser.add_argument(
-        "--amount",
-        type=float,
-        help="STASIS amount to stake/unstake (in USDC equivalent)"
-    )
-    parser.add_argument(
-        "--threshold",
-        type=float,
-        default=float(os.getenv("VAULT_REFINANCE_THRESHOLD", "0.05")),
-        help="Refinance when wSTASIS appreciation exceeds threshold (default: 5%%)"
-    )
-    parser.add_argument(
-        "--wallet",
-        default=os.getenv("BASIS_PRIVATE_KEY"),
-        help="Agent wallet private key"
-    )
-    parser.add_argument(
-        "--rpc-url",
-        default=os.getenv("BASIS_RPC_URL", "https://bsc-dataseed.binance.org/"),
-        help="BNB Chain RPC URL"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Simulate without submitting"
-    )
-    parser.add_argument(
-        "--json-output",
-        action="store_true",
-        help="Output as JSON"
-    )
+    parser.add_argument("--action", required=True,
+                        choices=["stake", "unstake", "lock", "unlock", "borrow", "repay",
+                                 "extend-loan", "refinance", "status"],
+                        help="Vault action")
+    parser.add_argument("--amount", type=float, help="STASIS amount (for stake/unstake) or wSTASIS shares (for lock/unlock)")
+    parser.add_argument("--stasis-amount", type=float, help="STASIS amount to borrow against (for borrow)")
+    parser.add_argument("--duration-days", type=int, default=30, help="Loan duration in days (for borrow)")
+    parser.add_argument("--extend-days", type=int, default=30, help="Days to add (for extend-loan)")
+    parser.add_argument("--pay-in-usdc", action="store_true", help="Pay extension fee in USDC")
+    parser.add_argument("--claim-usdc", action="store_true", help="Claim accrued USDC when unstaking")
+    parser.add_argument("--wallet", default=os.getenv("BASIS_WALLET_ADDRESS"), help="Wallet address (for status)")
+    parser.add_argument("--dry-run", action="store_true", help="Simulate without submitting")
+    parser.add_argument("--json-output", action="store_true", help="Output as JSON")
     return parser.parse_args()
 
 
@@ -80,91 +62,157 @@ def main():
     print("=" * 60)
 
     if args.action == "stake":
-        print(f"  Amount:            ${args.amount:.2f} worth of STASIS")
-        print(f"  Receive:           wSTASIS (wrapped ratio token)")
-        print(f"  Yield source:      Platform fees injected as STASIS → ratio increases")
-        print(f"  Loan eligible:     Yes — 100% LTV against wSTASIS, stays in vault")
-        print(f"  Airdrop points:    2 pts per $1 per day staked")
-        print()
-        print(f"  How it works:")
-        print(f"    1. STASIS goes into vault → you receive wSTASIS")
-        print(f"    2. Platform fees flow in as STASIS → STASIS:wSTASIS ratio increases")
-        print(f"    3. Your wSTASIS is worth more STASIS over time")
-        print(f"    4. Borrow USDC against wSTASIS without leaving vault")
-        print(f"    5. When ratio grows enough, refinance for more USDC")
+        if not args.amount:
+            print("Error: --amount required for stake", file=sys.stderr)
+            sys.exit(1)
+        print(f"  STASIS to wrap:  {args.amount}")
+        print(f"  Receive:         wSTASIS (appreciating ratio token)")
+        print(f"  Yield source:    Platform fees → STASIS → ratio increase")
+        print(f"  Airdrop points:  2 pts per $1 per day")
 
     elif args.action == "unstake":
-        print(f"  Amount:            ${args.amount:.2f} worth of wSTASIS to redeem")
-        print(f"  Receive:           STASIS (at current wSTASIS:STASIS ratio)")
-        print(f"  ⚠️  Unstaking ends yield earning for this amount")
+        if not args.amount:
+            print("Error: --amount required for unstake (wSTASIS shares)", file=sys.stderr)
+            sys.exit(1)
+        print(f"  wSTASIS shares:  {args.amount}")
+        print(f"  Claim USDC:      {'Yes' if args.claim_usdc else 'No'}")
+
+    elif args.action == "lock":
+        if not args.amount:
+            print("Error: --amount required for lock (wSTASIS shares)", file=sys.stderr)
+            sys.exit(1)
+        print(f"  Lock wSTASIS:    {args.amount} shares")
+        print(f"  Purpose:         Enable borrowing against locked collateral")
+
+    elif args.action == "unlock":
+        if not args.amount:
+            print("Error: --amount required for unlock (wSTASIS shares)", file=sys.stderr)
+            sys.exit(1)
+        print(f"  Unlock wSTASIS:  {args.amount} shares")
+
+    elif args.action == "borrow":
+        if not args.stasis_amount:
+            print("Error: --stasis-amount required for borrow", file=sys.stderr)
+            sys.exit(1)
+        print(f"  Borrow against:  {args.stasis_amount} STASIS worth of locked wSTASIS")
+        print(f"  Duration:        {args.duration_days} days")
+        print(f"  ✅ wSTASIS stays in vault — keeps earning yield while borrowed against")
+
+    elif args.action == "repay":
+        print(f"  Action:          Repay staking loan in full")
+
+    elif args.action == "extend-loan":
+        print(f"  Extend by:       {args.extend_days} days")
+        print(f"  Pay in USDC:     {'Yes' if args.pay_in_usdc else 'No'}")
 
     elif args.action == "refinance":
-        print(f"  Threshold:         {args.threshold:.0%} wSTASIS appreciation")
-        print(f"  Action:            Extend or create loan at new, higher wSTASIS value")
-        print(f"  Result:            Additional USDC extracted, still earning in vault")
-        print(f"  Airdrop points:    150 pts per refinance")
-        print()
-        print(f"  Agent strategy:")
-        print(f"    1. Check wSTASIS ratio → has it appreciated >{args.threshold:.0%}?")
-        print(f"    2. If yes → refinance loan (borrow more USDC against increased value)")
-        print(f"    3. Deploy new USDC into predictions, trades, or more STASIS")
-        print(f"    4. Repeat when threshold hit again (compound loop)")
-
-    elif args.action == "status":
-        print(f"  Fetching vault position...")
-        print(f"  Will show: wSTASIS balance, current ratio, outstanding loans,")
-        print(f"  available USDC to borrow, unrealized appreciation, daily yield estimate")
+        print(f"  Action:          Check ratio growth → extend/reborrow at new value")
+        print(f"  Result:          Extract additional USDC from vault appreciation")
+        print(f"  Airdrop points:  150 pts")
 
     if args.dry_run:
+        # Show conversion preview
+        if args.amount and args.action in ("stake", "unstake"):
+            try:
+                client = get_client(require_write=False)
+                if args.action == "stake":
+                    shares = client.staking.convert_to_shares(token_to_raw(args.amount))
+                    print(f"\n  Preview: {args.amount} STASIS → {shares} wSTASIS shares")
+                else:
+                    assets = client.staking.convert_to_assets(token_to_raw(args.amount))
+                    print(f"\n  Preview: {args.amount} wSTASIS shares → {assets} STASIS")
+            except Exception:
+                pass
+
         print(f"\n[DRY RUN] No transactions submitted.")
-        result = {
-            "status": "dry_run",
-            "action": args.action,
-            "amount": args.amount,
-            "refinance_threshold": args.threshold,
-            "airdrop_points": {
-                "stake": "2 pts/$1/day",
-                "refinance": "150 pts",
-            }[args.action] if args.action in ["stake", "refinance"] else 0,
-        }
+        result = {"status": "dry_run", "action": args.action}
     else:
-        # TODO: Implement using basis-sdk / direct contract call
-        # Example flow for stake (pseudocode):
-        #
-        # from basis_sdk import BasisClient
-        # client = BasisClient(private_key=args.wallet, rpc_url=args.rpc_url)
-        #
-        # stasis_balance = client.tokens.balance_of(STASIS_ADDRESS, client.wallet_address)
-        # stasis_amount = args.amount  # convert USDC amount to STASIS tokens
-        #
-        # # Approve STASIS spend
-        # client.tokens.approve(STASIS_ADDRESS, spender=VAULT_CONTRACT, amount=stasis_amount)
-        #
-        # # Stake into vault
-        # tx = client.vault.stake(amount=stasis_amount)
-        # receipt = client.wait_for_receipt(tx)
-        #
-        # wstasis_received = receipt.logs[...]  # parse Transfer event
-        # ratio = client.vault.get_ratio()
-        #
-        # result = {
-        #     "status": "success",
-        #     "stasis_staked": stasis_amount,
-        #     "wstasis_received": wstasis_received,
-        #     "current_ratio": ratio,
-        #     "tx_hash": receipt.transactionHash.hex(),
-        # }
+        client = get_client(require_write=(args.action != "status"))
 
-        print("ERROR: basis-sdk not yet available. Use --dry-run to simulate.")
-        sys.exit(1)
+        try:
+            if args.action == "stake":
+                stasis_raw = token_to_raw(args.amount)
+                tx_result = client.staking.buy(stasis_raw)
+                print(f"\n✅ STASIS wrapped into wSTASIS!")
+                print(f"  Tx hash: {tx_result['hash']}")
+                result = {"status": "success", "tx_hash": tx_result["hash"], "action": "stake"}
 
-    if args.json_output:
-        print(json.dumps(result, indent=2))
-    else:
-        print(f"\n✅ Vault {args.action} {'simulated' if args.dry_run else 'complete'}.")
-        if args.action == "stake":
-            print(f"\nNext: Set up refinance-checker monitor to auto-refinance at {args.threshold:.0%}")
-            print(f"      and loan-expiry-tracker to auto-extend vault loans.")
+            elif args.action == "unstake":
+                shares_raw = token_to_raw(args.amount)
+                tx_result = client.staking.sell(shares_raw, args.claim_usdc)
+                print(f"\n✅ wSTASIS unwrapped to STASIS!")
+                print(f"  Tx hash: {tx_result['hash']}")
+                result = {"status": "success", "tx_hash": tx_result["hash"], "action": "unstake"}
+
+            elif args.action == "lock":
+                shares_raw = token_to_raw(args.amount)
+                tx_result = client.staking.lock(shares_raw)
+                print(f"\n✅ wSTASIS locked as collateral!")
+                print(f"  Tx hash: {tx_result['hash']}")
+                result = {"status": "success", "tx_hash": tx_result["hash"], "action": "lock"}
+
+            elif args.action == "unlock":
+                shares_raw = token_to_raw(args.amount)
+                tx_result = client.staking.unlock(shares_raw)
+                print(f"\n✅ wSTASIS unlocked!")
+                print(f"  Tx hash: {tx_result['hash']}")
+                result = {"status": "success", "tx_hash": tx_result["hash"], "action": "unlock"}
+
+            elif args.action == "borrow":
+                stasis_raw = token_to_raw(args.stasis_amount)
+                tx_result = client.staking.borrow(stasis_raw, args.duration_days)
+                print(f"\n✅ Borrowed against locked wSTASIS!")
+                print(f"  Tx hash: {tx_result['hash']}")
+                result = {"status": "success", "tx_hash": tx_result["hash"], "action": "borrow"}
+
+            elif args.action == "repay":
+                tx_result = client.staking.repay()
+                print(f"\n✅ Staking loan repaid!")
+                print(f"  Tx hash: {tx_result['hash']}")
+                result = {"status": "success", "tx_hash": tx_result["hash"], "action": "repay"}
+
+            elif args.action == "extend-loan":
+                tx_result = client.staking.extend_loan(
+                    args.extend_days, args.pay_in_usdc, False
+                )
+                print(f"\n✅ Staking loan extended by {args.extend_days} days!")
+                print(f"  Tx hash: {tx_result['hash']}")
+                result = {"status": "success", "tx_hash": tx_result["hash"], "action": "extend-loan"}
+
+            elif args.action == "refinance":
+                # Refinance = extend loan + borrow additional based on appreciation
+                # Check available STASIS first
+                wallet = args.wallet or client.wallet_address
+                available = client.staking.get_available_stasis(wallet)
+                print(f"\n  Available STASIS for borrowing: {available}")
+
+                if int(available) > 0:
+                    # Extend existing loan and borrow more
+                    tx_result = client.staking.extend_loan(30, True, True)  # refinance=True
+                    print(f"\n✅ Vault refinanced!")
+                    print(f"  Tx hash: {tx_result['hash']}")
+                    result = {"status": "success", "tx_hash": tx_result["hash"], "action": "refinance"}
+                else:
+                    print(f"  No additional STASIS available for refinancing.")
+                    result = {"status": "no_action", "reason": "no additional collateral available"}
+
+            elif args.action == "status":
+                wallet = args.wallet
+                if not wallet:
+                    print("Error: --wallet required for status", file=sys.stderr)
+                    sys.exit(1)
+                available = client.staking.get_available_stasis(wallet)
+                print(f"\n  Available STASIS: {available}")
+                result = {"status": "success", "action": "status", "available_stasis": str(available)}
+
+        except Exception as e:
+            print(f"\n❌ Vault {args.action} failed: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    output_result(result, args.json_output)
+
+    if not args.json_output and not args.dry_run and args.action == "stake":
+        print(f"\nNext: Lock wSTASIS → borrow USDC → redeploy. Your position earns yield the whole time.")
 
 
 if __name__ == "__main__":

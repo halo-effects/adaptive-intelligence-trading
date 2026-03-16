@@ -1,21 +1,24 @@
 """
 trade.py — Buy or sell tokens on the Basis DEX (BNB Chain)
 
-All tokens on Basis trade through an internal DEX with STASIS as the base pair.
-Agents earn 1 airdrop point per $1 volume (min $10 per trade). Profitable
-trades earn a profit multiplier on top: 1.5x (up to 5% P&L) or 2.0x (5%+ P&L).
+All tokens trade through the Basis SWAP contract with STASIS (MAINTOKEN) as base pair.
+Supports spot buys/sells, percentage sells, and leveraged positions.
 
-Buying during bonding phase earns 2x volume points.
+SDK: client.trading.buy() / sell() / sell_percentage() / leverage_buy()
+     client.leverage_simulator.simulate_leverage() for preview
+
+Key mechanics:
+- USDC → MAINTOKEN → FactoryToken (3-hop path, handled automatically by SDK)
+- Leverage is per-position via leverage_buy, NOT a global toggle
+- Leveraged tokens held in leverage contract — cannot be used as loan collateral
+- No price liquidation on leverage — calculated against floor price
+- Airdrop points: 1 pt per $1 volume (min $10 per trade)
 
 Usage:
-    # Buy $200 worth of a token
-    python trade.py --token 0xTOKEN_ADDRESS --direction buy --amount 200
-
-    # Sell 1000 tokens (exact amount)
-    python trade.py --token 0xTOKEN_ADDRESS --direction sell --token-amount 1000
-
-    # Dry-run to check slippage before committing
-    python trade.py --token 0xTOKEN_ADDRESS --direction buy --amount 50 --dry-run
+    python trade.py --token 0xTOKEN --direction buy --amount 200
+    python trade.py --token 0xTOKEN --direction sell --percentage 50
+    python trade.py --token 0xTOKEN --direction buy --amount 100 --leverage --leverage-days 7
+    python trade.py --token 0xTOKEN --direction buy --amount 50 --dry-run
 """
 
 import argparse
@@ -26,197 +29,157 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from client_helper import get_client, usdc_to_raw, token_to_raw, raw_to_token, output_result, USDC, MAINTOKEN
+
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Buy or sell tokens on the Basis DEX"
-    )
-    parser.add_argument(
-        "--token",
-        required=True,
-        help="Token contract address to trade (0x...)"
-    )
-    parser.add_argument(
-        "--direction",
-        required=True,
-        choices=["buy", "sell"],
-        help="Trade direction: buy or sell"
-    )
+    parser = argparse.ArgumentParser(description="Buy or sell tokens on the Basis DEX")
+    parser.add_argument("--token", required=True, help="Token contract address (0x...)")
+    parser.add_argument("--direction", required=True, choices=["buy", "sell"], help="Trade direction")
 
-    # Amount specification (one of these required)
     amount_group = parser.add_mutually_exclusive_group(required=True)
-    amount_group.add_argument(
-        "--amount",
-        type=float,
-        help="USDC/USDB amount to spend (for buy) or receive (for sell)"
-    )
-    amount_group.add_argument(
-        "--token-amount",
-        type=float,
-        help="Exact number of tokens to buy or sell"
-    )
+    amount_group.add_argument("--amount", type=float, help="USDC amount to spend (buy) or receive target (sell)")
+    amount_group.add_argument("--token-amount", type=float, help="Exact number of tokens to sell")
+    amount_group.add_argument("--percentage", type=int, help="Percentage of balance to sell (1-100)")
 
-    parser.add_argument(
-        "--max-slippage",
-        type=float,
-        default=0.01,
-        help="Max acceptable slippage (default: 0.01 = 1%%)"
-    )
-    parser.add_argument(
-        "--leverage",
-        action="store_true",
-        help="Use 36x leverage toggle (floor-price based, no liquidation). Requires PATH_A strategy."
-    )
-    parser.add_argument(
-        "--leverage-split",
-        type=float,
-        default=1.0,
-        help="Fraction of position to leverage (0.0-1.0). E.g. 0.25 = 25%% leveraged + 75%% unleveraged ≈ 10x effective."
-    )
-    parser.add_argument(
-        "--wallet",
-        default=os.getenv("BASIS_PRIVATE_KEY"),
-        help="Agent wallet private key (or set BASIS_PRIVATE_KEY env var)"
-    )
-    parser.add_argument(
-        "--rpc-url",
-        default=os.getenv("BASIS_RPC_URL", "https://bsc-dataseed.binance.org/"),
-        help="BNB Chain RPC URL"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Simulate without submitting any transactions"
-    )
-    parser.add_argument(
-        "--json-output",
-        action="store_true",
-        help="Output result as JSON (for agent pipelines)"
-    )
+    parser.add_argument("--min-out", type=int, default=0, help="Minimum output (slippage protection, raw units)")
+    parser.add_argument("--to-usdc", action="store_true", help="Sell all the way to USDC (3-hop for factory tokens)")
+
+    # Leverage options (buy only)
+    parser.add_argument("--leverage", action="store_true", help="Open a leveraged position")
+    parser.add_argument("--leverage-days", type=int, default=7, help="Leverage loan duration in days (default: 7)")
+
+    parser.add_argument("--dry-run", action="store_true", help="Simulate without submitting")
+    parser.add_argument("--json-output", action="store_true", help="Output as JSON")
     return parser.parse_args()
-
-
-def compute_effective_leverage(leverage_enabled: bool, leverage_split: float) -> float:
-    """
-    Basis leverage is a toggle (1x or 36x) not a slider.
-    Effective leverage is achieved via position splitting.
-    E.g.: 25% leveraged + 75% unleveraged = 0.25*36 + 0.75*1 = 9.75x effective
-    """
-    if not leverage_enabled:
-        return 1.0
-    return (leverage_split * 36) + ((1 - leverage_split) * 1)
 
 
 def main():
     args = parse_args()
 
-    # Safety check
+    # Safety checks
     max_trade = float(os.getenv("MAX_TRADE_SIZE", "500"))
     if args.amount and args.amount > max_trade:
-        print(f"Warning: Trade size ${args.amount} exceeds MAX_TRADE_SIZE=${max_trade}")
-        print(f"Adjust MAX_TRADE_SIZE in .env or reduce --amount")
+        print(f"Warning: Trade ${args.amount} exceeds MAX_TRADE_SIZE=${max_trade}")
         sys.exit(1)
 
-    # Minimum trade for airdrop points
     if args.amount and args.amount < 10:
-        print(f"Note: Minimum $10 per trade for airdrop points. This trade won't earn points.")
+        print(f"Note: Minimum $10 per trade for airdrop points.")
 
-    effective_leverage = compute_effective_leverage(args.leverage, args.leverage_split)
+    if args.leverage and args.direction == "sell":
+        print("Error: --leverage only works with buy direction.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.percentage and args.direction == "buy":
+        print("Error: --percentage only works with sell direction.", file=sys.stderr)
+        sys.exit(1)
 
     print(f"\n{'[DRY RUN] ' if args.dry_run else ''}{args.direction.upper()} on Basis DEX")
     print("=" * 60)
     print(f"  Token:           {args.token}")
     print(f"  Direction:       {args.direction}")
+
     if args.amount:
-        print(f"  USDC amount:     ${args.amount:.2f}")
-    else:
-        print(f"  Token amount:    {args.token_amount}")
-    print(f"  Max slippage:    {args.max_slippage * 100:.1f}%")
+        print(f"  USDC amount:     ${args.amount:.2f} ({usdc_to_raw(args.amount)} raw)")
+    elif args.token_amount:
+        print(f"  Token amount:    {args.token_amount} ({token_to_raw(args.token_amount)} raw)")
+    elif args.percentage:
+        print(f"  Sell percentage: {args.percentage}% of balance")
 
     if args.leverage:
-        print(f"  Leverage:        36x toggle ON")
-        print(f"  Leverage split:  {args.leverage_split * 100:.0f}% leveraged → {effective_leverage:.1f}x effective")
-        print(f"  ⚠️  Leveraged tokens held in leverage contract — CANNOT be used as loan collateral")
-        print(f"  ✅ No price liquidation — leverage calculated against floor price")
-    else:
-        print(f"  Leverage:        1x (off)")
-
-    if args.amount:
-        est_points = max(0, (args.amount // 1))  # 1 pt per $1
-        print(f"  Airdrop points:  ~{est_points:.0f} pts base (+ profit multiplier if P&L positive)")
+        print(f"  Leverage:        YES — {args.leverage_days} day loan")
+        print(f"  ⚠️  Leveraged tokens held in leverage contract — cannot be used as loan collateral")
+        print(f"  ✅ No price liquidation — calculated against floor price")
 
     if args.dry_run:
-        print("\n[DRY RUN] Transaction would be submitted here. No action taken.")
+        client = get_client(require_write=False)
+
+        # Preview swap output
+        if args.direction == "buy" and args.amount:
+            try:
+                usdc_raw = usdc_to_raw(args.amount)
+                path = [USDC, MAINTOKEN, args.token]
+
+                if args.leverage:
+                    sim = client.leverage_simulator.simulate_leverage(usdc_raw, path, args.leverage_days)
+                    print(f"\n  Leverage simulation: {sim}")
+                else:
+                    expected = client.trading.get_amounts_out(usdc_raw, path)
+                    print(f"\n  Expected output: {expected} raw tokens ({raw_to_token(int(expected)):.4f} tokens)")
+            except Exception as e:
+                print(f"\n  ⚠️  Preview failed: {e}")
+
+        # Check current price
+        try:
+            price = client.trading.get_usd_price(args.token)
+            print(f"  Current USD price: ${price}")
+        except Exception:
+            pass
+
+        print("\n[DRY RUN] No action taken.")
         result = {
             "status": "dry_run",
             "token": args.token,
             "direction": args.direction,
             "amount_usdc": args.amount,
-            "token_amount": args.token_amount,
             "leverage": args.leverage,
-            "effective_leverage": effective_leverage,
-            "max_slippage": args.max_slippage,
-            "estimated_points_base": int(args.amount or 0),
         }
     else:
-        # TODO: Implement using basis-sdk / direct contract call
-        # Example flow (pseudocode):
-        #
-        # from basis_sdk import BasisClient
-        # client = BasisClient(private_key=args.wallet, rpc_url=args.rpc_url)
-        #
-        # if args.direction == "buy":
-        #     if args.leverage:
-        #         # Split position: leverage_split% goes through leverage contract
-        #         leveraged_amount = args.amount * args.leverage_split
-        #         spot_amount = args.amount * (1 - args.leverage_split)
-        #
-        #         if leveraged_amount > 0:
-        #             tx1 = client.dex.buy_leveraged(
-        #                 token=args.token,
-        #                 amount_usdc=leveraged_amount,
-        #                 max_slippage=args.max_slippage,
-        #             )
-        #         if spot_amount > 0:
-        #             tx2 = client.dex.buy(
-        #                 token=args.token,
-        #                 amount_usdc=spot_amount,
-        #                 max_slippage=args.max_slippage,
-        #             )
-        #     else:
-        #         tx = client.dex.buy(
-        #             token=args.token,
-        #             amount_usdc=args.amount,
-        #             max_slippage=args.max_slippage,
-        #         )
-        # elif args.direction == "sell":
-        #     tx = client.dex.sell(
-        #         token=args.token,
-        #         token_amount=args.token_amount or None,
-        #         usdc_amount=args.amount or None,
-        #         max_slippage=args.max_slippage,
-        #     )
-        #
-        # receipt = client.wait_for_receipt(tx)
-        # result = {
-        #     "status": "success",
-        #     "tx_hash": receipt.transactionHash.hex(),
-        #     "tokens_bought_or_sold": ...,
-        #     "price": ...,
-        #     "gas_used": receipt.gasUsed,
-        # }
+        client = get_client(require_write=True)
 
-        print("ERROR: basis-sdk not yet available. Use --dry-run to simulate.")
-        print("TODO: Implement direct contract call using web3.py + Basis ABIs.")
-        sys.exit(1)
+        try:
+            if args.direction == "buy":
+                usdc_raw = usdc_to_raw(args.amount)
 
-    if args.json_output:
-        print(json.dumps(result, indent=2))
-    else:
-        print(f"\n✅ Trade {'simulated' if args.dry_run else 'executed'} successfully.")
+                if args.leverage:
+                    # Leveraged buy: protocol lends additional capital
+                    path = [USDC, MAINTOKEN, args.token]
+                    tx_result = client.trading.leverage_buy(
+                        usdc_raw, args.min_out, path, args.leverage_days
+                    )
+                    print(f"\n✅ Leveraged buy executed!")
+                else:
+                    # Spot buy
+                    tx_result = client.trading.buy(args.token, usdc_raw, args.min_out)
+                    print(f"\n✅ Buy executed!")
+
+            elif args.direction == "sell":
+                if args.percentage:
+                    tx_result = client.trading.sell_percentage(
+                        args.token, args.percentage, args.to_usdc
+                    )
+                    print(f"\n✅ Sold {args.percentage}% of holdings!")
+                elif args.token_amount:
+                    token_raw = token_to_raw(args.token_amount)
+                    tx_result = client.trading.sell(
+                        args.token, token_raw, args.to_usdc, args.min_out
+                    )
+                    print(f"\n✅ Sell executed!")
+                else:
+                    # Sell by USDC target — sell tokens until reaching target USDC
+                    # SDK doesn't have a direct "sell for X USDC" — use sell with amount
+                    print("Error: Use --token-amount or --percentage for sells.", file=sys.stderr)
+                    sys.exit(1)
+
+            print(f"  Tx hash: {tx_result['hash']}")
+
+            result = {
+                "status": "success",
+                "tx_hash": tx_result["hash"],
+                "token": args.token,
+                "direction": args.direction,
+            }
+
+        except Exception as e:
+            print(f"\n❌ Trade failed: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    output_result(result, args.json_output)
+
+    if not args.json_output and not args.dry_run:
         if args.direction == "buy" and not args.leverage:
-            print(f"\nTip: Consider running lend.py to borrow USDC against these tokens (100% LTV).")
-            print(f"     Redeploy that USDC into predictions or another token (Path B strategy).")
+            print(f"\nTip: Borrow USDC against these tokens (100% LTV): python lend.py --action borrow --token {args.token}")
 
 
 if __name__ == "__main__":

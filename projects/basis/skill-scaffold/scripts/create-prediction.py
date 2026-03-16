@@ -1,15 +1,18 @@
 """
 create-prediction.py — Create a Predict+ prediction market on Basis
 
-Deploys a new prediction market with N outcomes. Each outcome gets a fresh
-Stable+ (Predict+) token on its own bonding curve. Creator earns 20% of all
+Deploys a new prediction market with N outcomes via the MarketTrading contract.
+Each outcome gets a token on its own bonding curve. Creator earns 20% of all
 trading fees for the lifetime of the market.
 
+SDK: client.prediction_markets.create_market()
+
 Key mechanics:
-- Minimum 5 unique participants required to earn creator airdrop points (300 pts)
 - Multi-outcome markets have higher expected payouts than binary markets
-- Tokens cost tiny BNB for gas (~0.0001 BNB) — tracked in net P&L
+- Winner takes the ENTIRE losing pool (not capped at $1/share like Polymarket)
 - Fresh bonding curve = max price impact from early volume
+- Min 5 unique participants for creator airdrop points (300 pts)
+- Requires small BNB for gas + creation fee
 
 Usage:
     python create-prediction.py --title "Will ETH close above $4000 on March 20?" \\
@@ -17,100 +20,39 @@ Usage:
 
     python create-prediction.py --title "2026 BNB Q2 price bracket" \\
         --outcomes "Below $400,$400-$600,$600-$800,Above $800" \\
-        --duration-days 90 --resolution-source chainlink_bnb_usd \\
-        --dry-run
+        --duration-days 90 --dry-run
 """
 
 import argparse
 import json
 import os
 import sys
+import time
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Import shared helpers
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from client_helper import get_client, output_result, MAINTOKEN
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Create a Predict+ prediction market on Basis (BNB Chain)"
     )
-    parser.add_argument(
-        "--title",
-        required=True,
-        help="Market title / question (e.g. 'Will ETH close above $4000 on March 20?')"
-    )
-    parser.add_argument(
-        "--outcomes",
-        required=True,
-        help="Comma-separated outcome names (e.g. 'Yes,No' or 'Team A,Team B,Draw')"
-    )
-    parser.add_argument(
-        "--duration-days",
-        type=int,
-        default=7,
-        help="Days until market resolves (default: 7)"
-    )
-    parser.add_argument(
-        "--resolution-source",
-        default="manual",
-        help="Resolution oracle: manual | chainlink_eth_usd | chainlink_bnb_usd | pyth | custom"
-    )
-    parser.add_argument(
-        "--resolution-date",
-        help="Explicit resolution date (YYYY-MM-DD). Overrides --duration-days."
-    )
-    parser.add_argument(
-        "--creator-fee",
-        type=float,
-        default=0.20,
-        help="Creator fee as decimal (default: 0.20 = 20%% of all trading fees)"
-    )
-    parser.add_argument(
-        "--min-participants",
-        type=int,
-        default=5,
-        help="Min unique participants for airdrop points eligibility (default: 5)"
-    )
-    parser.add_argument(
-        "--wallet",
-        default=os.getenv("BASIS_PRIVATE_KEY"),
-        help="Agent wallet private key (or set BASIS_PRIVATE_KEY env var)"
-    )
-    parser.add_argument(
-        "--rpc-url",
-        default=os.getenv("BASIS_RPC_URL", "https://bsc-dataseed.binance.org/"),
-        help="BNB Chain RPC URL"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Simulate without submitting any transactions"
-    )
-    parser.add_argument(
-        "--json-output",
-        action="store_true",
-        help="Output result as JSON (for agent pipelines)"
-    )
+    parser.add_argument("--title", required=True, help="Market title / question")
+    parser.add_argument("--symbol", default=None, help="Market token symbol (auto-generated if omitted)")
+    parser.add_argument("--outcomes", required=True, help="Comma-separated outcome names (e.g. 'Yes,No')")
+    parser.add_argument("--duration-days", type=int, default=7, help="Days until market closes (default: 7)")
+    parser.add_argument("--end-date", help="Explicit end date (YYYY-MM-DD). Overrides --duration-days.")
+    parser.add_argument("--bonding", type=int, default=1000, help="Bonding curve amount (default: 1000)")
+    parser.add_argument("--frozen", action="store_true", help="Start in frozen state (whitelist-only)")
+    parser.add_argument("--private", action="store_true", help="Create as private market (creator-managed resolution)")
+    parser.add_argument("--dry-run", action="store_true", help="Simulate without submitting transactions")
+    parser.add_argument("--json-output", action="store_true", help="Output as JSON")
     return parser.parse_args()
-
-
-def estimate_gas(num_outcomes: int) -> dict:
-    """
-    Estimate gas cost for prediction market creation.
-    TODO: Replace with actual contract call estimate when basis-sdk available.
-    """
-    # Rough estimates: ~200k gas per outcome contract + 100k base
-    estimated_gas = 100_000 + (num_outcomes * 200_000)
-    gas_price_gwei = 3  # BNB Chain typical
-    gas_cost_bnb = (estimated_gas * gas_price_gwei * 1e-9)
-    gas_cost_usd = gas_cost_bnb * 600  # approximate BNB price
-    return {
-        "estimated_gas_units": estimated_gas,
-        "gas_price_gwei": gas_price_gwei,
-        "gas_cost_bnb": round(gas_cost_bnb, 6),
-        "gas_cost_usd": round(gas_cost_usd, 4),
-    }
 
 
 def main():
@@ -121,25 +63,27 @@ def main():
         print("Error: Must specify at least 2 outcomes.", file=sys.stderr)
         sys.exit(1)
 
-    # Compute resolution timestamp
-    if args.resolution_date:
-        resolution_dt = datetime.fromisoformat(args.resolution_date)
-    else:
-        resolution_dt = datetime.utcnow() + timedelta(days=args.duration_days)
+    # Generate symbol if not provided
+    symbol = args.symbol or "".join(w[0] for w in args.title.split()[:4]).upper()
 
-    resolution_ts = int(resolution_dt.timestamp())
-    gas_estimate = estimate_gas(len(outcomes))
+    # Compute end timestamp
+    if args.end_date:
+        end_dt = datetime.fromisoformat(args.end_date)
+    else:
+        end_dt = datetime.utcnow() + timedelta(days=args.duration_days)
+    end_ts = int(end_dt.timestamp())
 
     print(f"\n{'[DRY RUN] ' if args.dry_run else ''}Creating Prediction Market on Basis")
     print("=" * 60)
     print(f"  Title:           {args.title}")
+    print(f"  Symbol:          {symbol}")
     print(f"  Outcomes ({len(outcomes)}):   {', '.join(outcomes)}")
-    print(f"  Resolves:        {resolution_dt.strftime('%Y-%m-%d %H:%M UTC')}")
-    print(f"  Resolution:      {args.resolution_source}")
-    print(f"  Creator fee:     {args.creator_fee * 100:.0f}% of all trading fees (forever)")
-    print(f"  Min participants:{args.min_participants} (for airdrop points eligibility)")
-    print(f"  Gas estimate:    ~{gas_estimate['gas_cost_bnb']} BNB (${gas_estimate['gas_cost_usd']})")
-    print(f"  Airdrop points:  300 pts (if ≥{args.min_participants} unique participants join)")
+    print(f"  Closes:          {end_dt.strftime('%Y-%m-%d %H:%M UTC')}")
+    print(f"  Bonding:         {args.bonding}")
+    print(f"  Frozen:          {'Yes' if args.frozen else 'No'}")
+    print(f"  Type:            {'Private' if args.private else 'Public'}")
+    print(f"  Creator fee:     20% of all trading fees (forever)")
+    print(f"  Airdrop points:  300 pts (if ≥5 unique participants)")
     print()
 
     if args.dry_run:
@@ -147,49 +91,55 @@ def main():
         result = {
             "status": "dry_run",
             "market_title": args.title,
+            "symbol": symbol,
             "outcomes": outcomes,
-            "resolution_timestamp": resolution_ts,
-            "creator_fee": args.creator_fee,
-            "gas_estimate": gas_estimate,
-            "expected_airdrop_points": 300,
+            "end_timestamp": end_ts,
+            "bonding": args.bonding,
+            "frozen": args.frozen,
+            "private": args.private,
         }
     else:
-        # TODO: Implement using basis-sdk / direct contract call
-        # Example flow (pseudocode):
-        #
-        # from basis_sdk import BasisClient
-        # client = BasisClient(private_key=args.wallet, rpc_url=args.rpc_url)
-        #
-        # tx = client.predict.create_market(
-        #     title=args.title,
-        #     outcomes=outcomes,
-        #     resolution_timestamp=resolution_ts,
-        #     resolution_source=args.resolution_source,
-        #     creator_fee=args.creator_fee,
-        # )
-        # receipt = client.wait_for_receipt(tx)
-        #
-        # result = {
-        #     "status": "success",
-        #     "tx_hash": receipt.transactionHash.hex(),
-        #     "market_address": receipt.logs[0].address,
-        #     "outcome_token_addresses": [...],  # one per outcome
-        #     "gas_used": receipt.gasUsed,
-        #     "block_number": receipt.blockNumber,
-        # }
+        client = get_client(require_write=True)
 
-        print("ERROR: basis-sdk not yet available. Use --dry-run to simulate.")
-        print("TODO: Implement direct contract call using web3.py + Basis ABIs.")
-        sys.exit(1)
+        try:
+            if args.private:
+                # Private market: creator-managed resolution
+                tx_result = client.private_markets.create_market(
+                    args.title, symbol, end_ts,
+                    outcomes, MAINTOKEN, args.frozen, args.bonding
+                )
+            else:
+                # Public market: community dispute resolution
+                tx_result = client.prediction_markets.create_market(
+                    args.title, symbol, end_ts,
+                    outcomes, MAINTOKEN, args.frozen, args.bonding
+                )
 
-    if args.json_output:
-        print(json.dumps(result, indent=2))
-    else:
-        print("✅ Market creation simulated successfully." if args.dry_run else f"✅ Market created!")
-        print(f"\nEarning path:")
-        print(f"  Every trade on '{args.title}' → you earn {args.creator_fee * 100:.0f}% of fees")
-        print(f"  High-volume multi-outcome markets earn the most")
-        print(f"  Bet on outcomes separately for additional income (Path B)")
+            print(f"\n✅ Market created!")
+            print(f"  Tx hash: {tx_result['hash']}")
+
+            result = {
+                "status": "success",
+                "tx_hash": tx_result["hash"],
+                "market_title": args.title,
+                "symbol": symbol,
+                "outcomes": outcomes,
+                "end_timestamp": end_ts,
+            }
+
+        except Exception as e:
+            print(f"\n❌ Market creation failed: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    output_result(result, args.json_output)
+
+    if not args.json_output:
+        if args.dry_run:
+            print("\n✅ Market creation simulated successfully.")
+        print(f"\nNext steps:")
+        print(f"  1. Buy shares in your preferred outcome: python bet.py --market <address> --outcome 'Yes' --amount 50")
+        print(f"  2. Share the market — every trade earns you 20% of fees")
+        print(f"  3. High-volume multi-outcome markets earn the most creator fees")
 
 
 if __name__ == "__main__":

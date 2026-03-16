@@ -1,21 +1,21 @@
 """
 bet.py — Place a bet on a Predict+ prediction market outcome on Basis
 
-Buys shares in a specific prediction outcome. Winner takes the ENTIRE losing pool —
-not capped at $1/share like Polymarket. Multi-outcome markets can deliver 8x+ returns.
+Buys shares in a specific prediction outcome via the MarketTrading contract.
+Winner takes the ENTIRE losing pool — not capped at $1/share like Polymarket.
+
+SDK: client.prediction_markets.buy() + client.market_reader.get_all_outcomes()
 
 Key mechanics:
-- Airdrop points: 1 pt per $1 NET PROFIT only (hedging all outcomes = 0 points)
-- Buying outcome tokens also earns trading points (1 pt/$1 volume, separate from bet points)
-- No counterparty risk — modified AMM pool with virtual liquidity
+- Multi-outcome markets can deliver up to 15x or more returns
 - Sellers can only sell to next buyer, NOT against pool (protects winning pool)
-- Post-resolution: selling BURNS tokens → fees inject into liquidity → price goes UP
+- Post-resolution: selling BURNS tokens → fees inject → price goes UP
+- Supports hybrid fills: AMM + order book in single transaction
+- Airdrop points: 1 pt per $1 volume
 
 Usage:
-    python bet.py --market 0xMARKET_ADDRESS --outcome "Yes" --amount 100
-
-    python bet.py --market 0xMARKET_ADDRESS --outcome "Team C" --amount 50 \\
-        --strategy path-b --dry-run
+    python bet.py --market 0xMARKET_ADDRESS --outcome-id 0 --amount 100
+    python bet.py --market 0xMARKET_ADDRESS --outcome-id 1 --amount 50 --dry-run
 """
 
 import argparse
@@ -26,183 +26,122 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from client_helper import get_client, usdc_to_raw, raw_to_usdc, raw_to_token, output_result, USDC, MARKET_TRADING
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Place a bet on a Predict+ market outcome on Basis"
     )
-    parser.add_argument(
-        "--market",
-        required=True,
-        help="Prediction market contract address (0x...)"
-    )
-    parser.add_argument(
-        "--outcome",
-        required=True,
-        help="Outcome name to bet on (must match market outcomes exactly)"
-    )
-    parser.add_argument(
-        "--amount",
-        type=float,
-        required=True,
-        help="Amount of USDB/USDC to bet"
-    )
-    parser.add_argument(
-        "--strategy",
-        choices=["path-a", "path-b", "standalone"],
-        default="standalone",
-        help="Strategy context: path-a (separate USDC), path-b (borrowed USDC), standalone"
-    )
-    parser.add_argument(
-        "--max-slippage",
-        type=float,
-        default=0.02,
-        help="Max acceptable slippage as decimal (default: 0.02 = 2%%)"
-    )
-    parser.add_argument(
-        "--wallet",
-        default=os.getenv("BASIS_PRIVATE_KEY"),
-        help="Agent wallet private key (or set BASIS_PRIVATE_KEY env var)"
-    )
-    parser.add_argument(
-        "--rpc-url",
-        default=os.getenv("BASIS_RPC_URL", "https://bsc-dataseed.binance.org/"),
-        help="BNB Chain RPC URL"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Simulate without submitting any transactions"
-    )
-    parser.add_argument(
-        "--json-output",
-        action="store_true",
-        help="Output result as JSON (for agent pipelines)"
-    )
+    parser.add_argument("--market", required=True, help="Prediction market token address (0x...)")
+    parser.add_argument("--outcome-id", type=int, required=True, help="Outcome index (0-based)")
+    parser.add_argument("--amount", type=float, required=True, help="USDC amount to bet")
+    parser.add_argument("--min-shares", type=int, default=0, help="Minimum shares to receive (slippage protection)")
+    parser.add_argument("--order-ids", help="Comma-separated order IDs to fill from book (hybrid fill)")
+    parser.add_argument("--show-odds", action="store_true", help="Show current market odds before betting")
+    parser.add_argument("--dry-run", action="store_true", help="Simulate without submitting")
+    parser.add_argument("--json-output", action="store_true", help="Output as JSON")
     return parser.parse_args()
 
 
-def fetch_market_info(market_address: str) -> dict:
-    """
-    Fetch current market state: outcomes, pool sizes, current prices.
-    TODO: Replace with actual API/contract call when basis-sdk available.
-    """
-    # TODO: Call GET /api/v1/predict/markets/{address} or read contract state
-    # Returning mock data for now
-    return {
-        "address": market_address,
-        "title": "[TODO: fetch from contract]",
-        "outcomes": ["[TODO: fetch outcomes]"],
-        "pool_sizes": {},  # outcome -> USDC in losing pool
-        "status": "active",
-        "resolution_date": "[TODO: fetch timestamp]",
-        "total_volume": 0.0,
-    }
-
-
-def estimate_payout(
-    outcome: str,
-    bet_amount: float,
-    market_info: dict
-) -> dict:
-    """
-    Estimate potential payout if outcome wins.
-    Winner splits entire losing pool (not capped at $1/share).
-    TODO: Use actual pool data from contract when available.
-    """
-    # TODO: Read actual pool sizes from contract
-    # Formula: payout = bet_amount + (bet_amount / winning_pool_total) * losing_pool_total
-    return {
-        "bet_outcome": outcome,
-        "bet_amount": bet_amount,
-        "estimated_min_payout": bet_amount,  # TODO: calculate from pool sizes
-        "estimated_max_payout": "[TODO: calculate from current pools]",
-        "note": "Winner takes ENTIRE losing pool — potential multiples of bet amount",
-    }
+def show_market_odds(client, market_address: str):
+    """Display current outcome probabilities and pool sizes."""
+    try:
+        outcomes = client.market_reader.get_all_outcomes(MARKET_TRADING, market_address)
+        print(f"\n  Current Market Odds:")
+        for i, outcome in enumerate(outcomes):
+            print(f"    [{i}] {outcome}")
+        return outcomes
+    except Exception as e:
+        print(f"  ⚠️  Could not fetch market data: {e}")
+        return None
 
 
 def main():
     args = parse_args()
 
-    # Validate bet amount
+    # Safety check
     max_bet = float(os.getenv("MAX_BET_PER_MARKET", "100"))
     if args.amount > max_bet:
-        print(f"Warning: Bet amount ${args.amount} exceeds MAX_BET_PER_MARKET=${max_bet}")
+        print(f"Warning: Bet ${args.amount} exceeds MAX_BET_PER_MARKET=${max_bet}")
         print(f"Adjust MAX_BET_PER_MARKET in .env or reduce --amount")
         sys.exit(1)
 
-    market_info = fetch_market_info(args.market)
-    payout_estimate = estimate_payout(args.outcome, args.amount, market_info)
+    usdc_raw = usdc_to_raw(args.amount)
 
     print(f"\n{'[DRY RUN] ' if args.dry_run else ''}Placing Bet on Basis Prediction Market")
     print("=" * 60)
     print(f"  Market:          {args.market}")
-    print(f"  Outcome:         {args.outcome}")
-    print(f"  Bet Amount:      ${args.amount:.2f} USDB")
-    print(f"  Strategy:        {args.strategy}")
-    print(f"  Max slippage:    {args.max_slippage * 100:.1f}%")
-    print(f"  Payout model:    Winner takes ENTIRE losing pool (not capped at $1)")
-    print(f"  Airdrop points:  1 pt per $1 NET PROFIT (hedging = 0 pts)")
-    print()
-    print(f"  Strategy note:")
-    if args.strategy == "path-a":
-        print(f"    Path A: You should already hold leveraged Predict+ tokens.")
-        print(f"    This bet uses SEPARATE USDC — leverage and loans are not stackable.")
-    elif args.strategy == "path-b":
-        print(f"    Path B: Using borrowed USDC from a Predict+ loan.")
-        print(f"    Run lend.py first to borrow USDC against your Predict+ tokens.")
-    else:
-        print(f"    Standalone bet — not part of a combined strategy.")
+    print(f"  Outcome ID:      {args.outcome_id}")
+    print(f"  Bet Amount:      ${args.amount:.2f} USDC ({usdc_raw} raw)")
+    print(f"  Min Shares:      {args.min_shares}")
+    print(f"  Payout model:    Winner takes ENTIRE losing pool (uncapped)")
+
+    if args.show_odds or args.dry_run:
+        client = get_client(require_write=False)
+        show_market_odds(client, args.market)
 
     if args.dry_run:
+        # Preview expected shares
+        try:
+            client = get_client(require_write=False)
+            wallet = os.getenv("BASIS_WALLET_ADDRESS", "0x0000000000000000000000000000000000000000")
+            order_ids = [int(x) for x in args.order_ids.split(",")] if args.order_ids else []
+            estimated = client.market_reader.estimate_shares_out(
+                MARKET_TRADING, args.market, args.outcome_id,
+                usdc_raw, order_ids, wallet
+            )
+            print(f"\n  Estimated shares: {estimated}")
+        except Exception:
+            pass
+
         print("\n[DRY RUN] Transaction would be submitted here. No action taken.")
         result = {
             "status": "dry_run",
             "market": args.market,
-            "outcome": args.outcome,
-            "bet_amount": args.amount,
-            "payout_estimate": payout_estimate,
-            "airdrop_points_if_win": f"1 pt per $1 net profit",
+            "outcome_id": args.outcome_id,
+            "amount_usdc": args.amount,
         }
     else:
-        # TODO: Implement using basis-sdk / direct contract call
-        # Example flow (pseudocode):
-        #
-        # from basis_sdk import BasisClient
-        # client = BasisClient(private_key=args.wallet, rpc_url=args.rpc_url)
-        #
-        # # First approve USDC spend
-        # client.usdc.approve(spender=market_address, amount=args.amount)
-        #
-        # # Place bet
-        # tx = client.predict.bet(
-        #     market_address=args.market,
-        #     outcome=args.outcome,
-        #     amount_usdc=args.amount,
-        #     max_slippage=args.max_slippage,
-        # )
-        # receipt = client.wait_for_receipt(tx)
-        #
-        # result = {
-        #     "status": "success",
-        #     "tx_hash": receipt.transactionHash.hex(),
-        #     "shares_received": ...,
-        #     "effective_price": ...,
-        #     "gas_used": receipt.gasUsed,
-        # }
+        client = get_client(require_write=True)
 
-        print("ERROR: basis-sdk not yet available. Use --dry-run to simulate.")
-        print("TODO: Implement direct contract call using web3.py + Basis ABIs.")
-        sys.exit(1)
+        try:
+            if args.order_ids:
+                # Hybrid fill: order book + AMM in single transaction
+                order_ids = [int(x) for x in args.order_ids.split(",")]
+                tx_result = client.prediction_markets.buy_orders_and_contract(
+                    args.market, args.outcome_id, order_ids,
+                    USDC, usdc_raw, args.min_shares
+                )
+            else:
+                # Pure AMM buy
+                tx_result = client.prediction_markets.buy(
+                    args.market, args.outcome_id, USDC,
+                    usdc_raw, 0, args.min_shares
+                )
 
-    if args.json_output:
-        print(json.dumps(result, indent=2))
-    else:
-        print(f"\n✅ Bet {'simulated' if args.dry_run else 'placed'} successfully.")
-        print(f"\nReminder — post-resolution sell strategy:")
-        print(f"  If you win: wait through the sell wave.")
-        print(f"  Selling tokens BURNS them → fees inject into price → price goes UP.")
-        print(f"  Last sellers get the BEST price. Patience is profitable.")
+            print(f"\n✅ Bet placed!")
+            print(f"  Tx hash: {tx_result['hash']}")
+
+            result = {
+                "status": "success",
+                "tx_hash": tx_result["hash"],
+                "market": args.market,
+                "outcome_id": args.outcome_id,
+                "amount_usdc": args.amount,
+            }
+
+        except Exception as e:
+            print(f"\n❌ Bet failed: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    output_result(result, args.json_output)
+
+    if not args.json_output and not args.dry_run:
+        print(f"\nPost-resolution strategy:")
+        print(f"  If you win: WAIT through the sell wave. Last sellers get the BEST price.")
+        print(f"  Selling burns tokens → fees inject → price goes UP.")
 
 
 if __name__ == "__main__":

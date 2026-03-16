@@ -1,8 +1,8 @@
 # Skill: basis-defi
 
 **Name:** basis-defi  
-**Version:** 0.2.0 (contract reference available — SDK in development by Alex)  
-**Status:** 🚧 Scripts are stubs. Full contract function reference now available in `references/api-reference.md`. Alex's SDK (with usage docs) is in development — scripts will be updated when SDK is published.
+**Version:** 0.3.0 (scripts wired to SDK API — 2026-03-16)  
+**Status:** ✅ All 7 core scripts wired to Basis SDK (`basis-sdk`). SDK docs received 2026-03-16, package not yet on PyPI — scripts will work as-is once `pip install basis-sdk` is available. `points.py` remains a stub (points backend not built).
 
 ## Description
 
@@ -21,43 +21,47 @@ Interact with the Basis DeFi platform — create prediction markets, launch toke
 ## Prerequisites
 
 - **Python 3.10+**
-- **basis-sdk** package: In development by Alex — will provide high-level wrappers over contract calls. Until published, agents interact with contracts directly via web3.py using ABIs.
+- **basis-sdk** package: `pip install basis-sdk` *(not yet on PyPI — awaiting beta publish)*
+- **python-dotenv**: `pip install python-dotenv`
 - **BNB Chain wallet** with small BNB for gas (~$0.01–0.14 per transaction)
-- **USDB** (test stablecoin) from faucet: https://basis.exchange/faucet *(USDB is fake USDC — zero financial risk, real airdrop points)*
-- **Web3 library**: `pip install web3` (agents interact with contracts directly via ABI calls)
-- **Python dotenv**: `pip install python-dotenv`
+- **USDB** (test stablecoin) from faucet: https://basis.exchange/faucet *(zero financial risk, real airdrop points)*
 
 ### Environment Setup
 
 Create a `.env` file in your skill directory:
 
 ```env
-# Required
-BASIS_PRIVATE_KEY=0x...         # Agent wallet private key
-BASIS_RPC_URL=https://bsc-dataseed.binance.org/  # BNB Chain RPC
+# Required for write operations (trading, creating, lending)
+BASIS_PRIVATE_KEY=0x...         # Agent wallet private key (enables auto SIWE + all writes)
+
+# Optional — read-only access
+BASIS_API_KEY=bsk_...           # API key for off-chain data (auto-provisioned in full mode)
+
+# Optional — custom RPC
+BASIS_RPC_URL=https://bsc-dataseed.binance.org/  # BNB Chain RPC (default)
+
+# Optional — wallet address for read-only queries (status, portfolio)
+BASIS_WALLET_ADDRESS=0x...      # For portfolio.py and points.py
 
 # Optional — operator safety limits
-MAX_LEVERAGE=5                  # 1 or 36 (toggle). Default 5 uses position splitting.
 MAX_BET_PER_MARKET=100          # Max USDC per prediction bet
 MAX_TRADE_SIZE=500              # Max USDC per DEX trade
-MAX_CONCURRENT_POSITIONS=10     # Max open positions at once
 AUTO_EXTEND_LOANS=true          # Auto-extend loans before expiry
-EXIT_TIMING=wait_for_wave       # immediate | wait_for_wave | manual
-MIN_MARKET_PARTICIPANTS=5       # Skip prediction markets with fewer participants
-MAX_LOAN_DURATION_DAYS=30       # Default loan term
-
-# Optional — API
-BASIS_API_KEY=...               # For metadata API (non-financial queries)
-BASIS_API_BASE=https://api.basis.exchange
+VAULT_REFINANCE_THRESHOLD=0.05  # Refinance when wSTASIS up 5%
 ```
 
 ---
 
 ## Architecture Note
 
-Basis is on-chain — agents interact with **smart contracts directly** via web3.py, not through a REST API. The scripts in this skill call contract functions directly using ABIs. The metadata API (candles, portfolio reads, points) is RESTful and used for read-only queries.
+Scripts use the **Basis SDK** (`basis-sdk`) which wraps all 13 smart contracts + off-chain API into a single `BasisClient`. Three init modes:
+1. **Read-only** (no credentials): on-chain reads — prices, balances, market data
+2. **API key**: adds off-chain data — candles, trade history, tokens, orders
+3. **Full mode** (private key): auto SIWE auth + all write operations
 
-See `references/api-reference.md` for the complete contract function reference (all 13 contracts, every read/write function with parameters and return types). Alex's SDK usage docs will follow when the SDK is published.
+All write methods auto-approve token spending. No manual approve steps needed.
+
+See `references/api-reference.md` for the contract function reference, or the full SDK docs at `../../sdk-docs-2026-03-16.md`.
 
 ---
 
@@ -172,16 +176,16 @@ python create-prediction.py \
 
 ```bash
 # 1. Install dependencies
-pip install web3 python-dotenv requests
+pip install basis-sdk python-dotenv  # basis-sdk not yet on PyPI — coming soon
 
 # 2. Set up .env with your wallet
-cp .env.example .env
+echo "BASIS_PRIVATE_KEY=0xYourPrivateKey" > .env
 
 # 3. Get USDB from faucet (zero financial risk, real airdrop points)
 # Visit: https://basis.exchange/faucet
 
 # 4. Check your portfolio
-python portfolio.py --wallet $YOUR_WALLET
+python portfolio.py --wallet 0xYourWallet
 
 # 5. Create your first prediction market (earn 300 airdrop points)
 python create-prediction.py \
@@ -189,8 +193,14 @@ python create-prediction.py \
   --outcomes "Yes,No" \
   --duration-days 7
 
-# 6. Check your airdrop points
-python points.py --wallet $YOUR_WALLET
+# 6. Buy tokens on the DEX
+python trade.py --token 0xTokenAddress --direction buy --amount 50
+
+# 7. Borrow USDC against your tokens (100% LTV)
+python lend.py --action borrow --token 0xTokenAddress --token-amount 100 --duration-days 30
+
+# 8. Check your airdrop points
+python points.py --wallet 0xYourWallet
 ```
 
 ---
@@ -210,16 +220,26 @@ python points.py --wallet $YOUR_WALLET
 
 ---
 
+## Shared Helpers
+
+All scripts use `client_helper.py` for:
+- `get_client(require_write, register_agent)` — BasisClient initialization from env vars
+- `usdc_to_raw()` / `raw_to_usdc()` — USDC decimal conversion (6 decimals)
+- `token_to_raw()` / `raw_to_token()` — Token decimal conversion (18 decimals)
+- `output_result()` — JSON output formatting
+- Contract address constants: `MAINTOKEN`, `USDC`, `MARKET_TRADING`
+
 ## References
 
-- `references/api-reference.md` — REST API endpoints (read-only) + contract function reference
+- `references/api-reference.md` — Contract function reference (all 13 contracts)
 - `references/token-frameworks.md` — Stable+, Floor+, Predict+ token mechanics
 - `references/earning-guide.md` — All earning paths, point values, multipliers
+- `../../sdk-docs-2026-03-16.md` — Full SDK documentation (13 modules, Python + TypeScript)
 
-## Links (placeholders — populate when docs released)
+## Links
 
-- SDK docs: *[TODO: Link when basis-sdk published]*
-- Contract ABIs: *[TODO: Link when Alex releases ABI package]*
-- Contract Reference: `references/api-reference.md` — Full reference for all 13 contracts (from Alex's SDK reference, 2026-03-14)
+- SDK docs (full): `../../sdk-docs-2026-03-16.md`
+- SDK package: `pip install basis-sdk` *(not yet on PyPI)*
+- Contract Reference: `references/api-reference.md`
 - Basis platform: https://basis.exchange
 - BNB Chain faucet (for gas): https://www.bnbchain.org/en/testnet-faucet
