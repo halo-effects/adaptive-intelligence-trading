@@ -735,11 +735,14 @@ def send_telegram_summary(output: dict):
         f"{output['coins_scanned']} coins"
     )
 
-    if output.get("top_picks"):
-        tp = output["top_picks"]
-        lines.append(f"\U0001f3c6 Best: {tp.get('best_score', '?')} | "
-                     f"\u26a1 Fastest: {tp.get('fastest_cycler', '?')} | "
-                     f"\U0001f6e1\ufe0f Safest: {tp.get('lowest_dd', '?')}")
+    # Derive picks from the Trade Score-ranked list (same window, same ranking)
+    if scored_rankings:
+        best_trade = scored_rankings[0]["coin"]
+        fastest = max(scored_rankings, key=lambda r: r.get("deals_per_week", 0))["coin"]
+        safest = min(scored_rankings, key=lambda r: r.get("max_drawdown_pct", 100))["coin"]
+        lines.append(f"\U0001f3c6 Best: {best_trade} | "
+                     f"\u26a1 Fastest: {fastest} | "
+                     f"\U0001f6e1\ufe0f Safest: {safest}")
 
     message = "\n".join(lines)
 

@@ -618,10 +618,20 @@ class V14PortfolioPaperBot:
                 base = sym.split("/")[0]
                 token_map[sym] = base
 
-            tokens = list(set(token_map.values())) + ["MARKET"]
-            data = client.get_current(tokens, period=4, fields="cfgi")
+            # Filter to CFGI-supported tokens only; request MARKET separately
+            # to avoid unsupported coins (SNX, PENDLE, etc.) breaking the whole batch
+            from trading.spot.cfgi_client import VALID_TOKENS
+            valid_set = set(VALID_TOKENS)
+            supported_coins = [t for t in set(token_map.values()) if t in valid_set]
 
-            market_data = data.get("MARKET", {})
+            # Always fetch MARKET first (standalone so it never fails due to bad coins)
+            market_resp = client.get_current(["MARKET"], period=4, fields="cfgi")
+            market_data = market_resp.get("MARKET", {})
+
+            # Fetch per-coin data only for supported tokens
+            data = {}
+            if supported_coins:
+                data = client.get_current(supported_coins, period=4, fields="cfgi")
             if isinstance(market_data, dict):
                 self._cfgi_market = market_data.get("cfgi", market_data.get("value"))
             elif isinstance(market_data, (int, float)):

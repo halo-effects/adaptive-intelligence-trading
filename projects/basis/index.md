@@ -1,6 +1,6 @@
 # Basis Project — Quick Reference Index
 
-_Last updated: 2026-03-14 (v2)_
+_Last updated: 2026-03-16 (v3)_
 
 ## Documents
 
@@ -14,6 +14,14 @@ _Last updated: 2026-03-14 (v2)_
 | `gitbook-corrections-for-alex-2026-03-14.md` | 5 corrections for the live GitBook site (ready for Alex) |
 | `sdk-gap-analysis-2026-03-14.md` | Gap analysis of Alex's SDK reference |
 | `index.md` | This file — quick reference to sections |
+
+### Polymarket Scout (`polymarket-scout/`)
+| File | Contents |
+|---|---|
+| `SKILL.md` | OpenClaw `polymarket-scout` skill definition — scout Polymarket for Basis-worthy markets |
+| `scripts/scout.py` | Fetch, score, and rank Polymarket markets — prioritizes multi-outcome (3+) for Basis |
+| `references/api.md` | Polymarket Gamma API reference (endpoints, data model, pagination) |
+| `polymarket-scout.skill` | Packaged `.skill` file ready for distribution |
 
 ### Skill Scaffold (`skill-scaffold/`)
 | File | Contents |
