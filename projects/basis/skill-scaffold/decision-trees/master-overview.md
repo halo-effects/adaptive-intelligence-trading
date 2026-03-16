@@ -11,6 +11,7 @@ _Last updated: 2026-03-16_
 | 🔮 **Prediction Markets** | `prediction-markets.md` | Scout → Create → Analyze → Position → Amplify → Manage → Exit |
 | 🪙 **Token Launch** | `token-launch.md` | Ideate → Configure → Launch → Grow → Monetize → Sustain |
 | 💰 **Capital Management** | `capital-management.md` | Source → Allocate → Deploy → Recycle → Optimize |
+| 📣 **Growth & Promotion** | `growth-and-promotion.md` | Content → Distribute → Community → Product Loop → Scale |
 
 **Capital Management is the connective tissue.** It's not a separate activity — it's the layer that runs underneath everything. Every prediction market position and every token position feeds into and out of the capital management tree via the loan layer.
 

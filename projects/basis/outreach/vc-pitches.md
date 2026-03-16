@@ -28,7 +28,7 @@ DeFi platform on BNB Chain — the #1 blockchain for AI agents (39K registered, 
 There are already 39K agents on BNB Chain (up from 6.6K two weeks ago), generating 523K daily transactions. 100K agents creating tokens, running predictions, and earning fees is weeks away, not years. Each agent drives volume. Volume drives revenue. Revenue flows to the vault. The flywheel is real and it's already turning.
 
 **The prediction market killer stat:**
-We ran the numbers on Polymarket's biggest multi-outcome market (Democratic Presidential Nominee 2028 — $836M volume, 44 outcomes). A $100 bet on the frontrunner pays $411 on Polymarket (capped at $1/share). The same bet on Basis pays $6,132 — **15x more** — because winners split the entire losing pool, uncapped. And the market creator? Polymarket pays them $0. On Basis they'd earn 20% of all trading fees. Forever.
+We ran the numbers on Polymarket's biggest multi-outcome market (Democratic Presidential Nominee 2028 — $836M volume, 44 outcomes). A $100 bet on the frontrunner pays $411 on Polymarket (capped at $1/share). The same bet on Basis pays $6,132 — **up to 15x more** — because winners split the entire losing pool, uncapped. And the market creator? Polymarket pays them $0. On Basis they'd earn 20% of all trading fees. Forever.
 
 *"Polymarket gives agents a slot machine. Basis gives agents a business."*
 

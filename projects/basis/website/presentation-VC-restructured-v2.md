@@ -81,7 +81,7 @@ Self-Amplifying DeFi Ecosystem. All Accessible Through a Standard SDK in Three A
 - Multi-outcome prediction markets (not limited to binary yes/no)
 - Winners split the ENTIRE losing pool — uncapped payouts
 - Dual utility: token appreciation + outcome betting
-- 15x better payout than Polymarket on multi-outcome markets (see Slide 5)
+- Up to 15x better payout than Polymarket on multi-outcome markets (see Slide 5)
 
 **3. LENDING PLATFORM**
 - 100% LTV loans — borrow full value of holdings
@@ -101,7 +101,7 @@ Self-Amplifying DeFi Ecosystem. All Accessible Through a Standard SDK in Three A
 _High-impact comparison slide. Side-by-side with big numbers._
 
 **Heading:**
-Same Bet. 15x the Payout.
+Same Bet. Up to 15x the Payout � or More.
 
 **Subheading:**
 Real data from Polymarket's biggest multi-outcome market. Not hypothetical.
@@ -209,37 +209,48 @@ The flywheel is real. The vault is live. The appreciation has already started.
 _Visual showing three layers. Tree diagram or layered architecture._
 
 **Heading:**
-Not Just Tools. A Complete Strategic Framework.
+Not Just Tools. A Complete Business Operating System.
 
 **Subheading:**
-Agents don't just execute trades. They navigate a decision tree of composable strategies.
+Agents don't just execute trades. They build businesses — from market creation to community growth.
 
 **Three Layers:**
 
-**Layer 1: Atomic Skills (10 operations)**
-Create tokens, create markets, trade, bet, lend, leverage, vault stake, portfolio track, points optimize, social promote
+**Layer 1: Atomic Skills (16 operations)**
+- Trading: create tokens, create markets, trade, bet, lend, leverage, vault stake, portfolio track, points optimize
+- Growth: post to X, post to Telegram, post to Discord, generate content, generate images, manage communities, promote
 
-**Layer 2: Named Strategies (13 pre-built pathways)**
+**Layer 2: Named Strategies (18 pre-built pathways)**
 - Prediction: polymarket-mirror, probability-arb, creator-fee-farm, loan-bet-combo, full-stack
 - Tokens: launch-and-promote, bonding-sniper, loan-compound, vault-yield, token-portfolio
 - Cross-platform: capital-recycler, points-optimizer, referral-network
+- Growth: market-promoter, token-launcher-kit, content-engine, community-flywheel, cross-promote
 
-**Layer 3: Decision Trees (3 maps)**
+**Layer 3: Decision Trees (4 complete maps)**
 - Prediction Markets: 7 phases, 5 capital deployment paths
 - Token Launch: 6 phases, creator monetization flows
 - Capital Management: loan loops, vault refinance, velocity scoring
+- Growth & Promotion: content creation, distribution, community building, product-community flywheel
+
+**The Full Agent Lifecycle:**
+Scout opportunity → Create product → Trade → Promote → Build community → Community drives volume → Earn fees → Reinvest → Scale
+
+**Human-Agent Collaboration:**
+Where agents hit platform limits (account creation, phone verification), the framework includes delegation nodes — the agent tells its human exactly what's needed and resumes autonomously once the step is complete.
 
 **The Comparison:**
 
 | | Polymarket | Basis |
 |---|---|---|
-| What agents can do | Bet yes/no | Create, trade, lend, leverage, vault, bet, promote, refer |
+| What agents can do | Bet yes/no | Create, trade, lend, leverage, vault, bet, **promote, build communities, generate content** |
 | Revenue streams | 1 (win bets) | 8+ (fees, appreciation, loans, vault, bets, points, referrals) |
-| Strategy depth | Binary | 3 decision trees × 13 strategies × 10 skills |
+| Strategy depth | Binary | **4 decision trees × 18 strategies × 16 skills** |
 | Creator economics | $0 | 20% of all trading fees forever |
+| Community tools | None | X posting, Telegram groups, Discord bots, content gen, image gen |
+| Agent-human collaboration | None | Delegation nodes for human-required steps |
 
 **Bottom text:**
-The deeper the strategy framework, the stickier the platform. Agents that learn Basis don't leave.
+Polymarket agents place bets. Basis agents build businesses. The deeper the framework, the stickier the platform.
 
 ---
 
@@ -252,11 +263,11 @@ Why Agents Stay. Why Competitors Cannot Replicate.
 **Box 1: Agent Confidence Score**
 On-chain reputation earned through real activity. Higher scores mean greater trust and better airdrop weight. Other agents route capital through high-ACS assets. Leaving Basis means starting from zero.
 
-**Box 2: 8+ Revenue Streams**
-Token creation fees, trading profits, prediction payouts, loan proceeds, vault yield, bet winnings, points/airdrop, referrals. No other single protocol offers this breadth. Switching cost is real.
+**Box 2: 8+ Revenue Streams + Full Growth Toolkit**
+Token creation fees, trading profits, prediction payouts, loan proceeds, vault yield, bet winnings, points/airdrop, referrals. Plus: content generation, social posting, community management. No other protocol offers this breadth. Switching cost is real.
 
-**Box 3: SDK-First Architecture**
-SDK complete and tested (Python + TypeScript). Three API calls from zero to earning. Integration with every major agent framework: OpenClaw, ElizaOS, GAME, Virtuals. Built for agents, not adapted for them.
+**Box 3: SDK-First Architecture + Agent-Human Collaboration**
+SDK complete and tested (Python + TypeScript). Three API calls from zero to earning. Integration with every major agent framework: OpenClaw, ElizaOS, GAME, Virtuals. Where platform limits exist, agents delegate to humans with exact instructions and resume autonomously. Built for agents, not adapted for them.
 
 **Box 4: Composability Moat**
 Every position unlocks the next action. Buy → loan → buy more → loan again. Each dollar works 3-4x. Loan loops cost 2% vs 43-70% for equivalent leverage. No other protocol offers this capital efficiency.
@@ -311,7 +322,7 @@ Growing 20% annually. Millions of creators need token infrastructure with reputa
 39,000 on BNB Chain alone. $18.1M daily agent DEX volume. 523,000 daily agent transactions. Growing 39,000% in 10 weeks.
 
 **Box 4: Our Position**
-First Mover in agent-native DeFi. 13 smart contracts live on mainnet. SDK complete and tested. 29 pages of documentation. Three decision trees with 13 agent strategies ready.
+First Mover in agent-native DeFi. 13 smart contracts live on mainnet. SDK complete and tested. 29 pages of documentation. Four decision trees with 18 agent strategies and 16 atomic skills — covering the full lifecycle from trading to community building.
 
 **Bottom text:**
 Crypto + Prediction Markets + AI Agent Economy = Addressable Market 10x Larger Than Retail DeFi Alone
@@ -422,7 +433,7 @@ Not a Whitepaper. A Live Protocol.
 - ✅ SDK complete and tested (Python + TypeScript) — publishing imminent
 - ✅ Decentralized application live at launchonbasis.com
 - ✅ 29-page GitBook documentation published
-- ✅ Agent strategy framework: 3 decision trees, 13 strategies, 10 atomic skills
+- ✅ Agent strategy framework: 4 decision trees, 18 strategies, 16 atomic skills (trading + growth)
 - ✅ Polymarket scout tool: live market intelligence for cross-listing
 - ✅ wSTASIS vault: ongoing appreciation and counting
 - ✅ Decimal-flexible architecture: ready for USDC, USDT, or BSC-USD
@@ -468,7 +479,7 @@ We are not building a better DEX. We are building the exchange layer for the age
 - **TECH:** 13 contracts live. SDK complete. Agent strategy framework ready.
 - **TIMING:** 130,000+ agents across chains, growing 39,000% in 10 weeks.
 - **TRACTION:** Protocol live. Vault appreciating. Documentation published.
-- **EDGE:** 15x better prediction payouts than Polymarket. 8+ revenue streams. Unmatched composability.
+- **EDGE:** Up to 15x better prediction payouts than Polymarket. 8+ revenue streams. Unmatched composability.
 
 ---
 
@@ -515,14 +526,14 @@ Twitter: @LaunchonBasis | Telegram: t.me/launchonbasis
 | 1. Cover | Same | No change |
 | 2. The Shift | Same | No change |
 | 3. Volume Thesis | Same | No change |
-| 4. The Protocol | Same | Updated bullets: confirmed fees, multi-outcome callout, 15x reference |
+| 4. The Protocol | Same | Updated bullets: confirmed fees, multi-outcome callout, payout comparison reference |
 | 5. Polymarket Killer | **NEW** | Full comparison slide with real data from $836M market |
 | 6. Token Technology | v1 Slide 5 | Added confirmed fees, stability dial range, surge tax details |
 | 7. The Flywheel | v1 Slide 6 | Added loan layer math (2% vs 43-70%), capital recycling |
 | 8. Agent Strategy | **NEW** | Three-layer framework, Polymarket toolkit comparison |
 | 9. Defensibility | v1 Slide 7 | Updated: 8+ revenue streams, SDK status, composability moat |
 | 10. The Human Side | v1 Slide 8 | Updated: confirmed fee breakdown, revenue split percentages |
-| 11. Market Validation | v1 Slide 9 | Updated: 15x payout callout, agent stats, traction bullets |
+| 11. Market Validation | v1 Slide 9 | Updated: payout multiplier callout, agent stats, traction bullets |
 | 12. Go-To-Market | v1 Slide 10 | Updated: SDK status, Polymarket scout, Founding Lobster |
 | 13. Token Model | v1 Slide 11 | Added: confirmed fee table from contracts, provisional note on splits |
 | 14. Traction | **NEW** | Full status dashboard — what's live, what's next |
@@ -535,7 +546,7 @@ Twitter: @LaunchonBasis | Telegram: t.me/launchonbasis
 
 ## KEY NARRATIVES ADDED IN V2
 
-1. **"Same bet, 15x the payout"** — Polymarket comparison with real $836M market data. Not hypothetical. Verifiable.
+1. **"Same bet, up to 15x the payout or more"** — Polymarket comparison with real $836M market data. Not hypothetical. Verifiable.
 
 2. **Confirmed fee structure** — All fees now sourced from actual smart contract code (staticFeePercentage=200, dynamicFeePercentage=5). No more approximations.
 

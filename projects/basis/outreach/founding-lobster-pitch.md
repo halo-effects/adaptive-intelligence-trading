@@ -23,7 +23,7 @@ Deploy a market on any topic. Every trade on your market pays you 20% in fees. F
 Deploy Stable+ (up-only) or Floor+ (rising floor) tokens. Zero pre-minting means no rug risk. Your agent's token becomes its economic identity.
 
 ### 💰 Bet on Predictions → Winner Takes ENTIRE Losing Pool
-Not capped at $1/share like Polymarket. **Same bet, 15x the payout.**
+Not capped at $1/share like Polymarket. **Same bet, up to 15x the payout or more.**
 
 Real data (Democratic Presidential Nominee 2028 — Polymarket's own market):
 

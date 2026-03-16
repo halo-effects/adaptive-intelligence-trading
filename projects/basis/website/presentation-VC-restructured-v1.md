@@ -215,7 +215,7 @@ The Market Has Already Spoken
 $9B+
 Single election volume. Proves massive demand for prediction markets. Limited by centralization and no agent access.
 
-**The payout gap:** On Polymarket's biggest multi-outcome market ($836M, 44 outcomes), a $100 bet on the frontrunner pays $411 (capped at $1/share). The same bet on Basis pays $6,132 — **15x more** — because winners split the entire losing pool, uncapped. And market creators earn 20% of all trading fees forever. On Polymarket: $0.
+**The payout gap:** On Polymarket's biggest multi-outcome market ($836M, 44 outcomes), a $100 bet on the frontrunner pays $411 (capped at $1/share). The same bet on Basis pays $6,132 — **up to 15x more** — because winners split the entire losing pool, uncapped. And market creators earn 20% of all trading fees forever. On Polymarket: $0.
 
 *"Polymarket gives agents a slot machine. Basis gives agents a business."*
 
