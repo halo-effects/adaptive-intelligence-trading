@@ -192,6 +192,8 @@ class V14LifecycleEngine:
         try:
             ts = self._parse_timestamp(candle_1h.get('timestamp'))
             price = float(candle_1h['close'])
+            high = float(candle_1h.get('high', price))
+            low = float(candle_1h.get('low', price))
             self.current_price = price
 
             # Initialize engine phase start on first tick
@@ -242,8 +244,16 @@ class V14LifecycleEngine:
                 if np.isnan(daily_close):
                     daily_close = price  # fallback
 
+                # Get daily high/low for realistic TP fills
+                daily_high = daily_close
+                daily_low = daily_close
+                if self.pack and self.pack.daily is not None and prev_date_ts in self.pack.daily.index:
+                    day_row = self.pack.daily.loc[prev_date_ts]
+                    daily_high = float(day_row.get('high', daily_close))
+                    daily_low = float(day_row.get('low', daily_close))
+
                 # Run full daily tick (router evaluates direction, signals compute)
-                actions.extend(self._run_daily_tick(prev_date_ts, daily_close))
+                actions.extend(self._run_daily_tick(prev_date_ts, daily_close, daily_high, daily_low))
 
                 # Engine is now warmed up — router has set direction, signals are loaded
                 if not self._warmed_up:
@@ -262,15 +272,15 @@ class V14LifecycleEngine:
                     old_trade_count = len(self._engine.trades)
 
                     if self._engine.phase == Phase.LONG_DCA:
-                        self._engine._long_dca_tick(date_ts, price)
+                        self._engine._long_dca_tick(date_ts, price, high=high)
                         # Check orphaned short TP (manual phase override — close only, no new layers)
-                        if self._engine.short_coins > 0 and self._engine.short_tp > 0 and price <= self._engine.short_tp:
+                        if self._engine.short_coins > 0 and self._engine.short_tp > 0 and low <= self._engine.short_tp:
                             old_unwinding = self._engine.unwinding
                             self._engine.unwinding = True  # Prevent new layers
-                            self._engine._short_dca_tick(date_ts, price)
+                            self._engine._short_dca_tick(date_ts, price, low=low)
                             self._engine.unwinding = old_unwinding
                     elif self._engine.phase == Phase.SHORT_DCA:
-                        self._engine._short_dca_tick(date_ts, price)
+                        self._engine._short_dca_tick(date_ts, price, low=low)
 
                     actions.extend(self._extract_new_actions(old_trade_count))
                 elif self._live_mode and not self._warmed_up:
@@ -282,7 +292,8 @@ class V14LifecycleEngine:
 
         return actions
 
-    def _run_daily_tick(self, date: pd.Timestamp, price: float) -> List[dict]:
+    def _run_daily_tick(self, date: pd.Timestamp, price: float,
+                        high: float = None, low: float = None) -> List[dict]:
         """Run the V14 engine's full daily logic, matching run() loop order exactly."""
         actions = []
         eng = self._engine
@@ -294,16 +305,17 @@ class V14LifecycleEngine:
 
         # Phase-specific logic (EXACT order from V14 run() loop)
         if eng.phase == Phase.LONG_DCA:
-            eng._long_dca_tick(date, price)
+            eng._long_dca_tick(date, price, high=high)
             # Check orphaned short TP (manual phase override — close only, no new layers)
-            if eng.short_coins > 0 and eng.short_tp > 0 and price <= eng.short_tp:
+            tp_low = low if low is not None else price
+            if eng.short_coins > 0 and eng.short_tp > 0 and tp_low <= eng.short_tp:
                 old_unwinding = eng.unwinding
                 eng.unwinding = True
-                eng._short_dca_tick(date, price)
+                eng._short_dca_tick(date, price, low=low)
                 eng.unwinding = old_unwinding
             eng._check_top_signals(date, price, signals)
         elif eng.phase == Phase.SHORT_DCA:
-            eng._short_dca_tick(date, price)
+            eng._short_dca_tick(date, price, low=low)
             eng._check_bottom_signals(date, price, signals)
             eng._check_markdown_exit(date, price, signals)
         elif eng.phase == Phase.ROUTER:

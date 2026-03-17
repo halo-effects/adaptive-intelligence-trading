@@ -1,6 +1,14 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+## 2026-03-17
+- **TP fill model fix**: TP now checked against candle high (long) / candle low (short) instead of candle close. Simulates limit order fill on wick touch — matches real exchange behavior. Fill price = TP level, not wick extreme.
+- **Root cause**: JUP/USDT hit 0.1710 intraday but TP at 0.1701 didn't trigger because engine only checked candle close (which was below TP). In live trading, a limit sell at 0.1701 would have filled.
+- **Files changed**: `v14_dca_engine.py` (`_long_dca_tick`, `_short_dca_tick`, `run()`), `v14_lifecycle_engine.py` (hourly + daily tick paths)
+- **Docs updated**: v14-system-spec.md, v14-dca-architecture.md, CLOUD_MIGRATION_GUIDE.md (item 12)
+- **Impact**: All paper bots (V14, V14-ETF, V14-PM) + backtest engine. Live bot unaffected (uses real exchange fills). Change is backward-compatible (high/low params default to None).
+- Paper bots restarted to pick up changes.
+
 ## 2026-03-10
 - **Full system audit complete**: Read every file in V14PM dependency chain
 - **CRITICAL FIX**: `v13_router_engine_v2.py` wrong DB path (`.parent.parent.parent` → `.parent.parent`). HybridDetector2D was reading from 0-byte DB — top/bottom detection completely broken across ALL bots since deployment

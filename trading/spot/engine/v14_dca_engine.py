@@ -337,16 +337,27 @@ class V14DCAEngine:
     #  LONG DCA GRID
     # =========================================================================
 
-    def _long_dca_tick(self, date, price):
-        """Process one tick of the long DCA grid."""
+    def _long_dca_tick(self, date, price, high=None):
+        """Process one tick of the long DCA grid.
+        
+        Args:
+            high: Candle high price. When provided, TP is checked against the high
+                  (simulating a limit sell order that fills on any wick touch).
+                  Falls back to close price if not provided (backward compat).
+        """
         if np.isnan(price):
             return
         available = self.capital * self.cfg.DCA_CAPITAL_PCT
         cfg = self.cfg
 
         # Check TP first (skip in accumulate mode — hold position for signal-based exit)
-        if not cfg.DCA_ACCUMULATE and self.long_coins > 0 and self.long_tp > 0 and price >= self.long_tp:
-            proceeds = self.long_coins * price
+        # Use candle high for TP check: a limit sell order on the book fills when
+        # price touches it, even on a wick. Fill price = TP level (limit order).
+        tp_check_price = high if high is not None and not np.isnan(high) else price
+        if not cfg.DCA_ACCUMULATE and self.long_coins > 0 and self.long_tp > 0 and tp_check_price >= self.long_tp:
+            # Fill at TP price (limit order), not at candle high
+            fill_price = self.long_tp
+            proceeds = self.long_coins * fill_price
             fee = self._charge_fee(proceeds, is_taker=False)  # TP = maker/limit
             pnl = proceeds - self.long_cost - fee
             pnl_pct = pnl / self.long_cost * 100 if self.long_cost > 0 else 0
@@ -356,7 +367,7 @@ class V14DCAEngine:
             self.long_pnl += pnl
             self.trades.append({
                 'date': date, 'action': f'LONG_DCA_TP ({self.long_layers}L)',
-                'price': price, 'amount': proceeds, 'coins': self.long_coins,
+                'price': fill_price, 'amount': proceeds, 'coins': self.long_coins,
                 'phase': self.phase, 'pnl_pct': pnl_pct, 'pnl': pnl, 'fee': fee
             })
             self.long_coins = 0
@@ -439,18 +450,28 @@ class V14DCAEngine:
     #  SHORT DCA GRID
     # =========================================================================
 
-    def _short_dca_tick(self, date, price):
+    def _short_dca_tick(self, date, price, low=None):
         """Process one tick of the short DCA grid.
-        Mirror of long grid: sell high, buy back low."""
+        Mirror of long grid: sell high, buy back low.
+        
+        Args:
+            low: Candle low price. When provided, TP is checked against the low
+                 (simulating a limit buy-back order that fills on any wick touch).
+                 Falls back to close price if not provided (backward compat).
+        """
         if np.isnan(price):
             return
         available = self.capital * self.cfg.DCA_CAPITAL_PCT
         cfg = self.cfg
 
         # Check TP first (skip in accumulate mode — hold for signal-based exit)
-        if not cfg.DCA_ACCUMULATE and self.short_coins > 0 and self.short_tp > 0 and price <= self.short_tp:
-            # Buy back at lower price
-            buy_cost = self.short_coins * price
+        # Use candle low for short TP check: a limit buy-back order fills when
+        # price drops to the TP level, even on a wick. Fill price = TP level.
+        tp_check_price = low if low is not None and not np.isnan(low) else price
+        if not cfg.DCA_ACCUMULATE and self.short_coins > 0 and self.short_tp > 0 and tp_check_price <= self.short_tp:
+            # Buy back at TP price (limit order), not at candle low
+            fill_price = self.short_tp
+            buy_cost = self.short_coins * fill_price
             fee = self._charge_fee(buy_cost, is_taker=False)  # TP = maker/limit
             pnl = self.short_cost - buy_cost - fee  # Sold high, bought low, minus fee
             pnl_pct = pnl / self.short_cost * 100 if self.short_cost > 0 else 0
@@ -460,7 +481,7 @@ class V14DCAEngine:
             self.short_pnl += pnl
             self.trades.append({
                 'date': date, 'action': f'SHORT_DCA_TP ({self.short_layers}L)',
-                'price': price, 'amount': buy_cost, 'coins': self.short_coins,
+                'price': fill_price, 'amount': buy_cost, 'coins': self.short_coins,
                 'phase': self.phase, 'pnl_pct': pnl_pct, 'pnl': pnl, 'fee': fee
             })
             self.short_coins = 0
@@ -757,18 +778,20 @@ class V14DCAEngine:
             price = row['close']
             if np.isnan(price):
                 continue
+            high = float(row['high']) if 'high' in row and not np.isnan(row['high']) else price
+            low = float(row['low']) if 'low' in row and not np.isnan(row['low']) else price
 
             signals = self._compute_signals(date, price)
 
             if self.phase == Phase.LONG_DCA:
                 # Run long DCA grid
-                self._long_dca_tick(date, price)
+                self._long_dca_tick(date, price, high=high)
                 # Check for top signals
                 self._check_top_signals(date, price, signals)
 
             elif self.phase == Phase.SHORT_DCA:
                 # Run short DCA grid
-                self._short_dca_tick(date, price)
+                self._short_dca_tick(date, price, low=low)
                 # Check for bottom signals
                 self._check_bottom_signals(date, price, signals)
                 # Also check for structural bullish reversal (markdown → DCA transition)

@@ -330,6 +330,11 @@ All three bots share the same V14 engine:
 - **Signal Stack:** ROUTER v2 (StochRSI, structure analysis, trend detection)
 - **Lifecycle:** `IDLE → LONG_DCA (Layer 1..12) → TP Hit → IDLE`
 - **Tick Interval:** 65 seconds (live), 1h candle-driven (paper)
+- **TP Fill Model:** TP is checked against candle high (long) or candle low (short),
+  simulating a resting limit order that fills on any wick touch. Fill price = TP level
+  (not the wick extreme). This matches real exchange behavior where a limit sell at
+  $0.1701 fills when price touches that level, even on a wick to $0.1710.
+  *(Changed 2026-03-17 — previously used candle close, which missed valid TP fills.)*
 
 ### 5.2 Risk Profiles
 

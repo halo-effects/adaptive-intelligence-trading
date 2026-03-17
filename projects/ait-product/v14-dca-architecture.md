@@ -64,7 +64,7 @@ LONG_DCA ←→ ROUTER ←→ SHORT_DCA
 
 ### DCA Grid Parameters (from V13 sweep results)
 - **Timeframe**: 1h (dominated 15m on all 5 coins tested)
-- **Take Profit**: 1.5%
+- **Take Profit**: 1.5% (checked against candle high/low, fills at TP price — see §TP Fill Model)
 - **Deviation**: 2.5% between safety orders (sweep baseline)
 - **SO Multiplier**: 2.5× volume per layer (sweep baseline)
 - **Max Safety Orders**: 8 (sweep baseline)
@@ -223,5 +223,6 @@ This engine stands on extensive V13 research:
 - [x] Paper bot — V14-PM (Portfolio Manager, dynamic coins) deployed (2026-03-05)
 - [x] Equity-tiered coin cap added to PM (2026-03-06)
 - [x] Trend Score multiplier wired into PM allocation (2026-03-06) — `Adjusted Score = Base × Trend Mult` in `rebalance_daily()`
+- [x] TP fill model fix (2026-03-17) — TP now checked against candle high/low (simulates limit order fill on wick touch). Fills at TP price, not wick extreme. Previously used candle close, missing valid TP fills.
 - [ ] Correlation gate for broad market stress *(planned pre-live)*
 - [ ] 30+ days paper data → evaluate live deployment at scale

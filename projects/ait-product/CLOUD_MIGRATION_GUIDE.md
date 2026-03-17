@@ -269,6 +269,12 @@ All 8 imports must pass before proceeding.
     drift on restart. This is already implemented in all four current runners.
 11. **`--fresh` must call `tracker.load_existing()`** to prevent `save_csv()` from
     overwriting trade history with an empty file.
+12. **TP fill model (engine-level):** The shared V14 engine checks TP against candle
+    high (longs) / candle low (shorts), simulating a resting limit order that fills on
+    wick touch at the TP price. For **live trading**, the engine's TP detection triggers
+    a market sell via the executor — the actual fill price comes from the exchange, not
+    the engine. Ensure the live runner uses `result.get("price")` from the exchange
+    response (as `run_v14_live_aster.py` already does) rather than the engine's TP price.
 
 This step is a development task — flag for completion before cutover.
 
