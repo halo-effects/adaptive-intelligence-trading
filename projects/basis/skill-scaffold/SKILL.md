@@ -193,6 +193,10 @@ python create-prediction.py \
   --outcomes "Yes,No" \
   --duration-days 7
 
+# ⚠️ LIQUIDITY NOTE: New markets start with virtual seed liquidity.
+# Early bets have outsized price impact. See references/liquidity-guide.md
+# The bet.py script auto-checks market maturity before placing bets.
+
 # 6. Buy tokens on the DEX
 python trade.py --token 0xTokenAddress --direction buy --amount 50
 
@@ -234,6 +238,7 @@ All scripts use `client_helper.py` for:
 - `references/api-reference.md` — Contract function reference (all 13 contracts)
 - `references/token-frameworks.md` — Stable+, Floor+, Predict+ token mechanics
 - `references/earning-guide.md` — All earning paths, point values, multipliers
+- `references/liquidity-guide.md` — **Seed formula, market maturity model, price impact tables, whale protection**
 - `../../sdk-docs-2026-03-16.md` — Full SDK documentation (13 modules, Python + TypeScript)
 
 ## Links

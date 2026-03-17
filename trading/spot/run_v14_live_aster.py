@@ -1134,7 +1134,10 @@ class V14LiveBot:
                         self._tp_order_id = None
 
                     tp_price = eng.long_tp
-                    tp_qty = eng.long_coins
+                    # Use actual exchange balance, not engine's virtual position
+                    # (with leverage, exchange holds more coins than eng.long_coins)
+                    bal = self.executor.get_balance()
+                    tp_qty = bal["base_free"] if bal["base_free"] > 0 else eng.long_coins
                     new_order_id = self.executor.place_limit_sell(
                         tp_qty, tp_price, reason=f"TP after BUY (L{eng.long_layers})"
                     )
@@ -1522,7 +1525,10 @@ class V14LiveBot:
         elif has_position and eng.long_tp > 0:
             # Position open but no TP order — place one now
             tp_price = eng.long_tp
-            tp_qty = eng.long_coins
+            # Use actual exchange balance, not engine's virtual position
+            # (with leverage, exchange holds more coins than eng.long_coins)
+            bal = self.executor.get_balance()
+            tp_qty = bal["base_free"] if bal["base_free"] > 0 else eng.long_coins
             logger.info(
                 f"TP RECOVERY: No TP order found but position open "
                 f"({tp_qty:.4f} @ TP ${tp_price:.6f}) — placing new limit sell"

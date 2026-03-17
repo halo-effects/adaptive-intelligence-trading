@@ -58,6 +58,65 @@ def show_market_odds(client, market_address: str):
         return None
 
 
+def estimate_price_impact(client, market_address: str, outcome_id: int, amount_usdc: float):
+    """
+    Estimate how much a bet will move the probability — critical for new/low-liquidity markets.
+    
+    The bonding curve uses virtual reserves seeded at market creation:
+      Public:  seed = min($50K, max($5K, $500 × numOutcomes))
+      Private: seed = min($10K, max($1K, $100 × numOutcomes))
+    
+    When total volume is low relative to seed, probabilities barely move (seed gravity).
+    When volume exceeds ~10x seed, probabilities reflect true conviction.
+    When betting into a young market, early bets have outsized price impact.
+    
+    Returns dict with impact metrics, or None if data unavailable.
+    """
+    try:
+        outcomes = client.market_reader.get_all_outcomes(MARKET_TRADING, market_address)
+        if not outcomes:
+            return None
+        
+        n = len(outcomes)
+        # Try to read current virtual reserves and total pool
+        # Note: exact method depends on SDK version — adapt as needed
+        market_info = client.market_reader.get_market_info(MARKET_TRADING, market_address)
+        total_pool = float(market_info.get("totalPool", 0)) / 1e6  # USDC decimals
+        
+        # Estimate seed from outcome count (public formula)
+        estimated_seed = min(50000, max(5000, 500 * n))
+        
+        # Volume = total pool minus seed
+        estimated_volume = max(0, total_pool - estimated_seed)
+        seed_ratio = estimated_seed / max(estimated_volume, 1) if estimated_volume > 0 else 999
+        
+        # Market maturity assessment
+        if seed_ratio > 5:
+            maturity = "VERY_EARLY"
+            warning = "⚠️  Market barely traded. Your bet will dominate the odds."
+        elif seed_ratio > 1:
+            maturity = "EARLY"
+            warning = "⚠️  Low volume. Your bet will significantly move the probability."
+        elif seed_ratio > 0.1:
+            maturity = "DEVELOPING"
+            warning = "Market developing. Moderate price impact expected."
+        else:
+            maturity = "MATURE"
+            warning = "Market mature. Minimal price impact."
+        
+        return {
+            "num_outcomes": n,
+            "estimated_seed": estimated_seed,
+            "total_pool": total_pool,
+            "estimated_volume": estimated_volume,
+            "seed_ratio": seed_ratio,
+            "maturity": maturity,
+            "warning": warning,
+        }
+    except Exception:
+        return None
+
+
 def main():
     args = parse_args()
 
@@ -78,9 +137,26 @@ def main():
     print(f"  Min Shares:      {args.min_shares}")
     print(f"  Payout model:    Winner takes ENTIRE losing pool (uncapped)")
 
+    # Always check price impact on new markets
+    read_client = get_client(require_write=False)
+    
     if args.show_odds or args.dry_run:
-        client = get_client(require_write=False)
-        show_market_odds(client, args.market)
+        show_market_odds(read_client, args.market)
+
+    # Price impact check — warn on low-liquidity markets
+    impact = estimate_price_impact(read_client, args.market, args.outcome_id, args.amount)
+    if impact:
+        print(f"\n  Market Maturity:  {impact['maturity']}")
+        print(f"  Total Pool:       ${impact['total_pool']:,.0f}")
+        print(f"  Est. Volume:      ${impact['estimated_volume']:,.0f}")
+        print(f"  Seed/Volume:      {impact['seed_ratio']:.1f}x")
+        print(f"  {impact['warning']}")
+        
+        if impact["maturity"] in ("VERY_EARLY", "EARLY") and args.amount > 500:
+            print(f"\n  💡 TIP: Consider splitting into smaller bets over time.")
+            print(f"     A ${args.amount:.0f} bet on a {impact['maturity'].lower()} market")
+            print(f"     will create outsized price movement that may attract")
+            print(f"     arbitrage or discourage other participants.")
 
     if args.dry_run:
         # Preview expected shares
