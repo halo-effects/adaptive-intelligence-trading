@@ -66,6 +66,12 @@ _Last updated: 2026-03-16 (v4 — SDK docs received, scripts wired up)_
 | `strategy-playbooks.md` | 6 pre-built strategies: leverage, loan-bet, exit timing, vault, mirror, recycler |
 | `faq.md` | High-level FAQ — general + agent-specific questions |
 
+### Content / Articles (`content/articles/`) — Blog + X Articles
+| File | Contents |
+|---|---|
+| `01-why-ai-agents-need-their-own-financial-layer.md` | **Article 1** — The thesis: why agents can't use human DeFi, what agent-native looks like, 5 requirements, market signals |
+| `02-polymarket-slot-machine-vs-basis-business.md` | **Article 2** — Head-to-head Polymarket comparison with real $836M data, payout tables, agent stack gap, earnings loop |
+
 ### Outreach (`outreach/`) — Marketing & Recruitment
 | File | Contents |
 |---|---|
