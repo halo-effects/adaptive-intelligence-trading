@@ -18,15 +18,15 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
-## AIT — Current State (2026-03-10)
-- **V14PM Paper (MVP)**: $50,440 equity, 30 trades, 100% win rate, $50K capital, 10 coin slots
-- **V14 Live (Aster)**: $311 real, ASTER/USDT
-- **V14 Paper**: $48K+ equity, 380 deals | **V14-ETF Paper**: $10.5K+ equity, fixed PID lock and equity sync issues.
+## AIT — Current State (2026-03-17)
+- **V14PM Paper (MVP)**: $53,579 equity, $50K capital, 10 coin slots
+- **V14 Live (Aster)**: $369.56 equity, $340 capital ($300 seed + $40 deposit), ASTER/USDT, 4 deals, 100% win rate
+- **V14 Paper**: $53,120 equity | **V14-ETF Paper**: $11,335 equity
 - **All 4 bots running** on Windows. Cloud migration pending.
+- **Resting limit orders LIVE (2026-03-17)**: `run_v14_live_aster.py` places limit sell on exchange at TP price after every BUY fill. Dual approach: limit order (primary) + candle detection (fallback). Verified on exchange (order 485775318). `run_v14_portfolio_live.py` should follow same pattern when built.
+- **TP fill model fix (2026-03-17)**: TP now checks candle high/low (not close). Simulates limit order fill on wick touch.
 - **Full audit complete 2026-03-10**: Fixed critical DB path bug (blind top/bottom detection), added state persistence (no more phantom trades), added daily resampling (19 blind coins now have signal data).
-- **Dashboard Fixes (2026-03-10)**: Corrected V14 dashboards to show "Trade Score" (Base Score × Trend Mult) and sort by it to accurately reflect bot logic.
 - **CSV-as-truth fix applied** to all 4 runners. V14-ETF equity bug fixed to enforce capital + CSV logic strictly.
-- **Architecture doc v1.2, Migration doc v1.2, Audit doc §11** all updated.
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.

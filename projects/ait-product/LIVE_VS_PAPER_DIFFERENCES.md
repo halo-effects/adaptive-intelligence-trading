@@ -25,21 +25,26 @@ The engine produces **actions** (BUY/SELL). What differs is how those actions ar
 | Aspect | Paper | Live |
 |--------|-------|------|
 | BUY execution | Simulated (engine updates internal state) | Real market order via exchange API |
-| SELL/TP execution | Simulated at TP price | Real market order via exchange API |
-| Fill price | TP price (limit order simulation) | Exchange fill price (market order, may differ from TP) |
-| Slippage | None (simulated) | Real (market order at current price) |
+| SELL/TP execution | Simulated at TP price | Resting limit sell order on exchange; market sell fallback |
+| Fill price | TP price (limit order simulation) | TP price (limit sell) or exchange fill price (fallback market sell) |
+| Slippage | None (simulated) | None for limit sell (fills at TP); real for market sell fallback |
 | Fees | Simulated (maker/taker rates) | Real exchange fees |
 
-### Resting Limit Orders (PLANNED — not yet implemented)
+### Resting Limit Orders (IMPLEMENTED on Aster live bot — 2026-03-17)
 
-| Aspect | Paper | Live (current) | Live (target) |
-|--------|-------|----------------|---------------|
-| TP order type | Engine-internal check | Engine detects → market sell | Resting limit sell on exchange |
-| TP reliability | Depends on bot running | Depends on bot + API | Exchange handles it (bot-independent) |
-| DCA layer order | Engine-internal check | Engine detects → market buy | Engine detects → market buy (OK as-is) |
+| Aspect | Paper | Live (Aster) |
+|--------|-------|--------------|
+| TP order type | Engine-internal check | Resting limit sell on exchange (primary) + engine detection (fallback) |
+| TP reliability | Depends on bot running | Exchange handles it automatically; bot syncs on next poll |
+| DCA layer order | Engine-internal check | Engine detects → market buy |
+| TP order recovery | N/A | `_tp_order_id` in `state.json`; recovered or replaced on startup |
 
-**Priority: HIGH** — Resting limit orders for TP should be implemented before scaling
-live capital. See `CLOUD_MIGRATION_GUIDE.md` item 13.
+**Dual approach:** Limit sell placed at TP price after every BUY fill. If the bot is
+down or API is unavailable, the exchange fills the order independently. On bot recovery,
+engine syncs to exchange order status. Candle-based detection remains as fallback.
+
+**For `run_v14_portfolio_live.py`:** Follow the same pattern as `run_v14_live_aster.py`
+(already proven). See `CLOUD_MIGRATION_GUIDE.md` item 13.
 
 ### Balance & Equity
 
@@ -103,7 +108,7 @@ Before deploying a live trading bot:
 - [ ] State persistence (engine_state.json / state.json) with atomic writes
 - [ ] `--dry-run` mode available for testing
 - [ ] GitHub PAT valid for dashboard sync
-- [ ] Resting limit orders for TP *(planned — see CLOUD_MIGRATION_GUIDE.md item 13)*
+- [x] Resting limit orders for TP *(implemented on Aster bot 2026-03-17 — see CLOUD_MIGRATION_GUIDE.md item 13)*
 
 ---
 
@@ -121,3 +126,4 @@ Before deploying a live trading bot:
 | Status file | `trading/spot/live/v14/status.json` |
 | Capital ledger | `trading/spot/live/v14/capital_ledger.json` |
 | Dashboard | https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html |
+| TP execution | Resting limit sell on exchange (primary) + candle-based detection (fallback) — implemented 2026-03-17 |

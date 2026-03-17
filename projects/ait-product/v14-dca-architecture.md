@@ -224,5 +224,6 @@ This engine stands on extensive V13 research:
 - [x] Equity-tiered coin cap added to PM (2026-03-06)
 - [x] Trend Score multiplier wired into PM allocation (2026-03-06) — `Adjusted Score = Base × Trend Mult` in `rebalance_daily()`
 - [x] TP fill model fix (2026-03-17) — TP now checked against candle high/low (simulates limit order fill on wick touch). Fills at TP price, not wick extreme. Previously used candle close, missing valid TP fills.
+- [x] Resting limit orders for TP (2026-03-17) — `run_v14_live_aster.py` now places a limit sell on the exchange at TP price after every BUY fill. Order recovered on restart, cancelled on phase change. Dual approach: limit order (primary) + candle-based detection (fallback). Verified on exchange (order 485775318).
 - [ ] Correlation gate for broad market stress *(planned pre-live)*
 - [ ] 30+ days paper data → evaluate live deployment at scale

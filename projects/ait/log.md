@@ -9,8 +9,8 @@ _Reverse chronological. Key events only._
 - **Live bot complications**: Duplicate instances (scheduled task + manual launch) caused race condition. Instance A sold successfully at $0.7757, Instance B failed and corrupted state. Required manual reconciliation.
 - **Capital update**: $300 → $340 (fresh $40 USDT deposit). Updated DEFAULT_CAPITAL, state.json, HEARTBEAT.md.
 - **GitHub PAT renewed**: `openclaw-deploy` token expired 2026-03-16, replaced.
-- **Docs updated**: v14-system-spec.md, v14-dca-architecture.md, CLOUD_MIGRATION_GUIDE.md (item 12), HEARTBEAT.md
-- **Architectural gap identified**: Live bot should place resting limit sell orders at TP price instead of poll-then-market-sell. Documented as pre-live migration requirement.
+- **Resting limit orders implemented** on `run_v14_live_aster.py`: bot now places a limit sell order on the Aster exchange at the TP price when a position opens. After every BUY fill → cancel old TP order, place new limit sell at updated TP for full position. Startup recovery reads `_tp_order_id` from `state.json`. Phase change cancels the order. Engine candle-based detection retained as fallback (dual approach). Verified on exchange — order 485775318. New `SpotExchangeClient` methods: `place_limit_sell()`, `cancel_tp_order()`, `check_order_status()`.
+- **Docs updated**: v14-system-spec.md, v14-dca-architecture.md, CLOUD_MIGRATION_GUIDE.md (items 12 + 13), LIVE_VS_PAPER_DIFFERENCES.md, log.md, incident report, memory files, HEARTBEAT.md
 - All 4 bots confirmed healthy and running post-fix.
 
 ## 2026-03-10

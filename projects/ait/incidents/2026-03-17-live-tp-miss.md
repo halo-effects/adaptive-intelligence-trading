@@ -109,11 +109,16 @@
 
 ## Documentation Still Needed
 
-### 1. Limit Order Architecture (Priority: High — pre-live migration)
-The live bot should place resting limit sell orders at the TP price when a position opens, rather than relying on poll-then-market-sell. This should be:
-- Documented in `CLOUD_MIGRATION_GUIDE.md` as a requirement for `run_v14_portfolio_live.py`
-- Added to `v14-dca-architecture.md` as an architectural decision
-- Covers: order placement on entry, order updates on DCA layer adds (new avg entry → new TP), order cancellation on phase change
+### 1. Limit Order Architecture ✅ DONE (2026-03-17)
+Resting limit sell orders implemented in `run_v14_live_aster.py`. Bot places a limit sell
+on the Aster exchange at the TP price after every BUY fill. Order ID (`_tp_order_id`)
+persisted in `state.json` for crash recovery. Cancelled and replaced on DCA layer adds
+(new avg entry → new TP). Cancelled on phase change. Engine candle-based detection
+retained as fallback. Verified on exchange (order 485775318).
+- `CLOUD_MIGRATION_GUIDE.md` item 13: updated (implemented, with reference pattern for `run_v14_portfolio_live.py`)
+- `v14-dca-architecture.md`: [x] checklist item added
+- `v14-system-spec.md` §5.1: dual TP approach documented
+- `LIVE_VS_PAPER_DIFFERENCES.md`: updated from PLANNED to IMPLEMENTED
 
 ### 2. Deposit Handling (Priority: Medium)
 No formal process exists for handling fresh deposits to the live account. Should document:

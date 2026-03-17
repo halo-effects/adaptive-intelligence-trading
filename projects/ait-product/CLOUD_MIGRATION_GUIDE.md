@@ -275,30 +275,27 @@ All 8 imports must pass before proceeding.
     a market sell via the executor — the actual fill price comes from the exchange, not
     the engine. Ensure the live runner uses `result.get("price")` from the exchange
     response (as `run_v14_live_aster.py` already does) rather than the engine's TP price.
-13. **Resting limit orders for TP (Priority: HIGH):** The current live bot uses a
-    poll-then-market-sell pattern — it polls candles, detects TP in software, then
-    fires a market sell. This has three failure modes observed in production
-    (incident 2026-03-17):
-    - Bot process dies → no TP execution at all
-    - Exchange API returns errors → bot is blind, misses candles
-    - Candle close below TP but wick above → TP missed (fixed by item 12, but
-      still depends on bot being alive)
-    
-    **The production live runner MUST place a resting limit sell order on the exchange
-    at the TP price when a position is opened.** This ensures:
-    - TP fills automatically even if the bot is down
-    - No dependency on candle polling or API reliability for exits
-    - Exact fill at TP price (no slippage from market sell)
-    
-    Implementation notes:
-    - Place limit sell at `avg_entry * (1 + TP_PCT)` after each BUY fill
-    - Cancel and replace the limit sell when a new DCA layer is added (new avg entry → new TP)
-    - Cancel limit sell on phase change or manual intervention
-    - Track order IDs in engine state for cancel/replace
-    - Handle partial fills and order expiry
-    - `--dry-run` mode should log limit order placement without executing
+13. **Resting limit orders for TP:** ✅ **IMPLEMENTED on `run_v14_live_aster.py` (2026-03-17)**
 
-This step is a development task — flag for completion before cutover.
+    The live Aster bot now places a resting limit sell order on the exchange at the TP
+    price whenever a position is opened. This eliminates the poll-then-market-sell
+    failure modes documented in incident 2026-03-17:
+    - Bot process dies → limit order still on book, fills automatically
+    - Exchange API errors → bot is blind, but exchange executes the order
+    - Candle close below TP but wick above → limit sell fills on touch (already fixed by item 12)
+
+    **Implemented behaviors (Aster bot):**
+    - After every BUY fill → cancel old TP order, place new limit sell at updated TP price for full position size
+    - On startup → recover existing limit order from `state.json` (`_tp_order_id`) or place a fresh one
+    - Each poll cycle → check if limit order was filled; if yes, sync engine state
+    - Phase change → cancel TP order before transition
+    - Engine candle-based TP detection retained as fallback (belt and suspenders)
+    - TP order ID persisted in `state.json` under `_tp_order_id` for crash recovery
+
+    **New methods on `SpotExchangeClient`:** `place_limit_sell()`, `cancel_tp_order()`, `check_order_status()`
+
+    **For `run_v14_portfolio_live.py`:** Follow the same pattern — already proven on Aster.
+    The implementation in `run_v14_live_aster.py` is the reference.
 
 ---
 
@@ -980,7 +977,7 @@ python -u trading/spot/backfill_scanner_coins.py --coins NEW/USDT
 
 | Item | Owner | Status | Notes |
 |------|-------|--------|-------|
-| Create `run_v14_portfolio_live.py` | Engineering | PENDING | Copy paper runner, enable real orders, add `--confirm`/`--dry-run`, keep state persistence, add exchange reconciliation, remove PID lock, equity from exchange API, CSV-as-truth for realized PnL, `--fresh` loads existing trades |
+| Create `run_v14_portfolio_live.py` | Engineering | PENDING | Copy paper runner, enable real orders, add `--confirm`/`--dry-run`, keep state persistence, add exchange reconciliation, remove PID lock, equity from exchange API, CSV-as-truth for realized PnL, `--fresh` loads existing trades. Resting limit orders for TP: follow `run_v14_live_aster.py` pattern (item 13). |
 | Create `run_candle_collector.sh` (Linux) | Engineering | PENDING | Must include 3-step pipeline: collect → resample_daily → scanner. Template the Windows `.ps1` version. |
 | Create `sync_dashboard.sh` as git-committed file | Engineering | PENDING | Template in Section 9.1 above |
 | Centralize `DB_PATH` into `trading/spot/config.py` | Engineering | RECOMMENDED | 6 files independently define DB_PATH. Two had wrong paths. Single import eliminates this bug class. |
