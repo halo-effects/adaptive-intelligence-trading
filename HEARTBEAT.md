@@ -5,7 +5,7 @@
 ### V14 Live Bot (Aster — ASTER/USDT) ⚠️ REAL MONEY
 - Check `trading/spot/live/v14/status.json` for bot health
 - Alert if: `running` is false, drawdown > 15%, or status.json stale (>65 min)
-- **Capital: $300** real USDT. Alert if balance drifts significantly.
+- **Capital: $340** real USDT ($300 seed + $40 deposit 2026-03-17). Alert if balance drifts significantly.
 - Profile: High, 12 layers, 1.5% TP, 1.5x leverage
 - Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "V14LiveAster"`
 - Scheduled Task: `V14LiveAster` (at boot) — confirmed exists as of 2026-03-09

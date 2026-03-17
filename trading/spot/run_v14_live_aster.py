@@ -49,7 +49,7 @@ from trading.spot.exchange_client import SpotExchangeClient
 SYMBOL = "ASTER/USDT"
 DB_SYMBOL = "ASTER/USDT"
 DEFAULT_OUTPUT_DIR = _WORKSPACE / "trading" / "spot" / "live" / "v14"
-DEFAULT_CAPITAL = 300.0
+DEFAULT_CAPITAL = 340.0
 DEFAULT_PROFILE = "high"
 DEFAULT_START_DATE = "2025-10-01"
 LIVE_POLL_INTERVAL = 65  # seconds (slightly over 1 min to avoid rate limits)
@@ -501,6 +501,136 @@ class TradeTracker:
 
 
 # ---------------------------------------------------------------------------
+# Capital Ledger — local deposit/withdrawal tracking
+# (Aster DEX does not expose deposit/withdrawal history via API)
+# ---------------------------------------------------------------------------
+
+def load_capital_ledger(ledger_path: Path) -> Optional[dict]:
+    """Load capital ledger from JSON file. Returns None if file doesn't exist."""
+    if not ledger_path.exists():
+        return None
+    try:
+        with open(ledger_path) as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load capital ledger: {e}")
+        return None
+
+
+def save_capital_ledger(ledger_path: Path, ledger: dict):
+    """Atomically save capital ledger to JSON (write .tmp then rename)."""
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = ledger_path.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(ledger, f, indent=2)
+    tmp.replace(ledger_path)
+
+
+def record_ledger_transaction(
+    ledger_path: Path,
+    tx_type: str,
+    amount: float,
+    note: str = "",
+) -> dict:
+    """Record a deposit/withdrawal/seed in the capital ledger.
+
+    tx_type: 'seed' | 'deposit' | 'withdrawal'
+    Returns the updated ledger dict.
+    """
+    ledger = load_capital_ledger(ledger_path) or {
+        "seed_capital": amount,
+        "current_capital": 0.0,
+        "transactions": [],
+    }
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ledger["transactions"].append({
+        "date": today,
+        "type": tx_type,
+        "amount": amount,
+        "note": note,
+    })
+    if tx_type in ("deposit", "seed"):
+        ledger["current_capital"] = ledger.get("current_capital", 0.0) + amount
+    elif tx_type == "withdrawal":
+        ledger["current_capital"] = ledger.get("current_capital", 0.0) - amount
+    save_capital_ledger(ledger_path, ledger)
+    return ledger
+
+
+def print_ledger_summary(ledger_path: Path):
+    """Print a human-readable capital ledger summary and exit."""
+    ledger = load_capital_ledger(ledger_path)
+    if ledger is None:
+        print(f"No capital ledger found at {ledger_path}")
+        return
+    seed = ledger.get("seed_capital", 0.0)
+    current = ledger.get("current_capital", 0.0)
+    txns = ledger.get("transactions", [])
+    total_deposits = sum(t["amount"] for t in txns if t["type"] == "deposit")
+    total_withdrawals = sum(t["amount"] for t in txns if t["type"] == "withdrawal")
+    print("=" * 50)
+    print("  Capital Ledger Summary")
+    print("=" * 50)
+    print(f"  Seed capital:      ${seed:.2f}")
+    print(f"  Total deposits:    ${total_deposits:.2f}")
+    print(f"  Total withdrawals: ${total_withdrawals:.2f}")
+    print(f"  Current capital:   ${current:.2f}")
+    print("-" * 50)
+    print("  Transactions:")
+    for t in txns:
+        note = f"  [{t.get('note', '')}]" if t.get("note") else ""
+        print(f"    {t['date']}  {t['type']:12s}  ${t['amount']:.2f}{note}")
+    print("=" * 50)
+
+
+# ---------------------------------------------------------------------------
+# PID Lock — prevent duplicate live bot instances
+# ---------------------------------------------------------------------------
+
+def _acquire_pid_lock(lock_path: Path) -> bool:
+    """Acquire a PID lock file. Returns True if lock acquired, False if
+    another live bot instance is already running."""
+    if lock_path.exists():
+        try:
+            old_pid = int(lock_path.read_text().strip())
+            # Check if the old process is still alive
+            try:
+                os.kill(old_pid, 0)  # Signal 0 = existence check only
+                # Process exists — is it actually the live bot?
+                import subprocess
+                result = subprocess.run(
+                    ["wmic", "process", "where", f"ProcessId={old_pid}", "get", "CommandLine"],
+                    capture_output=True, text=True, timeout=5
+                )
+                if "run_v14_live_aster" in result.stdout:
+                    return False  # Another live bot is genuinely running
+                else:
+                    logger.warning(
+                        f"Stale PID lock (PID {old_pid} exists but isn't a live bot). Overwriting."
+                    )
+            except OSError:
+                logger.warning(f"Stale PID lock (PID {old_pid} no longer running). Overwriting.")
+        except (ValueError, IOError):
+            logger.warning("Corrupt PID lock file. Overwriting.")
+
+    # Write our PID
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path.write_text(str(os.getpid()))
+    return True
+
+
+def _release_pid_lock(lock_path: Path):
+    """Release the PID lock file if it belongs to this process."""
+    try:
+        if lock_path.exists():
+            stored_pid = int(lock_path.read_text().strip())
+            if stored_pid == os.getpid():
+                lock_path.unlink()
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------------
 # V14LiveBot
 # ---------------------------------------------------------------------------
 
@@ -516,10 +646,24 @@ class V14LiveBot:
         dry_run: bool = False,
     ):
         self.symbol = SYMBOL
-        self.capital = capital
         self.profile = profile
         self.output_dir = Path(output_dir or DEFAULT_OUTPUT_DIR)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Load capital from ledger if available — it is the source of truth.
+        # This overrides DEFAULT_CAPITAL / --capital arg when ledger exists.
+        _ledger_path = self.output_dir / "capital_ledger.json"
+        _ledger = load_capital_ledger(_ledger_path)
+        if _ledger is not None:
+            _ledger_capital = _ledger.get("current_capital", capital)
+            if abs(_ledger_capital - capital) > 0.01:
+                logger.info(
+                    f"Capital loaded from ledger: ${_ledger_capital:.2f} "
+                    f"(arg/default was ${capital:.2f})"
+                )
+            capital = _ledger_capital
+        self.capital = capital
+
         self.start_date = start_date
         self.dry_run = dry_run
         # Spot trading = no leverage. Override to 1.0 regardless of profile.
@@ -1127,11 +1271,46 @@ class V14LiveBot:
                     f"Engine: ${engine_value:.2f} (${engine_cash:.2f} cash + "
                     f"{engine_coins:.4f} coins)"
                 )
-                send_telegram(
-                    f"⚠️ {TG_PREFIX} <b>Balance drift: {drift_pct:.1f}%</b>\n"
-                    f"Exchange: ${exchange_value:.2f}\n"
-                    f"Engine: ${engine_value:.2f}"
-                )
+
+                if engine_coins == 0:
+                    # No open position — drift is likely a deposit or withdrawal.
+                    # Auto-adjust capital and record to the capital ledger.
+                    tx_type = "deposit" if drift > 0 else "withdrawal"
+                    tx_amount = abs(drift)
+                    tx_note = f"Auto-detected {tx_type} via periodic reconciliation ({drift_pct:.1f}% drift)"
+                    logger.info(
+                        f"Probable {tx_type} detected: ${tx_amount:.2f} "
+                        f"(drift {drift_pct:.1f}%). Auto-adjusting capital and recording to ledger."
+                    )
+
+                    # Record to capital ledger
+                    ledger_path = self.output_dir / "capital_ledger.json"
+                    record_ledger_transaction(ledger_path, tx_type, tx_amount, note=tx_note)
+
+                    # Auto-adjust engine capital and self.cash to match exchange
+                    old_capital = eng.capital
+                    eng.capital = exchange_value  # no coins open, so value = USDT
+                    self.capital = eng.capital
+                    self.cash = eng.capital
+
+                    logger.info(
+                        f"Capital auto-adjusted: ${old_capital:.2f} → ${eng.capital:.2f}"
+                    )
+                    send_telegram(
+                        f"{'📥' if tx_type == 'deposit' else '📤'} {TG_PREFIX} "
+                        f"<b>{tx_type.capitalize()} detected: ${tx_amount:.2f}</b>\n"
+                        f"Drift: {drift_pct:.1f}% (no open position)\n"
+                        f"Capital adjusted: ${old_capital:.2f} → ${eng.capital:.2f}\n"
+                        f"Recorded in capital ledger."
+                    )
+                else:
+                    # Open position present — drift could be price movement, NOT auto-adjusting.
+                    send_telegram(
+                        f"⚠️ {TG_PREFIX} <b>Balance drift: {drift_pct:.1f}%</b>\n"
+                        f"Exchange: ${exchange_value:.2f}\n"
+                        f"Engine: ${engine_value:.2f}\n"
+                        f"Position open — not auto-adjusting."
+                    )
             else:
                 logger.debug(f"Reconciliation OK — drift {drift_pct:.1f}%")
 
@@ -1360,20 +1539,59 @@ def main():
                         help="Test connectivity and exit")
     parser.add_argument("--confirm", action="store_true",
                         help="Required to actually trade with real money")
+    # Capital ledger management flags (do not start the bot)
+    parser.add_argument("--deposit", type=float, default=None, metavar="AMOUNT",
+                        help="Record a manual deposit to the capital ledger and exit")
+    parser.add_argument("--withdraw", type=float, default=None, metavar="AMOUNT",
+                        help="Record a manual withdrawal from the capital ledger and exit")
+    parser.add_argument("--ledger", action="store_true",
+                        help="Print capital ledger summary and exit")
 
     args = parser.parse_args()
-
-    bot = V14LiveBot(
-        capital=args.capital,
-        profile=args.profile,
-        dry_run=args.dry_run,
-    )
 
     # Force UTF-8 stdout on Windows
     if sys.platform == "win32":
         import io
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+    # Ledger management commands — run without starting the bot
+    ledger_path = Path(DEFAULT_OUTPUT_DIR) / "capital_ledger.json"
+    Path(DEFAULT_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+
+    if args.ledger:
+        print_ledger_summary(ledger_path)
+        sys.exit(0)
+
+    if args.deposit is not None:
+        if args.deposit <= 0:
+            print(f"ERROR: Deposit amount must be positive (got {args.deposit})")
+            sys.exit(1)
+        ledger = record_ledger_transaction(
+            ledger_path, "deposit", args.deposit,
+            note=f"Manual deposit via --deposit flag"
+        )
+        print(f"✅ Recorded deposit of ${args.deposit:.2f}")
+        print(f"   New current_capital: ${ledger['current_capital']:.2f}")
+        sys.exit(0)
+
+    if args.withdraw is not None:
+        if args.withdraw <= 0:
+            print(f"ERROR: Withdrawal amount must be positive (got {args.withdraw})")
+            sys.exit(1)
+        ledger = record_ledger_transaction(
+            ledger_path, "withdrawal", args.withdraw,
+            note=f"Manual withdrawal via --withdraw flag"
+        )
+        print(f"✅ Recorded withdrawal of ${args.withdraw:.2f}")
+        print(f"   New current_capital: ${ledger['current_capital']:.2f}")
+        sys.exit(0)
+
+    bot = V14LiveBot(
+        capital=args.capital,
+        profile=args.profile,
+        dry_run=args.dry_run,
+    )
 
     if args.test:
         print("🧪 Testing Aster connectivity...")
@@ -1390,10 +1608,24 @@ def main():
         print("Run with --confirm to trade live, or --dry-run to test.")
         sys.exit(1)
 
-    bot.run(
-        skip_backfill=args.skip_backfill,
-        fresh=args.fresh,
-    )
+    # PID lock — prevent duplicate live bot instances
+    lock_path = Path(DEFAULT_OUTPUT_DIR) / "bot.pid"
+    if not _acquire_pid_lock(lock_path):
+        old_pid = lock_path.read_text().strip()
+        print(f"ERROR: Another V14 live bot instance is already running (PID {old_pid}). Exiting.")
+        logger.error(f"Another V14 live bot instance is already running (PID {old_pid}). Exiting.")
+        sys.exit(1)
+
+    logger.info(f"PID lock acquired: {lock_path} (PID {os.getpid()})")
+
+    try:
+        bot.run(
+            skip_backfill=args.skip_backfill,
+            fresh=args.fresh,
+        )
+    finally:
+        _release_pid_lock(lock_path)
+        logger.info("PID lock released.")
 
 
 if __name__ == "__main__":

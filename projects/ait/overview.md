@@ -14,7 +14,8 @@ _Last updated: 2026-03-10_
 
 ## Architecture Documents
 - `projects/ait-product/V14PM_SYSTEM_ARCHITECTURE.md` (v1.1) — Complete system reference
-- `projects/ait-product/CLOUD_MIGRATION_GUIDE.md` (v1.1) — Linux deployment guide
+- `projects/ait-product/CLOUD_MIGRATION_GUIDE.md` (v1.2) — Linux deployment guide
+- `projects/ait-product/LIVE_VS_PAPER_DIFFERENCES.md` — Live vs paper architecture, production checklist
 - `projects/ait-product/V14PM_FULL_AUDIT.md` — End-to-end code audit (2026-03-10)
 - `projects/ait-product/CODE_AUDIT_FINDINGS.md` — Bug tracker
 - `projects/ait-product/conviction-stack-spec.md` — Signal stack specification

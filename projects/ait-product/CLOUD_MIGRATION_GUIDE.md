@@ -275,6 +275,28 @@ All 8 imports must pass before proceeding.
     a market sell via the executor — the actual fill price comes from the exchange, not
     the engine. Ensure the live runner uses `result.get("price")` from the exchange
     response (as `run_v14_live_aster.py` already does) rather than the engine's TP price.
+13. **Resting limit orders for TP (Priority: HIGH):** The current live bot uses a
+    poll-then-market-sell pattern — it polls candles, detects TP in software, then
+    fires a market sell. This has three failure modes observed in production
+    (incident 2026-03-17):
+    - Bot process dies → no TP execution at all
+    - Exchange API returns errors → bot is blind, misses candles
+    - Candle close below TP but wick above → TP missed (fixed by item 12, but
+      still depends on bot being alive)
+    
+    **The production live runner MUST place a resting limit sell order on the exchange
+    at the TP price when a position is opened.** This ensures:
+    - TP fills automatically even if the bot is down
+    - No dependency on candle polling or API reliability for exits
+    - Exact fill at TP price (no slippage from market sell)
+    
+    Implementation notes:
+    - Place limit sell at `avg_entry * (1 + TP_PCT)` after each BUY fill
+    - Cancel and replace the limit sell when a new DCA layer is added (new avg entry → new TP)
+    - Cancel limit sell on phase change or manual intervention
+    - Track order IDs in engine state for cancel/replace
+    - Handle partial fills and order expiry
+    - `--dry-run` mode should log limit order placement without executing
 
 This step is a development task — flag for completion before cutover.
 
