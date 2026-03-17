@@ -1,6 +1,6 @@
 # The MSTR Problem: Bitcoin Treasury Without the Blowup Risk
 
-*MicroStrategy turned corporate treasury into a leveraged Bitcoin bet. What if you could get the upside without the existential risk?*
+*MicroStrategy turned corporate treasury into a leveraged Bitcoin bet. BTC+ lets you earn more Bitcoin while keeping yours in cold storage.*
 
 ---
 
@@ -12,9 +12,9 @@ Because here's what MSTR actually is: a leveraged, concentrated, single-asset be
 
 It's the most popular Bitcoin treasury strategy in the world. It's also a ticking time bomb dressed in a suit.
 
-What if there was a way to build Bitcoin treasury exposure with structural upside — where the base asset mechanically appreciates, the floor price can never decrease, and the entire position can generate yield while sitting in your treasury?
+What if there was a way to grow your Bitcoin holdings where the base asset mechanically appreciates, the floor price can never decrease, you can get your entire Bitcoin position back into cold storage immediately — and still keep earning more Bitcoin on top?
 
-That's what Stable+ paired with Bitcoin makes possible. And it's a fundamentally different model than anything Wall Street is doing.
+That's BTC+. And it makes everything MSTR does look like financial engineering from the stone age.
 
 ---
 
@@ -60,154 +60,181 @@ When the next crypto winter hits, the question won't be whether MSTR-style treas
 
 ---
 
-## What a Structural Bitcoin Treasury Looks Like
+## The Custody Problem Nobody Wants to Talk About
 
-Now imagine a different model. Instead of buying Bitcoin with leverage and hoping the price goes up, you build a treasury position where:
+Here's something that gets glossed over in every MSTR analysis: **Michael Saylor holds your Bitcoin.**
 
-1. **The base asset can only go up** — not because of market speculation, but because of mathematical contract mechanics
-2. **Every transaction makes the floor higher** — buys push it up, sells inject fees that push it up
-3. **You can borrow against the position at 100% LTV** — extracting USDC without selling, with no price-based liquidation
-4. **The position generates passive income** — from trading fees, not from finding new buyers
-5. **Bitcoin exposure is maintained** — through a BTC/Stable+ trading pair where the Stable+ side only appreciates
+When you buy MSTR stock, you don't own Bitcoin. You own shares in a company that owns Bitcoin. Your exposure depends entirely on:
+- MicroStrategy's management decisions
+- Their custodian's security
+- Their ability to service debt
+- Regulatory actions against the company
+- The integrity of a single corporate entity
 
-This is what a Stable+ Bitcoin treasury looks like on Basis.
+If MicroStrategy gets hacked, you lose. If they're forced to sell in a downturn, you lose. If regulators freeze their assets, you lose. If management makes a catastrophic decision, you lose.
 
-### How It Works
-
-**Create a Stable+ token** as your treasury's base asset. This token has a mathematically enforced floor price that can only increase.
-
-**Pair it with BTC** (or wBTC/BTC.b on BNB Chain). Now you have a trading pair where one side is Bitcoin and the other side is an asset that only goes up.
-
-**Every trade on the pair generates fees.** 0.50% per transaction. 20% of that goes to the token creator (you). The rest injects into the pool, raising the floor.
-
-**Borrow against your Stable+ holdings at 100% LTV.** Need cash? Don't sell your position. Borrow against it. The loan has no price-based liquidation — only a timer you control. Your Stable+ tokens keep appreciating while they're being used as collateral.
-
-**Refinance as the floor rises.** As trading activity raises your token's floor, your collateral is worth more. Borrow additional USDC against the increased value — still without selling.
-
-```python
-from basis import BasisClient
-
-client = BasisClient.create(private_key="0x...")
-
-# Create a Stable+ treasury token
-result = client.factory.create_token(
-    "BTCTRS",                # symbol
-    "Bitcoin Treasury+",     # name
-    0,                       # hybridMultiplier=0 → Stable+ (price only goes up)
-    False,                   # not frozen
-    10000,                   # USDC for bonding
-    1000,                    # start LP
-    False, 0, False          # no auto-vest for treasury token
-)
-
-# Borrow against the position — no selling required
-client.loans.take_loan(
-    MAINTOKEN,
-    treasury_token_address,
-    token_amount,
-    90  # 90-day loan
-)
-```
+You're trusting one company with tens of billions in Bitcoin. That's not decentralized finance. That's a single point of failure wrapped in a stock ticker.
 
 ---
 
-## MSTR vs Stable+ Treasury: Side by Side
+## BTC+: How It Actually Works
 
-| Feature | MSTR Model | Stable+ Treasury |
-|---------|-----------|-----------------|
-| Bitcoin exposure | Direct (buy and hold BTC) | Via BTC/Stable+ trading pair |
+BTC+ is a Stable+ token paired with wBTC (wrapped Bitcoin) on Basis. It's launched exclusively by Basis, and the mechanics are simple but revolutionary.
+
+**The key: it's wBTC in, wBTC out.** Not dollars. Not stablecoins. Bitcoin.
+
+### Step 1: Bring in Your wBTC
+
+You deposit wBTC to buy BTC+ tokens. Your Bitcoin goes into the BTC+/wBTC liquidity pool. You receive BTC+ tokens — which are Stable+ tokens, meaning their floor price can only go up.
+
+### Step 2: Borrow 100% of Your wBTC Back
+
+Immediately after buying BTC+, you take a 100% LTV loan against your BTC+ position. The loan is paid out in wBTC — not stablecoins, not IOUs. Real, withdrawable wBTC.
+
+**You now hold 100% of your original wBTC back in your hands.**
+
+### Step 3: Put Your wBTC in Cold Storage
+
+Take the wBTC from the loan and move it to your hardware wallet. Your Ledger. Your Trezor. Your multisig vault. Whatever cold storage you trust.
+
+Your Bitcoin is now in your full custody. Not on an exchange. Not in a company's vault. Not under Michael Saylor's control. **Yours.**
+
+### Step 4: Your BTC+ Keeps Appreciating
+
+Meanwhile, your BTC+ tokens are being held as collateral for the loan — but they're still Stable+ tokens. The floor price only goes up. Every trade on the BTC+/wBTC pair injects fees that raise the floor.
+
+Your collateral is getting *more valuable* while it's sitting in the loan contract.
+
+### Step 5: Take More wBTC as the Floor Rises
+
+As BTC+ appreciates from trading activity, the floor value of your collateral increases. You can now take additional 100% LTV loans — paid in wBTC — against the increased value.
+
+**You're earning more Bitcoin without ever bringing your original Bitcoin back.**
+
+You never have to sell. You never have to deposit more. The rising floor of BTC+ generates new borrowing capacity that pays out in wBTC. You withdraw it, add it to cold storage, and repeat.
+
+This is the **buy, borrow, die** strategy — executed with an infinite money glitch built into the Stable+ token model.
+
+---
+
+## The Tax Advantage
+
+This is where it gets even better.
+
+When you take a loan against your BTC+ position, **that's not a taxable event.** In most jurisdictions:
+
+- Borrowing is not income — it's debt
+- No capital gains tax — you didn't sell anything
+- No staking tax — you didn't earn yield
+- No income tax — you received a loan, not payment
+
+You're accessing the value of your Bitcoin position through loans — tax-free. Compare that to selling Bitcoin (taxable capital gains), earning staking yield (taxable income), or receiving dividends from MSTR stock (taxable).
+
+The wBTC you borrow goes straight to your cold storage. Tax-free. And as BTC+ appreciates, you borrow more. Tax-free.
+
+This is the same "buy, borrow, die" strategy that billionaires have used in traditional finance for decades — borrow against appreciating assets, never sell, never trigger taxes. Except on Basis, the appreciating asset has a floor that can only go up, and the loans have no price-based liquidation risk.
+
+---
+
+## ~36x Leverage on Bitcoin — Without the Downside
+
+Because BTC+ uses the Stable+ token model, where the floor price always equals the spot price, it supports the maximum leverage available on Basis — up to approximately 36x.
+
+Think about what that means:
+
+**On traditional platforms:** 36x leverage on Bitcoin means if BTC drops 2.8%, you're liquidated. Your entire position is gone. A normal Tuesday afternoon in crypto can wipe you out.
+
+**On Basis:** 36x leverage on BTC+ means you have 36x exposure to an asset whose floor price can only go up. There is no price-based liquidation. The floor doesn't drop. Your leverage is calculated against a number that only increases.
+
+This isn't leverage as the market understands it. This is amplified exposure to a one-directional asset.
+
+MSTR's effective leverage is 1.5-2.5x on an asset with unlimited downside. BTC+ offers up to ~36x on an asset with zero downside (the floor). The risk profiles aren't comparable — they're in different universes.
+
+---
+
+## MSTR vs BTC+: Side by Side
+
+| Feature | MSTR Model | BTC+ on Basis |
+|---------|-----------|--------------|
+| What you hold | Shares in a company | wBTC in your cold storage |
+| Custody of Bitcoin | MicroStrategy holds it | **You hold it** — full self-custody |
 | Downside risk | Unlimited — leveraged losses | Floor price can only go up |
-| Funding model | Debt issuance + stock dilution | Trading fees (organic revenue) |
-| Revenue source | BTC price appreciation only | Creator fees (20% of all trades) + floor appreciation |
+| Funding model | Debt issuance + stock dilution | wBTC in, wBTC out — no external debt |
+| Revenue source | BTC price appreciation only | Trading fees + floor appreciation + loan refinancing |
 | Liquidation risk | Yes — debt obligations in downturns | No price-based liquidation — time-only |
-| Cash access | Sell BTC or issue more debt | Borrow at 100% LTV, no selling needed |
+| Cash/BTC access | Sell stock or wait for dividends (none) | Borrow wBTC at 100% LTV — tax-free |
 | Death spiral risk | Yes — forced selling during crashes | Structurally impossible (sells raise the floor) |
-| Yield while holding | None (BTC doesn't yield) | Trading fees generate ongoing USDC income |
-| Leverage effect | Reflexive — amplifies both directions | One-directional — floor only goes up |
-| Corporate debt required | Yes — billions in convertible notes | No — self-funded through trading activity |
+| Maximum leverage | ~2.5x (with full downside) | ~36x (against a floor that only goes up) |
+| Tax efficiency | Capital gains on sale, dividends taxed | Loans are not taxable events |
+| Hack/custody risk | Single corporate custodian | Your BTC is in your own cold storage |
+| Yield while holding | None (BTC doesn't yield) | Trading fees generate ongoing wBTC income |
 
-The contrast is stark. MSTR's model works until it doesn't. The Stable+ model works because the math doesn't have a failure mode.
+MSTR loses on every single row.
 
 ---
 
-## The Yield Problem MSTR Can't Solve
+## The Infinite Loop
 
-One of MSTR's fundamental weaknesses: **Bitcoin doesn't yield.**
+Let's trace the full BTC+ cycle:
 
-A company holding $30 billion in Bitcoin generates exactly $0 in income from that Bitcoin. The only "return" is price appreciation. To fund operations, pay debt service, and keep the lights on, MSTR must either:
-- Issue more debt (increasing leverage)
-- Dilute shareholders (issuing stock)
-- Sell Bitcoin (defeating the purpose)
+1. **Buy BTC+** with 1 wBTC
+2. **Borrow** 1 wBTC back at 100% LTV → put it in cold storage
+3. **Wait** as trading activity raises the BTC+ floor
+4. **Refinance** → borrow additional wBTC against the increased floor value
+5. **Add** new wBTC to cold storage
+6. **Repeat** as the floor continues to rise
 
-There is no fourth option. Bitcoin sitting in a wallet is a speculative position, not a revenue-generating asset.
+At no point do you sell anything. At no point do you bring your cold storage Bitcoin back. At no point do you trigger a taxable event. At no point does your position face price-based liquidation risk.
 
-A Stable+ treasury generates income from day one:
-- **Creator fees:** 20% of every trade on the token pair — paid in USDC, continuously
-- **Floor appreciation:** Every transaction raises the floor, increasing the treasury's base value
-- **Loan proceeds:** Borrow USDC against the position to fund operations — no dilution, no additional debt
+You started with 1 wBTC. You now have 1 wBTC in cold storage, PLUS additional wBTC from refinancing, PLUS a BTC+ position that keeps appreciating. The only thing you manage is the loan expiry timer — extend it before it expires.
 
-A Stable+ token doing $100,000/day in trading volume generates $500/day in total fees, of which $100/day flows directly to the treasury creator. That's $36,500/year in organic revenue from a single trading pair — with zero cost of capital.
+**The infinite money glitch.** Your Bitcoin makes more Bitcoin. The floor only goes up. The loans are tax-free. You keep everything in your own custody.
 
-Scale that to $1M/day volume and you're looking at $365,000/year in creator fees alone. Plus the floor appreciation. Plus the ability to borrow against the entire position.
+Try doing that with MSTR stock.
 
-Compare that to MSTR paying hundreds of millions per year in interest on convertible notes — just for the privilege of holding an asset that generates zero income.
+---
+
+## The Custody Comparison
+
+This deserves its own spotlight because it's the sleeper argument that changes everything.
+
+**MSTR:** Michael Saylor's company holds ~$30B in Bitcoin in custodial vaults. If those vaults get hacked — like the countless exchange hacks in crypto's history — shareholders lose everything. If regulators seize the assets, shareholders lose everything. If the company goes bankrupt, shareholders are creditors in line behind bondholders.
+
+**BTC+:** Your wBTC is in *your* cold storage. Your hardware wallet. Your multisig. Your setup. If Basis disappeared tomorrow, you'd still have your wBTC. The only thing at risk is the BTC+ collateral in the loan contract — and that's an appreciating asset with a floor that can only go up.
+
+The risk profiles aren't even in the same category. MSTR asks you to trust a corporation with your Bitcoin. BTC+ gives your Bitcoin back and lets you earn more from a position you fully control.
+
+---
+
+## For Individual Bitcoin Holders
+
+If you hold Bitcoin today, you have two choices:
+
+**Option A:** Hold it in cold storage. Earn nothing. Hope the price goes up. If you need cash, sell some — triggering taxes and reducing your position.
+
+**Option B (BTC+):** Buy BTC+ with your wBTC. Borrow 100% of your wBTC back — tax-free. Put it back in cold storage. As BTC+ appreciates from trading fees, borrow more wBTC. Never sell. Never trigger taxes. Never lose custody of your Bitcoin.
+
+Same Bitcoin. Same cold storage. But now you're also earning more Bitcoin from the BTC+ position — while your original holdings sit safely in your own wallet.
 
 ---
 
 ## For DAOs and Protocol Treasuries
 
-The MSTR comparison applies to corporate treasuries, but the same logic extends to DAOs and crypto-native organizations.
+The same logic scales to organizations:
 
 **The current DAO treasury playbook:**
 - Hold ETH/BTC (price volatile, no yield)
 - Hold stablecoins (no appreciation, depeg risk)
-- Deploy into yield farms (smart contract risk, impermanent loss, yield compression)
-- Diversify into "blue chips" (still fully exposed to downside)
+- Deploy into yield farms (smart contract risk, impermanent loss)
 
-**The Stable+ treasury playbook:**
-- Hold Stable+ tokens (floor only goes up, appreciation from fees)
-- Pair with BTC, ETH, or SOL for blue-chip exposure with structural floor
-- Borrow against holdings at 100% LTV for operational expenses
-- Refinance as floor appreciates — never sell the position
-- Earn creator fees as trading activity generates organic revenue
+**The BTC+ treasury playbook:**
+- Deposit wBTC into BTC+ (floor only goes up)
+- Borrow 100% of wBTC back into treasury cold storage
+- Earn from trading fee injection as BTC+ floor rises
+- Refinance for additional wBTC as the position appreciates
+- Never sell, never trigger taxes, never lose custody
 
-Every DAO treasurer who has watched their treasury lose 60% in a bear market should be paying attention to this. A treasury asset with a one-way floor isn't a theoretical improvement — it's a structural solution to the problem that has plagued every crypto treasury since the first DAO was created.
-
----
-
-## For Individual Investors
-
-This isn't just for corporations and DAOs. Individual investors and traders face the same dilemma:
-
-**"I believe in Bitcoin long-term, but I can't stomach the 50-80% drawdowns."**
-
-A BTC/Stable+ pair gives you Bitcoin market exposure where the Stable+ side of your position can only appreciate. You're participating in Bitcoin trading activity, earning fees from every trade, and holding an asset with a mathematically enforced floor.
-
-You're not buying Bitcoin and hoping. You're building a position that generates income from Bitcoin *trading volume* regardless of which direction the price moves. Bull market? High volume, more fees, floor rises faster. Bear market? Lower volume, fewer fees, but the floor still only goes up — it just moves slower.
-
-That's a fundamentally different risk profile than holding spot BTC. And it's infinitely better than buying MSTR stock and hoping the leveraged house of cards doesn't collapse.
-
----
-
-## The Leverage Comparison
-
-MSTR's effective leverage on Bitcoin is estimated at 1.5-2.5x depending on the debt cycle. This means:
-- When BTC rises 10%, MSTR might rise 15-25%
-- When BTC drops 10%, MSTR might drop 15-25%
-- When BTC drops 50%, MSTR's equity can be under serious stress
-
-Stable+ paired with Bitcoin offers a different leverage dynamic through 100% LTV loans:
-
-1. Hold $100K of Stable+ in your BTC treasury pair
-2. Borrow $100K USDC at 100% LTV
-3. Deploy that USDC into more Stable+ or other strategies
-4. Your effective exposure is 2x — similar to MSTR — but with a critical difference:
-
-**Your collateral's floor price can't go down.** The loan can't be liquidated by price drops. The only risk is the loan timer — which you control with a simple extension.
-
-MSTR's 2x leverage means 2x downside risk. Stable+ 2x exposure through loans means the base position can only appreciate, and the loan has no price liquidation.
-
-Same leverage. Fundamentally different risk.
+Every DAO treasurer who has watched their treasury lose 60% in a bear market should be paying attention. BTC+ doesn't just protect against drawdowns — it gives you your Bitcoin back while building an appreciating position on top.
 
 ---
 
@@ -215,45 +242,26 @@ Same leverage. Fundamentally different risk.
 
 Michael Saylor has become the most famous Bitcoin advocate in corporate America. His conviction is genuine. His strategy has created enormous wealth during bull markets.
 
-But conviction and good structural design are different things. A strategy that relies on the asset going up to avoid default is not a treasury strategy — it's a leveraged bet with a corporate wrapper.
+But conviction and good structural design are different things. A strategy that relies on the asset going up to avoid default is not a treasury strategy — it's a leveraged bet with a corporate wrapper. And it requires you to hand your Bitcoin to someone else and hope they don't lose it.
 
-The next generation of Bitcoin treasury management won't be built on debt issuance and stock dilution. It will be built on assets with structural floors, organic fee revenue, and 100% LTV lending that doesn't depend on price going up to survive a downturn.
+The next generation of Bitcoin treasury management won't be built on debt issuance, stock dilution, and custodial risk. It will be built on assets with structural floors, self-custody, tax-free borrowing, and leverage that doesn't carry downside risk.
 
-The model already exists. It's called Stable+. And it's available to anyone — from a solo investor to a DAO to a Fortune 500 company — right now.
+**Buy. Borrow. Keep your Bitcoin. Earn more Bitcoin. Repeat.**
 
----
-
-## Getting Started
-
-For any organization or individual looking to build a structural Bitcoin treasury:
-
-```python
-from basis import BasisClient
-
-client = BasisClient.create(private_key="0x...")
-
-# 1. Create your treasury token (Stable+ — floor only goes up)
-treasury = client.factory.create_token(
-    "MYTREASURY", "My Bitcoin Treasury+",
-    0, False, 10000, 1000, False, 0, False
-)
-
-# 2. Buy into your own treasury token
-client.trading.buy(treasury_address, 50_000_000)  # 50 USDC
-
-# 3. Borrow against it for operational capital — no selling
-client.loans.take_loan(MAINTOKEN, treasury_address, token_amount, 90)
-
-# 4. Check your creator fee earnings
-price = client.trading.get_usd_price(treasury_address)
-```
-
-Four calls. A treasury with a rising floor, organic revenue, and 100% LTV borrowing capability.
-
-No convertible notes. No stock dilution. No hoping Bitcoin doesn't crash during your debt maturity window.
-
-Just math.
+The model exists. It's called BTC+. And it makes MSTR look like a horse and buggy.
 
 ---
 
-*Stable+ Treasury: Bitcoin exposure with a rising floor. Organic fee revenue. 100% LTV borrowing. The treasury model that works in bull markets AND bear markets. [launchonbasis.com](https://launchonbasis.com)*
+## Where BTC+ Stands Today
+
+BTC+ is built on the Stable+ token model — the same core technology that's live and testable right now on the Basis beta on BNB Chain. Every Stable+ token in the beta demonstrates the exact mechanics that BTC+ will use: the one-way floor ratchet, 100% LTV loans, leverage up to ~36x, and fee-driven appreciation.
+
+The difference is simple: current beta tokens are paired with USDB (the test stablecoin). BTC+ will be paired with wBTC — making it wBTC in, wBTC out. Same Stable+ engine, different base pair.
+
+If you want to see the floor mechanics, the loan system, and the leverage in action before BTC+ launches, you can test it today at [launchonbasis.com](https://launchonbasis.com) using USDB. Zero financial risk. Everything you see is exactly how BTC+ will behave — just with Bitcoin instead of a test token.
+
+BTC+ will be launched exclusively by Basis. The mechanics are proven. The contracts are deployed. The only thing left is the wBTC pair going live.
+
+---
+
+*BTC+ on Basis: wBTC in, wBTC out. 100% LTV loans in Bitcoin — tax-free. Full self-custody. Floor only goes up. Up to ~36x leverage with zero downside. The Bitcoin treasury model that gives your BTC back. [launchonbasis.com](https://launchonbasis.com)*
