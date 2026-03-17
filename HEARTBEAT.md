@@ -23,18 +23,6 @@
 - Scheduled Task: `V14PaperBot`
 - Backfill verified: +552% on $10K, matches standalone backtest
 
-### V14-ETF Paper Bot (Hyperliquid — SOL/XRP/LTC/HBAR/ADA) — LIVE as of 2026-03-02
-- Check `trading/spot/paper/v14etf/status.json` for bot health
-- Alert if: process not running or status.json stale (>65 min)
-- Coins: SOL/USDT, XRP/USDT, LTC/USDT, HBAR/USDT, ADA/USDT — 1h candles, daily signal ticks
-- Profile: High (1.5x leverage), BO=40%, Dev=1.5%, Mult=1.5x, 12 layers, TP=1.5%
-- Engine: V14 DCA-only with ROUTER v2 signals
-- Fresh start (no backfill history) — started 2026-03-02 with $10K
-- Entry point: `python -u -m trading.spot.run_v14etf_paper --capital 10000 --profile high --exchange hyperliquid --fresh`
-- Telegram: All notifications prefixed with `[V14-ETF]`
-- Scheduled Task: `V14ETFPaperBot` (created 2026-03-02)
-- Dashboard: `docs/dashboardV14ETF.html`
-
 ### V14 PM (Portfolio Manager) Paper Bot — LIVE as of 2026-03-05
 - **Capital**: $50K paper. 10 coin slots (equity-tiered). Dynamic allocation with trend multiplier.
 - **Profile**: High, 12 layers, **1.0x leverage** (no leverage), Hyperliquid perps (longs + shorts)
