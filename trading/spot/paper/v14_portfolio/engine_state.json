@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "saved_at": "2026-03-17T07:04:07.368876+00:00",
+  "saved_at": "2026-03-17T08:03:32.072433+00:00",
   "last_rebalance_date": "2026-03-17",
   "approved_symbols": [
     "DOT/USDT",
@@ -9,7 +9,7 @@
     "TAO/USDT",
     "ZRO/USDT"
   ],
-  "current_equity": 53521.4194,
+  "current_equity": 53593.09940000001,
   "engines": {
     "ZRO/USDT": {
       "symbol": "ZRO/USDT",
@@ -52,9 +52,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773147661.006382,
-      "current_price": 2.1901
+      "current_price": 2.2025
     },
     "NEAR/USDT": {
       "symbol": "NEAR/USDT",
@@ -97,9 +97,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773147369.267956,
-      "current_price": 1.4492
+      "current_price": 1.4632
     },
     "DOT/USDT": {
       "symbol": "DOT/USDT",
@@ -142,9 +142,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773147369.393933,
-      "current_price": 1.5946
+      "current_price": 1.6125
     },
     "PENDLE/USDT": {
       "symbol": "PENDLE/USDT",
@@ -152,15 +152,15 @@
       "profile": "high",
       "leverage": 1.0,
       "phase": "LONG_DCA",
-      "capital": 6018.11927604833,
+      "capital": 6017.758188891767,
       "phase_start_date": "2026-03-10 12:00:00",
       "long_coins": 0,
       "long_avg_entry": 0,
       "long_layers": 0,
-      "long_last_buy": "2026-03-17 06:00:00",
+      "long_last_buy": "2026-03-17 07:00:00",
       "long_tp": 0,
       "long_cost": 0,
-      "long_trades": -23,
+      "long_trades": -24,
       "long_wins": 4,
       "long_pnl": 134.56253950569578,
       "short_coins": 0.0,
@@ -181,15 +181,15 @@
       "top_detected": false,
       "conviction_fired": false,
       "markup_cycles_completed": 0,
-      "total_fees": 13.002265232679672,
+      "total_fees": 13.363352389242571,
       "adx_below_20_streak": 0,
       "router_from_top": false,
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773147661.178598,
-      "current_price": 1.3473
+      "current_price": 1.3544
     },
     "INJ/USDT": {
       "symbol": "INJ/USDT",
@@ -197,15 +197,15 @@
       "profile": "high",
       "leverage": 1.0,
       "phase": "LONG_DCA",
-      "capital": 4538.642566583928,
+      "capital": 4538.370248029933,
       "phase_start_date": "2026-03-10 12:00:00",
       "long_coins": 0,
       "long_avg_entry": 0,
       "long_layers": 0,
-      "long_last_buy": "2026-03-17 06:00:00",
+      "long_last_buy": "2026-03-17 07:00:00",
       "long_tp": 0,
       "long_cost": 0,
-      "long_trades": -66,
+      "long_trades": -67,
       "long_wins": 3,
       "long_pnl": 54.45893726276435,
       "short_coins": 0.0,
@@ -226,15 +226,15 @@
       "top_detected": false,
       "conviction_fired": false,
       "markup_cycles_completed": 0,
-      "total_fees": 20.09940988584803,
+      "total_fees": 20.371728439843064,
       "adx_below_20_streak": 0,
       "router_from_top": false,
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773147369.504771,
-      "current_price": 3.2167
+      "current_price": 3.2376
     },
     "ENS/USDT": {
       "symbol": "ENS/USDT",
@@ -242,15 +242,15 @@
       "profile": "high",
       "leverage": 1.0,
       "phase": "LONG_DCA",
-      "capital": 2432.5515865845064,
+      "capital": 2432.405633489311,
       "phase_start_date": "2026-03-10 12:00:00",
       "long_coins": 0,
       "long_avg_entry": 0,
       "long_layers": 0,
-      "long_last_buy": "2026-03-17 06:00:00",
+      "long_last_buy": "2026-03-17 07:00:00",
       "long_tp": 0,
       "long_cost": 0,
-      "long_trades": -68,
+      "long_trades": -69,
       "long_wins": 1,
       "long_pnl": 15.205931163022985,
       "short_coins": 0.0,
@@ -271,15 +271,15 @@
       "top_detected": false,
       "conviction_fired": false,
       "markup_cycles_completed": 0,
-      "total_fees": 10.470329398503353,
+      "total_fees": 10.616282493698423,
       "adx_below_20_streak": 0,
       "router_from_top": false,
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773147661.250771,
-      "current_price": 6.6526
+      "current_price": 6.6485
     },
     "JUP/USDT": {
       "symbol": "JUP/USDT",
@@ -322,9 +322,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773147369.599817,
-      "current_price": 0.1652
+      "current_price": 0.1663
     },
     "TAO/USDT": {
       "symbol": "TAO/USDT",
@@ -367,9 +367,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773147369.712595,
-      "current_price": 280.35
+      "current_price": 276.41
     },
     "SOL/USDC": {
       "symbol": "SOL/USDC",
@@ -377,15 +377,15 @@
       "profile": "high",
       "leverage": 1.0,
       "phase": "LONG_DCA",
-      "capital": 2039.7263526947208,
+      "capital": 2039.603969113559,
       "phase_start_date": "2026-03-10 12:00:00",
       "long_coins": 0,
       "long_avg_entry": 0,
       "long_layers": 0,
-      "long_last_buy": "2026-03-17 06:00:00",
+      "long_last_buy": "2026-03-17 07:00:00",
       "long_tp": 0,
       "long_cost": 0,
-      "long_trades": -67,
+      "long_trades": -68,
       "long_wins": 2,
       "long_pnl": 49.015224919269265,
       "short_coins": 0.0,
@@ -406,15 +406,15 @@
       "top_detected": false,
       "conviction_fired": false,
       "markup_cycles_completed": 0,
-      "total_fees": 9.121871999775937,
+      "total_fees": 9.24425558093762,
       "adx_below_20_streak": 0,
       "router_from_top": false,
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773147369.839433,
-      "current_price": 93.835
+      "current_price": 94.375
     },
     "SNX/USDT": {
       "symbol": "SNX/USDT",
@@ -457,9 +457,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773147661.450984,
-      "current_price": 0.32405
+      "current_price": 0.32691
     },
     "STX/USDT": {
       "symbol": "STX/USDT",
@@ -467,15 +467,15 @@
       "profile": "high",
       "leverage": 1.0,
       "phase": "LONG_DCA",
-      "capital": 2010.7463596928656,
+      "capital": 2010.625714911284,
       "phase_start_date": "2026-03-02 18:00:00",
       "long_coins": 0,
       "long_avg_entry": 0,
       "long_layers": 0,
-      "long_last_buy": "2026-03-17 06:00:00",
+      "long_last_buy": "2026-03-17 07:00:00",
       "long_tp": 0,
       "long_cost": 0,
-      "long_trades": -63,
+      "long_trades": -64,
       "long_wins": 5,
       "long_pnl": 99.53592407787026,
       "short_coins": 0.0,
@@ -496,29 +496,29 @@
       "top_detected": false,
       "conviction_fired": false,
       "markup_cycles_completed": 0,
-      "total_fees": 10.215738559770365,
+      "total_fees": 10.336383341351937,
       "adx_below_20_streak": 0,
       "router_from_top": false,
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-17",
       "_live_mode": true,
-      "_last_candle_ts": 1773727200000,
+      "_last_candle_ts": 1773730800000,
       "start_time": 1773190815.569966,
-      "current_price": 0.26269
+      "current_price": 0.26339
     }
   },
   "last_candle_ts": {
-    "ZRO/USDT": 1773727200000,
-    "NEAR/USDT": 1773727200000,
-    "DOT/USDT": 1773727200000,
-    "PENDLE/USDT": 1773727200000,
-    "INJ/USDT": 1773727200000,
-    "ENS/USDT": 1773727200000,
-    "JUP/USDT": 1773727200000,
-    "TAO/USDT": 1773727200000,
-    "SOL/USDC": 1773727200000,
-    "SNX/USDT": 1773727200000,
-    "STX/USDT": 1773727200000
+    "ZRO/USDT": 1773730800000,
+    "NEAR/USDT": 1773730800000,
+    "DOT/USDT": 1773730800000,
+    "PENDLE/USDT": 1773730800000,
+    "INJ/USDT": 1773730800000,
+    "ENS/USDT": 1773730800000,
+    "JUP/USDT": 1773730800000,
+    "TAO/USDT": 1773730800000,
+    "SOL/USDC": 1773730800000,
+    "SNX/USDT": 1773730800000,
+    "STX/USDT": 1773730800000
   },
   "open_deals": {
     "JUP/USDT:long": {
