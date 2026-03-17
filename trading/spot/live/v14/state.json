@@ -1,7 +1,7 @@
 {
-  "saved_at": "2026-03-17T15:03:51.184855+00:00",
+  "saved_at": "2026-03-17T16:04:14.572655+00:00",
   "capital": 340.0,
-  "cash": 258.6673715446658,
+  "cash": 257.3981721311765,
   "deal_counter": 5,
   "open_deals": {
     "ASTER/USDT:long": {
@@ -13,14 +13,15 @@
       "invested": 110.8664004
     }
   },
-  "last_candle_ts": 1773756000000,
+  "last_candle_ts": 1773759600000,
+  "tp_order_id": "485775318",
   "engine": {
     "symbol": "ASTER/USDT",
     "initial_capital": 340.0,
     "profile": "high",
     "leverage": 1.0,
     "phase": "LONG_DCA",
-    "capital": 258.6673715446658,
+    "capital": 257.3981721311765,
     "phase_start_date": "2025-10-07 00:00:00",
     "long_coins": 145.410717996113,
     "long_avg_entry": 0.76244,
@@ -55,8 +56,8 @@
     "router_from_markdown": false,
     "_last_daily_date": "2026-03-17",
     "_live_mode": true,
-    "_last_candle_ts": 1773756000000,
+    "_last_candle_ts": 1773759600000,
     "start_time": 1772546476.657223,
-    "current_price": 0.76346
+    "current_price": 0.75404
   }
 }

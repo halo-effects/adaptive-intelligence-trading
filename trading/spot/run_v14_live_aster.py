@@ -389,6 +389,56 @@ class AsterOrderExecutor:
             )
             return None
 
+    # -----------------------------------------------------------------------
+    # Resting limit order helpers
+    # -----------------------------------------------------------------------
+
+    def place_limit_sell(self, qty: float, price: float, reason: str = "TP") -> Optional[str]:
+        """Place a resting limit sell order. Returns order ID or None on failure."""
+        qty = self._round_amount(qty)
+        price = self._round_price(price)
+
+        if self.dry_run:
+            logger.info(
+                f"[DRY RUN] LIMIT SELL {qty} {self.base_currency} @ ${price:.6f} — {reason}"
+            )
+            return f"dry_run_tp_{int(time.time())}"
+
+        try:
+            logger.info(
+                f"Placing LIMIT SELL {qty} {self.symbol} @ ${price:.6f} — {reason}"
+            )
+            order = self.client.create_limit_sell(self.symbol, qty, price)
+            order_id = order.get("id")
+            logger.info(
+                f"LIMIT SELL placed: order_id={order_id}, qty={qty:.6f}, price=${price:.6f}"
+            )
+            return str(order_id) if order_id is not None else None
+        except Exception as e:
+            logger.error(f"LIMIT SELL placement failed: {e}\n{traceback.format_exc()}")
+            return None
+
+    def cancel_tp_order(self, order_id: str) -> bool:
+        """Cancel an order by ID. Returns True if cancelled successfully."""
+        if self.dry_run:
+            logger.info(f"[DRY RUN] Cancel order {order_id}")
+            return True
+        try:
+            self.client.cancel_order(order_id, self.symbol)
+            logger.info(f"Order {order_id} cancelled successfully")
+            return True
+        except Exception as e:
+            logger.warning(f"Cancel order {order_id} failed: {e}")
+            return False
+
+    def check_order_status(self, order_id: str) -> Optional[dict]:
+        """Fetch order status from exchange. Returns order dict or None on failure."""
+        try:
+            return self.client.fetch_order(order_id, self.symbol)
+        except Exception as e:
+            logger.warning(f"fetch_order {order_id} failed: {e}")
+            return None
+
 
 # ---------------------------------------------------------------------------
 # Trade Tracker (same pattern as paper bot)
@@ -696,6 +746,9 @@ class V14LiveBot:
         # Last processed candle timestamp
         self._last_candle_ts: int = 0
 
+        # Resting TP limit sell order ID (None = no order placed)
+        self._tp_order_id: Optional[str] = None
+
         # Balance reconciliation
         self._last_recon_time: float = 0
         self._recon_interval: float = 300  # 5 minutes
@@ -904,6 +957,13 @@ class V14LiveBot:
             try:
                 cycle_start = time.time()
 
+                # Check if the resting TP limit sell has been filled by the exchange
+                if self._tp_order_id:
+                    try:
+                        self._check_tp_order_fill()
+                    except Exception as e:
+                        logger.error(f"TP order fill check error: {e}")
+
                 # Fetch latest candles from Aster
                 try:
                     ohlcv = self.exchange_client.fetch_ohlcv(self.symbol, "1h", limit=50)
@@ -990,6 +1050,18 @@ class V14LiveBot:
                         f"{prev_phase} → {self.engine.phase}\n"
                         f"Reason: {reason}"
                     )
+                    # Cancel TP order on phase change — position may be unwinding
+                    if self._tp_order_id and self.executor:
+                        logger.info(
+                            f"Phase change {prev_phase} → {self.engine.phase}: "
+                            f"cancelling TP limit sell {self._tp_order_id}"
+                        )
+                        self.executor.cancel_tp_order(self._tp_order_id)
+                        self._tp_order_id = None
+                        send_telegram(
+                            f"🔄 {TG_PREFIX} TP limit sell cancelled (phase change: "
+                            f"{prev_phase} → {self.engine.phase})"
+                        )
 
                 # Periodic balance reconciliation
                 self._maybe_reconcile()
@@ -1049,7 +1121,55 @@ class V14LiveBot:
                 action["cost"] = actual_cost
                 self.tracker.process_actions(self.symbol, [action], ts)
 
+                # Place / replace resting TP limit sell order
+                eng = self.engine._engine
+                if eng and eng.long_coins > 0 and eng.long_tp > 0:
+                    # Cancel existing TP order — TP price shifts after each DCA layer
+                    if self._tp_order_id:
+                        logger.info(
+                            f"Cancelling existing TP order {self._tp_order_id} "
+                            f"before placing updated one"
+                        )
+                        self.executor.cancel_tp_order(self._tp_order_id)
+                        self._tp_order_id = None
+
+                    tp_price = eng.long_tp
+                    tp_qty = eng.long_coins
+                    new_order_id = self.executor.place_limit_sell(
+                        tp_qty, tp_price, reason=f"TP after BUY (L{eng.long_layers})"
+                    )
+                    if new_order_id:
+                        self._tp_order_id = new_order_id
+                        logger.info(
+                            f"TP limit sell placed: id={new_order_id}, "
+                            f"qty={tp_qty:.4f}, price=${tp_price:.6f}"
+                        )
+                        send_telegram(
+                            f"🎯 {TG_PREFIX} <b>TP Limit Sell Placed</b>\n"
+                            f"Order ID: {new_order_id}\n"
+                            f"Qty: {tp_qty:.4f} @ ${tp_price:.6f}\n"
+                            f"Layers: {eng.long_layers} | Avg entry: ${eng.long_avg_entry:.6f}"
+                        )
+                    else:
+                        logger.warning(
+                            "TP limit sell placement FAILED — candle-based TP detection "
+                            "remains as fallback"
+                        )
+                        send_telegram(
+                            f"⚠️ {TG_PREFIX} TP limit sell placement FAILED\n"
+                            f"Candle-based TP detection still active as fallback\n"
+                            f"Qty: {tp_qty:.4f} @ ${tp_price:.6f}"
+                        )
+
         elif act_type == "SELL":
+            # Cancel resting TP limit sell before market sell to avoid double-fill
+            if self._tp_order_id:
+                logger.info(
+                    f"Cancelling TP limit sell {self._tp_order_id} before market sell"
+                )
+                self.executor.cancel_tp_order(self._tp_order_id)
+                self._tp_order_id = None
+
             result = self.executor.execute_sell(qty, price, reason)
             if result and result.get("status") in ("filled", "dry_run"):
                 proceeds = result.get("proceeds", qty * price)
@@ -1064,6 +1184,8 @@ class V14LiveBot:
                     f"Reason: {reason}"
                 )
                 self.tracker.process_actions(self.symbol, [action], ts)
+                # TP order already cancelled above; ensure cleared
+                self._tp_order_id = None
             else:
                 # SELL FAILED — roll back engine state so it retries next tick
                 eng = self.engine._engine
@@ -1237,6 +1359,193 @@ class V14LiveBot:
             logger.warning("CFGI poll failed: %s", e)
             self._cfgi_last_poll = now
 
+    def _check_tp_order_fill(self):
+        """Check if the resting TP limit sell order has been filled by the exchange.
+
+        Called every poll cycle. Handles fill, cancellation, and expiry.
+        """
+        if not self._tp_order_id or not self.executor:
+            return
+
+        order = self.executor.check_order_status(self._tp_order_id)
+        if order is None:
+            logger.warning(f"Could not fetch TP order status for {self._tp_order_id}")
+            return
+
+        status = order.get("status", "")
+
+        if status == "closed":
+            # Order filled — update state and record trade
+            fill_price = order.get("average") or order.get("price") or 0.0
+            fill_qty = order.get("filled") or order.get("amount") or 0.0
+            proceeds = order.get("cost") or (fill_price * fill_qty)
+            fee_cost = 0.0
+            if order.get("fee"):
+                fee_cost = order["fee"].get("cost", 0) or 0.0
+
+            logger.info(
+                f"TP LIMIT SELL FILLED: {fill_qty:.4f} @ ${fill_price:.6f} = "
+                f"${proceeds:.2f} (fee: ${fee_cost:.4f})"
+            )
+
+            # Calculate PnL
+            eng = self.engine._engine
+            invested = (eng.long_cost or 0.0) if eng else 0.0
+            pnl = proceeds - invested - fee_cost if invested > 0 else proceeds - invested
+            pnl_pct = (pnl / invested * 100) if invested > 0 else 0.0
+
+            # Update cash
+            self.cash += proceeds
+
+            # Zero out engine position
+            if eng:
+                eng.capital += proceeds
+                eng.long_trades = (eng.long_trades or 0) + 1
+                if pnl >= 0:
+                    eng.long_wins = (eng.long_wins or 0) + 1
+                eng.long_pnl = (eng.long_pnl or 0.0) + pnl
+                eng.long_coins = 0.0
+                eng.long_avg_entry = 0.0
+                eng.long_layers = 0
+                eng.long_last_buy = None
+                eng.long_tp = 0.0
+                eng.long_cost = 0.0
+
+            # Record trade in tracker
+            ts_now = datetime.now(timezone.utc)
+            sell_action = {
+                "action": "SELL",
+                "price": fill_price,
+                "qty": fill_qty,
+                "pnl": round(pnl, 4),
+                "pnl_pct": round(pnl_pct, 2),
+                "reason": "TP limit sell filled",
+                "cost": proceeds,
+            }
+            self.tracker.process_actions(self.symbol, [sell_action], ts_now)
+
+            # Clear TP order ID
+            self._tp_order_id = None
+
+            # Notify
+            emoji = "🟢" if pnl >= 0 else "🔴"
+            send_telegram(
+                f"{emoji} {TG_PREFIX} <b>TP LIMIT SELL FILLED</b>\n"
+                f"Qty: {fill_qty:.4f} @ ${fill_price:.6f}\n"
+                f"Proceeds: ${proceeds:.2f} | Fee: ${fee_cost:.4f}\n"
+                f"PnL: ${pnl:.2f} ({pnl_pct:.1f}%)"
+            )
+
+            # Persist
+            try:
+                self._save_state()
+                self.tracker.save_csv()
+            except Exception as e:
+                logger.error(f"State save after TP fill failed: {e}")
+
+        elif status in ("canceled", "expired"):
+            logger.warning(
+                f"TP limit sell order {self._tp_order_id} was {status} — clearing. "
+                f"Candle-based TP detection remains active as fallback."
+            )
+            send_telegram(
+                f"⚠️ {TG_PREFIX} TP limit sell order <b>{status}</b>\n"
+                f"Order ID: {self._tp_order_id}\n"
+                f"Candle-based TP detection still active"
+            )
+            self._tp_order_id = None
+
+        # status 'open' or 'partially_filled' → nothing to do yet
+
+    def _recover_tp_order(self):
+        """On startup, reconcile TP limit sell orders with exchange open orders.
+
+        Cases:
+        - Open sell order exists + position open → adopt it as _tp_order_id
+        - Open sell order exists + no position   → stale order, cancel it
+        - No open sell order + position open     → place a fresh TP limit sell
+        - No open sell order + no position       → nothing to do
+        """
+        if self.executor is None:
+            return
+
+        eng = self.engine._engine
+        has_position = eng is not None and eng.long_coins > 0
+
+        try:
+            open_orders = self.exchange_client.fetch_open_orders(self.symbol)
+        except Exception as e:
+            logger.warning(f"Could not fetch open orders for TP recovery: {e}")
+            return
+
+        # Filter for limit sell orders only
+        limit_sells = [
+            o for o in open_orders
+            if o.get("side") == "sell" and o.get("type") in ("limit", "LIMIT")
+        ]
+
+        if limit_sells:
+            if has_position:
+                # Sort by timestamp descending; adopt the most recent as our TP order
+                limit_sells.sort(key=lambda o: o.get("timestamp", 0), reverse=True)
+                tp_order = limit_sells[0]
+                self._tp_order_id = str(tp_order.get("id"))
+                logger.info(
+                    f"TP RECOVERY: Adopted existing limit sell {self._tp_order_id} "
+                    f"@ ${tp_order.get('price', 0):.6f} x {tp_order.get('amount', 0):.4f}"
+                )
+                send_telegram(
+                    f"🔧 {TG_PREFIX} TP order recovered on startup\n"
+                    f"Order: {self._tp_order_id}\n"
+                    f"Price: ${tp_order.get('price', 0):.6f} | "
+                    f"Qty: {tp_order.get('amount', 0):.4f}"
+                )
+                # Cancel any surplus limit sells
+                for extra in limit_sells[1:]:
+                    eid = str(extra.get("id"))
+                    logger.info(f"TP RECOVERY: Cancelling duplicate limit sell {eid}")
+                    self.executor.cancel_tp_order(eid)
+            else:
+                # No open position → stale orders from a crash; cancel all
+                for o in limit_sells:
+                    oid = str(o.get("id"))
+                    logger.warning(
+                        f"TP RECOVERY: Cancelling stale limit sell {oid} "
+                        f"(no open position)"
+                    )
+                    self.executor.cancel_tp_order(oid)
+                self._tp_order_id = None
+                send_telegram(
+                    f"🔧 {TG_PREFIX} Stale TP order(s) cancelled on startup\n"
+                    f"Count: {len(limit_sells)} | No open position"
+                )
+        elif has_position and eng.long_tp > 0:
+            # Position open but no TP order — place one now
+            tp_price = eng.long_tp
+            tp_qty = eng.long_coins
+            logger.info(
+                f"TP RECOVERY: No TP order found but position open "
+                f"({tp_qty:.4f} @ TP ${tp_price:.6f}) — placing new limit sell"
+            )
+            new_order_id = self.executor.place_limit_sell(
+                tp_qty, tp_price, reason="TP recovery on startup"
+            )
+            if new_order_id:
+                self._tp_order_id = new_order_id
+                logger.info(f"TP RECOVERY: New TP limit sell placed: {new_order_id}")
+                send_telegram(
+                    f"🔧 {TG_PREFIX} TP limit sell placed on startup (recovery)\n"
+                    f"Order: {new_order_id}\n"
+                    f"Price: ${tp_price:.6f} | Qty: {tp_qty:.4f}"
+                )
+            else:
+                logger.warning(
+                    "TP RECOVERY: Failed to place TP limit sell — "
+                    "candle-based TP detection active as fallback"
+                )
+        else:
+            logger.info("TP RECOVERY: No open orders, no open position — nothing to recover")
+
     def _maybe_reconcile(self):
         """Periodically reconcile engine state with exchange balances."""
         now = time.time()
@@ -1337,6 +1646,7 @@ class V14LiveBot:
             "deal_counter": self.tracker._deal_counter,
             "open_deals": self.tracker._open_deals,
             "last_candle_ts": self._last_candle_ts,
+            "tp_order_id": self._tp_order_id,
             "engine": self.engine.snapshot_state(),
         }
         path = self.output_dir / "state.json"
@@ -1358,6 +1668,7 @@ class V14LiveBot:
             self.tracker._deal_counter = state.get("deal_counter", 0)
             self.tracker._open_deals = state.get("open_deals", {})
             self._last_candle_ts = state.get("last_candle_ts", 0)
+            self._tp_order_id = state.get("tp_order_id", None)
 
             eng_state = state.get("engine", {})
             if eng_state:
@@ -1494,6 +1805,9 @@ class V14LiveBot:
         # This fixes accumulated drift from failed orders, rounding, or
         # any other discrepancy between engine state and reality.
         self._reconcile_on_startup()
+
+        # Recover/reconcile any resting TP limit sell order on the exchange.
+        self._recover_tp_order()
 
         # Save initial state
         try:

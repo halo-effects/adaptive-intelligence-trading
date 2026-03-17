@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 
-const WARNING_ACCEPTED_KEY = "beta_warning_accepted_v4";
+const WARNING_ACCEPTED_KEY = "beta_warning_accepted_v5";
 
 // Pages that should never show the beta gate (marketing / public pages)
 const EXCLUDED_PATHS = ["/", "/index", "/blog", "/api-docs"];
@@ -69,7 +69,7 @@ export default function BetaWarning({ children }: { children: React.ReactNode })
 
           <div className="space-y-4 text-sm sm:text-base leading-relaxed">
             <p>
-              <strong>Every action earns airdrop points.</strong> Trade, create tokens, bet on predictions, lend, and stake — all with free test USD from the faucet. Only BNB gas is real.
+              Basis is in <strong>public beta</strong>. Trade, create tokens, bet on predictions, lend, and stake — all with free test USD from the faucet. Only BNB gas fees are real.
             </p>
 
             <div className={`rounded-xl p-4 ${isDarkMode ? "bg-white/5 border border-white/10" : "bg-gray-50 border border-gray-200"}`}>
@@ -85,20 +85,20 @@ export default function BetaWarning({ children }: { children: React.ReactNode })
             <ul className={`space-y-2.5 text-xs sm:text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
               <li className="flex items-start gap-2">
                 <span className="text-green-400 mt-0.5">&#10003;</span>
-                Points earned now count toward the BASIS airdrop
+                Test USD from the faucet — no real funds needed
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-400 mt-0.5">&#10003;</span>
-                First 500 wallets get Early Bird bonus (+50% on all points)
+                Airdrop reward system coming soon — early users will be remembered
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-purple-400 mt-0.5">&#10003;</span>
-                Claim free test USD from the faucet — zero risk, real rewards
+                Features and contracts may change as we iterate
               </li>
             </ul>
 
             <p className={`text-xs sm:text-sm mt-6 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>
-              Features and contracts may change during beta. Report bugs to earn bonus points.
+              Help us build the future of DeFi. Report bugs and share feedback to shape what Basis becomes.
             </p>
           </div>
 
@@ -107,7 +107,7 @@ export default function BetaWarning({ children }: { children: React.ReactNode })
               onClick={handleAccept}
               className="px-10 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all active:scale-95 bg-blue-600 hover:bg-blue-700 text-white"
             >
-              Start Earning
+              Let&apos;s Go
             </button>
           </div>
         </div>
