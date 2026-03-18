@@ -127,10 +127,15 @@ _Last updated: 2026-03-16 (v4 — SDK docs received, scripts wired up)_
 
 | Item | Status | Notes |
 |---|---|---|
-| Exact loan interest rate | ⏳ | Diamond said "low single digits APR" — TBC |
-| Surge tax parameters | ⏳ | Feature exists, defaults TBD |
-| Oracle provider for BNB | ⏳ | Chainlink / API3 / custom |
-| Audit timeline | ⏳ | Before TGE, budget from raise |
+| Exact loan interest rate | ✅ | 2.0% flat + 0.005%/day (~3.83% for 1yr). Confirmed from contract source 2026-03-16. See `fee-schedule.md` |
+| Surge tax parameters | ✅ | 7-day quota, 1hr min, creator-set decaying rate, max 0.5% Stable+ / 1-15% Floor+. See `fee-schedule.md` |
+| getPotentialPayout() | ✅ | Documented in SDK docs & API reference 2026-03-16. On-chain view function confirmed. |
+| Google Slides from v2 deck | ✅ | Completed by Brett 2026-03-18 |
+| Oracle provider for BNB | ✅ | Chainlink for BTC up/down. Creator-managed or Basis oracle for all others. Per-market, not platform-wide. (Alex, 2026-03-18) |
+| Audit timeline | ⏳ | Before TGE, budget from raise — no specifics yet |
+| SDK beta publish (npm/PyPI) | ⏳ | **No timeline.** Alex reworking entire system to 18 decimals → redeploy. All addresses/ABIs subject to change. |
+| USDB faucet URL | ✅ | No standalone URL. Built into dapp: button on `launchonbasis.com/profile` + hovering overlay (if claimable USDB & balance < 2500). Also via SDK. (Alex, 2026-03-18) |
+| Points system ownership | ✅ → ⏳ | **Alex will build it.** Needs phased spec — manageable chunks. GeeGee to deliver phased build plan. (Alex, 2026-03-18) |
 | Alex's preferred API stack | ✅ | Alex building SDK himself — contract reference delivered 2026-03-14, usage docs to follow |
 
 ---

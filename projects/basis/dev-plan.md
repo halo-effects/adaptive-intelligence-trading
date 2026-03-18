@@ -54,8 +54,8 @@ The platform is fully on-chain. All financial operations (token creation, tradin
 - **All 7 core skill scripts wired to SDK API** (create-prediction, bet, create-token, trade, lend, vault, portfolio) — 2026-03-16
 
 ### 🔧 IN PROGRESS
-- **SDK npm/PyPI publish** — Alex to publish when contracts finalized (beta). Docs are complete.
-- **Points system backend** — not started, no owner. Critical for `points.py` script.
+- **SDK npm/PyPI publish** — No timeline. Alex reworking entire system to 18 decimals, then redeploying. Updating both dapp and SDK. All current contract addresses/ABIs subject to change.
+- **Points system backend** — Alex will build it. Needs phased spec (manageable chunks). GeeGee to deliver phased build spec.
 
 ### 📋 STILL TO BUILD
 
@@ -328,10 +328,12 @@ POST-TGE:
 - ~~"Does SDK expose read-only functions?"~~ → Yes. All modules have read methods that work without private key. Prices, balances, market data, tax rates, leverage simulation.
 - ~~"Contract addresses?"~~ → All 14 addresses documented in SDK. Overridable via constructor options.
 
+**Answered (2026-03-18):**
+- ~~Oracle provider?~~ → **Chainlink for BTC up/down market.** All other markets: creator-managed resolution or Basis's own oracle system. Not a single provider decision — it's per-market-type.
+- ~~USDB faucet URL?~~ → **No standalone URL.** Faucet is built into the dapp: button on `launchonbasis.com/profile`, plus a hovering overlay on other pages if you have claimable USDB and balance < 2500. Also available via SDK.
+- ~~Points system ownership?~~ → **Alex will build it**, but wants it phased — manageable chunks, not dozens of features at once. Needs spec fleshed out in phases.
+
 **Still open:**
-1. Oracle provider decision for BNB Chain (Chainlink / API3 / custom)?
-2. Contract upgrade patterns in use (proxy, diamond, etc.)? Relevant for ABI stability.
-3. Audit timeline and preferred auditor?
-4. Confirm: Is `mixedBuy` the only ASwap function not exposed on frontend? Any others agent-only?
-5. What's the current USDB faucet URL and rate limits for test participants?
-6. Points system backend — who owns this? Critical blocker for airdrop farming.
+1. Contract upgrade patterns in use (proxy, diamond, etc.)? Relevant for ABI stability.
+2. Audit timeline and preferred auditor?
+3. Confirm: Is `mixedBuy` the only ASwap function not exposed on frontend? Any others agent-only?
