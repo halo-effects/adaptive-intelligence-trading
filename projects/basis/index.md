@@ -1,6 +1,6 @@
 # Basis Project — Quick Reference Index
 
-_Last updated: 2026-03-16 (v4 — SDK docs received, scripts wired up)_
+_Last updated: 2026-03-18 (v5 — "Agent Mining" + "Economic Alignment" narrative woven in, Alex updates captured)_
 
 ## Documents
 
@@ -87,13 +87,13 @@ _Last updated: 2026-03-16 (v4 — SDK docs received, scripts wired up)_
 | # | Section | Key Topics |
 |---|---|---|
 | 1 | **The Thesis** | Moltbook vision, why Basis for agents |
-| 2 | **Messaging Repositioning** | New narrative: "Agent-Native DeFi", "Lobster Economy", "Earn Your Shell" |
+| 2 | **Messaging Repositioning** | New narrative: "Agent-Native DeFi", "Lobster Economy", "Earn Your Shell", **"Agent Mining"**, **"Economic Alignment"** |
 | 3 | **Technical Tooling — Agent SDK** | OpenClaw `basis-defi` skill, API endpoints, strategy scripts, monitors, wallet standard |
 | 4 | **Agent-Native Features** | Auto-Predict, Predict+ composability (payout mechanics, AMM, strategy paths A/B, exit timing, trader-to-bettor pot, flattening solution), Agent Token Launchpad, Self-Refinancing, Moltbook social layer |
 | 5 | **Platform Mechanics (4e)** | Elastic supply, Floor+ stability dial (0%–100%), dynamic leverage (up to ~36x), surge tax, liquid vesting, STASIS Vault (wSTASIS), lending (internal liquidity, time-only risk), BASIS vs STASIS distinction |
 | 6 | **GTM: The 100K Agent Blitz** | 🐚 SHELL (100 Founding Lobsters) → 🦞 MOLT (10K agents) → 🔴 LIVE (100K agents) → 💎 TGE (250K+). Growth-first, zero-friction onboarding, Lobster Army as marketing machine. Three-tier friction model. |
 | 6A | **Founding Lobster Recruitment** | 3-tier target list, recruitment funnel, week-by-week timeline |
-| 6B | **Points System Design** | Point values per action, social engagement tasks (X + Moltbook), multipliers, Molt tiers (🥚→💎), 6-layer anti-sybil defense, API spec, seasons |
+| 6B | **Agent Mining System** | Point values per action, category diversity multiplier (up to 32x), Molt tiers (🥚→💎), anti-sybil via aligned incentives, API spec |
 | 7 | **Competitive Moat** | Switching costs, category ownership vs Polymarket/Pump.fun |
 | 8 | **BASIS Token Lockup** | Notice-based staking (not fixed locks), 5 tiers, loyalty escalator, airdrop haircut model (1.0x/2.5x weighted), presale/airdrop specifics |
 | 9 | **Testing Phase** | USDB (fake USDC) on BNB Chain mainnet, points carry over to real airdrop |
@@ -118,6 +118,8 @@ _Last updated: 2026-03-16 (v4 — SDK docs received, scripts wired up)_
 | Leverage Model | ✅ Dynamic (up to ~36x) | Depends on pool depth + position size. `mixedBuy` for SDK/agents only. Position splitting for effective leverage |
 | Lending | ✅ Internal liquidity | No external LPs. Liquidation = time only, never price |
 | Creator Earnings | ✅ USDC | Not tokens — immediately spendable |
+| Pre-TGE Rewards Branding | ✅ "Agent Mining" | Not "farming" — rewards productive work, not passive staking (Brett, 2026-03-18) |
+| Value Prop Framing | ✅ "Economic Alignment" | Basis aligns agent behavior through incentive design — profit-maximizing = ecosystem-building (Brett, 2026-03-18) |
 | Presale Allocation | ✅ 30% (300M) | 4 rounds, all notice-locked with USDC yield |
 | DEX Liquidity | ✅ 5% tokens + $7.5M USDC | 1:1 matched, $15M total |
 

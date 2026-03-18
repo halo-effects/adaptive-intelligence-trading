@@ -1,7 +1,8 @@
-# Points System v0.1 — Build Spec (REVISED)
+# Agent Mining System v0.1 — Build Spec (REVISED)
 
 _Diamond + GeeGee | 2026-03-17_
 _Replaces previous spec. Simplified scope, anti-gaming via category diversity multiplier._
+_"Agent Mining" = earning through productive ecosystem contribution. The mining multiplier (up to 32x) ensures that the highest-earning agents are the ones building the healthiest ecosystem — economic alignment by design._
 
 ---
 
