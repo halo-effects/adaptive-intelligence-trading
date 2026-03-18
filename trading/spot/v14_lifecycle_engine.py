@@ -255,6 +255,35 @@ class V14LifecycleEngine:
                 # Run full daily tick (router evaluates direction, signals compute)
                 actions.extend(self._run_daily_tick(prev_date_ts, daily_close, daily_high, daily_low))
 
+                # ── Live TP catch-up ──
+                # The daily tick uses previous day's OHLC. If today's price already
+                # exceeds TP (e.g. overnight gap up), the daily tick won't see it
+                # and may add DCA layers instead of selling. Run a TP-only check
+                # with the current candle's price to catch this case.
+                # Safe because: if price > avg_entry, the DCA buy check won't fire
+                # (negative drop from avg), so only TP logic runs.
+                if self._live_mode:
+                    eng = self._engine
+                    date_ts_now = pd.Timestamp(ts.replace(tzinfo=None))
+                    if eng.phase == Phase.LONG_DCA and eng.long_coins > 0 and eng.long_tp > 0:
+                        tp_check = high if high is not None and not np.isnan(high) else price
+                        if tp_check >= eng.long_tp:
+                            old_tc = len(eng.trades)
+                            eng._long_dca_tick(date_ts_now, price, high=high)
+                            actions.extend(self._extract_new_actions(old_tc))
+                            if eng.long_coins == 0:
+                                logger.info(f"{self.symbol} Live TP catch-up: sold at daily boundary "
+                                            f"(current price {price:.4f} >= TP {eng.long_tp:.4f})")
+                    elif eng.phase == Phase.SHORT_DCA and eng.short_coins > 0 and eng.short_tp > 0:
+                        tp_check = low if low is not None and not np.isnan(low) else price
+                        if tp_check <= eng.short_tp:
+                            old_tc = len(eng.trades)
+                            eng._short_dca_tick(date_ts_now, price, low=low)
+                            actions.extend(self._extract_new_actions(old_tc))
+                            if eng.short_coins == 0:
+                                logger.info(f"{self.symbol} Live TP catch-up: covered at daily boundary "
+                                            f"(current price {price:.4f} <= TP {eng.short_tp:.4f})")
+
                 # Engine is now warmed up — router has set direction, signals are loaded
                 if not self._warmed_up:
                     self._warmed_up = True
