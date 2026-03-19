@@ -31,9 +31,9 @@ EQUITY_TIER_CAPS = [
 class CapitalRouter:
     """
     Capital Router for V14 Engine.
-    Manages the distribution of capital between active trading (75%) 
-    and reserve holdings (25%), dynamic allocation based on DCA Score,
-    and strict risk caps.
+    Manages the distribution of capital between active trading (90%) 
+    and reserve holdings (10%), dynamic allocation based on DCA Score,
+    and dynamic per-coin caps.
 
     Tier-aware: max coins allowed scales with current portfolio equity.
     On a tier drop the cap is enforced on new T1 entries only — existing
@@ -42,9 +42,9 @@ class CapitalRouter:
     def __init__(self, initial_capital: float):
         self.total_equity = initial_capital
         
-        # 75/25 Pool Split
-        self.active_pool_total = self.total_equity * 0.75
-        self.reserve_pool_total = self.total_equity * 0.25
+        # 90/10 Pool Split (active trading / emergency reserve)
+        self.active_pool_total = self.total_equity * 0.90
+        self.reserve_pool_total = self.total_equity * 0.10
         
         # Track available cash
         self.active_pool_cash = self.active_pool_total
@@ -58,8 +58,8 @@ class CapitalRouter:
         self.tier_coin_cap: int = self.get_tier_coin_cap(self.total_equity)
 
         logger.info(f"Initialized CapitalRouter with ${self.total_equity:.2f} total equity.")
-        logger.info(f"Active Pool (75%): ${self.active_pool_total:.2f}")
-        logger.info(f"Reserve Pool (25%): ${self.reserve_pool_total:.2f}")
+        logger.info(f"Active Pool (90%): ${self.active_pool_total:.2f}")
+        logger.info(f"Reserve Pool (10%): ${self.reserve_pool_total:.2f}")
         logger.info(f"Tier coin cap: {self.tier_coin_cap} coins")
 
     @staticmethod
@@ -199,8 +199,11 @@ class CapitalRouter:
         # 4. Calculate total adjusted score
         total_score = sum(c["adjusted_score"] for c in top_coins)
         
-        # 5. Proportional weighting by adjusted score & 20% max cap per coin
-        max_cap_per_coin = 0.20 * self.active_pool_total
+        # 5. Proportional weighting by adjusted score & dynamic max cap per coin
+        # Scale cap inversely with number of coins:
+        #   1 coin → 100%, 2 → 60%, 3 → 47%, 5 → 36%, 10 → 28%
+        cap_pct = min(1.0, 0.20 + (0.80 / max(len(top_coins), 1)))
+        max_cap_per_coin = cap_pct * self.active_pool_total
         target_allocations = {}
         
         for c in top_coins:

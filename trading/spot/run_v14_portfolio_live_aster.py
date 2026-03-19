@@ -281,6 +281,22 @@ class AsterPerpClient:
         if not dry_run:
             self._exchange.load_markets()
 
+        # Track which symbols we've already set leverage for (avoid repeat API calls)
+        self._leverage_set: set = set()
+
+    def ensure_leverage(self, db_symbol: str, leverage: float = 1.0):
+        """Set leverage for a symbol on the exchange. Called once per symbol.
+        Aster defaults perp pairs to 5x Cross — we must explicitly set 1x."""
+        if self.dry_run or db_symbol in self._leverage_set:
+            return
+        sym = self._aster_symbol(db_symbol)
+        try:
+            self._exchange.set_leverage(int(leverage), sym)
+            self._leverage_set.add(db_symbol)
+            logger.info(f"Exchange leverage set to {int(leverage)}x for {db_symbol} ({sym})")
+        except Exception as e:
+            logger.warning(f"set_leverage({db_symbol}, {leverage}x) failed: {e}")
+
     def _aster_symbol(self, db_symbol: str) -> str:
         """Convert DB symbol (e.g. PEPE/USDT) to Aster perp symbol.
         Handles 1000-prefix for PEPE, BONK, FLOKI."""
@@ -472,6 +488,28 @@ class AsterPerpClient:
             logger.warning(f"check_order_status({order_id}): {e}")
             return {}
 
+    def fetch_open_orders(self, db_symbol: str = None) -> list:
+        """Fetch all open orders, optionally filtered by symbol.
+        Returns list of dicts with id, side, type, price, amount, symbol."""
+        try:
+            sym = self._aster_symbol(db_symbol) if db_symbol else None
+            orders = self._exchange.fetch_open_orders(sym)
+            return [
+                {
+                    "id": str(o.get("id")),
+                    "side": o.get("side"),
+                    "type": o.get("type"),
+                    "price": float(o.get("price") or 0),
+                    "amount": float(o.get("amount") or 0),
+                    "symbol": o.get("symbol", ""),
+                    "timestamp": o.get("timestamp", 0),
+                }
+                for o in orders
+            ]
+        except Exception as e:
+            logger.warning(f"fetch_open_orders failed: {e}")
+            return []
+
     def fetch_open_positions(self) -> dict:
         """Return open perp positions. Keys are base symbols."""
         if self.dry_run:
@@ -615,6 +653,9 @@ class V14PortfolioLiveAster:
 
         # Re-entry cooldown (prevents rapid-fire after TP fills)
         self._reentry_cooldown_until: float = 0.0
+
+        # Periodic reconciliation timer
+        self._last_periodic_recon: float = 0.0
 
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         logger.info(
@@ -862,6 +903,67 @@ class V14PortfolioLiveAster:
         except Exception as e:
             logger.error(f"Reconciliation failed: {e}\n{traceback.format_exc()}")
 
+    # ── Periodic reconciliation ──────────────────────────────────────────────
+
+    def _periodic_reconcile(self):
+        """
+        Periodic reconciliation (every 5 minutes).
+        Compares exchange USDT balance against router + engine totals.
+        Resets idle engine capitals to allocated amounts.
+        """
+        try:
+            exchange_usdt = self.client.fetch_balance()
+
+            # Fetch open perp positions
+            position_value = 0.0
+            try:
+                positions = self.client.fetch_open_positions()
+                for base, pos in positions.items():
+                    entry = pos.get("entry_price", 0)
+                    pqty = pos.get("qty", 0)
+                    position_value += entry * pqty
+            except Exception as e:
+                logger.warning(f"Periodic recon: position fetch failed: {e}")
+
+            exchange_total = exchange_usdt + position_value
+
+            # Engine side: router cash + invested across all coin engines
+            router_cash = self.router.active_pool_cash + self.router.reserve_pool_cash
+            engine_invested = sum(
+                cs.engine._engine.long_cost if cs.engine and cs.engine._engine else 0
+                for cs in self.coins.values()
+            )
+            engine_total = router_cash + engine_invested
+            drift = exchange_total - engine_total
+
+            # Correct router if drift > $1
+            if abs(drift) > 1.0:
+                old_active = self.router.active_pool_cash
+                self.router.active_pool_cash += drift
+                logger.warning(
+                    f"PERIODIC RECON: drift=${drift:+.2f} | "
+                    f"active pool ${old_active:.2f} → ${self.router.active_pool_cash:.2f}"
+                )
+            else:
+                logger.debug(f"Periodic recon OK: drift=${drift:+.2f}")
+
+            # Reset idle engine capitals to allocated amounts
+            for sym, cs in self.coins.items():
+                if not cs.engine or not cs.engine._engine:
+                    continue
+                eng = cs.engine._engine
+                if eng.long_coins == 0 and eng.long_layers == 0:
+                    if abs(eng.capital - cs.allocated_capital) > 0.01:
+                        old_cap = eng.capital
+                        eng.capital = cs.allocated_capital
+                        logger.info(
+                            f"PERIODIC RECON: {sym} engine capital reset "
+                            f"${old_cap:.2f} → ${cs.allocated_capital:.2f} (no position)"
+                        )
+
+        except Exception as e:
+            logger.error(f"Periodic reconciliation failed: {e}")
+
     # ── Funding rate tracking ─────────────────────────────────────────────────
 
     def _update_funding(self):
@@ -896,8 +998,28 @@ class V14PortfolioLiveAster:
             return
         eng = cs.engine._engine
         tp_price = eng.long_tp
+        if not tp_price:
+            return
+
+        # Use actual exchange position size when available (ported from old bot).
+        # Engine's eng.long_coins can drift from reality due to partial fills,
+        # leverage differences, or rounding.
         qty = eng.long_coins
-        if not tp_price or not qty:
+        try:
+            positions = self.client.fetch_open_positions()
+            base = sym.split("/")[0]
+            if base in positions and positions[base].get("qty", 0) > 0:
+                exchange_qty = positions[base]["qty"]
+                if abs(exchange_qty - qty) > 0.001:
+                    logger.info(
+                        f"TP qty for {sym}: using exchange position {exchange_qty:.4f} "
+                        f"(engine had {qty:.4f})"
+                    )
+                    qty = exchange_qty
+        except Exception as e:
+            logger.warning(f"Position fetch for TP qty failed ({sym}), using engine qty: {e}")
+
+        if not qty:
             return
 
         # Cancel existing TP order if any
@@ -936,7 +1058,17 @@ class V14PortfolioLiveAster:
                 logger.error(f"TP check failed for {sym}: {e}")
 
     def _recover_tp_orders(self):
-        """Audit #6: On startup, check if any saved TP orders filled while bot was down."""
+        """On startup, reconcile TP orders with exchange state.
+
+        Ported from old bot's _recover_tp_order pattern:
+        1. Check saved TP order IDs (filled/cancelled while down?)
+        2. Scan exchange for ALL open sell orders (detect orphans)
+        3. For each coin:
+           - Has position + open sell → adopt order as TP
+           - Has position + no order → place new TP
+           - No position + stale order → cancel it
+        """
+        # Phase 1: Check saved TP order IDs
         for sym, cs in list(self.coins.items()):
             if not cs.tp_order_id:
                 continue
@@ -960,6 +1092,61 @@ class V14PortfolioLiveAster:
                     logger.info(f"TP order {cs.tp_order_id} still open ({result.get('status', '?')})")
             except Exception as e:
                 logger.error(f"TP recovery check failed for {sym}: {e}")
+
+        # Phase 2: Scan exchange for orphaned sell orders (ported from old bot)
+        for sym, cs in list(self.coins.items()):
+            if not cs.engine:
+                continue
+            eng = cs.engine._engine
+            has_position = eng is not None and (eng.long_coins > 0 or eng.long_layers > 0)
+
+            try:
+                open_orders = self.client.fetch_open_orders(sym)
+                limit_sells = [o for o in open_orders if o.get("side") == "sell"]
+
+                if limit_sells and not cs.tp_order_id:
+                    if has_position:
+                        # Orphan sell order found + position open → adopt it
+                        limit_sells.sort(key=lambda o: o.get("timestamp", 0), reverse=True)
+                        tp_order = limit_sells[0]
+                        cs.tp_order_id = tp_order["id"]
+                        cs.tp_limit_price = tp_order.get("price")
+                        logger.info(
+                            f"TP RECOVERY: Adopted orphan sell order {cs.tp_order_id} "
+                            f"for {sym} @ ${tp_order.get('price', 0):.6f}"
+                        )
+                        send_telegram(
+                            f"🔧 {TG_PREFIX} Orphan TP order adopted for {sym}\n"
+                            f"Order: {cs.tp_order_id} @ ${tp_order.get('price', 0):.6f}"
+                        )
+                        # Cancel any extra sell orders
+                        for extra in limit_sells[1:]:
+                            logger.info(f"TP RECOVERY: Cancelling duplicate sell {extra['id']} for {sym}")
+                            self.client.cancel_tp_order(sym, extra["id"])
+                    else:
+                        # No position but stale sell orders → cancel all
+                        for o in limit_sells:
+                            logger.warning(
+                                f"TP RECOVERY: Cancelling stale sell order {o['id']} "
+                                f"for {sym} (no open position)"
+                            )
+                            self.client.cancel_tp_order(sym, o["id"])
+                        send_telegram(
+                            f"🔧 {TG_PREFIX} Cancelled {len(limit_sells)} stale order(s) "
+                            f"for {sym} (no open position)"
+                        )
+
+                elif has_position and not cs.tp_order_id and not limit_sells:
+                    # Position open but no TP order anywhere → place one
+                    if eng and eng.long_tp > 0:
+                        logger.info(
+                            f"TP RECOVERY: Position open for {sym} but no TP order — "
+                            f"placing new limit sell @ ${eng.long_tp:.6f}"
+                        )
+                        self._place_tp_order(sym, cs)
+
+            except Exception as e:
+                logger.warning(f"TP RECOVERY exchange scan failed for {sym}: {e}")
 
     def _handle_tp_fill(self, sym: str, cs: CoinState, fill_result: dict):
         """Handle a TP limit order that filled on the exchange."""
@@ -1004,15 +1191,16 @@ class V14PortfolioLiveAster:
         # Audit #2: Complete engine cleanup after TP fill
         if cs.engine and cs.engine._engine:
             eng = cs.engine._engine
-            # Use stored TP price (Audit #8), not eng.long_tp which may have shifted
+            # Always add full actual proceeds — the engine never ran a sell tick
+            # (exchange handled TP), so eng.capital still has pre-buy minus buy cost.
+            eng.capital += actual_proceeds
+
+            # Log correction info if stored TP price differs from actual fill
             stored_tp = cs.tp_limit_price or eng.long_tp or actual_price
             engine_expected = stored_tp * actual_qty
             correction = actual_proceeds - engine_expected
             if abs(correction) > 0.01:
-                eng.capital += correction
-                logger.info(f"Engine capital corrected by ${correction:+.2f} for {sym}")
-            else:
-                eng.capital += actual_proceeds
+                logger.info(f"TP fill correction for {sym}: ${correction:+.2f} (actual vs expected)")
 
             # Update trade counters
             eng.long_trades = (eng.long_trades or 0) + 1
@@ -1028,6 +1216,10 @@ class V14PortfolioLiveAster:
             eng.long_last_buy = None
             eng.long_tp = 0.0
             eng.long_cost = 0.0
+
+            # Reset engine capital to allocated amount (live mode: router manages real capital)
+            # Prevents paper-capital depletion over multiple trade cycles
+            eng.capital = cs.allocated_capital
 
         # Clean up
         cs.tp_order_id = None
@@ -1387,6 +1579,8 @@ class V14PortfolioLiveAster:
                     # The engine is initialized in LONG_DCA phase and ready to trade.
                     cs.engine._warmed_up = True
                     self.coins[sym] = cs
+                    # Set leverage on exchange for new coin
+                    self.client.ensure_leverage(sym, self.leverage)
                 else:
                     # Update allocation if no open position
                     cs = self.coins[sym]
@@ -1764,6 +1958,14 @@ class V14PortfolioLiveAster:
             return
         self._last_status_write = now
 
+        # Fetch live prices and positions from exchange for accurate PnL
+        live_prices = {}
+        exchange_positions = {}
+        try:
+            exchange_positions = self.client.fetch_open_positions()
+        except Exception:
+            pass
+
         coins = {}
         for sym, cs in self.coins.items():
             if not cs.engine:
@@ -1772,6 +1974,46 @@ class V14PortfolioLiveAster:
                 st = cs.engine.get_status()
                 if "coins" in st:
                     coin_data = st["coins"].get(sym, {})
+
+                    # Override current_price with live ticker (engine only updates on candle)
+                    try:
+                        live_price = self.client.fetch_ticker_price(sym)
+                        if live_price > 0:
+                            coin_data["current_price"] = round(live_price, 6)
+                            live_prices[sym] = live_price
+                    except Exception:
+                        pass
+
+                    # Recalculate unrealized PnL from exchange position data
+                    base = sym.split("/")[0]
+                    if base in exchange_positions:
+                        pos = exchange_positions[base]
+                        coin_data["unrealized_pnl"] = round(pos.get("unrealized_pnl", 0), 4)
+                        # Use exchange entry price (more accurate than engine after corrections)
+                        if pos.get("entry_price", 0) > 0:
+                            coin_data["avg_entry"] = round(pos["entry_price"], 6)
+                    elif coin_data.get("current_price") and coin_data.get("avg_entry"):
+                        eng = cs.engine._engine
+                        if eng and eng.long_coins > 0:
+                            coin_data["unrealized_pnl"] = round(
+                                (coin_data["current_price"] - coin_data["avg_entry"]) * eng.long_coins, 4
+                            )
+
+                    # Per-coin realized PnL from CSV (engine counter resets on restart)
+                    try:
+                        csv_path = OUTPUT_DIR / "trades.csv"
+                        if csv_path.exists():
+                            import csv as csv_mod
+                            with open(csv_path) as cf:
+                                reader = csv_mod.DictReader(cf)
+                                coin_pnl = sum(
+                                    float(t.get("pnl", 0))
+                                    for t in reader if t.get("symbol") == sym
+                                )
+                            coin_data["realized_pnl"] = round(coin_pnl, 4)
+                    except Exception as csv_err:
+                        logger.warning(f"CSV PnL read failed for {sym}: {csv_err}")
+
                     coin_data["cumulative_funding"] = round(cs.cumulative_funding, 6)
                     coin_data["tp_order_id"] = cs.tp_order_id
                     if sym in self._cfgi_coins:
@@ -1780,7 +2022,16 @@ class V14PortfolioLiveAster:
             except Exception as e:
                 logger.error(f"get_status failed for {sym}: {e}")
 
-        equity = self._compute_equity()
+        # Compute equity from exchange balance (API truth, like old bot)
+        try:
+            exchange_usdt = self.client.fetch_balance()
+            position_value = sum(
+                p.get("entry_price", 0) * p.get("qty", 0) + p.get("unrealized_pnl", 0)
+                for p in exchange_positions.values()
+            )
+            equity = round(exchange_usdt + position_value, 2)
+        except Exception:
+            equity = self._compute_equity()
         pnl_pct = ((equity - self.capital) / self.capital * 100) if self.capital > 0 else 0.0
 
         status = {
@@ -1795,6 +2046,7 @@ class V14PortfolioLiveAster:
             "equity": round(equity, 2),
             "pnl_pct": round(pnl_pct, 2),
             "total_pnl": round(self.tracker.total_pnl, 4),
+            "total_realized_pnl": round(self.tracker.total_pnl, 4),
             "deals_completed": self.tracker.deal_count,
             "win_rate": round(
                 self.tracker.win_count / self.tracker.deal_count * 100
@@ -1883,20 +2135,32 @@ class V14PortfolioLiveAster:
         signal.signal(signal.SIGINT,  _shutdown_handler)
         signal.signal(signal.SIGTERM, _shutdown_handler)
 
-        # PID lock
+        # PID lock — robust version with signature validation
+        # Stores "PID:TIMESTAMP:v14pm" to distinguish our bot from random PIDs.
+        # On Windows, os.kill(pid, 0) can return True for ANY process with that PID,
+        # including unrelated ones that inherited the PID after our crash.
         pid_path = OUTPUT_DIR / "bot.pid"
         if pid_path.exists():
             try:
-                old_pid = int(pid_path.read_text().strip())
-                try:
-                    os.kill(old_pid, 0)
-                    logger.error(f"Another instance running (PID {old_pid}). Exiting.")
-                    sys.exit(1)
-                except OSError:
-                    logger.warning(f"Stale PID lock (PID {old_pid}). Overwriting.")
+                lock_content = pid_path.read_text().strip()
+                parts = lock_content.split(":")
+                old_pid = int(parts[0])
+                lock_sig = parts[2] if len(parts) >= 3 else ""
+
+                # Only treat as conflict if signature matches (it's actually our bot)
+                if lock_sig == "v14pm":
+                    try:
+                        os.kill(old_pid, 0)
+                        # Process alive AND has our signature — real conflict
+                        logger.error(f"Another V14PM instance running (PID {old_pid}). Exiting.")
+                        sys.exit(1)
+                    except OSError:
+                        logger.warning(f"Stale PID lock (PID {old_pid}). Overwriting.")
+                else:
+                    logger.warning(f"PID lock has no/wrong signature ({lock_content!r}). Overwriting.")
             except Exception:
-                pass
-        pid_path.write_text(str(os.getpid()))
+                logger.warning("Malformed PID lock file. Overwriting.")
+        pid_path.write_text(f"{os.getpid()}:{int(time.time())}:v14pm")
 
         try:
             # Restore state or start fresh
@@ -1909,6 +2173,10 @@ class V14PortfolioLiveAster:
 
             # Initial rebalance to set up coin engines
             self._do_rebalance(datetime.now(timezone.utc))
+
+            # Set leverage on exchange for all active coins (Aster defaults to 5x Cross)
+            for sym in list(self.coins.keys()):
+                self.client.ensure_leverage(sym, self.leverage)
 
             # Startup reconciliation
             self._reconcile_with_exchange()
@@ -1950,10 +2218,18 @@ class V14PortfolioLiveAster:
                         self._update_funding()
                         last_tp_check = time.time()
 
+                    # Periodic reconciliation every 5 minutes
+                    if time.time() - self._last_periodic_recon >= 300:
+                        self._periodic_reconcile()
+                        self._last_periodic_recon = time.time()
+
                     # Process each active coin (Audit #5: 50 candles, process all missed)
                     for sym, cs in list(self.coins.items()):
                         if not cs.engine:
                             continue
+
+                        # Capture phase before processing candles (for phase change detection)
+                        prev_phase = cs.engine.phase if cs.engine else None
 
                         candles = self._fetch_candles(sym)
                         if not candles:
@@ -1978,7 +2254,7 @@ class V14PortfolioLiveAster:
 
                             # Run engine tick
                             try:
-                                actions = cs.engine.tick(candle, cash_available=0)
+                                actions = cs.engine.tick(candle, cash_available=cs.allocated_capital)
                             except Exception as e:
                                 logger.error(f"Engine tick failed for {sym}: {e}")
                                 continue
@@ -1996,6 +2272,19 @@ class V14PortfolioLiveAster:
 
                             cs.last_candle_ts = ts_ms
                             cs.engine._last_candle_ts = ts_ms
+
+                        # Phase change detection (ported from old bot)
+                        # If phase changed during candle processing, cancel stale TP orders
+                        current_phase = cs.engine.phase if cs.engine else None
+                        if current_phase != prev_phase and prev_phase is not None:
+                            if cs.tp_order_id:
+                                logger.info(
+                                    f"Phase change {prev_phase} → {current_phase}: "
+                                    f"cancelling TP for {sym}"
+                                )
+                                self.client.cancel_tp_order(sym, cs.tp_order_id)
+                                cs.tp_order_id = None
+                                cs.tp_limit_price = None
 
                     # CFGI poll
                     try:
@@ -2028,9 +2317,11 @@ class V14PortfolioLiveAster:
             self.tracker.save_csv()
             try:
                 if pid_path.exists():
-                    stored = int(pid_path.read_text().strip())
-                    if stored == os.getpid():
+                    lock_content = pid_path.read_text().strip()
+                    stored_pid = int(lock_content.split(":")[0])
+                    if stored_pid == os.getpid():
                         pid_path.unlink()
+                        logger.info("PID lock released.")
             except Exception:
                 pass
             logger.info("V14PM Live Aster shut down cleanly")

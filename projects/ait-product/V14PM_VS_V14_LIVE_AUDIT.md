@@ -1,0 +1,276 @@
+# V14PM Live vs V14 Live — Critical Path Audit
+**Date:** 2026-03-19
+**Status:** ACTIVE — issues being fixed
+
+Systematic comparison of every critical path in the working old bot (`run_v14_live_aster.py`)
+versus the new PM bot (`run_v14_portfolio_live_aster.py`).
+
+---
+
+## Summary of Findings
+
+| # | Critical Path | Old Bot | PM Bot | Status |
+|---|---|---|---|---|
+| 1 | Engine capital management | ✅ Full capital, reset on startup | ❌ Fractional, drifts | **BROKEN** |
+| 2 | Startup reconciliation | ✅ eng.capital synced to exchange | ❌ Only router pools | **BROKEN** |
+| 3 | Periodic reconciliation | ✅ Every 5 min, auto-adjusts | ❌ None after startup | **MISSING** |
+| 4 | TP fill → capital return | ✅ eng.capital += proceeds | ⚠️ Complex correction path | **FRAGILE** |
+| 5 | Cash tracking (self.cash) | ✅ Independent tracker, synced | ❌ No equivalent | **MISSING** |
+| 6 | Capital ledger | ✅ Deposit/withdrawal tracking | ❌ Not implemented | **MISSING** |
+| 7 | Engine tick cash_available | ✅ Passes self.cash | ❌ Passes 0 | **WRONG** |
+| 8 | PID lock management | ✅ acquire/release with cleanup | ⚠️ Inline, no release on crash | **FRAGILE** |
+| 9 | Exchange client timeout | ✅ SpotExchangeClient has timeouts | ❌ ccxt.aster() had no timeout | **FIXED** (today) |
+| 10 | Equity computation | ✅ Exchange balance (API truth) | ⚠️ fetch_balance only (no positions) | **PARTIAL** |
+| 11 | TP order recovery | ✅ Scans open orders on exchange | ⚠️ Only checks saved order IDs | **WEAKER** |
+| 12 | Deposit/withdrawal detection | ✅ Auto-detects via periodic recon | ❌ Not implemented | **MISSING** |
+| 13 | Error handling in main loop | ✅ try/except with 30s backoff | ✅ try/except with 10s backoff | OK |
+| 14 | LIVE GUARD | ✅ Full rollback on TP conflict | ✅ Full rollback (Audit #1) | OK |
+| 15 | Pre-tick snapshot | ✅ Full snapshot + rollback | ✅ Full snapshot + rollback | OK |
+| 16 | Sell failure rollback | ✅ Full state + phantom trade trim | ✅ Same pattern | OK |
+| 17 | TP limit order placement | ✅ Uses exchange base_free for qty | ⚠️ Uses eng.long_coins for qty | **DIFFERENT** |
+| 18 | Phase change handling | ✅ Cancels TP, notifies | ❌ Not implemented | **MISSING** |
+| 19 | Status.json equity source | ✅ Exchange balance × price | ⚠️ _compute_equity() | **DIFFERENT** |
+| 20 | Candle fetch | ✅ via SpotExchangeClient | ✅ Direct ccxt | OK (timeout now added) |
+
+---
+
+## Detailed Findings
+
+### 1. Engine Capital Management — **BROKEN**
+
+**Old bot:** The engine gets the FULL bot capital ($340). On every startup, `_reset_engine_positions()`
+sets `eng.capital = self.capital`. The engine's internal capital always matches the real account.
+
+```python
+# Old bot startup
+eng.capital = self.capital  # Always $340
+```
+
+**PM bot:** Each engine gets a FRACTION of capital ($52 out of $350). The engine's internal
+capital is used for DCA order sizing (`available = self.capital * DCA_CAPITAL_PCT`). After TP fills,
+the engine adds proceeds back but rounding errors accumulate. After 2 cycles, capital depleted
+from $56 → $27.31, causing order sizes to fall below the $10 minimum → **silently blocking all trades**.
+
+**Fix applied today:** Reset engine capital to `allocated_capital` on startup when no position is open.
+But this only fixes the symptom — the engine's paper-capital tracking is fundamentally incompatible
+with the PM architecture where the CapitalRouter manages real capital.
+
+**Proper fix needed:** The PM bot should either:
+- (a) Reset engine capital to `allocated_capital` after EVERY TP fill (not just on startup), OR
+- (b) Override the engine's order sizing to use `allocated_capital` directly (bypass internal tracking), OR
+- (c) Set `eng.capital = allocated_capital` at the start of every tick cycle
+
+### 2. Startup Reconciliation — **BROKEN**
+
+**Old bot:** `_reconcile_on_startup()` compares:
+- Exchange: USDT balance + base_total × price
+- Engine: eng.capital + eng.long_coins × price
+- If drift > $1: `eng.capital += total_drift` (and syncs `self.cash`)
+
+This means the engine's internal capital is ALWAYS corrected to match reality on startup.
+
+**PM bot:** `_reconcile_with_exchange()` compares:
+- Exchange: USDT balance + position_value
+- Engine: router_cash + sum(eng.long_cost)
+- If drift > $1: `self.router.active_pool_cash += drift`
+
+**Critical gap:** The PM bot adjusts the ROUTER, not the individual ENGINE capitals. An engine
+can have `eng.capital = $27` while the router has plenty of cash. The router grants capital for
+new trades, but the engine's internal sizing uses its own depleted `eng.capital` to calculate
+order sizes — so the router capital is irrelevant.
+
+**Fix needed:** Reconciliation must also sync each engine's `eng.capital` to its allocated amount
+when no position is open.
+
+### 3. Periodic Reconciliation — **MISSING**
+
+**Old bot:** `_maybe_reconcile()` runs every 5 minutes. Compares exchange total value vs engine
+total value. Alerts on >10% drift. Auto-detects deposits/withdrawals when no position is open.
+Always syncs `self.cash` to `eng.capital`.
+
+**PM bot:** No periodic reconciliation at all. Only runs `_reconcile_with_exchange()` once on startup.
+If the engine or router state drifts during operation, there's no correction until next restart.
+
+**Fix needed:** Add periodic reconciliation that:
+- Runs every 5 minutes
+- Compares exchange balance against router + engine totals
+- Auto-corrects per-engine capital when position is closed
+- Detects deposits/withdrawals
+
+### 4. TP Fill → Capital Return — **FRAGILE**
+
+**Old bot:** Simple and direct:
+```python
+eng.capital += proceeds  # Add actual exchange proceeds
+self.cash += proceeds    # Track independently
+# Later: self.cash = eng.capital (sync)
+```
+
+**PM bot:** Complex correction path:
+```python
+# Use stored TP price for expected proceeds
+stored_tp = cs.tp_limit_price or eng.long_tp or actual_price
+engine_expected = stored_tp * actual_qty
+correction = actual_proceeds - engine_expected
+if abs(correction) > 0.01:
+    eng.capital += correction  # Only adds the DIFFERENCE
+else:
+    eng.capital += actual_proceeds  # Adds full proceeds
+```
+
+**Bug:** When `correction > 0.01`, only the correction amount is added — NOT the full proceeds.
+The engine already added TP-price proceeds during its internal tick? No — the TP is handled by
+the exchange, not the engine. The engine never ran a sell tick. So `eng.capital` still has the
+pre-buy amount minus the buy cost. We need to add `actual_proceeds`, not just the correction.
+
+Wait — let me re-check. The engine's `long_cost` was deducted on buy. After TP:
+- `eng.capital` = original - buy_cost
+- We add `correction` (= actual_proceeds - expected) → eng.capital = original - buy_cost + correction
+- But we need: eng.capital = original - buy_cost + actual_proceeds
+
+**This is a bug.** When `abs(correction) > 0.01`, only the delta is added, not the full proceeds.
+The `else` branch correctly adds `actual_proceeds`, but the `if` branch only adds `correction`.
+
+**Fix needed:** Always add `actual_proceeds` to `eng.capital`. If there's a correction from stored
+vs actual TP price, apply that separately.
+
+### 5. Cash Tracking (self.cash) — **MISSING**
+
+**Old bot:** Maintains `self.cash` as an independent cash tracker alongside `eng.capital`.
+Every buy: `self.cash -= actual_cost`. Every sell: `self.cash += proceeds`. Periodically synced
+to `eng.capital` as a sanity check. This double-entry pattern catches discrepancies early.
+
+**PM bot:** No `self.cash` equivalent. The CapitalRouter tracks pool-level cash
+(`active_pool_cash`, `reserve_pool_cash`), but individual engine cash is not independently tracked.
+When the engine's internal capital drifts, there's no second source of truth to catch it.
+
+**Fix needed:** Either add per-coin cash tracking or verify engine capital against router
+allocations on every tick.
+
+### 6. Capital Ledger — **MISSING**
+
+**Old bot:** Full capital ledger system (`capital_ledger.json`) tracking deposits, withdrawals,
+and capital adjustments. The bot loads capital from ledger on startup (overrides CLI arg).
+Supports `--deposit` and `--withdraw` CLI flags.
+
+**PM bot:** Capital is passed as CLI arg only. No ledger. No deposit/withdrawal tracking.
+If Brett deposits more USDT, the bot won't know unless restarted with a new `--capital` value.
+
+**Fix needed:** Port capital ledger system from old bot.
+
+### 7. Engine Tick cash_available — **WRONG**
+
+**Old bot:** `actions = self.engine.tick(candle, self.cash)` — passes actual available cash.
+
+**PM bot:** `actions = cs.engine.tick(candle, cash_available=0)` — always passes 0.
+
+The engine's `_long_dca_tick` uses `self.capital` for order sizing (not `cash_available`),
+so passing 0 doesn't break sizing. But the lifecycle engine may use `cash_available` for
+other decisions (e.g., position sizing validation). This should at minimum pass
+`cs.allocated_capital` or `self.router.available_cash(sym)`.
+
+### 8. PID Lock Management — **FRAGILE**
+
+**Old bot:** Uses `_acquire_pid_lock()` / `_release_pid_lock()` helper functions.
+The lock is released in a `finally` block, and the acquire function checks if the old
+PID is actually alive via `os.kill(old_pid, 0)`.
+
+**PM bot:** Inline PID lock check in `run()`. Checks `os.kill(old_pid, 0)` correctly,
+but the release is buried in the `finally` block and only does `pid_path.unlink()`.
+**No stale PID cleanup on crash** — if the bot crashes without reaching `finally`,
+the next startup sees the stale PID file, tries `os.kill`, and if a different process
+inherited that PID, it exits with code 1 (the exact bug we hit today).
+
+**Fix needed:** Make PID lock more robust — include a timestamp and bot signature
+in the PID file, or use a file lock (flock) instead.
+
+### 9. Exchange Client Timeout — **FIXED** (today)
+
+**Old bot:** Uses `SpotExchangeClient` which wraps ccxt with built-in timeouts.
+
+**PM bot:** Uses `ccxt.aster()` directly with no `timeout` parameter. API calls could
+hang indefinitely. **Fixed today** by adding `"timeout": 15000` to ccxt config.
+
+### 10. Equity Computation — **PARTIAL**
+
+**Old bot:** `_write_status()` fetches exchange balance (USDT + base × price) for equity.
+Uses exchange API as the single source of truth.
+
+**PM bot:** `_compute_equity()` calls `self.client.fetch_balance()` for USDT but doesn't
+add the value of open perp positions. For perps, unrealized PnL is reflected in the USDT
+balance on some exchanges but not all.
+
+**Fix needed:** Verify that Aster perps include unrealized PnL in the USDT balance.
+If not, add `fetch_open_positions()` to equity calculation (same as reconciliation does).
+
+### 11. TP Order Recovery — **WEAKER**
+
+**Old bot:** `_recover_tp_order()` fetches ALL open orders from the exchange, then:
+- Has position + open sell → adopt order
+- Has position + no order → place new TP
+- No position + stale order → cancel it
+- Handles multiple stale orders
+
+**PM bot:** `_recover_tp_orders()` only checks saved `cs.tp_order_id` values.
+If a TP order was placed but the state wasn't saved before crash, it's orphaned
+on the exchange forever. If the state has a stale order ID that was already filled,
+it checks and handles that. But it never scans for UNKNOWN orders on the exchange.
+
+**Fix needed:** Add exchange-side open order scan on startup (like old bot).
+
+### 17. TP Limit Order Quantity — **DIFFERENT**
+
+**Old bot:** Uses `bal["base_free"]` (actual exchange holding) for TP sell quantity.
+Falls back to `eng.long_coins` only if balance is 0. This handles leverage differences
+and partial fills correctly.
+
+**PM bot:** Uses `eng.long_coins` directly. For perps with leverage, this may not
+match the actual exchange position size. If there's any discrepancy between the engine's
+tracked position and the exchange's actual position, the TP order will have the wrong qty.
+
+**Fix needed:** Fetch actual position size from exchange for TP order placement.
+
+### 18. Phase Change Handling — **MISSING**
+
+**Old bot:** Detects phase changes and cancels TP orders:
+```python
+if self.engine.phase != prev_phase:
+    if self._tp_order_id and self.executor:
+        self.executor.cancel_tp_order(self._tp_order_id)
+        self._tp_order_id = None
+```
+
+**PM bot:** No phase change detection in the main loop. If the engine transitions
+phases (e.g., LONG_DCA → SHORT_DCA), stale TP orders remain on the exchange.
+
+### 19. Status.json Equity — **DIFFERENT**
+
+**Old bot:** Equity in status.json comes directly from exchange API:
+```python
+exchange_equity = eb["usdt_total"] + eb["base_total"] * price
+st["equity"] = round(exchange_equity, 2)
+```
+
+**PM bot:** Equity comes from `_compute_equity()` which calls `fetch_balance()` only.
+For perps, this may miss unrealized PnL depending on exchange behavior.
+
+---
+
+## Priority Fixes (Ordered)
+
+### P0 — Trade-blocking bugs (fix NOW)
+1. **Engine capital reset after EVERY TP fill** — not just startup
+2. **TP fill capital return bug** — always add `actual_proceeds`, not just `correction`
+3. **Periodic reconciliation** — sync engine capitals every 5 minutes
+
+### P1 — Safety gaps (fix this week)
+4. **Exchange-side TP order scan on startup** — detect orphaned orders
+5. **Phase change → cancel TP orders** — port from old bot
+6. **TP order qty from exchange position** — not engine tracking
+7. **PID lock robustness** — timestamp + signature in lock file
+
+### P2 — Operational gaps (fix soon)
+8. **Capital ledger** — deposit/withdrawal tracking
+9. **Periodic cash tracking** — double-entry verification
+10. **Equity computation** — include open position values
+11. **Pass real cash_available to engine tick** — not 0

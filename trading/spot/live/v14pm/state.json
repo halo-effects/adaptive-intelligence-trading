@@ -1,14 +1,14 @@
 {
-  "saved_at": "2026-03-19T19:28:10.036591+00:00",
+  "saved_at": "2026-03-19T21:04:18.086335+00:00",
   "bot_state": "RUNNING",
   "capital": 350.0,
   "coins": {
     "GRASS/USDT": {
       "symbol": "GRASS/USDT",
-      "allocated_capital": 52.537999230000004,
-      "tp_order_id": null,
-      "tp_limit_price": null,
-      "last_candle_ts": 1773943200000,
+      "allocated_capital": 250.91607443442794,
+      "tp_order_id": "222466094",
+      "tp_limit_price": 0.40488349999999995,
+      "last_candle_ts": 1773950400000,
       "cumulative_funding": 0.0,
       "last_funding_check_ms": 1773932053341,
       "engine_state": {
@@ -17,14 +17,14 @@
         "profile": "high",
         "leverage": 1.0,
         "phase": "LONG_DCA",
-        "capital": 52.537999230000004,
+        "capital": 36.84456906518809,
         "phase_start_date": "2026-03-19 15:00:00",
-        "long_coins": 0.0,
-        "long_avg_entry": 0,
-        "long_layers": 0,
-        "long_last_buy": null,
-        "long_tp": 0,
-        "long_cost": 0,
+        "long_coins": 39.51215785660567,
+        "long_avg_entry": 0.3989,
+        "long_layers": 1,
+        "long_last_buy": "2026-03-19 19:00:00",
+        "long_tp": 0.40488349999999995,
+        "long_cost": 15.761399769,
         "long_trades": 0,
         "long_wins": 0,
         "long_pnl": 0.0,
@@ -46,23 +46,23 @@
         "top_detected": false,
         "conviction_fired": false,
         "markup_cycles_completed": 0,
-        "total_fees": 0.009068942934825235,
+        "total_fees": 0.012221222888625234,
         "adx_below_20_streak": 0,
         "router_from_top": false,
         "router_from_markdown": false,
         "_last_daily_date": "2026-03-19",
         "_live_mode": true,
-        "_last_candle_ts": 1773943200000,
+        "_last_candle_ts": 1773950400000,
         "start_time": 1773936951.952672,
-        "current_price": 0.3832
+        "current_price": 0.3982
       }
     }
   },
   "router": {
-    "active_pool_cash": 262.91504382587385,
+    "active_pool_cash": 247.15364405687384,
     "reserve_pool_cash": 87.5,
     "active_allocations": {
-      "GRASS/USDT": 0.0
+      "GRASS/USDT": 15.761399769
     },
     "reserve_allocations": {}
   },
@@ -72,5 +72,13 @@
     "alert_state": "NONE"
   },
   "tg_update_offset": 715173887,
-  "open_deals": {}
+  "open_deals": {
+    "GRASS/USDT:long": {
+      "deal_id": 13,
+      "symbol": "GRASS/USDT",
+      "open_time": "2026-03-19T20:05:04.677585+00:00",
+      "layers": 1,
+      "invested": 15.69027788485811
+    }
+  }
 }
