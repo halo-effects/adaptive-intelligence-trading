@@ -7,8 +7,8 @@
   "leverage": 1.0,
   "bot_state": "RUNNING",
   "capital": 350.0,
-  "equity": 350.06,
-  "pnl_pct": 0.02,
+  "equity": 349.87,
+  "pnl_pct": -0.04,
   "total_pnl": 23.954,
   "total_realized_pnl": 23.954,
   "deals_completed": 12,
@@ -19,8 +19,8 @@
       "side": "long",
       "layers": 1,
       "avg_entry": 0.3971,
-      "current_price": 0.3966,
-      "unrealized_pnl": -0.115,
+      "current_price": 0.3893,
+      "unrealized_pnl": -0.2102,
       "invested": 15.76,
       "realized_pnl": 0.2047,
       "lifecycle_phase": "LONG_DCA",
@@ -29,7 +29,7 @@
       "liquidation_price": null,
       "distance_to_liq_pct": null,
       "total_fees": 0.01,
-      "cumulative_funding": 0.0,
+      "cumulative_funding": 0.001734,
       "tp_order_id": "222466094"
     }
   },
@@ -52,6 +52,6 @@
     "active_cash": 247.15,
     "reserve_cash": 87.5
   },
-  "uptime_hours": 0.95,
-  "last_update": "2026-03-19T22:04:18.259053+00:00"
+  "uptime_hours": 1.95,
+  "last_update": "2026-03-19T23:04:21.587216+00:00"
 }
