@@ -356,3 +356,106 @@ After all post-audit fixes:
 - V14PM: $50,627 equity, $608 realized (matches CSV), 30 deals
 - V14 Live Aster: $314 equity (matches exchange balance), $1.56 realized, 1 deal
 - All CSVs verified intact after multiple restarts with `--fresh`
+
+---
+
+## 12. V14PM Live Launch Audit (2026-03-19)
+
+V14PM Live bot launched on Aster Perps. Multiple dashboard and data integrity issues
+discovered and fixed during the first day of operation.
+
+### 12.1 Dashboard Data Crossover (Critical)
+
+**Problem:** `sync_dashboard.ps1` had "prefer live over paper" logic that overwrote
+`docs/data/v14-pm/` (paper PM dashboard data) with live PM data when the live bot's
+`status.json` was fresh (<65 min). This caused the paper PM dashboard
+(`dashboardV14PM.html`) to show live Aster data ($350 capital, GRASS/USDT) instead of
+paper Hyperliquid data ($50K capital, 11 coins).
+
+**Root cause:** Sync script lines 69-82 selected live source when fresh, overriding paper.
+
+**Fix:** Removed the "prefer live" logic entirely. `data/v14-pm/` now ALWAYS copies from
+the paper source (`trading/spot/paper/v14_portfolio/`). Live PM data goes exclusively to
+`data/v14-pm-live/` (separate path). Added comments: "FIXED 2026-03-19: Never overwrite
+paper data with live data."
+
+**Note:** Initial fix attempt at 08:42 AM did not persist — the edit was confirmed at the
+time but subsequent sync runs still used old logic. Root cause of edit loss unknown
+(possible file handle contention with scheduled task). Second fix at 11:20 AM confirmed
+by re-reading the file and verifying sync output.
+
+### 12.2 Equity Double-Counting (Critical)
+
+**Problem:** V14PM Live inherited `trades.csv` from the legacy V14 Live bot (10 ASTER/USDT
+trades, $23.75 realized PnL). The equity formula `capital + realized_pnl + unrealized`
+computed $350 + $23.75 = $373.75, but the exchange balance was only $350.06. The legacy
+PnL was already baked into the account balance before V14PM took over — double-counting.
+
+**Fix:** Changed `_compute_equity()` in `run_v14_portfolio_live_aster.py` to use exchange
+balance (via `client.fetch_balance()`) as the cash component instead of
+`self.capital + self.tracker.total_pnl`. Equity is now: `exchange_usdt_free + unrealized_pnl`.
+Fallback to `self.capital` if exchange API fails.
+
+**After fix:** Equity shows $350.25 (matches exchange).
+
+### 12.3 Regime Display Bug (Dashboard)
+
+**Problem:** V14PM Live status.json output `regime` as an object
+`{"alert_state":"NONE","signal_type":null,"signal_count":0}`. Dashboard JS does
+`var rg = S.regime || '--'` which renders as `[object Object]` in the header badge
+and Market Conditions section.
+
+**Fix:** Changed status.json `regime` field to output the string `self._regime_alert_state`
+(e.g. `"NONE"`, `"AWAITING_APPROVAL"`, `"EARLY"`, etc.). Full object preserved in new
+`regime_detail` field. State persistence (`state.json`) unchanged — still uses object.
+
+### 12.4 Missing Trend Direction
+
+**Problem:** V14PM Live status.json had no `trend_direction` field. Dashboard expects it
+for the trend badge in the header. Paper bots include it from the ROUTER v2 signal stack;
+the live runner never added it.
+
+**Fix:** Added `trend_direction` to status output. Defaults to `"bullish"` (long-only mode).
+Flips to `"bearish"` when regime signal_type is `"TOP"` (market top detected).
+
+### 12.5 Live Dashboard Rewiring
+
+**Problem:** The live dashboard (`d-984ae0d4ab9dc1a5.html`) was hardcoded to read from
+`data/v14-live/` (legacy V14 Live Aster Spot bot). Needed to show V14PM Live data.
+
+**Fix:**
+- Data source: `data/v14-live/` → `data/v14-pm-live/`
+- Title: "AIT V14 - Live Trading Dashboard" → "AIT V14-PM - Live Trading Dashboard"
+- Subtitle: Removed (was "V14 Live Trading")
+
+**Docs updated:**
+- `V14PM_SYSTEM_ARCHITECTURE.md` Section 9.1 (dashboard table) and 9.3 (data paths)
+- `LIVE_VS_PAPER_DIFFERENCES.md` (dashboard URL annotation)
+
+### 12.6 Scanner Coin Universe Mismatch (Open)
+
+**Problem:** `cycle_scanner.json` was updated to the 50-coin Aster Perps universe.
+Both the paper PM dashboard and live PM dashboard read from the same scanner file.
+The paper bot runs on Hyperliquid with a different coin set — scanner shows coins
+(GRASS, BERA, INIT, etc.) the paper bot can't trade.
+
+**Status:** Reported to Brett. Awaiting decision on fix approach (separate scanner files,
+dashboard-side filtering, or accept divergence).
+
+### 12.7 Legacy Trades in V14PM Live CSV (Open)
+
+The `trades.csv` still contains 10 legacy ASTER/USDT trades from the V14 Live bot.
+Equity is now correct (exchange-based), but the trade log and deal count include legacy
+trades. Options: archive legacy trades to separate file and start fresh, or leave as
+historical record. Awaiting decision.
+
+### 12.8 Verification (Post-Fix)
+
+After all fixes applied and bot restarted (PID 6040):
+- V14PM Live: $350.25 equity (matches exchange balance of $350.25)
+- Regime: `"NONE"` (string, renders correctly on dashboard)
+- Trend: `"bullish"` (present in status.json)
+- Paper dashboard (`dashboardV14PM.html`): mode=paper, capital=$50K, exchange=hyperliquid
+- Live dashboard (`d-984ae0d4ab9dc1a5.html`): mode=live, capital=$350, exchange=aster_perp
+- Sync script: `data/v14-pm/` always paper, `data/v14-pm-live/` always live
+- Bot startup: state restored, GRASS/USDT active, reconciliation OK (drift=$-0.16)

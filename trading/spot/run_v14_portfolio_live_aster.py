@@ -708,6 +708,30 @@ class V14PortfolioLiveAster:
                     )
                     engine.restore_state(engine_state)
                     engine._live_mode = True
+
+                    # LIVE FIX: Reset engine internal capital to allocated amount.
+                    # The engine's paper-capital tracking drifts from reality in live mode
+                    # (CapitalRouter manages real capital). A depleted engine capital can
+                    # cause order sizes to fall below the $10 minimum, silently blocking
+                    # trades. Reset to allocated capital when no position is open.
+                    eng_inner = engine._engine
+                    if eng_inner and eng_inner.long_coins == 0 and eng_inner.short_coins == 0:
+                        old_cap = eng_inner.capital
+                        eng_inner.capital = cs.allocated_capital
+                        # Sanitize stale fields from closed positions
+                        eng_inner.long_avg_entry = 0
+                        eng_inner.long_tp = 0
+                        eng_inner.long_cost = 0
+                        eng_inner.long_last_buy = None
+                        eng_inner.long_layers = 0
+                        if eng_inner.long_trades < 0:
+                            eng_inner.long_trades = 0
+                        if abs(old_cap - cs.allocated_capital) > 1:
+                            logger.info(
+                                f"  {sym} engine capital reset: ${old_cap:.2f} -> "
+                                f"${cs.allocated_capital:.2f} (no open position)"
+                            )
+
                     cs.engine = engine
                     logger.info(f"  Restored engine for {sym}")
                 except Exception as e:
@@ -1709,8 +1733,19 @@ class V14PortfolioLiveAster:
     # ── Status ────────────────────────────────────────────────────────────────
 
     def _compute_equity(self) -> float:
-        """Compute equity: capital + realized PnL + unrealized."""
-        total_pnl = self.tracker.total_pnl
+        """Compute equity from exchange balance (source of truth) + unrealized PnL.
+
+        Exchange balance = free USDT (not in positions).
+        Unrealized = mark-to-market value of open positions minus cost basis.
+        Total equity = cash + unrealized.
+        """
+        try:
+            cash = self.client.fetch_balance()  # returns float: free USDT
+            if cash <= 0:
+                raise ValueError("Zero balance returned")
+        except Exception as e:
+            logger.warning(f"Failed to fetch exchange balance for equity: {e}")
+            cash = self.capital  # fallback
         unrealized = 0.0
         for cs in self.coins.values():
             if cs.engine and cs.engine._engine:
@@ -1718,8 +1753,8 @@ class V14PortfolioLiveAster:
                 if eng.long_coins and eng.long_cost:
                     current_price = self.client.fetch_ticker_price(cs.symbol)
                     if current_price:
-                        unrealized += (current_price - eng.long_tp or 0) * eng.long_coins
-        return self.capital + total_pnl + unrealized
+                        unrealized += (current_price * eng.long_coins) - eng.long_cost
+        return cash + unrealized
 
     def _write_status(self):
         """Write status.json for dashboard and heartbeat monitoring."""
@@ -1770,11 +1805,13 @@ class V14PortfolioLiveAster:
             "approved_symbols": sorted(
                 self.router.active_allocations.keys()
             ),
-            "regime": {
+            "regime": self._regime_alert_state or "NONE",
+            "regime_detail": {
                 "alert_state": self._regime_alert_state,
                 "signal_type": self._regime_signal_type,
                 "signal_count": self._regime_signal_count,
             },
+            "trend_direction": "bearish" if self._regime_signal_type == "TOP" else "bullish",
             "fear_greed_index": self._cfgi_market,
             "router": {
                 "active_cash": round(self.router.active_pool_cash, 2),

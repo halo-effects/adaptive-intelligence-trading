@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -68,7 +68,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .coin-icon.ltc{background:linear-gradient(135deg,#BFBBBB,#D4D4D4)}
 .coin-icon.hbar{background:linear-gradient(135deg,#3A3A3A,#5A5A5A)}
 .coin-icon.ada{background:linear-gradient(135deg,#0033AD,#1A53FF)}
-/* New coins added 2026-03-19 â€” Aster 50-coin universe */
+/* New coins added 2026-03-19 — Aster 50-coin universe */
 .coin-icon.ondo{background:linear-gradient(135deg,#1A1A2E,#4A4AFF)}
 .coin-icon.render{background:linear-gradient(135deg,#FF6B35,#FF9A5C)}
 .coin-icon.virtual{background:linear-gradient(135deg,#00D4FF,#0066FF)}
@@ -504,7 +504,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th title="Base Score = Realized PnL Ã— (1 - DD%) Ã— Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5Ã—) &#x2192; stable (1.0Ã—) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score Ã— Trend Multiplier â€” the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="Base Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5×) &#x2192; stable (1.0×) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score × Trend Multiplier — the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -680,7 +680,7 @@ function renderStats(){
   if(deals===0 && trades.length>0) deals=trades.length;
   var totalFees=S.total_fees||0;
   $('vRPnl').innerHTML='<span style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</span>';
-  $('vRPnlSub').textContent=deals+' completed deals'+(totalFees>0?' Â· after '+fUsd(totalFees)+' fees':'');
+  $('vRPnlSub').textContent=deals+' completed deals'+(totalFees>0?' · after '+fUsd(totalFees)+' fees':'');
 
   var syms=S.symbols||Object.keys(S.coins||{});
   var totalUpnl=0, totalInv=0;
@@ -825,7 +825,7 @@ function renderPositions(){
     var upnl=c.unrealized_pnl||0;
     var rpnl=c.realized_pnl||0;
     var layers=c.layers||0;
-    var maxLayers=12;
+    var maxLayers=(S.profile==='high')?12:10;
 
     html+='<div class="position-card">';
     html+='<div class="position-head"><div class="position-head-left">';
@@ -894,7 +894,7 @@ function renderAIPanel(){
     var cfgi=c.cfgi!=null?c.cfgi:null;
     var cfgiCol=cfgi!=null?(cfgi<=25?'var(--red)':cfgi<=45?'var(--amber)':cfgi<=55?'var(--text2)':'var(--green)'):'var(--text3)';
     var layers=c.layers||0;
-    var maxLayers=12;
+    var maxLayers=(S.profile==='high')?12:10;
     var gridPct=Math.min(layers/maxLayers*100,100);
     var side=(phase==='SHORT_DCA')?'short':'long';
     var dirText=side==='long'?'LONG \u25B2':'SHORT \u25BC';
