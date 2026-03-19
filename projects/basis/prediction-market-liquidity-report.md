@@ -183,12 +183,12 @@ The seed-to-volume ratio determines distortion:
 
 2. **Seed constants:**
    ```solidity
-   uint256 constant PUBLIC_MIN_SEED = 5000 * 1e6;      // $5,000 USDC
-   uint256 constant PUBLIC_MAX_SEED = 50000 * 1e6;      // $50,000 USDC
-   uint256 constant PRIVATE_MIN_SEED = 1000 * 1e6;      // $1,000 USDC
-   uint256 constant PRIVATE_MAX_SEED = 10000 * 1e6;     // $10,000 USDC
-   uint256 constant PUBLIC_PER_OUTCOME = 500 * 1e6;     // $500/outcome
-   uint256 constant PRIVATE_PER_OUTCOME = 100 * 1e6;    // $100/outcome
+   uint256 constant PUBLIC_MIN_SEED = 5000 * 1e18;      // $5,000 USDB
+   uint256 constant PUBLIC_MAX_SEED = 50000 * 1e18;      // $50,000 USDB
+   uint256 constant PRIVATE_MIN_SEED = 1000 * 1e18;      // $1,000 USDB
+   uint256 constant PRIVATE_MAX_SEED = 10000 * 1e18;     // $10,000 USDB
+   uint256 constant PUBLIC_PER_OUTCOME = 500 * 1e18;     // $500/outcome
+   uint256 constant PRIVATE_PER_OUTCOME = 100 * 1e18;    // $100/outcome
    
    // seed = min(MAX, max(MIN, PER_OUTCOME * numOutcomes))
    ```

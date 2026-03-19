@@ -17,7 +17,7 @@ import os
 from dataclasses import dataclass, field
 
 TAX_RATE_BPS = 150  # 1.5% prediction tax
-ONE_USD = 1_000_000  # 6 decimal USDC
+ONE_USD = 1_000_000_000_000_000_000  # 18 decimal USDB
 
 
 @dataclass

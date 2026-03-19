@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from client_helper import get_client, usdc_to_raw, raw_to_usdc, raw_to_token, output_result, USDC, MARKET_TRADING
+from client_helper import get_client, usdb_to_raw, raw_to_usdb, raw_to_token, output_result, USDB, MARKET_TRADING
 
 
 def parse_args():
@@ -36,7 +36,7 @@ def parse_args():
     )
     parser.add_argument("--market", required=True, help="Prediction market token address (0x...)")
     parser.add_argument("--outcome-id", type=int, required=True, help="Outcome index (0-based)")
-    parser.add_argument("--amount", type=float, required=True, help="USDC amount to bet")
+    parser.add_argument("--amount", type=float, required=True, help="USDB amount to bet")
     parser.add_argument("--min-shares", type=int, default=0, help="Minimum shares to receive (slippage protection)")
     parser.add_argument("--order-ids", help="Comma-separated order IDs to fill from book (hybrid fill)")
     parser.add_argument("--show-odds", action="store_true", help="Show current market odds before betting")
@@ -81,7 +81,7 @@ def estimate_price_impact(client, market_address: str, outcome_id: int, amount_u
         # Try to read current virtual reserves and total pool
         # Note: exact method depends on SDK version — adapt as needed
         market_info = client.market_reader.get_market_info(MARKET_TRADING, market_address)
-        total_pool = float(market_info.get("totalPool", 0)) / 1e6  # USDC decimals
+        total_pool = float(market_info.get("totalPool", 0)) / 1e18  # USDB decimals
         
         # Estimate seed from outcome count (public formula)
         estimated_seed = min(50000, max(5000, 500 * n))
@@ -127,13 +127,13 @@ def main():
         print(f"Adjust MAX_BET_PER_MARKET in .env or reduce --amount")
         sys.exit(1)
 
-    usdc_raw = usdc_to_raw(args.amount)
+    usdb_raw = usdb_to_raw(args.amount)
 
     print(f"\n{'[DRY RUN] ' if args.dry_run else ''}Placing Bet on Basis Prediction Market")
     print("=" * 60)
     print(f"  Market:          {args.market}")
     print(f"  Outcome ID:      {args.outcome_id}")
-    print(f"  Bet Amount:      ${args.amount:.2f} USDC ({usdc_raw} raw)")
+    print(f"  Bet Amount:      ${args.amount:.2f} USDB ({usdb_raw} raw)")
     print(f"  Min Shares:      {args.min_shares}")
     print(f"  Payout model:    Winner takes ENTIRE losing pool (uncapped)")
 
@@ -166,7 +166,7 @@ def main():
             order_ids = [int(x) for x in args.order_ids.split(",")] if args.order_ids else []
             estimated = client.market_reader.estimate_shares_out(
                 MARKET_TRADING, args.market, args.outcome_id,
-                usdc_raw, order_ids, wallet
+                usdb_raw, order_ids, wallet
             )
             print(f"\n  Estimated shares: {estimated}")
         except Exception:
@@ -177,7 +177,7 @@ def main():
             "status": "dry_run",
             "market": args.market,
             "outcome_id": args.outcome_id,
-            "amount_usdc": args.amount,
+            "amount_usdb": args.amount,
         }
     else:
         client = get_client(require_write=True)
@@ -188,13 +188,13 @@ def main():
                 order_ids = [int(x) for x in args.order_ids.split(",")]
                 tx_result = client.prediction_markets.buy_orders_and_contract(
                     args.market, args.outcome_id, order_ids,
-                    USDC, usdc_raw, args.min_shares
+                    USDB, usdb_raw, args.min_shares
                 )
             else:
                 # Pure AMM buy
                 tx_result = client.prediction_markets.buy(
-                    args.market, args.outcome_id, USDC,
-                    usdc_raw, 0, args.min_shares
+                    args.market, args.outcome_id, USDB,
+                    usdb_raw, 0, args.min_shares
                 )
 
             print(f"\n✅ Bet placed!")
@@ -205,7 +205,7 @@ def main():
                 "tx_hash": tx_result["hash"],
                 "market": args.market,
                 "outcome_id": args.outcome_id,
-                "amount_usdc": args.amount,
+                "amount_usdb": args.amount,
             }
 
         except Exception as e:

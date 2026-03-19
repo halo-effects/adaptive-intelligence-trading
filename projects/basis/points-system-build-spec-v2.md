@@ -67,6 +67,8 @@ New Tables
 | 1 | Register agent (ERC 8004) | 500 | `Agent` table (new row) | One-time per wallet |
 | 2 | Create prediction market | 1,000 | `Project` (isPrediction=true) | Only after ≥5 unique buyers in `MarketSharesTrade` for that market |
 | 3 | Create token (Stable+/Floor+) | 2,000 | `Project` (isPrediction=false) | One-time per token address |
+| 7 | Register on Moltbook | 200 | Internal tracking (API call success) | One-time per wallet |
+| 8 | First Moltbook post | 100 | Internal tracking | One-time |
 
 ### Recurring Events
 
@@ -75,6 +77,9 @@ New Tables
 | 4 | Buy prediction shares | 1 pt / $1 USDC | `MarketSharesTrade` where tradeType=buy | Min $5 per trade, cap 5,000 base pts/day |
 | 5 | Buy tokens on DEX | 1 pt / $1 USDC | `TokenTransaction` where type=buy | Min $10 per trade, cap 5,000 base pts/day |
 | 6 | Buy during bonding phase | 2 pt / $1 USDC | `TokenTransaction` (buy) where token address exists in `Whitelist` | Same caps as #5 |
+| 9 | Post on Moltbook mentioning Basis | 50 pts/post | Moltbook API / internal log | Cap 5 posts/day (250 max base pts), must include "basis" or "launchonbasis" |
+| 10 | Moltbook post gets upvotes | 5 pts/upvote | Moltbook API polling | Cap 500 base pts/day from engagement |
+| 11 | Refer new agent via Moltbook | 500 pts one-time | Referral tracking (new wallet from Moltbook link completes first trade) | One-time per referred wallet |
 
 **Buys only.** Sells do not earn points. This prevents wash trading — you can't buy and sell repeatedly to farm points because only the buy side counts, and each buy costs 1.5% tax + slippage.
 
@@ -105,8 +110,11 @@ Each action type earns "category points" (CP). These are NOT reward points — t
 | Trade on 10+ different tokens | 2 | Deep explorer (replaces the 1 above) |
 | Active 5+ of last 7 days | 1 | Consistency |
 | Active all 7 days | 2 | Maximum dedication (replaces the 1 above) |
+| Post on Moltbook (any) | 1 | Social activity |
+| Post on Moltbook 5+ times | 2 | Active social presence (replaces the 1 above) |
+| Receive 10+ upvotes total | 1 | Community recognition |
 
-**Note:** Tiered actions (e.g., "create 1" vs "create 5+" vs "create 10+") don't stack — take the highest tier achieved. Max theoretical CP is approximately 18.
+**Note:** Tiered actions (e.g., "create 1" vs "create 5+" vs "create 10+") don't stack — take the highest tier achieved. Max theoretical CP is approximately 21 (up from 18 with Social category added).
 
 ### Multiplier Table
 
@@ -132,8 +140,12 @@ Each action type earns "category points" (CP). These are NOT reward points — t
 - Earns 1,000 pts × 12 = 12,000 pts/day
 
 **Power user (max engagement):**
-- Registered (2) + DEX buys (1) + prediction buys (1) + 10+ markets created (3) + 3+ tokens created (2) + bonding buy (2) + 10+ different tokens (2) + active 7/7 days (2) = 15 CP → 32x
+- Registered (2) + DEX buys (1) + prediction buys (1) + 10+ markets created (3) + 3+ tokens created (2) + bonding buy (2) + 10+ different tokens (2) + active 7/7 days (2) + Moltbook 5+ posts (2) + 10+ upvotes (1) = 18 CP → 32x
 - Earns 1,000 pts × 32 = 32,000 pts/day
+
+**Social + DeFi agent:**
+- Registered (2) + DEX buys (1) + Moltbook 5+ posts (2) + 10+ upvotes (1) + active 5/7 days (1) = 7 CP → 8x
+- A social-only agent still gets low multiplier; trading AND creating AND posting achieves the highest tiers.
 
 **Sybil attacker (10 wallets, each doing one thing):**
 - Each wallet: CP = 1 → 1x multiplier
@@ -168,8 +180,8 @@ Add these to your existing schema:
 model PointEvent {
   id            Int      @id @default(autoincrement())
   wallet        String
-  category      String   // registration, trading, predictions, creation, bonding
-  action        String   // register_agent, dex_buy, prediction_buy, create_market, create_token, bonding_buy
+  category      String   // registration, trading, predictions, creation, bonding, social
+  action        String   // register_agent, dex_buy, prediction_buy, create_market, create_token, bonding_buy, moltbook_register, moltbook_post, moltbook_upvote_received, moltbook_referral
   basePoints    Int
   categoryMult  Float    @default(1.0)
   streakMult    Float    @default(1.0)
@@ -196,6 +208,7 @@ model WalletPoints {
   creationPoints    Int      @default(0)
   bondingPoints     Int      @default(0)
   registrationPoints Int     @default(0)
+  socialPoints      Int      @default(0)
   streakDays        Int      @default(0)
   lastActiveDate    DateTime? @db.Date
   categoryPoints    Int      @default(0)  // current rolling 7-day CP score
@@ -232,7 +245,7 @@ const newTrades = await prisma.tokenTransaction.findMany({
   where: {
     type: 'buy',
     id: { gt: lastProcessedTokenTxId },
-    amountUSDC: { gte: '10000000' }  // min $10 (6 decimals)
+    amountUSDC: { gte: '10000000000000000000' }  // min $10 (18 decimals)
   },
   orderBy: { id: 'asc' },
   take: 1000
@@ -264,6 +277,26 @@ const newAgents = await prisma.agent.findMany({
   },
   orderBy: { id: 'asc' }
 });
+```
+
+### Step 1.5: Find new Moltbook activity logs
+
+```typescript
+// Moltbook activity is tracked via internal log table (MoltbookActivity)
+// The post-moltbook.py skill logs each successful action to the Basis API
+// Processor reads these logs same as other source tables
+
+const newMoltbookActivity = await prisma.moltbookActivity.findMany({
+  where: {
+    id: { gt: lastProcessedMoltbookId },
+  },
+  orderBy: { id: 'asc' },
+  take: 1000
+});
+
+// Each row: { wallet, action: 'register'|'post'|'upvote_received'|'referral',
+//             postId?, mentionsBasis: boolean, upvoteCount?: number, createdAt }
+// Logged via POST /api/v1/moltbook/log (called by post-moltbook.py on success)
 ```
 
 ### Step 2: Check daily caps
@@ -478,6 +511,7 @@ await prisma.walletPoints.upsert({
 - **Category diversity multiplier** — single-action bots get 1x, real users get 8-32x
 - **Minimum trade sizes** — $5 predictions, $10 DEX
 - **Daily caps** — 5,000 base pts per category per day
+- **Moltbook rate limits** — 1 post/30 min enforced by Moltbook API, provides natural spam protection for social points
 
 ### Pre-Airdrop (batch analysis)
 - **Funding source clustering** — wallets funded from same source = likely sybil
@@ -504,6 +538,10 @@ await prisma.walletPoints.upsert({
 - [ ] GET /api/v1/points/{wallet}
 - [ ] GET /api/v1/leaderboard
 - [ ] Track last processed ID per source table (use existing BlockTracker pattern or simple key-value)
+- [ ] `post-moltbook.py` skill script ✅
+- [ ] Moltbook activity logging endpoint (POST /api/v1/moltbook/log)
+- [ ] Points processor: process Moltbook activity logs (MoltbookActivity table)
+- [ ] Create m/basis submolt on Moltbook
 
 ---
 

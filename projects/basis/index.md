@@ -14,7 +14,8 @@ _Last updated: 2026-03-18 (v5 — "Agent Mining" + "Economic Alignment" narrativ
 | `fee-schedule.md` | **Single source of truth** for all platform fees — trading, loans, leverage, creation, vault |
 | `gitbook-corrections-for-alex-2026-03-14.md` | 5 corrections for the live GitBook site (ready for Alex) |
 | `sdk-gap-analysis-2026-03-14.md` | Gap analysis of Alex's SDK reference |
-| `sdk-docs-2026-03-16.md` | **Full SDK documentation from Alex** — 13 modules, Python + TypeScript, all read/write methods, examples, error handling |
+| `sdk-docs-2026-03-16.md` | SDK documentation v1 from Alex (2026-03-16) — USDC 6 decimals, XETHER naming |
+| `sdk-docs-2026-03-19.md` | **SDK documentation v2 from Alex (2026-03-19)** — 18-decimal USDB rework complete, STASIS naming, new methods (createTokenWithMetadata, createMarketWithMetadata, sellPercentage, convertToNative, getMarketLiquidity), explicit contract addresses, full Off-Chain API section |
 | `standup-2026-03-17.md` | Tomorrow's standup — progress, blockers, questions for Alex, priorities |
 | `index.md` | This file — quick reference to sections |
 

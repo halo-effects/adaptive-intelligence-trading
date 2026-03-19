@@ -125,5 +125,5 @@ Before deploying a live trading bot:
 | Scheduled Task | `V14LiveAster` (at boot) |
 | Status file | `trading/spot/live/v14/status.json` |
 | Capital ledger | `trading/spot/live/v14/capital_ledger.json` |
-| Dashboard | https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html |
+| Dashboard | https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html (V14-PM Live) |
 | TP execution | Resting limit sell on exchange (primary) + candle-based detection (fallback) — implemented 2026-03-17 |

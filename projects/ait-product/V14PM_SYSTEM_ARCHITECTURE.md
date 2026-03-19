@@ -1,5 +1,88 @@
 # Adaptive Intelligence Trading — V14PM System Architecture
-_Version: 1.4 | Date: 2026-03-19 | Status: Production Architecture Locked_
+_Version: 1.5 | Date: 2026-03-19 | Status: Production — Live on Aster Perps_
+
+---
+
+## Executive Summary
+
+V14PM is an automated crypto portfolio trading system. Here's what it does,
+in plain English.
+
+### What It Does
+
+The system watches 50 cryptocurrencies, picks the best one to trade right now,
+buys it in layers as the price dips, and sells for a small profit (1.5%).
+Then it rotates to the next best opportunity. Rinse and repeat, 24/7.
+
+### How It Makes Decisions
+
+1. **The Scanner** looks at all 50 coins every day and asks: "Which coin is
+   completing the most profitable buy-low-sell-high cycles right now?" It scores
+   each coin by speed, profitability, and risk. The best scorer gets the capital.
+
+2. **The Grid Engine** manages the actual trading. When it enters a coin, it
+   doesn't go all-in. It buys a starter position (~40% of allocation) and places
+   up to 12 more buy orders at progressively lower prices. If the price dips,
+   it buys more at better prices, lowering its average. When the price recovers
+   just 1.5% above the average, it sells everything for a profit.
+
+3. **The Regime Monitor** watches for market-wide danger signs. If half the coins
+   start showing topping signals, it sends a Telegram alert. No automatic panic
+   selling — Brett decides whether to wind down positions.
+
+### Key Safety Features
+
+| Feature | What It Does | Why It Matters |
+|---------|-------------|----------------|
+| **1x Leverage** | No borrowing, no liquidation risk | You can't lose more than you put in |
+| **Exchange Is Truth** | All decisions verified against actual exchange data | Engine bugs can't cause phantom trades |
+| **LIVE GUARD** | Exchange handles take-profit, not the bot | Even if the bot crashes, your TP order sits on the exchange |
+| **Human Approval** | Direction changes require Telegram confirmation | The bot never flips strategy on its own |
+| **PAUSE/RESUME** | Freeze all trading with one command | Instant kill switch, existing TPs stay active |
+| **Startup Reconciliation** | Compares internal state vs exchange balance on every restart | Catches any drift from crashes or manual intervention |
+
+### How Capital Flows
+
+```
+$350 USDT (Aster Perps account)
+  │
+  ├── 75% Active Pool ($262.50)
+  │     └── Deployed to top-ranked coin
+  │           └── DCA grid: layers at 1.5% spacing
+  │                 └── TP hit → profit returned → rotate to next coin
+  │
+  └── 25% Reserve Pool ($87.50)
+        └── Held back for deep DCA layers and new opportunities
+```
+
+As equity grows, more coins trade simultaneously:
+
+| Your Equity | Coins Trading | Effect |
+|-------------|--------------|--------|
+| $350 (now) | 1 | Focused, simple |
+| $10,000 | 2 | Diversified |
+| $50,000 | 5 | Portfolio mode |
+| $100,000+ | 10 | Full rotation |
+
+### The Components
+
+| Component | Role | Analogy |
+|-----------|------|---------|
+| **Cycle Scanner** | Ranks coins by DCA efficiency | The talent scout |
+| **Capital Router** | Allocates money across coins | The portfolio manager |
+| **DCA Grid Engine** | Executes buy/sell layers | The trader |
+| **Regime Monitor** | Watches for market-wide shifts | The risk officer |
+| **LIVE GUARD** | Ensures exchange orders are authoritative | The auditor |
+| **Telegram Interface** | Human oversight and commands | The control panel |
+| **Dashboard** | Real-time visualization on GitHub Pages | The scoreboard |
+
+### Current Status (2026-03-19)
+
+- **Live on Aster Perps** with $350 real USDT
+- Scanner selected GRASS/USDT as first coin (top 30d DCA scorer)
+- 1 coin slot at current equity; scales to 10 as equity grows
+- All safeguards active: LIVE GUARD, reconciliation, resting limit orders
+- Telegram commands operational: PAUSE, RESUME, CLOSE, APPROVE, DENY
 
 ---
 
@@ -60,10 +143,10 @@ changes requiring human approval. The core engine is exchange-agnostic via CCXT.
 
 | Component | Entry Point | Exchange | Capital | Notes |
 |-----------|------------|----------|---------|-------|
-| **V14PM Live** | `run_v14_portfolio_live_aster.py` | Aster Perps | ~$340 real | **Production.** Built from live Aster bot + PM components. |
-| V14PM Paper | `run_v14_portfolio_paper.py` | Hyperliquid (sim) | $50K paper | Customer demo / benchmark |
-| V14 Paper | `run_v14_paper.py` | Hyperliquid (sim) | $10K paper | Customer demo |
-| V14 Live (legacy) | `run_v14_live_aster.py` | Aster Spot | $340 real | Being replaced by V14PM Live. LIVE GUARD active. |
+| **V14PM Live** | `run_v14_portfolio_live_aster.py` | Aster Perps | $350 real | **Production.** Live since 2026-03-19. All safeguards active. |
+| V14PM Paper | `run_v14_portfolio_paper.py` | Hyperliquid (sim) | $50K paper | Benchmark / demo |
+| V14 Paper | `run_v14_paper.py` | Hyperliquid (sim) | $10K paper | Benchmark / demo |
+| V14 Live (legacy) | `run_v14_live_aster.py` | Aster Spot | — | **RETIRED 2026-03-19.** Replaced by V14PM Live. |
 
 > **V14-ETF Paper Bot RETIRED (2026-03-17):** HBAR autonomously switched to DCA Short
 > direction and suffered significant losses. Lesson learned: Long↔Short strategy direction
@@ -108,13 +191,15 @@ trading/
     ├── run_v14_portfolio_paper.py  # V14PM bot runner (paper)
     ├── run_v14_paper.py            # V14 paper bot runner
     ├── run_v14etf_paper.py         # V14-ETF paper bot runner (RETIRED — do not restart)
-    ├── run_v14_live_aster.py       # V14 live bot runner (Aster DEX)
+    ├── run_v14_live_aster.py       # V14 live bot runner (Aster Spot — LEGACY, retired)
+    ├── run_v14_portfolio_live_aster.py # V14PM live bot (Aster Perps — PRODUCTION)
     ├── run_v14_scanner.py          # Manual scanner runner
     ├── run_daily_collector.py      # Manual collector runner
     │
     ├── collect_scanner_candles.py  # Incremental 1h candle collector (Step 1)
     ├── resample_daily.py           # 1h → daily OHLCV resampling (Step 1.5)
     ├── backfill_scanner_coins.py   # Historical candle backfill
+    ├── backfill_binance.py          # One-time deep history backfill from Binance Futures (50 coins)
     ├── backfill_etf_candles.py     # ETF coin candle backfill
     ├── generate_daily_equity.py    # Daily equity JSON for dashboards
     ├── pm_comparison_log.py        # PM performance comparison logger
@@ -134,8 +219,13 @@ trading/
     │       ├── trades.csv          # Trade history
     │       └── bot.log             # Runtime log
     │
-    ├── live/v14pm/                 # V14PM live bot state (create for production)
-    │   └── .env.template           # Hyperliquid credential template
+    ├── live/v14pm/                 # V14PM live bot state (Aster Perps — PRODUCTION)
+    │   ├── .env.template           # Credential template
+    │   ├── state.json              # Bot + engine state (persisted across restarts)
+    │   ├── status.json             # Health/metrics (updated every 60s)
+    │   ├── trades.csv              # Closed trade history
+    │   ├── bot.pid                 # PID lock file
+    │   └── bot.log                 # Runtime log
     │
     └── paper/
         ├── v14/                    # V14 paper bot state
@@ -157,13 +247,14 @@ trading/
 
 **Entry point:** `run_candle_collector.ps1` (Windows) / `run_candle_collector.sh` (Linux)
 **Schedule:** Hourly via `AIT_CandleCollector` scheduled task
-**Exchange:** Hyperliquid perps (CCXT)
-**Coverage:** 66 symbol pairs (45 base coins × USDC/USDT), 1h timeframe, incremental
+**Exchange:** Aster DEX Perps (CCXT) — switched from Hyperliquid 2026-03-19
+**Coverage:** 50 coins (Aster Perps universe), 1h timeframe, incremental
+**Deep history:** Binance Futures backfill via `backfill_binance.py` (one-time, 722K candles)
 
 **Three-step hourly pipeline:**
 ```
 Step 1: collect_scanner_candles.py
-  Hyperliquid API
+  Aster Perps API (ccxt.aster, defaultType=future)
     └─ fetch_ohlcv(symbol, '1h', since=last_stored)
          └─ INSERT INTO candles (symbol, timeframe, timestamp, O/H/L/C/V)
 
@@ -1085,12 +1176,15 @@ At 1x leverage with DCA hold times of hours to days, funding is typically neglig
 
 ### 7.10 Current Bot Status (2026-03-19)
 
-- **V14PM Live (Aster):** Building. Will replace V14 Live with PM capabilities.
-  Starting capital ~$340, coin cap = 1. Current ASTER position closes naturally, then rotates.
-- **V14 Live (Aster, legacy):** $351.20 real USDT (exchange-verified), $340 capital,
-  ASTER/USDT. LIVE GUARD active. Being replaced by V14PM Live.
-- **V14 Paper:** ~$53,500 equity, 400 deals, 97.8% win rate
-- **V14 PM Paper:** ~$53,815 equity, 102 deals, 100% win rate
+- **V14PM Live (Aster Perps):** ✅ **LIVE as of 2026-03-19.** $350 real USDT on Aster Perps.
+  Coin cap = 1 (equity tier: $100–$10K). Scanner selected GRASS/USDT as first coin.
+  All safeguards active: LIVE GUARD, resting limit orders, reconciliation, Telegram commands.
+  Previous ASTER/USDT spot position closed and funds transferred to Perps account.
+- **V14 Live (Aster Spot, legacy):** ❌ **RETIRED 2026-03-19** — replaced by V14PM Live.
+  Position closed, funds transferred to Perps. Scheduled task `V14LiveAster` still exists
+  but should not be started (will conflict with PM bot).
+- **V14 Paper:** ~$52,600 equity, 400+ deals, 97.8% win rate
+- **V14 PM Paper:** ~$53,100 equity, 100+ deals, 100% win rate
 - **V14-ETF:** ❌ **RETIRED 2026-03-17** — HBAR autonomous direction switch caused losses.
 
 > **Bug history:** Earlier equity figures were inflated by engine counter drift.
@@ -1183,7 +1277,7 @@ Methods on `SpotExchangeClient` for production trading:
 | V14PM Portfolio | `docs/dashboardV14PM.html` | V14PM paper |
 | V14 DCA | `docs/dashboardV14.html` | V14 paper |
 | V14-ETF | `docs/dashboardV14ETF.html` | V14-ETF paper (RETIRED — dashboard preserved for historical record) |
-| V14 Live | `docs/d-984ae0d4ab9dc1a5.html` | V14 live (Aster) |
+| V14-PM Live | `docs/d-984ae0d4ab9dc1a5.html` | V14PM live (Aster Perps) |
 
 **Hosted at:** https://halo-effects.github.io/adaptive-intelligence-trading/
 
@@ -1222,8 +1316,11 @@ docs/data/
 ├── v14etf/
 │   ├── status.json          ← RETIRED — static snapshot
 │   └── trades.csv           ← RETIRED — historical record
-└── v14-pm/
-    ├── status.json
+├── v14-pm/
+│   ├── status.json          ← V14PM paper bot (always paper, never overwritten by live)
+│   └── trades.csv
+└── v14-pm-live/
+    ├── status.json          ← V14PM live bot (Aster Perps)
     └── trades.csv
 ```
 

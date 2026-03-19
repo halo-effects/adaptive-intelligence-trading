@@ -14,9 +14,9 @@ This is the **creator-managed prediction market** contract. Creators control res
 
 | Constant | Value | Meaning |
 |---|---|---|
-| `INITIAL_VIRTUAL_RESERVE` | 1,000 USDC (1e9 in 6-decimal) | Starting virtual liquidity per outcome |
+| `INITIAL_VIRTUAL_RESERVE` | 1,000 USDB (1e21 in 18-decimal) | Starting virtual liquidity per outcome |
 | `MAX_OUTCOMES` | 50 | Max outcomes per market |
-| `ONE_USD` | 1e6 | USDC decimal precision (6 decimals) |
+| `ONE_USD` | 1e18 | USDB decimal precision (18 decimals) |
 | `VOTING_WINDOW` | 15 minutes | Time between first vote and finalization |
 
 ---
@@ -25,7 +25,7 @@ This is the **creator-managed prediction market** contract. Creators control res
 
 ### How share pricing works
 
-Each outcome starts with a **virtual reserve** of 1,000 USDC. The price of an outcome is:
+Each outcome starts with a **virtual reserve** of 1,000 USDB. The price of an outcome is:
 
 ```
 Price = outcomeVirtualReserve / totalVirtualReserve
@@ -93,7 +93,7 @@ The `bonding` value is passed to `ATokenFactory.createToken()` as `usdcForBondin
 - Higher bonding = deeper initial liquidity = less price impact per trade
 - `startLP = 1000` is the initial LP allocation for the underlying token AMM
 
-**⚠️ This is separate from the prediction market virtual reserves.** The prediction market has its own virtual reserve system (1,000 USDC per outcome). The `bonding` parameter affects the underlying Stable+ token that the market is built on.
+**⚠️ This is separate from the prediction market virtual reserves.** The prediction market has its own virtual reserve system (1,000 USDB per outcome). The `bonding` parameter affects the underlying Stable+ token that the market is built on.
 
 ---
 
@@ -171,7 +171,7 @@ All funds (generalPot + all totalCosts) go to `insuranceWallet`. Market is effec
 ## Simulation Questions for Diamond
 
 ### Starting Liquidity
-1. **Virtual reserve per outcome (1,000 USDC)** — is this enough? With 5 outcomes, total virtual reserve is $5,000. A $500 buy on one outcome would move its price significantly:
+1. **Virtual reserve per outcome (1,000 USDB)** — is this enough? With 5 outcomes, total virtual reserve is $5,000. A $500 buy on one outcome would move its price significantly:
    - Before: 1,000/5,000 = 20%
    - After: 1,500/5,500 = 27.3%
    - That's a +36% relative price move from a $500 trade
