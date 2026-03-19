@@ -7,10 +7,9 @@
   "leverage": 1.0,
   "bot_state": "RUNNING",
   "capital": 350.0,
-  "equity": 350.1,
-  "pnl_pct": 0.03,
+  "equity": 334.4,
+  "pnl_pct": -4.46,
   "total_pnl": 23.954,
-  "total_realized_pnl": 23.954,
   "deals_completed": 12,
   "win_rate": 100.0,
   "coins": {
@@ -18,11 +17,11 @@
       "state": "LONG_DCA",
       "side": "long",
       "layers": 1,
-      "avg_entry": 0.3971,
+      "avg_entry": 0.3989,
       "current_price": 0.3966,
-      "unrealized_pnl": -0.0818,
+      "unrealized_pnl": -0.09,
       "invested": 15.76,
-      "realized_pnl": 0.2047,
+      "realized_pnl": 0.0,
       "lifecycle_phase": "LONG_DCA",
       "cfgi": null,
       "next_tp_price": 0.40488349999999995,
@@ -52,6 +51,6 @@
     "active_cash": 247.15,
     "reserve_cash": 87.5
   },
-  "uptime_hours": 1.26,
-  "last_update": "2026-03-19T22:22:53.257418+00:00"
+  "uptime_hours": 2.48,
+  "last_update": "2026-03-19T22:33:32.560173+00:00"
 }
