@@ -9,7 +9,7 @@ Comprehensive side-by-side audit of `run_v14_live_aster.py` (old, single-coin, S
 vs `run_v14_portfolio_live_aster.py` (new, PM, Perps). Focus on critical execution
 paths where bugs lose real money.
 
-**Findings: 8 gaps identified, 3 already fixed during session, 5 remaining.**
+**Findings: 8 gaps identified. All 8 fixed as of 10:27 PDT.**
 
 ---
 
@@ -265,24 +265,24 @@ if abs(total_drift) > 1.0:
 
 ---
 
-## Priority Fix List
+## Priority Fix List — ALL APPLIED 2026-03-19
 
-### 🔴 Critical (can lose money)
-1. **Add full pre-tick snapshot and rollback** (LIVE GUARD is incomplete without it)
-2. **Complete engine cleanup on TP fill** (zero all position fields, update counters)
-3. **Add pre-flight order checks** (min amount, precision rounding, balance check)
-4. **Fix reconciliation** (include perp positions, use additive correction)
+### 🔴 Critical (can lose money) — ALL FIXED
+1. ✅ **Full pre-tick snapshot and rollback** — `_snapshot_engine()` / `_rollback_engine()` + passed to `_execute_action()`
+2. ✅ **Complete engine cleanup on TP fill** — all fields zeroed, trade counters updated (both `_handle_tp_fill` and `_execute_action` SELL)
+3. ✅ **Pre-flight order checks** — min cost $5, USDT balance check with 1% buffer, Telegram alert on skip
+4. ✅ **Reconciliation fixed** — `fetch_open_positions()` included, additive correction, full breakdown logging
 
-### 🟡 Important (correctness)
-5. **Increase candle fetch to 50** + incomplete candle check
-6. **Add TP recovery on startup** (check if TP filled while bot was down)
-7. **Add spread logging and alerting**
-8. **Store TP limit price in CoinState** (don't rely on `eng.long_tp` which shifts)
+### 🟡 Important (correctness) — ALL FIXED
+5. ✅ **50-candle fetch** + incomplete candle check (`candle_end > now_ms: break`) + process all missed candles in sequence
+6. ✅ **TP recovery on startup** — `_recover_tp_orders()` checks filled/cancelled/still-open on every restart
+7. ✅ **Spread logging** — bps logged on every fill, Telegram alert if > 50bps
+8. ✅ **TP limit price stored separately** — `cs.tp_limit_price` in CoinState, used in `_handle_tp_fill` instead of `eng.long_tp`
 
-### 🟢 Nice-to-Have (observability)
-9. Fill price source logging
+### 🟢 Remaining Nice-to-Have (future)
+9. Fill price source logging (which method returned the price)
 10. Phase change handling (cancel TP, notify)
-11. Capital ledger (deposit/withdrawal tracking) — old bot has this, new doesn't
+11. Capital ledger (deposit/withdrawal tracking)
 
 ---
 

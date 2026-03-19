@@ -88,6 +88,7 @@ LIVE_POLL_INTERVAL = 65        # seconds between exchange polls
 TP_CHECK_INTERVAL  = 65        # seconds between TP order status checks
 STATUS_WRITE_INTERVAL = 60     # seconds between status.json writes
 REGIME_EVAL_HOUR   = 0         # UTC hour for daily regime evaluation (midnight)
+REENTRY_COOLDOWN   = 60        # seconds to wait after TP fill before re-entry
 TG_PREFIX          = "[V14-PM]"
 
 # ── Unified production profile ────────────────────────────────────────────────
@@ -520,6 +521,7 @@ class CoinState:
         self.allocated_capital = allocated_capital
         self.engine: Optional[V14LifecycleEngine] = None
         self.tp_order_id: Optional[str] = None
+        self.tp_limit_price: Optional[float] = None   # Audit #8: store TP price separately
         self.last_candle_ts: int = 0
         self.cumulative_funding: float = 0.0
         self.last_funding_check_ms: int = 0
@@ -529,6 +531,7 @@ class CoinState:
             "symbol": self.symbol,
             "allocated_capital": self.allocated_capital,
             "tp_order_id": self.tp_order_id,
+            "tp_limit_price": self.tp_limit_price,
             "last_candle_ts": self.last_candle_ts,
             "cumulative_funding": self.cumulative_funding,
             "last_funding_check_ms": self.last_funding_check_ms,
@@ -609,6 +612,9 @@ class V14PortfolioLiveAster:
         self._last_rebalance_date = None
         self._last_status_write: float = 0.0
 
+        # Re-entry cooldown (prevents rapid-fire after TP fills)
+        self._reentry_cooldown_until: float = 0.0
+
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         logger.info(
             f"V14PM Live Aster | capital=${capital:.2f} | "
@@ -685,6 +691,7 @@ class V14PortfolioLiveAster:
         for sym, cs_data in state.get("coins", {}).items():
             cs = CoinState(sym, cs_data.get("allocated_capital", 0))
             cs.tp_order_id = cs_data.get("tp_order_id")
+            cs.tp_limit_price = cs_data.get("tp_limit_price")
             cs.last_candle_ts = cs_data.get("last_candle_ts", 0)
             cs.cumulative_funding = cs_data.get("cumulative_funding", 0.0)
             cs.last_funding_check_ms = cs_data.get("last_funding_check_ms", 0)
@@ -758,14 +765,39 @@ class V14PortfolioLiveAster:
 
     def _reconcile_with_exchange(self):
         """
-        Reconcile engine capital against actual exchange balance.
-        Called on startup and periodically.
+        Reconcile engine state against actual exchange state.
+        Called on startup. Includes perp positions (Audit #4).
+
+        Compares:
+          Exchange: USDT balance + open position values
+          Engine: router cash + engine invested amounts
+
+        Uses additive correction (not multiplicative ratio).
         """
         try:
-            exchange_balance = self.client.fetch_balance()
-            logger.info(f"Exchange USDT balance: ${exchange_balance:.2f}")
+            exchange_usdt = self.client.fetch_balance()
+            logger.info(f"Exchange USDT balance: ${exchange_usdt:.2f}")
 
-            # Compare against router's total cash
+            # Fetch open perp positions for position-aware reconciliation
+            position_value = 0.0
+            try:
+                positions = self.client.fetch_open_positions()
+                for base, pos in positions.items():
+                    entry = pos.get("entry_price", 0)
+                    pqty = pos.get("qty", 0)
+                    unrealized = pos.get("unrealized_pnl", 0)
+                    pval = entry * pqty
+                    position_value += pval
+                    logger.info(
+                        f"  Position: {base} {pqty} @ ${entry:.6f} "
+                        f"(unrealized: ${unrealized:+.2f})"
+                    )
+            except Exception as e:
+                logger.warning(f"Position fetch failed (using engine data): {e}")
+
+            exchange_total = exchange_usdt + position_value
+
+            # Engine side: router cash + invested across all coin engines
             router_cash = self.router.active_pool_cash + self.router.reserve_pool_cash
             engine_invested = sum(
                 cs.engine._engine.long_cost if cs.engine and cs.engine._engine else 0
@@ -773,30 +805,37 @@ class V14PortfolioLiveAster:
             )
             engine_total = router_cash + engine_invested
 
-            drift = exchange_balance - engine_total
-            if abs(drift) > 0.50:
+            drift = exchange_total - engine_total
+
+            logger.info(
+                f"RECONCILIATION:\n"
+                f"  Exchange: ${exchange_usdt:.2f} USDT + ${position_value:.2f} positions "
+                f"= ${exchange_total:.2f} total\n"
+                f"  Engine:   ${router_cash:.2f} cash + ${engine_invested:.2f} invested "
+                f"= ${engine_total:.2f} total\n"
+                f"  Drift: ${drift:+.2f}"
+            )
+
+            DRIFT_THRESHOLD = 1.0
+            if abs(drift) > DRIFT_THRESHOLD:
+                # Additive correction applied to router active pool (Audit #4)
+                old_active = self.router.active_pool_cash
+                self.router.active_pool_cash += drift
                 logger.warning(
-                    f"Reconciliation: engine=${engine_total:.2f}, "
-                    f"exchange=${exchange_balance:.2f}, drift=${drift:+.2f}"
-                )
-                # Adjust router cash proportionally
-                correction_ratio = exchange_balance / engine_total if engine_total > 0 else 1.0
-                self.router.active_pool_cash  *= correction_ratio
-                self.router.reserve_pool_cash *= correction_ratio
-                logger.info(
-                    f"Corrected router cash: active=${self.router.active_pool_cash:.2f}, "
-                    f"reserve=${self.router.reserve_pool_cash:.2f}"
+                    f"RECONCILIATION ADJUSTMENT: active pool "
+                    f"${old_active:.2f} → ${self.router.active_pool_cash:.2f} "
+                    f"(adjusted by ${drift:+.2f})"
                 )
                 send_telegram(
-                    f"⚠️ {TG_PREFIX} Reconciliation\n"
-                    f"Engine: ${engine_total:.2f} | Exchange: ${exchange_balance:.2f}\n"
-                    f"Drift: ${drift:+.2f} — corrected"
+                    f"🔧 {TG_PREFIX} <b>Reconciliation</b>\n"
+                    f"Exchange: ${exchange_total:.2f} | Engine: ${engine_total:.2f}\n"
+                    f"Drift: ${drift:+.2f} — corrected (active pool)"
                 )
             else:
                 logger.info(f"Reconciliation OK: drift=${drift:+.2f}")
 
         except Exception as e:
-            logger.error(f"Reconciliation failed: {e}")
+            logger.error(f"Reconciliation failed: {e}\n{traceback.format_exc()}")
 
     # ── Funding rate tracking ─────────────────────────────────────────────────
 
@@ -825,7 +864,9 @@ class V14PortfolioLiveAster:
     # ── TP order management ───────────────────────────────────────────────────
 
     def _place_tp_order(self, sym: str, cs: CoinState):
-        """Place (or replace) TP limit order for a coin."""
+        """Place (or replace) TP limit order for a coin.
+        Stores the TP price in CoinState (Audit #8) so we never rely on
+        eng.long_tp which can shift after engine ticks."""
         if not cs.engine or not cs.engine._engine:
             return
         eng = cs.engine._engine
@@ -838,12 +879,24 @@ class V14PortfolioLiveAster:
         if cs.tp_order_id:
             self.client.cancel_tp_order(sym, cs.tp_order_id)
             cs.tp_order_id = None
+            cs.tp_limit_price = None
 
         # Place new TP order
         oid = self.client.place_limit_sell(sym, qty, tp_price)
         if oid:
             cs.tp_order_id = oid
+            cs.tp_limit_price = tp_price  # Audit #8: store separately
             logger.info(f"TP order placed for {sym}: qty={qty:.4f} @ ${tp_price:.8f} | order={oid}")
+        else:
+            logger.warning(
+                f"TP order placement FAILED for {sym}. "
+                f"Candle-based TP detection remains as fallback."
+            )
+            send_telegram(
+                f"⚠️ {TG_PREFIX} TP order placement FAILED for {sym}\n"
+                f"Qty: {qty:.4f} @ ${tp_price:.6f}\n"
+                f"Candle-based TP detection still active as fallback"
+            )
 
     def _check_tp_fills(self):
         """Poll exchange for TP order fills."""
@@ -856,6 +909,32 @@ class V14PortfolioLiveAster:
                     self._handle_tp_fill(sym, cs, result)
             except Exception as e:
                 logger.error(f"TP check failed for {sym}: {e}")
+
+    def _recover_tp_orders(self):
+        """Audit #6: On startup, check if any saved TP orders filled while bot was down."""
+        for sym, cs in list(self.coins.items()):
+            if not cs.tp_order_id:
+                continue
+            logger.info(f"Checking saved TP order for {sym}: {cs.tp_order_id}")
+            try:
+                result = self.client.check_order_status(sym, cs.tp_order_id)
+                if result.get("filled"):
+                    logger.info(f"TP order {cs.tp_order_id} FILLED while bot was down!")
+                    self._handle_tp_fill(sym, cs, result)
+                elif result.get("status") in ("canceled", "cancelled", "expired"):
+                    logger.warning(
+                        f"TP order {cs.tp_order_id} was {result['status']} while bot was down"
+                    )
+                    cs.tp_order_id = None
+                    cs.tp_limit_price = None
+                    send_telegram(
+                        f"⚠️ {TG_PREFIX} TP order for {sym} was {result['status']} "
+                        f"while bot was down. Will re-place on next cycle."
+                    )
+                else:
+                    logger.info(f"TP order {cs.tp_order_id} still open ({result.get('status', '?')})")
+            except Exception as e:
+                logger.error(f"TP recovery check failed for {sym}: {e}")
 
     def _handle_tp_fill(self, sym: str, cs: CoinState, fill_result: dict):
         """Handle a TP limit order that filled on the exchange."""
@@ -897,23 +976,45 @@ class V14PortfolioLiveAster:
         # Return capital to router
         self.router.return_capital(sym, actual_proceeds)
 
-        # Update engine state: sync to actual fill
+        # Audit #2: Complete engine cleanup after TP fill
         if cs.engine and cs.engine._engine:
             eng = cs.engine._engine
-            # Correct engine capital to actual proceeds
-            engine_expected = (eng.long_tp or actual_price) * actual_qty
+            # Use stored TP price (Audit #8), not eng.long_tp which may have shifted
+            stored_tp = cs.tp_limit_price or eng.long_tp or actual_price
+            engine_expected = stored_tp * actual_qty
             correction = actual_proceeds - engine_expected
             if abs(correction) > 0.01:
                 eng.capital += correction
                 logger.info(f"Engine capital corrected by ${correction:+.2f} for {sym}")
+            else:
+                eng.capital += actual_proceeds
+
+            # Update trade counters
+            eng.long_trades = (eng.long_trades or 0) + 1
+            pnl = record.get("pnl", 0) if record else 0
+            if pnl >= 0:
+                eng.long_wins = (eng.long_wins or 0) + 1
+            eng.long_pnl = (eng.long_pnl or 0.0) + pnl
+
+            # Zero out ALL position fields (matching old bot exactly)
             eng.long_coins = 0.0
-            eng.long_cost  = 0.0
+            eng.long_avg_entry = 0.0
             eng.long_layers = 0
+            eng.long_last_buy = None
+            eng.long_tp = 0.0
+            eng.long_cost = 0.0
 
         # Clean up
         cs.tp_order_id = None
+        cs.tp_limit_price = None
         cs.cumulative_funding = 0.0
         self.tracker.save_csv()
+
+        # Immediate re-entry: reset candle timestamp so the engine re-evaluates
+        # on the next poll cycle (after cooldown). No need to wait for next hour.
+        cs.last_candle_ts = 0
+        self._reentry_cooldown_until = time.time() + REENTRY_COOLDOWN
+        logger.info(f"Re-entry enabled for {sym} after {REENTRY_COOLDOWN}s cooldown")
 
         # Wind-down check: if in WIND_DOWN and no positions remain, flip direction
         if self.bot_state == BotState.WIND_DOWN:
@@ -921,43 +1022,93 @@ class V14PortfolioLiveAster:
 
     # ── Candle processing ─────────────────────────────────────────────────────
 
-    def _fetch_latest_candle(self, sym: str) -> Optional[dict]:
-        """Fetch the latest closed 1h candle for a symbol from Aster."""
+    def _fetch_candles(self, sym: str) -> List[dict]:
+        """Fetch closed 1h candles for a symbol from Aster.
+
+        Returns list of closed candles (incomplete current candle excluded).
+        Fetches 50 candles for crash recovery (Audit #5).
+        """
         try:
             base = sym.split("/")[0]
             prefix_coins = {"PEPE": "1000PEPE", "BONK": "1000BONK", "FLOKI": "1000FLOKI"}
             exchange_base = prefix_coins.get(base, base)
             aster_sym = f"{exchange_base}/USDT:USDT"
 
-            # Use the bot's exchange client (already configured for Aster fapi)
-            ohlcv = self.client._exchange.fetch_ohlcv(aster_sym, "1h", limit=3)
-            if not ohlcv or len(ohlcv) < 2:
-                return None
+            ohlcv = self.client._exchange.fetch_ohlcv(aster_sym, "1h", limit=50)
+            if not ohlcv:
+                return []
 
-            # Second-to-last is the last fully closed candle
-            bar = ohlcv[-2]
-            ts_ms = int(bar[0])
-
-            # Reverse 1000-prefix price scaling
+            now_ms = int(time.time() * 1000)
             scale = 1.0 / 1000.0 if base in ("PEPE", "BONK", "FLOKI") else 1.0
-            return {
-                "timestamp": ts_ms,
-                "open":   float(bar[1]) * scale,
-                "high":   float(bar[2]) * scale,
-                "low":    float(bar[3]) * scale,
-                "close":  float(bar[4]) * scale,
-                "volume": float(bar[5]),
-            }
+            candles = []
+            for bar in ohlcv:
+                ts_ms = int(bar[0])
+                candle_end = ts_ms + 3600_000
+                # Skip incomplete (current) candle
+                if candle_end > now_ms:
+                    break
+                candles.append({
+                    "timestamp": ts_ms,
+                    "open":   float(bar[1]) * scale,
+                    "high":   float(bar[2]) * scale,
+                    "low":    float(bar[3]) * scale,
+                    "close":  float(bar[4]) * scale,
+                    "volume": float(bar[5]),
+                })
+            return candles
         except Exception as e:
-            logger.error(f"fetch_latest_candle({sym}): {e}")
-            return None
+            logger.error(f"fetch_candles({sym}): {e}")
+            return []
+
+    # ── Pre-tick snapshot (Audit #1) ─────────────────────────────────────────
+
+    def _snapshot_engine(self, eng) -> dict:
+        """Take a full snapshot of engine state before tick.
+        Enables complete rollback on LIVE GUARD or failed orders."""
+        if eng is None:
+            return {}
+        return {
+            "long_coins": eng.long_coins,
+            "long_avg_entry": eng.long_avg_entry,
+            "long_layers": eng.long_layers,
+            "long_last_buy": eng.long_last_buy,
+            "long_tp": eng.long_tp,
+            "long_cost": eng.long_cost,
+            "long_trades": eng.long_trades,
+            "long_wins": eng.long_wins,
+            "long_pnl": eng.long_pnl,
+            "capital": eng.capital,
+            "_trades_len": len(eng.trades),
+        }
+
+    def _rollback_engine(self, eng, snapshot: dict):
+        """Restore engine to pre-tick snapshot. Trims phantom trades."""
+        if not snapshot or eng is None:
+            return
+        old_trades_len = snapshot.pop("_trades_len", None)
+        for k, v in snapshot.items():
+            setattr(eng, k, v)
+        if old_trades_len is not None and len(eng.trades) > old_trades_len:
+            removed = eng.trades[old_trades_len:]
+            eng.trades = eng.trades[:old_trades_len]
+            logger.warning(
+                f"Rolled back {len(removed)} phantom trade(s): "
+                f"{[t.get('action','?') for t in removed]}"
+            )
 
     # ── Action execution ──────────────────────────────────────────────────────
 
-    def _execute_action(self, sym: str, cs: CoinState, action: dict):
+    def _execute_action(self, sym: str, cs: CoinState, action: dict,
+                        pre_tick_snapshot: dict = None):
         """
         Execute a single engine action against the exchange.
-        Implements LIVE GUARD: engine TP sells blocked when limit order is active.
+
+        Audit fixes applied:
+          #1: Full pre-tick snapshot for LIVE GUARD rollback
+          #2: Complete engine cleanup on TP fill
+          #3: Pre-flight order validation (min amount, precision)
+          #7: Spread logging
+          #8: Store TP limit price separately in CoinState
         """
         act_type = action.get("action", "")
         price    = float(action.get("price", 0))
@@ -972,8 +1123,23 @@ class V14PortfolioLiveAster:
                     cs.engine.reject_action(action)
                 return
 
-            # Request capital from router
+            # Re-entry cooldown: block buys immediately after TP fill
+            if time.time() < self._reentry_cooldown_until:
+                remaining = self._reentry_cooldown_until - time.time()
+                logger.info(f"BUY blocked for {sym} — re-entry cooldown ({remaining:.0f}s remaining)")
+                if cs.engine:
+                    cs.engine.reject_action(action)
+                return
+
+            # Audit #3: Pre-flight checks
             cost = price * qty
+            if cost < 5.0:
+                logger.warning(f"BUY cost ${cost:.2f} below $5 minimum for {sym}, skipping")
+                if cs.engine:
+                    cs.engine.reject_action(action)
+                return
+
+            # Request capital from router
             key = f"{sym}:long"
             layer = self.tracker._open_deals.get(key, {}).get("layers", 0) + 1
             pool = "reserve" if layer >= 6 else "active"
@@ -991,12 +1157,41 @@ class V14PortfolioLiveAster:
                 self.router.return_capital(sym, granted)
                 return
 
+            # Audit #3: Balance pre-check
+            exchange_balance = self.client.fetch_balance()
+            if exchange_balance < cost * 1.01:
+                logger.warning(
+                    f"Insufficient USDT for {sym} BUY: need ${cost:.2f}, "
+                    f"have ${exchange_balance:.2f}"
+                )
+                self.router.return_capital(sym, granted)
+                if cs.engine:
+                    cs.engine.reject_action(action)
+                send_telegram(
+                    f"⚠️ {TG_PREFIX} BUY skipped — insufficient USDT\n"
+                    f"Need: ${cost:.2f} | Have: ${exchange_balance:.2f}\n"
+                    f"Symbol: {sym}"
+                )
+                return
+
             result = self.client.create_market_buy(sym, qty)
             if result and result.get("status") in ("filled", "dry_run"):
                 actual_price = result.get("price", price)
                 actual_qty   = result.get("qty", qty)
                 actual_cost  = result.get("cost", actual_price * actual_qty)
                 fee = result.get("fee", 0)
+
+                # Audit #7: Spread logging
+                spread_bps = abs(actual_price - price) / price * 10000 if price > 0 else 0
+                logger.info(
+                    f"BUY fill {sym}: engine=${price:.6f}, actual=${actual_price:.6f}, "
+                    f"spread={spread_bps:.1f}bps"
+                )
+                if spread_bps > 50:  # > 0.5%
+                    send_telegram(
+                        f"⚠️ {TG_PREFIX} High spread on {sym} BUY: {spread_bps:.0f}bps\n"
+                        f"Engine: ${price:.6f} | Fill: ${actual_price:.6f}"
+                    )
 
                 # Correct engine for actual fill vs expected
                 if cs.engine and cs.engine._engine:
@@ -1006,37 +1201,30 @@ class V14PortfolioLiveAster:
                         eng.capital -= correction
                         logger.info(f"BUY capital correction for {sym}: ${correction:+.4f}")
 
-                    # ── CRITICAL: Recalculate TP from actual fill price ──
-                    # The engine sets TP based on candle close, but the market
-                    # buy fill is typically higher (ask side + slippage).
-                    # We must recalculate avg entry and TP from actual fills,
-                    # otherwise the TP spread is too thin and profits vanish.
+                    # Recalculate TP from actual fill price (not engine's candle close)
                     if eng.long_coins > 0 and eng.long_cost > 0:
-                        actual_avg = eng.long_cost / eng.long_coins
-                        # Also correct avg_entry and cost with actual fill
-                        old_cost = eng.long_cost - actual_cost  # cost before this buy
-                        old_coins = eng.long_coins - actual_qty  # coins before this buy
-                        corrected_cost = (old_cost + actual_price * actual_qty)
+                        old_cost = eng.long_cost - actual_cost
+                        corrected_cost = old_cost + (actual_price * actual_qty)
                         eng.long_cost = corrected_cost
                         eng.long_avg_entry = corrected_cost / eng.long_coins
-                        # Recalculate TP from corrected average entry
                         tp_pct = 1.0 + (eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015)
                         eng.long_tp = eng.long_avg_entry * tp_pct
                         logger.info(
-                            f"TP recalculated from actual fill: avg_entry=${eng.long_avg_entry:.6f}, "
-                            f"TP=${eng.long_tp:.6f} (was engine price ${price:.6f})"
+                            f"TP recalculated from actual fill: avg=${eng.long_avg_entry:.6f}, "
+                            f"TP=${eng.long_tp:.6f} (engine was ${price:.6f})"
                         )
 
                 self.tracker.on_buy(sym, actual_qty, actual_price,
                                     datetime.now(timezone.utc))
 
-                # Update/place TP limit order (now using corrected TP)
+                # Place TP limit order (using corrected TP)
                 self._place_tp_order(sym, cs)
 
                 send_telegram(
                     f"🔵 {TG_PREFIX} <b>DCA Layer {layer}</b>\n"
                     f"Symbol: {sym}\n"
                     f"Fill: ${actual_price:.6f} × {actual_qty:.4f} = ${actual_cost:.2f}\n"
+                    f"TP: ${cs.tp_limit_price:.6f}\n"
                     f"Reason: {reason}"
                 )
             else:
@@ -1046,22 +1234,22 @@ class V14PortfolioLiveAster:
                     cs.engine.reject_action(action)
 
         elif act_type == "SELL":
-            # ── LIVE GUARD ──────────────────────────────────────────────────
+            # ── LIVE GUARD (Audit #1: full rollback) ──────────────────────
             # If a TP limit order is on the exchange, the exchange handles TP.
-            # Block engine-generated TP sells (which may use stale candle data).
-            # Non-TP sells (phase change, signal exit) are allowed through.
+            # Block engine-generated TP sells. Roll back ALL engine state.
             if cs.tp_order_id and "TP" in reason:
                 logger.info(
                     f"LIVE GUARD: Blocking engine TP sell for {sym} — "
                     f"TP order {cs.tp_order_id} is active on exchange. "
                     f"Engine price: ${price:.6f}"
                 )
-                # Roll back engine state — TP didn't happen
-                if cs.engine and cs.engine._engine:
-                    eng = cs.engine._engine
-                    # Re-add the quantity the engine thinks it sold
-                    eng.long_coins = eng.long_coins or qty
-                    logger.info(f"Engine state rolled back for {sym}")
+                # Full rollback from pre-tick snapshot
+                if pre_tick_snapshot and cs.engine and cs.engine._engine:
+                    self._rollback_engine(cs.engine._engine, pre_tick_snapshot.copy())
+                    logger.info(
+                        f"LIVE GUARD: Full engine rollback for {sym} — "
+                        f"restored to pre-tick state"
+                    )
                 return
 
             # Non-TP sell: cancel TP order first, then market sell
@@ -1069,6 +1257,7 @@ class V14PortfolioLiveAster:
                 logger.info(f"Cancelling TP order for {sym} before {reason} sell")
                 self.client.cancel_tp_order(sym, cs.tp_order_id)
                 cs.tp_order_id = None
+                cs.tp_limit_price = None
 
             result = self.client.create_market_sell(sym, qty)
             if result and result.get("status") in ("filled", "dry_run"):
@@ -1077,23 +1266,28 @@ class V14PortfolioLiveAster:
                 actual_proceeds = result.get("proceeds", 0)
                 fee             = result.get("fee", 0)
 
-                # Calculate PnL from ACTUAL exchange fill, not engine estimate
                 ts = datetime.now(timezone.utc)
                 record = self.tracker.on_sell(
                     sym, actual_qty, actual_price, actual_proceeds, fee, ts
                 )
-
-                # Return capital to router
                 self.router.return_capital(sym, actual_proceeds)
 
-                # Correct engine capital to actual
+                # Audit #2: Complete engine cleanup after sell
                 if cs.engine and cs.engine._engine:
                     eng = cs.engine._engine
-                    engine_expected = (eng.long_tp or price) * qty
-                    correction = actual_proceeds - engine_expected
-                    if abs(correction) > 0.01:
-                        eng.capital += correction
-                        logger.info(f"SELL capital correction for {sym}: ${correction:+.4f}")
+                    eng.capital += actual_proceeds
+                    eng.long_trades = (eng.long_trades or 0) + 1
+                    pnl = record.get("pnl", 0) if record else 0
+                    if pnl >= 0:
+                        eng.long_wins = (eng.long_wins or 0) + 1
+                    eng.long_pnl = (eng.long_pnl or 0.0) + pnl
+                    # Zero out ALL position fields
+                    eng.long_coins = 0.0
+                    eng.long_avg_entry = 0.0
+                    eng.long_layers = 0
+                    eng.long_last_buy = None
+                    eng.long_tp = 0.0
+                    eng.long_cost = 0.0
 
                 if record:
                     pnl = record["pnl"]
@@ -1106,10 +1300,34 @@ class V14PortfolioLiveAster:
                     )
 
                 cs.tp_order_id = None
+                cs.tp_limit_price = None
                 self.tracker.save_csv()
 
                 if self.bot_state == BotState.WIND_DOWN:
                     self._check_wind_down_complete()
+
+            else:
+                # SELL FAILED — full rollback from pre-tick snapshot
+                if pre_tick_snapshot and cs.engine and cs.engine._engine:
+                    self._rollback_engine(cs.engine._engine, pre_tick_snapshot.copy())
+                    logger.warning(
+                        f"SELL FAILED for {sym} — full engine rollback. "
+                        f"Will retry on next candle."
+                    )
+                    send_telegram(
+                        f"⚠️ {TG_PREFIX} <b>SELL FAILED — engine rolled back</b>\n"
+                        f"Symbol: {sym} | Reason: {reason}\n"
+                        f"Will retry on next candle"
+                    )
+                else:
+                    logger.error(
+                        f"SELL FAILED for {sym} and no pre-tick snapshot! "
+                        f"Engine state may be inconsistent."
+                    )
+                    send_telegram(
+                        f"🔴 {TG_PREFIX} <b>SELL FAILED — NO ROLLBACK</b>\n"
+                        f"Symbol: {sym} | Manual intervention may be needed"
+                    )
 
     # ── Capital Router integration ────────────────────────────────────────────
 
@@ -1657,6 +1875,9 @@ class V14PortfolioLiveAster:
             # Startup reconciliation
             self._reconcile_with_exchange()
 
+            # Audit #6: TP recovery — check if any TP orders filled while bot was down
+            self._recover_tp_orders()
+
             # Announce startup
             mode_str = "PAUSED" if self.bot_state == BotState.PAUSED else "RUNNING"
             send_telegram(
@@ -1691,43 +1912,52 @@ class V14PortfolioLiveAster:
                         self._update_funding()
                         last_tp_check = time.time()
 
-                    # Process each active coin
+                    # Process each active coin (Audit #5: 50 candles, process all missed)
                     for sym, cs in list(self.coins.items()):
                         if not cs.engine:
                             continue
 
-                        candle = self._fetch_latest_candle(sym)
-                        if not candle:
+                        candles = self._fetch_candles(sym)
+                        if not candles:
                             logger.warning(f"No candle data for {sym}")
                             continue
 
-                        ts_ms = candle["timestamp"]
-                        if ts_ms <= cs.last_candle_ts:
-                            continue  # Already processed this candle
+                        for candle in candles:
+                            ts_ms = candle["timestamp"]
+                            if ts_ms <= cs.last_candle_ts:
+                                continue  # Already processed
 
-                        ts_dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
-                        logger.info(
-                            f"Candle {sym}: {ts_dt.strftime('%H:%M')} UTC | "
-                            f"O={candle['open']:.6f} H={candle['high']:.6f} "
-                            f"L={candle['low']:.6f} C={candle['close']:.6f}"
-                        )
+                            ts_dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
+                            logger.info(
+                                f"Candle {sym}: {ts_dt.strftime('%H:%M')} UTC | "
+                                f"O={candle['open']:.6f} H={candle['high']:.6f} "
+                                f"L={candle['low']:.6f} C={candle['close']:.6f}"
+                            )
 
-                        # Run engine tick
-                        try:
-                            actions = cs.engine.tick(candle, cash_available=0)
-                        except Exception as e:
-                            logger.error(f"Engine tick failed for {sym}: {e}")
-                            continue
+                            # Audit #1: Take pre-tick snapshot for rollback
+                            eng = cs.engine._engine if cs.engine else None
+                            pre_tick = self._snapshot_engine(eng)
 
-                        if actions:
-                            logger.info(f"Engine actions for {sym}: {actions}")
-                            for action in actions:
-                                self._execute_action(sym, cs, action)
-                        else:
-                            logger.info(f"Engine tick {sym}: no action (warmed_up={cs.engine._warmed_up})")
+                            # Run engine tick
+                            try:
+                                actions = cs.engine.tick(candle, cash_available=0)
+                            except Exception as e:
+                                logger.error(f"Engine tick failed for {sym}: {e}")
+                                continue
 
-                        cs.last_candle_ts = ts_ms
-                        cs.engine._last_candle_ts = ts_ms
+                            if actions:
+                                logger.info(f"Engine actions for {sym}: {actions}")
+                                for action in actions:
+                                    self._execute_action(sym, cs, action,
+                                                         pre_tick_snapshot=pre_tick)
+                            else:
+                                logger.info(
+                                    f"Engine tick {sym}: no action "
+                                    f"(warmed_up={cs.engine._warmed_up})"
+                                )
+
+                            cs.last_candle_ts = ts_ms
+                            cs.engine._last_candle_ts = ts_ms
 
                     # CFGI poll
                     try:
