@@ -55,8 +55,8 @@
   },
   {
     "test": "get_base_tax_rates()",
-    "status": "FAIL",
-    "error": "(\"The function 'getBaseTaxRates' was not found in this \", \"contract's abi.\")"
+    "status": "PASS",
+    "result": "{'stasis': 50, 'stable': 50, 'default': 150, 'prediction': 150}"
   },
   {
     "test": "get_current_surge_tax(MAX_TOKEN)",
@@ -65,8 +65,8 @@
   },
   {
     "test": "get_available_surge_quota(MAX_TOKEN)",
-    "status": "FAIL",
-    "error": "(\"The function 'getAvailableSurgeQuota' was not found in this \", \"contract's abi.\")"
+    "status": "PASS",
+    "result": "604800"
   },
   {
     "test": "get_market_data(MAX_MARKET)",
@@ -125,8 +125,8 @@
   },
   {
     "test": "get_current_round(MAX_MARKET)",
-    "status": "FAIL",
-    "error": "(\"The function 'getCurrentRound' was not found in this \", \"contract's abi.\")"
+    "status": "PASS",
+    "result": "0"
   },
   {
     "test": "get_user_loan_count(zero addr)",
@@ -136,7 +136,7 @@
   {
     "test": "get_claimable_amount(0)",
     "status": "PASS",
-    "result": "247488425925925925"
+    "result": "256481481481481481"
   },
   {
     "test": "has_trading",

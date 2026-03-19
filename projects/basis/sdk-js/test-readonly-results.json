@@ -1,0 +1,209 @@
+[
+  {
+    "test": "init",
+    "status": "PASS"
+  },
+  {
+    "test": "getUSDPrice(MAINTOKEN)",
+    "status": "PASS",
+    "result": "1001084793879398573"
+  },
+  {
+    "test": "getTokenPrice(MAX_TOKEN)",
+    "status": "PASS",
+    "result": "1019364287863942114"
+  },
+  {
+    "test": "getAmountsOut(5 USDB -> MAINTOKEN)",
+    "status": "PASS",
+    "result": "4992785962375723218"
+  },
+  {
+    "test": "getAmountsOut(5 USDB -> MAX 3-hop)",
+    "status": "PASS",
+    "result": "4874519861188553891"
+  },
+  {
+    "test": "getTokenState(MAX_TOKEN)",
+    "status": "PASS",
+    "result": "{\"frozen\":false,\"hasBonded\":true,\"totalSupply\":\"1058171567435754808550\",\"usdPrice\":\"1020470088004294403\"}"
+  },
+  {
+    "test": "isEcosystemToken(MAX_TOKEN)",
+    "status": "PASS",
+    "result": "true"
+  },
+  {
+    "test": "getFeeAmount()",
+    "status": "PASS",
+    "result": "0"
+  },
+  {
+    "test": "getTokensByCreator(zero)",
+    "status": "PASS",
+    "result": "[]"
+  },
+  {
+    "test": "convertToShares(100 STASIS)",
+    "status": "PASS",
+    "result": "46645236751904753819"
+  },
+  {
+    "test": "convertToAssets(100 wSTASIS)",
+    "status": "PASS",
+    "result": "214384162164031699296"
+  },
+  {
+    "test": "getBaseTaxRates()",
+    "status": "FAIL",
+    "error": "Do not know how to serialize a BigInt"
+  },
+  {
+    "test": "getCurrentSurgeTax(MAX_TOKEN)",
+    "status": "PASS",
+    "result": "0"
+  },
+  {
+    "test": "getAvailableSurgeQuota(MAX_TOKEN)",
+    "status": "PASS",
+    "result": "604800"
+  },
+  {
+    "test": "getMarketData(MAX_MARKET)",
+    "status": "FAIL",
+    "error": "Do not know how to serialize a BigInt"
+  },
+  {
+    "test": "getOutcome(MAX_MARKET, 0)",
+    "status": "FAIL",
+    "error": "Do not know how to serialize a BigInt"
+  },
+  {
+    "test": "getInitialReserves(2)",
+    "status": "FAIL",
+    "error": "Do not know how to serialize a BigInt"
+  },
+  {
+    "test": "getUserShares(MAX_MARKET, zero, 0)",
+    "status": "PASS",
+    "result": "0"
+  },
+  {
+    "test": "isRegistered(zero)",
+    "status": "PASS",
+    "result": "false"
+  },
+  {
+    "test": "getAllOutcomes(MAX_MARKET)",
+    "status": "FAIL",
+    "error": "Do not know how to serialize a BigInt"
+  },
+  {
+    "test": "simulateLeverage(10 USDB, 7 days)",
+    "status": "FAIL",
+    "error": "Do not know how to serialize a BigInt"
+  },
+  {
+    "test": "isResolved(MAX_MARKET)",
+    "status": "PASS",
+    "result": "false"
+  },
+  {
+    "test": "isInDispute(MAX_MARKET)",
+    "status": "PASS",
+    "result": "false"
+  },
+  {
+    "test": "isInVeto(MAX_MARKET)",
+    "status": "PASS",
+    "result": "false"
+  },
+  {
+    "test": "getFinalOutcome(MAX_MARKET)",
+    "status": "PASS",
+    "result": "255"
+  },
+  {
+    "test": "getCurrentRound(MAX_MARKET)",
+    "status": "PASS",
+    "result": "0"
+  },
+  {
+    "test": "getUserLoanCount(zero)",
+    "status": "PASS",
+    "result": "0"
+  },
+  {
+    "test": "getClaimableAmount(0)",
+    "status": "PASS",
+    "result": "274039351851851851"
+  },
+  {
+    "test": "has_trading",
+    "status": "PASS"
+  },
+  {
+    "test": "has_factory",
+    "status": "PASS"
+  },
+  {
+    "test": "has_loans",
+    "status": "PASS"
+  },
+  {
+    "test": "has_staking",
+    "status": "PASS"
+  },
+  {
+    "test": "has_vesting",
+    "status": "PASS"
+  },
+  {
+    "test": "has_predictionMarkets",
+    "status": "PASS"
+  },
+  {
+    "test": "has_orderBook",
+    "status": "PASS"
+  },
+  {
+    "test": "has_resolver",
+    "status": "PASS"
+  },
+  {
+    "test": "has_privateMarkets",
+    "status": "PASS"
+  },
+  {
+    "test": "has_marketReader",
+    "status": "PASS"
+  },
+  {
+    "test": "has_leverageSimulator",
+    "status": "PASS"
+  },
+  {
+    "test": "has_taxes",
+    "status": "PASS"
+  },
+  {
+    "test": "has_agent",
+    "status": "PASS"
+  },
+  {
+    "test": "has_api",
+    "status": "PASS"
+  },
+  {
+    "test": "has_package_json",
+    "status": "PASS"
+  },
+  {
+    "test": "has_dist_cjs",
+    "status": "PASS"
+  },
+  {
+    "test": "has_types",
+    "status": "PASS"
+  }
+]

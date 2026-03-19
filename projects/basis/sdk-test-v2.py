@@ -5,7 +5,7 @@ import json
 import traceback
 
 # Add SDK v2 to path as a proper package
-sdk_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sdk-python-v2")
+sdk_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sdk-python-v3")
 sys.path.insert(0, sdk_root)
 
 from basis import BasisClient

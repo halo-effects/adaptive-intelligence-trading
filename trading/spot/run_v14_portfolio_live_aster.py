@@ -1963,8 +1963,10 @@ class V14PortfolioLiveAster:
         exchange_positions = {}
         try:
             exchange_positions = self.client.fetch_open_positions()
-        except Exception:
-            pass
+            if exchange_positions:
+                logger.debug(f"Status write: fetched {len(exchange_positions)} positions: {list(exchange_positions.keys())}")
+        except Exception as e:
+            logger.warning(f"Status write: position fetch failed: {e}")
 
         coins = {}
         for sym, cs in self.coins.items():
@@ -1986,6 +1988,11 @@ class V14PortfolioLiveAster:
 
                     # Recalculate unrealized PnL from exchange position data
                     base = sym.split("/")[0]
+                    logger.info(
+                        f"Status write {sym}: base={base}, "
+                        f"exchange_positions_keys={list(exchange_positions.keys())}, "
+                        f"match={base in exchange_positions}"
+                    )
                     if base in exchange_positions:
                         pos = exchange_positions[base]
                         coin_data["unrealized_pnl"] = round(pos.get("unrealized_pnl", 0), 4)
