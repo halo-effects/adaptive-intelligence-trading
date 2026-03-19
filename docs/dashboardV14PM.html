@@ -641,6 +641,8 @@ function render(){
   $('updateTime').textContent=S.last_update?new Date(S.last_update).toLocaleString():'--';
 
   var rg=S.regime||'--';
+  // Handle regime as object (live bot) or string (paper bot)
+  if(typeof rg==='object'&&rg!==null)rg=rg.alert_state||rg.signal_type||'--';
   var rgClass='regime-dist';
   if(rg==='ACCUMULATION'||rg==='RANGING')rgClass='regime-acc';
   else if(rg==='EXTREME'||rg==='CRASH')rgClass='regime-ext';
