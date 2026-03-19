@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -22,7 +22,7 @@
 body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;min-height:100vh;line-height:1.5}
 .wrap{max-width:1400px;margin:0 auto;padding:16px 20px}
 
-/* ── Header ── */
+/* -- Header -- */
 .header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:var(--card);border:1px solid var(--border);border-radius:16px;margin-bottom:12px}
 .header-left{display:flex;align-items:center;gap:14px}
 .logo-wrap{width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -47,7 +47,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .header-time{font-size:.7rem;color:var(--text3)}
 
-/* ── Summary Cards ── */
+/* -- Summary Cards -- */
 .summary{display:grid;grid-template-columns:1.2fr 1.2fr 1.2fr 1fr 0.8fr 0.8fr;gap:14px;margin-bottom:16px}
 .scard{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden}
 .sc-label{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
@@ -55,7 +55,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .sc-rpnl .sc-value,.sc-upnl .sc-value,.sc-eq .sc-value{font-size:clamp(1.1rem,2.5vw,1.7rem)}
 .sc-sub{font-size:.73rem;color:var(--text2);margin-top:4px}
 
-/* ── Coin Cards ── */
+/* -- Coin Cards -- */
 .coins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px}
 .coin-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:border-color .2s}
 .coin-card:hover{border-color:var(--accent)}
@@ -135,7 +135,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .rb-CHOPPY{background:rgba(245,158,11,.15);color:var(--amber)}
 .rb-DISTRIBUTION{background:rgba(245,166,35,.15);color:var(--amber)}
 
-/* ── Adaptive Intelligence Panel ── */
+/* -- Adaptive Intelligence Panel -- */
 .ai-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px}
 .ai-panel h2{font-size:1rem;font-weight:600;color:var(--text2);margin-bottom:16px}
 .ai-coins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
@@ -144,7 +144,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .ai-coin-name{font-size:.9rem;font-weight:600;display:flex;align-items:center;gap:8px}
 .ai-coin-phase{font-size:.65rem}
 
-/* ── Portfolio Allocation ── */
+/* -- Portfolio Allocation -- */
 .alloc-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px}
 .alloc-section h2{font-size:1rem;font-weight:600;color:var(--text2);margin-bottom:16px}
 .alloc-inner{display:flex;align-items:center;gap:40px;flex-wrap:wrap}
@@ -159,7 +159,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .alloc-table td{padding:8px;border-bottom:1px solid rgba(30,30,46,.5);font-size:.8rem}
 .alloc-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
 
-/* ── Risk Profile ── */
+/* -- Risk Profile -- */
 .risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .risk-col{padding:16px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px}
 .risk-col h3{font-size:.8rem;font-weight:600;color:var(--text2);margin-bottom:12px}
@@ -174,7 +174,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .regime-big{font-size:2.5rem;font-weight:700;margin:8px 0}
 .regime-desc{font-size:.78rem;color:var(--text2);line-height:1.5}
 
-/* ── Positions Section ── */
+/* -- Positions Section -- */
 .positions-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
 .position-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:20px}
 .position-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -194,7 +194,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .pb-dot.current{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2s infinite;width:14px;height:14px;z-index:3}
 .pb-label{position:absolute;top:-16px;transform:translateX(-50%);font-size:.55rem;color:var(--text3);white-space:nowrap}
 
-/* ── Phase Flow ── */
+/* -- Phase Flow -- */
 .flow-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px}
 .flow-section h2{font-size:1rem;font-weight:600;color:var(--text2);margin-bottom:4px}
 .opp-table{width:100%;border-collapse:collapse;margin-top:16px}
@@ -223,13 +223,13 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .fc-dot{width:18px;height:18px;border-radius:50%;font-size:.5rem;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center}
 .fc-dot.hbar{background:#3A3A3A}.fc-dot.atom{background:#6F7390}.fc-dot.link{background:#2A5ADA}.fc-dot.near{background:#00C08B}
 
-/* ── Charts Row ── */
+/* -- Charts Row -- */
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 .chart-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
 .chart-box h3{font-size:.9rem;font-weight:600;color:var(--text2);margin-bottom:14px}
 .chart-wrap{position:relative;height:280px}
 
-/* ── Trade Log ── */
+/* -- Trade Log -- */
 .trade-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}
 .trade-section h2{font-size:1rem;font-weight:600;margin-bottom:14px;color:var(--text2)}
 .trade-empty{text-align:center;color:var(--text3);padding:32px;font-size:.85rem}
@@ -248,7 +248,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 .pag-bar button:disabled{opacity:.4;cursor:not-allowed}
 .pag-info{font-size:.75rem;color:var(--text2)}
 
-/* ── Bottom Stats Bar ── */
+/* -- Bottom Stats Bar -- */
 .bottom-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 20px;margin-bottom:12px;font-size:.78rem;color:var(--text2)}
 .bstat{display:flex;flex-direction:column;align-items:center;gap:2px}
 .bstat span:first-child{font-size:.6rem;text-transform:uppercase;letter-spacing:.3px}
@@ -256,7 +256,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 .dd-gauge{width:80px;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-top:2px}
 .dd-gauge-fill{height:100%;border-radius:3px;transition:width .5s}
 
-/* ── Compounding Tracker ── */
+/* -- Compounding Tracker -- */
 .section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px}
 .section h2{font-size:1rem;font-weight:600;color:var(--text2);margin-bottom:16px}
 .comp-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
@@ -274,7 +274,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 .proj-card .pj-val{font-size:1.6rem;font-weight:700;color:var(--accent2)}
 .proj-card .pj-sub{font-size:.68rem;color:var(--text2);margin-top:4px}
 
-/* ── Macro Indicators ── */
+/* -- Macro Indicators -- */
 .macro-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .macro-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center}
 .macro-card .mc-title{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
@@ -284,7 +284,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 .fg-dot{width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--bg);position:absolute;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 6px rgba(255,255,255,.5)}
 .fg-labels{display:flex;justify-content:space-between;font-size:.55rem;color:var(--text3)}
 
-/* ── Footer ── */
+/* -- Footer -- */
 .footer{text-align:center;padding:20px 16px;font-size:.72rem;color:var(--text3);border-top:1px solid var(--border);margin-top:4px}
 .footer a{color:var(--accent2);text-decoration:none}.footer a:hover{text-decoration:underline}
 
@@ -299,7 +299,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 .status-indicator.pending{background:rgba(148,163,184,.12);color:var(--text2);border:1px solid rgba(148,163,184,.2)}
 .status-indicator.fired{background:rgba(99,102,241,.12);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}
 
-/* ── Responsive ── */
+/* -- Responsive -- */
 @media(max-width:1024px){
   .summary{grid-template-columns:repeat(3,1fr)}
   .charts-row{grid-template-columns:1fr}
@@ -468,7 +468,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 <!-- 8. LIVE OPPORTUNITY DASHBOARD -->
 <div class="flow-section">
   <h2 style="text-align:center;font-size:1.15rem;color:var(--text);margin-bottom:4px">&#x1F4CA; Live Opportunity Dashboard</h2>
-  <div class="flow-sub" style="text-align:center">Each coin operates independently through V14 DCA phases — long grids, short grids, and routing evaluation</div>
+  <div class="flow-sub" style="text-align:center">Each coin operates independently through V14 DCA phases � long grids, short grids, and routing evaluation</div>
 
   <!-- Phase Flow Diagram -->
   <div class="phase-flow" id="phaseFlow"></div>
@@ -488,7 +488,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th title="Base Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5×) &#x2192; stable (1.0×) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score × Trend Multiplier — the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="Base Score = Realized PnL � (1 - DD%) � Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5�) &#x2192; stable (1.0�) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score � Trend Multiplier � the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -597,9 +597,9 @@ var COIN_BASE = {
 function cm(sym){var b=sym.split('/')[0];return COIN_BASE[b]||{icon:b.toLowerCase(),label:b,name:b,color:'#6366f1'}}
 
 var PHASE_DESC = {
-  LONG_DCA:'Long grid active — buying dips, cycling TPs',
-  SHORT_DCA:'Short grid active — selling rallies, cycling TPs',
-  ROUTER:'Evaluating direction — waiting for signal confirmation'
+  LONG_DCA:'Long grid active � buying dips, cycling TPs',
+  SHORT_DCA:'Short grid active � selling rallies, cycling TPs',
+  ROUTER:'Evaluating direction � waiting for signal confirmation'
 };
 var PHASES = ['LONG_DCA','ROUTER','SHORT_DCA'];
 var REGIME_CLS = {ACCUMULATION:'rb-ACCUMULATION',ACC:'rb-ACC',TRENDING:'rb-TRENDING',TREND:'rb-TREND',RANGING:'rb-RANGING',EXTREME:'rb-EXTREME',CRASH:'rb-CRASH',CHOPPY:'rb-CHOPPY',DISTRIBUTION:'rb-DISTRIBUTION',LONG_DCA:'rb-ACC',SHORT_DCA:'rb-EXTREME',ROUTER:'rb-RANGING'};
@@ -658,7 +658,7 @@ function renderStats(){
   if(deals===0 && trades.length>0) deals=trades.length;
   var totalFees=S.total_fees||0;
   $('vRPnl').innerHTML='<span style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</span>';
-  $('vRPnlSub').textContent=deals+' completed deals'+(totalFees>0?' · after '+fUsd(totalFees)+' fees':'');
+  $('vRPnlSub').textContent=deals+' completed deals'+(totalFees>0?' � after '+fUsd(totalFees)+' fees':'');
 
   var syms=S.symbols||Object.keys(S.coins||{});
   var totalUpnl=0, totalInv=0;
@@ -792,7 +792,7 @@ function renderPositions(){
     var upnl=c.unrealized_pnl||0;
     var rpnl=c.realized_pnl||0;
     var layers=c.layers||0;
-    var maxLayers=10;
+    var maxLayers=(S.profile==='high')?12:10;
 
     html+='<div class="position-card">';
     html+='<div class="position-head"><div class="position-head-left">';
@@ -861,7 +861,7 @@ function renderAIPanel(){
     var cfgi=c.cfgi!=null?c.cfgi:null;
     var cfgiCol=cfgi!=null?(cfgi<=25?'var(--red)':cfgi<=45?'var(--amber)':cfgi<=55?'var(--text2)':'var(--green)'):'var(--text3)';
     var layers=c.layers||0;
-    var maxLayers=10;
+    var maxLayers=(S.profile==='high')?12:10;
     var gridPct=Math.min(layers/maxLayers*100,100);
     var side=(phase==='SHORT_DCA')?'short':'long';
     var dirText=side==='long'?'LONG \u25B2':'SHORT \u25BC';
