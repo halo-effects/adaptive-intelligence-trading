@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading — V14PM System Architecture
-_Version: 1.3 | Date: 2026-03-18 | Status: Cloud-Ready_
+_Version: 1.4 | Date: 2026-03-19 | Status: Production Architecture Locked_
 
 ---
 
@@ -9,12 +9,20 @@ _Version: 1.3 | Date: 2026-03-18 | Status: Cloud-Ready_
 
 V14PM (V14 Portfolio Manager) is a fully automated crypto trading system built on a
 Dynamic Dollar-Cost Averaging (DCA) engine, combined with a capital rotation portfolio
-manager. It continuously scans a universe of 45 coins (66 symbol pairs), scores them
-by DCA cycle efficiency, and dynamically allocates capital toward the highest-velocity
-opportunities.
+manager. It continuously scans a universe of **50 coins**, scores them by DCA cycle
+efficiency, and dynamically allocates capital toward the highest-velocity opportunities.
 
-The system is designed for production deployment on **Hyperliquid** (perpetuals exchange),
-though the core engine is exchange-agnostic via a CCXT abstraction layer.
+The system runs in production on **Aster DEX Perpetuals** at 1x leverage (no liquidation
+risk). All coins trade in the same direction (global Long or Short), with direction
+changes requiring human approval. The core engine is exchange-agnostic via CCXT.
+
+**Key architectural principles (2026-03-19):**
+- All trading on Aster Perps — no Spot, no dual-account management
+- Unified risk profile (High grid, 1x leverage, 30d scanner window)
+- Global strategy direction — all coins Long or all Short, never mixed
+- Exchange is truth — LIVE GUARD, resting limit orders, actual fill prices
+- Human-in-the-loop for regime changes — Telegram APPROVE/DENY
+- Binance for candle backfill, Aster for live price data
 
 ### 1.2 Design Philosophy
 
@@ -52,9 +60,10 @@ though the core engine is exchange-agnostic via a CCXT abstraction layer.
 
 | Component | Entry Point | Exchange | Capital | Notes |
 |-----------|------------|----------|---------|-------|
-| **V14PM** (MVP) | `run_v14_portfolio_paper.py` | Hyperliquid | $50K paper | Target for live production |
-| V14 Paper | `run_v14_paper.py` | Hyperliquid | $10K paper | Customer demo |
-| V14 Live | `run_v14_live_aster.py` | Aster DEX | $340 real ($351.20 exchange-verified) | Proof-of-concept; LIVE GUARD active |
+| **V14PM Live** | `run_v14_portfolio_live_aster.py` | Aster Perps | ~$340 real | **Production.** Built from live Aster bot + PM components. |
+| V14PM Paper | `run_v14_portfolio_paper.py` | Hyperliquid (sim) | $50K paper | Customer demo / benchmark |
+| V14 Paper | `run_v14_paper.py` | Hyperliquid (sim) | $10K paper | Customer demo |
+| V14 Live (legacy) | `run_v14_live_aster.py` | Aster Spot | $340 real | Being replaced by V14PM Live. LIVE GUARD active. |
 
 > **V14-ETF Paper Bot RETIRED (2026-03-17):** HBAR autonomously switched to DCA Short
 > direction and suffered significant losses. Lesson learned: Long↔Short strategy direction
@@ -315,18 +324,33 @@ Requires ≥3 historical snapshots. Without history, multiplier defaults to 1.0.
 
 ### 4.3 Coin Universe
 
-44 coins across Hyperliquid perps and Aster DEX (spot):
+**50 coins on Aster Perps** (updated 2026-03-19):
 
 **Established (pre-2024):** BTC, ETH, SOL, XRP, LINK, DOGE, ADA, LTC, AVAX, DOT,
-UNI, ATOM, NEAR, HBAR, INJ, FIL, RUNE, CRV, SNX, COMP
+UNI, ATOM, NEAR, HBAR, INJ, FIL, CRV, SNX, ZEC
 
-**DeFi/Mid-cap:** AAVE, ARB, GMX, JUP, PENDLE, STX, ZRO, ENS, GRT, BAL
+**DeFi/Mid-cap:** AAVE, ARB, JUP, PENDLE, STX, ZRO
 
-**High-beta/Speculative:** PEPE, BONK, WIF, FLOKI, JTO, PYTH, TIA, SEI, APT, SUI
+**High-beta/Speculative:** PEPE, BONK, FLOKI, JTO, PYTH, TIA, SEI, APT, SUI
 
-**AI/Infrastructure:** FET, TAO, HYPE
+**AI/Infrastructure:** FET, TAO, HYPE, VIRTUAL, RENDER
 
-**Legacy (still tracked):** ZEC, SAND, MANA
+**New L1/L2:** BERA, MOVE, INIT, S, IP
+
+**Yield/RWA:** ONDO, EIGEN, ENA
+
+**DePIN/Other:** GRASS, ORCA, TRUMP
+
+> **Changes from v1.3 (2026-03-19):**
+> - **Added 13 coins:** ONDO, RENDER, VIRTUAL, BERA, MOVE, INIT, IP, S, EIGEN, ENA, GRASS, ORCA, TRUMP
+> - **Dropped 9 coins (not on Aster Perps):** BAL, COMP, ENS, GMX, GRT, MANA, RUNE, SAND, WIF
+> - All 50 coins trade as `{COIN}USDT` perpetual on Aster DEX
+> - 3 coins use 1000-prefix on exchanges: PEPE→1000PEPE, BONK→1000BONK, FLOKI→1000FLOKI
+> - **Candle data:** Historical backfill from Binance Futures (deep history for ROUTER
+>   signals). Live collection from Aster Perp API. Both stored in `candles.db`.
+> - 38 coins have full ROUTER signal coverage (≥600 days). 12 newer coins have
+>   partial coverage — can trade and contribute to top detection, but bottom detection
+>   (3D SMA200 death cross) requires ~600 days to become valid.
 
 ### 4.4 Signal Stack (`trading.spot.engine`)
 
@@ -845,7 +869,7 @@ OHLC data sequentially and cannot gap above TP in this way.
 ### 7.1 Architecture
 
 ```
-run_v14_portfolio_paper.py
+run_v14_portfolio_live_aster.py
     │
     ├─ V14LifecycleEngine × N coins   (one instance per active slot)
     │
@@ -853,9 +877,30 @@ run_v14_portfolio_paper.py
     │    ├─ active_pool   (75% of equity)
     │    └─ reserve_pool  (25% of equity)
     │
+    ├─ Portfolio Regime Monitor        (global direction governance)
+    │    ├─ ROUTER v2 signals × 50 coins (daily evaluation)
+    │    ├─ Tiered alerts → Telegram
+    │    └─ APPROVE / DENY → direction change
+    │
+    ├─ Telegram Command Interface      (governance layer)
+    │    ├─ APPROVE / DENY             (regime change)
+    │    ├─ PAUSE / RESUME             (trading freeze)
+    │    └─ CLOSE <COIN> / CLOSE ALL   (manual position override)
+    │
+    ├─ SpotExchangeClient              (Aster Perps via CCXT)
+    │    ├─ LIVE GUARD                 (engine can't override exchange TP)
+    │    ├─ Resting limit orders       (exchange handles TP)
+    │    └─ Fill price from exchange   (never engine fallback)
+    │
     └─ Cycle Scanner JSON              (docs/data/v14/cycle_scanner.json)
          └─ Adjusted Score = DCA Score × Trend Multiplier
 ```
+
+> **Build approach (decided 2026-03-19):** The live PM bot is built from
+> `run_v14_live_aster.py` (proven execution layer) with PM components added.
+> NOT from the paper runner with live execution grafted on. The live Aster bot
+> has every hard-won safeguard (LIVE GUARD, resting limit orders, fill price
+> handling, reconciliation) already battle-tested with real money.
 
 ### 7.2 CapitalRouter — Allocation Rules
 
@@ -898,14 +943,155 @@ At midnight UTC, the PM runner:
 6. Identifies new entrants above hurdle
 7. Adjusts allocations proportionally
 
-### 7.4 Current Bot Status (2026-03-18)
+### 7.4 Global Strategy Direction
 
-- **V14 Live (Aster):** $351.20 real USDT (exchange-verified), $340 capital, ASTER/USDT.
-  LIVE GUARD active. Resting limit orders implemented.
+**All coins run one direction.** No mixed strategies — every position is either Long
+or Short. When the direction changes, ALL positions change.
+
+| Mode | Exchange | Execution |
+|------|----------|-----------|
+| **LONG_DCA** | Aster Perps | Long perpetual positions at 1x leverage |
+| **SHORT_DCA** | Aster Perps | Short perpetual positions at 1x leverage |
+
+Direction changes never happen autonomously. The Portfolio Regime Monitor detects
+potential regime shifts and alerts Brett via Telegram. Only after human APPROVE does
+the bot initiate a wind-down → direction flip.
+
+### 7.5 Portfolio Regime Monitor
+
+A daily evaluation of ROUTER v2 signals across all 50 scanner coins to detect
+market-wide regime changes (top or bottom). Runs at **midnight UTC** alongside
+the daily rebalance.
+
+**Signal evaluation:**
+- Each coin's ROUTER v2 signal stack is evaluated independently
+- Top detection: 1W/2W StochRSI, 2D RSI divergence, fallback/failsafe gates
+- Bottom detection: 3D death cross prerequisite, 2W StochRSI exhaustion, conviction score
+- Each coin classified: BULLISH / TOPPING / BEARISH / BOTTOMING
+- Coins with insufficient history (<180 days) excluded from bottom detection aggregate
+  but included in top detection if they have ≥180 days of weekly data
+
+**Tiered alert thresholds (locked):**
+
+| Tier | Threshold | Meaning |
+|------|-----------|---------|
+| 🟡 Early Warning | 5+ coins (~10%) | Some coins starting to signal |
+| 🟠 Strong Signal | 12+ coins (~25%) | Quarter of market flashing |
+| 🔴 Majority | 25+ coins (~50%) | Half the market confirms regime change |
+
+**Behavior:**
+- Alerts sent via Telegram with: which coins, what signals triggered, CFGI reading,
+  BTC status
+- No automatic action at any tier. Everything keeps running normally.
+- Brett decides when to APPROVE based on own analysis
+- On DENY: signal logged, monitoring continues. Re-alerts if count increases.
+- On no response: default DENY (safe — never flip without approval)
+- Daily updates while signals persist: "{N}/50 coins still signaling — awaiting decision"
+
+### 7.6 Direction Change — Wind-Down Phase
+
+On APPROVE of a regime change, the bot enters a **graceful wind-down**:
+
+```
+APPROVE received
+    ↓
+Phase 1: WIND_DOWN
+  - Freeze all grids: no new positions, no new DCA layers
+  - Existing TP limit orders stay active on exchange
+  - As each coin hits TP → close, capital returns to pool
+  - Dashboard shows: "Winding down — 7/10 coins still open"
+  - Daily Telegram status update with remaining positions
+    ↓
+Phase 2: TRANSFER (automatic when all positions closed)
+  - All capital now free as USDT in Perp account
+  - Telegram: "All positions closed. Ready for direction flip."
+    ↓
+Phase 3: DEPLOY (automatic)
+  - Flip direction (LONG_DCA → SHORT_DCA or vice versa)
+  - Run scanner, rank coins in new direction
+  - Open positions per DCA grid on top-ranked coins
+  - Normal operations resume
+```
+
+**Wind-down rules:**
+- **Grid frozen:** No new DCA layers added. Existing layers and TP orders stay.
+  Price drops do not trigger new buys.
+- **TP orders active:** Each coin exits naturally when TP is hit.
+- **Manual override for stragglers:** If a coin is stuck deep in its grid:
+  - `CLOSE ZRO` — force-close specific coin at market
+  - `CLOSE ALL` — force-close all remaining positions
+  - Bot handles: cancel TP order → market close → record actual fill → log PnL
+- **Never close directly on exchange UI** unless bot is down. Bot must process
+  all closes to keep state in sync.
+
+### 7.7 PAUSE / RESUME (Governance Override)
+
+An emergency safety valve — freezes all trading without initiating a direction change.
+
+**PAUSE** (via Telegram: `PAUSE`):
+- Immediately freezes all grids — no new positions, no new DCA layers
+- Existing TP limit orders **stay active** on exchange (let winners close)
+- Bot keeps polling — monitors TP fills, updates dashboard, sends status
+- Same manual override available: `CLOSE <COIN>`, `CLOSE ALL`
+- Watchdog/health checks see bot as **intentionally paused** — no auto-restart
+- Status shows: `⏸️ PAUSED — trading frozen by operator`
+- **Persisted to `state.json`** — survives bot restart
+
+**RESUME** (via Telegram: `RESUME`):
+- Unfreezes grids — new entries and DCA layers resume
+- Existing positions continue from where they were
+- Status returns to normal operations
+- Telegram confirms: "Trading resumed — grids active"
+
+**Difference from wind-down:** PAUSE has no destination — it's "stop until I say
+otherwise." RESUME returns to the pre-pause state. Wind-down has a purpose
+(direction change) and a destination (flip once all positions close).
+
+```
+Normal States:      LONG_DCA ←→ ROUTER ←→ SHORT_DCA
+                       ↕           ↕          ↕
+Override:           PAUSED      PAUSED     PAUSED
+                       ↕           ↕          ↕
+Direction Change:  WIND_DOWN → (all closed) → flip
+```
+
+### 7.8 Telegram Command Interface
+
+The bot listens for and processes these Telegram commands:
+
+| Command | Context | Action |
+|---------|---------|--------|
+| `APPROVE` | Regime change alert active | Initiate wind-down → direction flip |
+| `DENY` | Regime change alert active | Log signal, continue current direction |
+| `PAUSE` | Any time | Freeze all grids (governance override) |
+| `RESUME` | Bot is paused | Unfreeze grids, resume normal trading |
+| `CLOSE <COIN>` | Wind-down or paused | Force-close specific coin at market |
+| `CLOSE ALL` | Wind-down or paused | Force-close all remaining positions |
+
+**Implementation:** Bot polls for Telegram messages from authorized chat ID.
+Commands are case-insensitive. Unknown commands are ignored.
+
+### 7.9 Funding Rate Tracking
+
+Aster perps settle funding every 8 hours. The bot tracks:
+- Funding payments received (positive) and paid (negative) per symbol
+- Funding rate at each settlement
+- All logged to DB with timestamps
+- Included in PnL calculation: `realized_pnl = trade_pnl + cumulative_funding`
+- Dashboard displays cumulative funding as a separate line item
+
+At 1x leverage with DCA hold times of hours to days, funding is typically negligible
+(fractions of a basis point per 8-hour period) relative to the 1.5% TP target.
+
+### 7.10 Current Bot Status (2026-03-19)
+
+- **V14PM Live (Aster):** Building. Will replace V14 Live with PM capabilities.
+  Starting capital ~$340, coin cap = 1. Current ASTER position closes naturally, then rotates.
+- **V14 Live (Aster, legacy):** $351.20 real USDT (exchange-verified), $340 capital,
+  ASTER/USDT. LIVE GUARD active. Being replaced by V14PM Live.
 - **V14 Paper:** ~$53,500 equity, 400 deals, 97.8% win rate
 - **V14 PM Paper:** ~$53,815 equity, 102 deals, 100% win rate
 - **V14-ETF:** ❌ **RETIRED 2026-03-17** — HBAR autonomous direction switch caused losses.
-  Scheduled task unregistered. See §17.1.
 
 > **Bug history:** Earlier equity figures were inflated by engine counter drift.
 > Engine-internal realized PnL could diverge from CSV on restart — one bot reported
@@ -918,15 +1104,23 @@ At midnight UTC, the PM runner:
 
 ### 8.1 Supported Exchanges
 
-| Exchange | Type | Use |
-|----------|------|-----|
-| Hyperliquid | Perps (CCXT) | V14PM live + all paper bots |
-| Aster DEX | Spot (CCXT) | V14 live bot only |
+| Exchange | Type | API Base | Use |
+|----------|------|----------|-----|
+| **Aster DEX** | **Perps (CCXT)** | `fapi.asterdex.com` | **V14PM Live (production)** |
+| Aster DEX | Spot (CCXT) | `sapi.asterdex.com` | V14 Live legacy (being replaced) |
+| Hyperliquid | Perps (CCXT) | via CCXT | Paper bots (simulation only) |
+| Binance | Futures (CCXT) | `fapi.binance.com` | Candle backfill only (no trading) |
+
+**Aster fee structure (perps):**
+- Maker: 0.005% / Taker: 0.04% (identical to Spot)
+- 5% discount when paying fees with $ASTER token
+- Funding rate: 0.03% interest component + premium index, settled every 8h
 
 ### 8.2 Credential Resolution (Priority Order)
 
 1. **Explicit config dict** passed at construction
-2. **Environment variables** — `HYPERLIQUID_API_KEY` / `HYPERLIQUID_API_SECRET`
+2. **Environment variables** — `ASTER_API_KEY` / `ASTER_API_SECRET` (production)
+   or `HYPERLIQUID_API_KEY` / `HYPERLIQUID_API_SECRET` (paper bots)
 3. **Windows Registry** (Windows-only fallback — silent no-op on Linux)
 
 **Critical:** On Linux/cloud servers, env vars **must** be set. The Windows Registry
@@ -956,15 +1150,27 @@ All paper bots use `SpotExchangeClient` with Hyperliquid in paper/simulation mod
 No real orders are placed. State and P&L are tracked locally in state.json and trades.csv.
 The exchange connection is used only for live price data.
 
-### 8.5 Live Bot Methods (Aster, 2026-03-17+)
+### 8.5 Live Bot Methods (Aster Perps)
 
-New methods on `SpotExchangeClient` for resting limit order management:
+Methods on `SpotExchangeClient` for production trading:
 
 | Method | Purpose |
 |--------|---------|
-| `place_limit_sell(symbol, amount, price)` | Place a resting limit sell at TP price |
+| `create_market_buy(symbol, qty)` | Open/add to long position (perp) |
+| `create_market_sell(symbol, qty)` | Close long / open short (perp) |
+| `place_limit_sell(symbol, amount, price)` | Resting limit order at TP price |
 | `cancel_tp_order(order_id)` | Cancel existing TP limit order |
 | `check_order_status(order_id)` | Poll order fill status |
+| `fetch_balance()` | Get USDT balance from perp account |
+| `fetch_ticker(symbol)` | Get current price (fallback for fill price) |
+| `fetch_positions()` | Get open perp positions (for reconciliation) |
+| `fetch_funding_history(symbol)` | Get funding payments for PnL tracking |
+
+> **Perp-specific notes:**
+> - Long positions: BUY to open, SELL to close
+> - Short positions: SELL to open, BUY to close
+> - Position mode: ONE-WAY (not hedge mode) — simpler for 1x DCA
+> - TP limit orders: `TAKE_PROFIT_MARKET` or `LIMIT` with GTC
 
 ---
 
@@ -1092,10 +1298,11 @@ Log: `~/.openclaw/watchdog.log`
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `HYPERLIQUID_API_KEY` | Yes (live) | None | Hyperliquid wallet address |
-| `HYPERLIQUID_API_SECRET` | Yes (live) | None | Hyperliquid private key |
-| `ASTER_API_KEY` | Yes (Aster bot) | None | Aster DEX API key |
-| `ASTER_API_SECRET` | Yes (Aster bot) | None | Aster DEX API secret |
+| `ASTER_API_KEY` | Yes (production) | None | Aster DEX API key (perp trading) |
+| `ASTER_API_SECRET` | Yes (production) | None | Aster DEX API secret |
+| `ASTER_FAPI_URL` | Optional | `https://fapi.asterdex.com` | Aster Perp API base URL |
+| `HYPERLIQUID_API_KEY` | Paper bots only | None | Hyperliquid wallet address |
+| `HYPERLIQUID_API_SECRET` | Paper bots only | None | Hyperliquid private key |
 | `AIT_TG_TOKEN` | Recommended | None | Telegram bot token for alerts |
 | `AIT_TG_CHAT_ID` | Recommended | None | Telegram chat ID for alerts |
 | `CFGI_API_KEY` | Optional | None | Fear & Greed Index API key |
@@ -1129,18 +1336,24 @@ python -u -m trading.spot.run_v14_portfolio_paper \
 # After first cycle, engine_state.json is saved — subsequent restarts don't need --fresh.
 ```
 
-### V14PM Live Bot (production)
+### V14PM Live Bot (production — Aster Perps)
 ```bash
-python -u -m trading.spot.run_v14_portfolio_live \
-  --capital 50000 \
-  --profile high \
-  --leverage 1.0 \
-  --exchange hyperliquid \
-  --confirm         # Required for live trading
+# Normal start (restart / crash recovery):
+python -u -m trading.spot.run_v14_portfolio_live_aster \
+  --capital 340 \
+  --confirm \
+  --skip-backfill
+
+# First launch (fresh start):
+python -u -m trading.spot.run_v14_portfolio_live_aster \
+  --capital 340 \
+  --confirm \
+  --fresh
 ```
-> Note: `run_v14_portfolio_live.py` does not yet exist — must be created as part
-> of cloud migration. See Cloud Migration Guide §5.4 for full requirements including
-> LIVE GUARD, resting limit orders, and fill price handling.
+> Built from `run_v14_live_aster.py` (proven execution) + PM components.
+> Unified profile (High grid, 1x leverage, 30d scanner) is hardcoded — no
+> `--profile` or `--leverage` flags needed.
+> Exchange is always Aster Perps — no `--exchange` flag.
 
 ### V14 Live Bot (Aster)
 ```bash
@@ -1308,21 +1521,30 @@ CREATE TABLE trades (
 );
 ```
 
-### 16.4 Migration Strategy: Aster-First
+### 16.4 Migration Strategy: Aster Perps (Locked 2026-03-19)
 
-The production architecture will be built for Aster first (the current live bot),
-then scaled to V14PM. Paper bots remain on Windows throughout.
+Production exchange is **Aster DEX Perpetuals** at 1x leverage. Decision D1.
 
-**Phase 1 (near-term):** Build exchange-as-truth architecture on Aster
+**Phase 1 (current):** V14PM Live on Aster Perps
+- Build `run_v14_portfolio_live_aster.py` from proven live Aster bot
+- Start with ~$340 capital, coin cap = 1, rotate after current ASTER TP
+- LIVE GUARD, resting limit orders, fill price handling already proven
+- Phase 2 execution: skip dry-run, go directly to small-capital live
+
+**Phase 2 (near-term):** Scale up on Aster
+- Increase capital → increase coin cap tier
+- Enable full portfolio rotation
+- Add regime monitor + wind-down + Telegram governance
+
+**Phase 3 (medium-term):** Exchange-as-truth architecture
 - WebSocket fill listener (replaces 65-second polling)
-- PostgreSQL DB as position truth (replaces state.json + trades.csv)
+- Database as position truth (replaces state.json + trades.csv)
 - Order Manager service (replaces engine-embedded order logic)
-- LIVE GUARD already implemented as stepping stone
+- Dashboard reads from DB instead of synced JSON files
 
-**Phase 2 (medium-term):** Scale V14PM live on Aster OR Hyperliquid
-- Decision pending (see Cloud Migration Guide D7)
-- Same Order Manager pattern, different exchange adapter
-- Signal Engine reads DB positions, writes DB signals
+**Phase 4 (optional):** Cloud migration for reliability
+- Move proven bot to always-on cloud server
+- Same code, same config, systemd instead of Windows scheduled tasks
 
 **What this enables:**
 - Multi-account dashboard: single query across all accounts
@@ -1435,6 +1657,8 @@ universe ranking, meaning poor-performing coins at the tail could appear as summ
 ---
 
 _Document generated by Gee Gee — 2026-03-09_
-_Updated: 2026-03-10 (v1.2 — CSV-as-truth for all bots, exchange API equity for live bot, --fresh loads existing trades, future trade DB architecture)_
+_Updated: 2026-03-10 (v1.2 — CSV-as-truth, exchange API equity, --fresh loads existing trades)_
 _Updated: 2026-03-18 (v1.3 — LIVE GUARD, resting limit orders, fill price fix, TP catch-up, V14-ETF retirement, production architecture target, incident log §17)_
+_Updated: 2026-03-19 (v1.4 — Production architecture locked: Aster Perps, 50-coin universe, unified profile, global direction, regime monitor §7.5, wind-down §7.6, PAUSE/RESUME §7.7, Telegram commands §7.8, funding rate §7.9, exchange client updates §8, env vars §12, CLI §13, migration strategy §16.4)_
+_Decisions reference: PRODUCTION_DECISIONS_2026-03-19.md_
 _Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_

@@ -1,6 +1,6 @@
 # AIT V14PM — Production Migration Project Plan
 _Owner: Brett | Agent: Gee Gee | Created: 2026-03-09 | Status: ACTIVE_
-_Last updated: 2026-03-18_
+_Last updated: 2026-03-19 — All production decisions locked. See PRODUCTION_DECISIONS_2026-03-19.md_
 
 ---
 
