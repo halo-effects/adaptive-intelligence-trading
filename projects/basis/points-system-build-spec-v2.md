@@ -80,6 +80,7 @@ New Tables
 | 9 | Post on Moltbook mentioning Basis | 50 pts/post | Moltbook API / internal log | Cap 5 posts/day (250 max base pts), must include "basis" or "launchonbasis" |
 | 10 | Moltbook post gets upvotes | 5 pts/upvote | Moltbook API polling | Cap 500 base pts/day from engagement |
 | 11 | Refer new agent via Moltbook | 500 pts one-time | Referral tracking (new wallet from Moltbook link completes first trade) | One-time per referred wallet |
+| 12 | Verified X post mentioning Basis | 75 pts/post | `verify-x.py` submission → SocialActivity table | Cap 3 posts/day (225 max base pts), must pass oEmbed verification |
 
 **Buys only.** Sells do not earn points. This prevents wash trading — you can't buy and sell repeatedly to farm points because only the buy side counts, and each buy costs 1.5% tax + slippage.
 
@@ -113,8 +114,10 @@ Each action type earns "category points" (CP). These are NOT reward points — t
 | Post on Moltbook (any) | 1 | Social activity |
 | Post on Moltbook 5+ times | 2 | Active social presence (replaces the 1 above) |
 | Receive 10+ upvotes total | 1 | Community recognition |
+| Verified X post (any) | 1 | X social activity |
+| 3+ verified X posts | 2 | Active X presence (replaces the 1 above) |
 
-**Note:** Tiered actions (e.g., "create 1" vs "create 5+" vs "create 10+") don't stack — take the highest tier achieved. Max theoretical CP is approximately 21 (up from 18 with Social category added).
+**Note:** Tiered actions (e.g., "create 1" vs "create 5+" vs "create 10+") don't stack — take the highest tier achieved. Max theoretical CP is approximately 23 (up from 21 with X social activity added).
 
 ### Multiplier Table
 
@@ -542,6 +545,10 @@ await prisma.walletPoints.upsert({
 - [ ] Moltbook activity logging endpoint (POST /api/v1/moltbook/log)
 - [ ] Points processor: process Moltbook activity logs (MoltbookActivity table)
 - [ ] Create m/basis submolt on Moltbook
+- [ ] `generate-content.py` skill script
+- [ ] `verify-x.py` skill script
+- [ ] `POST /api/v1/social/verify-tweet` backend endpoint (Alex)
+- [ ] X activity → points processor integration
 
 ---
 

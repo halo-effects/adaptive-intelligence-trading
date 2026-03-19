@@ -276,6 +276,7 @@ class AsterPerpClient:
             "secret": api_secret,
             "enableRateLimit": True,
             "options": {"defaultType": "future"},
+            "timeout": 15000,  # 15s hard timeout on all API calls (prevent hangs)
         })
         if not dry_run:
             self._exchange.load_markets()
