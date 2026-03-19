@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading — V14PM System Architecture
-_Version: 1.2 | Date: 2026-03-10 | Status: Cloud-Ready_
+_Version: 1.3 | Date: 2026-03-18 | Status: Cloud-Ready_
 
 ---
 
@@ -22,6 +22,10 @@ though the core engine is exchange-agnostic via a CCXT abstraction layer.
 - **DCA-only exits:** All positions exit at a fixed take-profit above average entry
 - **Capital rotation:** Close winners fast, redeploy to the next best opportunity
 - **No manual intervention:** Fully autonomous from candle collection to order execution
+- **Exchange is truth (live bots):** For live trading, exchange balances and fill prices
+  are authoritative. Engine state is never used as a source of fill prices or position
+  truth. All live bot capital calculations reflect actual exchange proceeds. Engine TP
+  sells are blocked when an active exchange limit order exists (LIVE GUARD pattern).
 
 ### 1.3 System Layers
 
@@ -38,6 +42,9 @@ though the core engine is exchange-agnostic via a CCXT abstraction layer.
 ├─────────────────────────────────────────────────────────────┤
 │  DATA PIPELINE                                              │
 │  Candle Collector · candles.db · Daily Aggregator          │
+├─────────────────────────────────────────────────────────────┤
+│  EXCHANGE LAYER (LIVE BOTS ONLY)                            │
+│  Resting Limit Orders · Fill Verification · LIVE GUARD     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -47,8 +54,12 @@ though the core engine is exchange-agnostic via a CCXT abstraction layer.
 |-----------|------------|----------|---------|-------|
 | **V14PM** (MVP) | `run_v14_portfolio_paper.py` | Hyperliquid | $50K paper | Target for live production |
 | V14 Paper | `run_v14_paper.py` | Hyperliquid | $10K paper | Customer demo |
-| V14-ETF Paper | `run_v14etf_paper.py` | Hyperliquid | $10K paper | Customer demo |
-| V14 Live | `run_v14_live_aster.py` | Aster DEX | $300 real | Proof-of-concept |
+| V14 Live | `run_v14_live_aster.py` | Aster DEX | $340 real ($351.20 exchange-verified) | Proof-of-concept; LIVE GUARD active |
+
+> **V14-ETF Paper Bot RETIRED (2026-03-17):** HBAR autonomously switched to DCA Short
+> direction and suffered significant losses. Lesson learned: Long↔Short strategy direction
+> changes require human-in-the-loop approval. Scheduled task unregistered. State preserved
+> at `paper/v14etf/status.json.retired`.
 
 ---
 
@@ -87,7 +98,7 @@ trading/
     │
     ├── run_v14_portfolio_paper.py  # V14PM bot runner (paper)
     ├── run_v14_paper.py            # V14 paper bot runner
-    ├── run_v14etf_paper.py         # V14-ETF paper bot runner
+    ├── run_v14etf_paper.py         # V14-ETF paper bot runner (RETIRED — do not restart)
     ├── run_v14_live_aster.py       # V14 live bot runner (Aster DEX)
     ├── run_v14_scanner.py          # Manual scanner runner
     ├── run_daily_collector.py      # Manual collector runner
@@ -109,7 +120,7 @@ trading/
     │   └── v14/                    # V14 live bot state (Aster DEX)
     │       ├── .env                # Credentials (NOT in git)
     │       ├── .env.template       # Credential template
-    │       ├── state.json          # Bot position state
+    │       ├── state.json          # Bot position state (includes _tp_order_id)
     │       ├── status.json         # Health/metrics (updated every ~1h)
     │       ├── trades.csv          # Trade history
     │       └── bot.log             # Runtime log
@@ -119,7 +130,8 @@ trading/
     │
     └── paper/
         ├── v14/                    # V14 paper bot state
-        ├── v14etf/                 # V14-ETF paper bot state
+        ├── v14etf/                 # V14-ETF paper bot state (RETIRED)
+        │   └── status.json.retired # Renamed on 2026-03-17 retirement
         └── v14_portfolio/          # V14PM paper bot state
             ├── engine_state.json     # Engine snapshots (saved every 60s)
             ├── status.json           # Health metrics (dashboard + heartbeat)
@@ -277,6 +289,10 @@ Taker fee:       0.025% (Hyperliquid)
 
 **Minimum history:** 6 months of 1h candles required to appear on dashboard rankings
 
+> **Scanner fix (2026-03-18):** Best/Fastest/Safest summary picks in `cycle_scanner.json`
+> are now derived from the top 5 scored coins only (`scored_rankings[:5]`), not the full
+> coin universe. This ensures summary picks are drawn from genuinely high-performing coins.
+
 ### 4.2 Trend Multiplier
 
 Applied on top of the DCA Score to bias allocation toward momentum:
@@ -419,6 +435,12 @@ Layer N: where N = DCA_MAX_LAYERS
 Take Profit: when avg_entry × (1 + DCA_TP_PCT) ≤ current_price → SELL ALL
 ```
 
+**TP Fill Model (updated 2026-03-17):** TP detection now checks candle **high** (for longs)
+and candle **low** (for shorts), not candle close. This ensures wicks that touch the TP price
+trigger a fill at the TP price, matching the behavior of a resting exchange limit order.
+Previously, the engine could miss TPs when the wick touched the TP level but the candle
+closed below it. Files updated: `v14_dca_engine.py`, `v14_lifecycle_engine.py`.
+
 **Layer timing:** There is no cooldown between layers at any risk profile (Low,
 Medium, or High). When price drops through multiple deviation thresholds, the
 grid fills all qualifying layers on the next tick. The deviation check
@@ -434,7 +456,30 @@ for faster TP recovery.
 
 ### 5.3 Risk Profiles
 
-All bots are launched with an explicit `--profile` flag:
+#### Production Profile (Unified — decided 2026-03-18)
+
+For initial production deployment, V14PM uses a **single unified profile** — the
+proven High grid at 1x leverage with a 30d scanner window. Risk tiers are deferred
+until production data justifies differentiation.
+
+| Parameter | Production Value |
+|-----------|-----------------|
+| Leverage | **1.0x** (no liquidation risk) |
+| Base Order | 40% |
+| SO Deviation | 1.5% |
+| SO Multiplier | 1.5x |
+| Max Layers | 12 |
+| Take Profit | 1.5% |
+| Scanner Window | 30d |
+| Trend Multiplier | Yes (0.3–1.5x) |
+
+This is identical to the V14PM Paper configuration that produced $53.8K equity,
+102 deals, 100% win rate over its operating period.
+
+#### Legacy Profiles (paper bots / backtesting only)
+
+These profiles remain available for paper bots and backtesting but are **not used
+in production**:
 
 | Profile | Leverage | BO% | SO Dev | SO Mult | Max Layers | TP |
 |---------|----------|-----|--------|---------|------------|----|
@@ -442,7 +487,9 @@ All bots are launched with an explicit `--profile` flag:
 | `medium` | 1.5x | 40% | 2.0% | 1.5x | 10 | 1.5% |
 | `high` | 1.5x | 40% | 1.5% | 1.5x | 12 | 1.5% |
 
-**V14PM live production uses:** `high` profile, `1.0x` leverage (no liquidation risk)
+> **Future:** Risk tiers may be reintroduced once production performance data
+> supports it. Planned differentiation: scanner window (14d for aggressive vs 30d
+> for moderate) rather than grid parameters. All tiers would remain 1x leverage.
 
 ### 5.4 Configuration (`V14Config`)
 
@@ -470,6 +517,7 @@ Every hour (on candle close):
   1. Fetch latest 1h candle from exchange
   2. Update signal state (StochRSI, ADX, HH/HL structure)
   3. Check for take-profit hit → execute sell if triggered
+     (LIVE GUARD: blocked if _tp_order_id is set — exchange limit order takes priority)
   4. Check phase transition signals → update phase if warranted
   5. Check for new DCA layer entry → execute buy if triggered
   6. Write state.json + status.json
@@ -479,6 +527,7 @@ At midnight UTC (daily signal evaluation):
   2. Run full signal stack (HVF, 3-check, Fibonacci, HybridDetector2D)
   3. Update ROUTER evaluation
   4. Write signal snapshot to DB
+  5. [Live mode only] Run TP catch-up check against current candle (§6.9)
 ```
 
 ### 6.2 State Persistence
@@ -543,7 +592,7 @@ and state is still restored — signals will refresh on the next daily boundary.
 
 ### 6.3 Equity Calculation (All Bots)
 
-**All four bot runners** compute equity from ground truth, not engine internals:
+**All bot runners** compute equity from ground truth, not engine internals:
 
 ```
 Equity = Capital + CSV Realized PnL - Fees + Unrealized PnL
@@ -568,23 +617,61 @@ Equity = Capital + CSV Realized PnL - Fees + Unrealized PnL
 > Deal counts and win rate were overridden from CSV, but equity and realized PnL
 > were not. On restart, engine counters could reset, inflate, or drift — producing
 > incorrect dashboard numbers while the CSV remained accurate. The fix applies to
-> all four runners: `run_v14_paper.py`, `run_v14etf_paper.py`,
-> `run_v14_portfolio_paper.py`, and `run_v14_live_aster.py`.
+> all runners: `run_v14_paper.py`, `run_v14_portfolio_paper.py`, and
+> `run_v14_live_aster.py`.
 
-### 6.3.1 Live Bot Equity (Exchange API)
+### 6.3.1 Live Bot Equity & Exchange Interaction (Aster)
 
-The V14 Live bot (Aster) has an additional equity source: **actual exchange balances**.
+The V14 Live bot (Aster) treats the **exchange as the ultimate source of truth**.
+Multiple safeguards ensure engine state can never override real exchange positions.
 
+**Equity calculation:**
 ```
 Live Equity = USDT Balance + (Base Coins × Current Price)
 ```
+Fetched from exchange API every cycle. Overrides the CSV-based calculation.
 
-This is fetched from the exchange API every cycle and overrides the CSV-based
-calculation. For a live bot, the exchange balance is the ultimate truth — it
-accounts for positions the engine may not know about (e.g., after a `--fresh`
-restart where the engine forgets old positions but the exchange still holds them).
+**Resting Limit Orders (implemented 2026-03-17):**
+After every BUY fill, the bot places a resting limit sell order on the exchange at
+the TP price for the full position size. This eliminates poll-dependent TP execution:
+- Bot process dies → limit order still on book, fills automatically
+- Exchange API errors → bot is blind, but exchange executes the order
+- Wick touches TP but candle closes below → limit sell fills on touch
 
-The exchange balance is included in status.json as `exchange_balance`:
+Implementation details:
+- After BUY fill → cancel old TP order, place new limit sell at updated TP price for full position
+- On startup → recover `_tp_order_id` from `state.json` or place fresh if missing
+- Each poll cycle → check if limit order was filled; if yes, sync engine state
+- Phase change → cancel TP order before transition
+- Engine candle-based TP detection retained as fallback (belt and suspenders)
+- `_tp_order_id` persisted in `state.json` for crash recovery
+
+New `SpotExchangeClient` methods: `place_limit_sell()`, `cancel_tp_order()`, `check_order_status()`
+
+**LIVE GUARD Pattern (implemented 2026-03-18 — incident response):**
+When `_tp_order_id` is set (a TP limit order is active on the exchange), all engine-initiated
+TP sells are **BLOCKED** and engine state is **ROLLED BACK** to pre-sell values. Only
+non-TP exits (phase close, signal exit) can override the exchange limit order.
+
+Root cause this addresses: the daily tick (which uses previous-day OHLC) could trigger an
+internal TP sell even while an exchange limit order was active. On 2026-03-18, previous-day
+high (~$0.78) exceeded TP ($0.7436) → engine cancelled exchange limit order → market sold at
+~$0.69 → $22 loss. LIVE GUARD prevents the engine from ever overriding an active exchange
+limit order with a TP sell. See §17.2 for full incident record.
+
+**Fill price handling (implemented 2026-03-18):**
+`execute_sell()` and `execute_buy()` now fetch the current ticker price if the exchange API
+does not return a fill price. **Engine TP prices are never used as fill price substitutes.**
+This corrects a pre-incident bug where fill price fell back to the engine's internal TP price
+($0.7436) instead of the actual exchange fill price (~$0.69), causing incorrect PnL.
+
+**PnL and capital correction:**
+- PnL is calculated from actual exchange proceeds, not engine TP-price math
+- Engine capital is corrected after sells to reflect actual vs. expected proceeds
+- Startup reconciliation compares engine state vs. exchange balances and corrects drift
+  (caught and corrected $22.73 drift from the 2026-03-18 incident on next restart)
+
+**exchange_balance in status.json:**
 ```json
 {
   "exchange_balance": {
@@ -633,8 +720,8 @@ On every PM bot restart:
    this updates allocations; if fresh start, this creates new engines.
 6. Enter live trading loop
 
-> **Live bot startup (future):** Will add exchange balance reconciliation after step 4.
-> Compare engine state vs. real balances, log drift, abort if drift exceeds threshold.
+> **Live bot startup:** Exchange balance reconciliation runs after step 4.
+> Compare engine state vs. real balances, log drift, correct automatically.
 > Paper bots skip this since they don't interact with real exchange positions.
 
 ### 6.5.1 Engine Warmup Period
@@ -676,6 +763,80 @@ was actually written, distinct from `close_time` (when the trade claims to have 
 
 This field is the forensic backstop: even if all other safeguards fail, phantom trades can always
 be identified and removed by comparing `recorded_at` vs `close_time`.
+
+### 6.8 Live Trading Safeguards
+
+> **This section is the authoritative reference for all live bot exchange interaction patterns.**
+> All of the following were implemented in response to incidents on 2026-03-17 and 2026-03-18.
+> See §17 for incident records.
+
+#### 6.8.1 LIVE GUARD
+
+When `_tp_order_id` is set (exchange limit order active), engine-initiated TP sells are **BLOCKED**
+and all engine state mutations from that tick are **ROLLED BACK** to pre-tick values. The engine
+cannot override an active exchange TP order via its internal TP detection.
+
+Only non-TP exits (phase close, signal exit) can go through while a limit order is live. These
+are conscious strategic exits, not automated TP fills — they may cancel the TP order as part of
+a phase transition, which is intentional.
+
+#### 6.8.2 Resting Limit Orders as Primary TP Mechanism
+
+After every BUY fill, a resting limit sell is placed on the exchange at the TP price for the
+full position size. The exchange executes the TP without any bot interaction — bot polling is
+a **fallback**, not the primary path.
+
+Sequence:
+1. BUY fill → cancel any existing TP limit order
+2. Place new limit sell at updated TP price for full position size
+3. Persist `_tp_order_id` in `state.json`
+4. Each poll cycle: check order status; if filled, sync engine state and clear `_tp_order_id`
+
+#### 6.8.3 Fill Price Handling
+
+Exchange fill prices are always used. **Engine TP prices are never used as fill price substitutes.**
+If the exchange API does not return a fill price, the current ticker price is fetched as fallback.
+Engine prices are never the fallback — this was the root cause of incorrect bookkeeping in the
+2026-03-18 incident.
+
+#### 6.8.4 PnL from Actual Exchange Fills
+
+All PnL and capital accounting uses actual exchange proceeds. Engine TP-price math is not
+used for PnL calculation. This ensures `trades.csv` accurately reflects real performance,
+not the engine's internal TP-price expectations.
+
+#### 6.8.5 Engine State Rollback on Blocked TP
+
+When LIVE GUARD blocks an engine TP sell, all engine state mutations from that tick are
+rolled back — position quantities, capital, PnL accumulators, and phase state all revert
+to pre-tick values. The engine returns to its state before the blocked tick, preserving
+consistency until the exchange limit order fills and syncs the engine.
+
+#### 6.8.6 Human-in-the-Loop for Long↔Short Direction Changes
+
+The V14-ETF incident (2026-03-17) demonstrated that autonomous Long↔Short direction switches
+can cause catastrophic losses (HBAR switched to DCA Short autonomously and was liquidated).
+Strategy direction changes (LONG_DCA ↔ SHORT_DCA) across all **live bots** require explicit
+human approval before execution. Autonomous direction switches remain enabled for paper bots
+where capital risk is simulated.
+
+### 6.9 TP Catch-Up (Paper Bots)
+
+**Bug (pre-2026-03-18):** The daily tick uses the **previous day's OHLC** data. If today's
+price gapped above the TP but yesterday's high was below the TP, the engine would add DCA
+layers instead of selling — because the previous candle showed price below TP, and the engine
+interpreted this as "price still below TP, DCA more."
+
+**Example:** TP = $0.7436. Yesterday's high = $0.72. Today's price = $0.80. Daily tick sees
+high=$0.72 < TP=$0.7436, skips TP, adds a DCA layer. Engine is now underwater on the new layer.
+
+**Fix (2026-03-18):** A "Live TP catch-up" block was added after the daily tick in
+`v14_lifecycle_engine.py`. After the daily tick completes, the engine checks the current
+(live) candle against the TP. If the current candle's high (longs) or low (shorts) exceeds
+the TP, it runs an additional TP tick with the current candle data.
+
+This fix applies **only in `_live_mode`**. Backtesting is unaffected — it uses historical
+OHLC data sequentially and cannot gap above TP in this way.
 
 ---
 
@@ -737,19 +898,14 @@ At midnight UTC, the PM runner:
 6. Identifies new entrants above hurdle
 7. Adjusts allocations proportionally
 
-### 7.4 Current Paper Performance (2026-03-10)
+### 7.4 Current Bot Status (2026-03-18)
 
-- **Capital:** $50,000 paper
-- **Equity:** ~$50,627 (+1.25%)
-- **Realized PnL:** $608 | Win rate: 100% (30 deals) | Drawdown: 0.0%
-- **Active coins:** 10/10 slots (dynamically selected by cycle scanner)
-- **Regime:** RANGING — DCA grids cycling TPs in sideways market
-- **State persistence:** Verified — multiple restart cycles with zero phantom trades
-
-**Other bots (2026-03-10, CSV-truth verified):**
-- **V14 Paper:** $49,988 equity, 380 deals, 97.6% win rate (Oct 2024 – present)
-- **V14-ETF Paper:** $10,834 equity, 24 deals, 100% win rate (Mar 2 – present)
-- **V14 Live (Aster):** $314 equity on $300 capital, +4.7%, 1 deal (exchange-verified)
+- **V14 Live (Aster):** $351.20 real USDT (exchange-verified), $340 capital, ASTER/USDT.
+  LIVE GUARD active. Resting limit orders implemented.
+- **V14 Paper:** ~$53,500 equity, 400 deals, 97.8% win rate
+- **V14 PM Paper:** ~$53,815 equity, 102 deals, 100% win rate
+- **V14-ETF:** ❌ **RETIRED 2026-03-17** — HBAR autonomous direction switch caused losses.
+  Scheduled task unregistered. See §17.1.
 
 > **Bug history:** Earlier equity figures were inflated by engine counter drift.
 > Engine-internal realized PnL could diverge from CSV on restart — one bot reported
@@ -800,6 +956,16 @@ All paper bots use `SpotExchangeClient` with Hyperliquid in paper/simulation mod
 No real orders are placed. State and P&L are tracked locally in state.json and trades.csv.
 The exchange connection is used only for live price data.
 
+### 8.5 Live Bot Methods (Aster, 2026-03-17+)
+
+New methods on `SpotExchangeClient` for resting limit order management:
+
+| Method | Purpose |
+|--------|---------|
+| `place_limit_sell(symbol, amount, price)` | Place a resting limit sell at TP price |
+| `cancel_tp_order(order_id)` | Cancel existing TP limit order |
+| `check_order_status(order_id)` | Poll order fill status |
+
 ---
 
 ## 9. Presentation Layer
@@ -810,7 +976,7 @@ The exchange connection is used only for live price data.
 |-----------|------|-----|
 | V14PM Portfolio | `docs/dashboardV14PM.html` | V14PM paper |
 | V14 DCA | `docs/dashboardV14.html` | V14 paper |
-| V14-ETF | `docs/dashboardV14ETF.html` | V14-ETF paper |
+| V14-ETF | `docs/dashboardV14ETF.html` | V14-ETF paper (RETIRED — dashboard preserved for historical record) |
 | V14 Live | `docs/d-984ae0d4ab9dc1a5.html` | V14 live (Aster) |
 
 **Hosted at:** https://halo-effects.github.io/adaptive-intelligence-trading/
@@ -848,8 +1014,8 @@ docs/data/
 │   ├── cycle_scanner.json   ← DCA scores (read by V14PM runner)
 │   └── daily_equity.json    ← Equity curve data
 ├── v14etf/
-│   ├── status.json
-│   └── trades.csv
+│   ├── status.json          ← RETIRED — static snapshot
+│   └── trades.csv           ← RETIRED — historical record
 └── v14-pm/
     ├── status.json
     └── trades.csv
@@ -865,7 +1031,6 @@ All tasks run as the current user. Working directory: `C:\Users\Never\.openclaw\
 |-----------|---------|-------------|---------|
 | `V14LiveAster` | At boot | `run_v14_live_aster.py --confirm --skip-backfill` | V14 live bot |
 | `V14PaperBot` | At boot | `run_v14_paper.py` | V14 paper bot |
-| `V14ETFPaperBot` | At boot | `run_v14etf_paper.py` | V14-ETF paper bot |
 | `V14PMPaperBot` | At logon | `run_v14_portfolio_paper.py --capital 50000 --profile high --leverage 1.0` | V14PM paper bot (state restored from `engine_state.json`) |
 | `V14CycleScanner` | Daily | `v14_cycle_scanner.py` | DCA score refresh |
 | `AIT_CandleCollector` | Hourly | `run_candle_collector.ps1` | Candle + scanner pipeline |
@@ -873,7 +1038,10 @@ All tasks run as the current user. Working directory: `C:\Users\Never\.openclaw\
 | `AIT_PMComparisonLog` | Scheduled | `pm_comparison_log.py` | PM benchmark logging |
 | `AIT_Watchdog` | Every 5 min | `openclaw_watchdog.ps1` | Monitor + auto-restart bots |
 
-**Auto-restart:** `V14LiveAster`, `V14PaperBot`, `V14ETFPaperBot`, `V14PMPaperBot` all have
+> **V14ETFPaperBot UNREGISTERED (2026-03-17):** Scheduled task removed when bot was retired.
+> Do not re-register — bot is permanently retired. See §17.1.
+
+**Auto-restart:** `V14LiveAster`, `V14PaperBot`, `V14PMPaperBot` all have
 `RestartCount=3` / `RestartInterval=2min` configured on the task.
 
 ---
@@ -894,7 +1062,7 @@ All bots send structured Telegram alerts for:
 
 **Message prefixes:**
 - V14PM paper: `[V14-PM]`
-- V14-ETF paper: `[V14-ETF]`
+- V14 paper: `[V14]`
 - V14 live: `[ASTER]`
 
 ### 11.2 Heartbeat Health Check
@@ -910,9 +1078,11 @@ heartbeat monitor check:
 Runs every 5 minutes. Monitors:
 1. **OpenClaw Gateway** — restarts if process not found
 2. **V14PaperBot** — restarts scheduled task if not running or status stale > 2h
-3. **V14ETFPaperBot** — same
-4. **V14PMPaperBot** — same
-5. **V14LiveAster** — same
+3. **V14PMPaperBot** — same
+4. **V14LiveAster** — same
+
+> **V14ETFPaperBot removed from watchdog (2026-03-17):** Bot retired; watchdog no longer
+> monitors or restarts it.
 
 Log: `~/.openclaw/watchdog.log`
 
@@ -969,7 +1139,8 @@ python -u -m trading.spot.run_v14_portfolio_live \
   --confirm         # Required for live trading
 ```
 > Note: `run_v14_portfolio_live.py` does not yet exist — must be created as part
-> of cloud migration. See Cloud Migration Guide.
+> of cloud migration. See Cloud Migration Guide §5.4 for full requirements including
+> LIVE GUARD, resting limit orders, and fill price handling.
 
 ### V14 Live Bot (Aster)
 ```bash
@@ -1033,83 +1204,237 @@ matplotlib, scipy, scikit-learn, plotly  # Backtest analysis only
 | Ground-truth equity calc | `Capital + Realized - Fees + Unrealized` from trades.csv; avoids engine internal drift. Live bot uses exchange API balances as ultimate truth. |
 | `load_existing()` on ALL startup paths | Trade history survives restarts including `--fresh`; prevents `save_csv()` from overwriting history with empty data |
 | `resample_daily.py` in hourly pipeline | Ensures all coins have daily candles for signal computation; closes gap between 1h collector and daily-dependent signal pack |
+| TP checks candle high/low not close | Matches resting limit order behavior; fills on wick touch at TP price (2026-03-17) |
+| LIVE GUARD pattern | Engine TP sells blocked when exchange limit order is active; prevents engine from overriding exchange truth (2026-03-18) |
+| Resting limit orders as primary TP | Exchange executes TP even if bot dies; polling is fallback only (2026-03-17) |
+| Fill price from exchange, never engine | PnL accuracy; prevents fictional bookkeeping when fill price differs from TP price (2026-03-18) |
+| Human-in-the-loop for direction flips | V14-ETF incident: autonomous LONG↔SHORT switches can cause catastrophic losses (2026-03-17) |
+| Top-5 scanner summary picks | Summary Best/Fastest/Safest picks derived from top 5 only; avoids low-quality picks from tail of coin universe (2026-03-18) |
 
 ---
 
-## 16. Future Architecture: Trade Database Migration
+## 16. Future Architecture: Production Trading System
 
-> **Status:** Planning. Triggered when scaling to multiple live accounts on a DEX.
+> **Status:** Design finalized 2026-03-18 following live incident. Triggered by the
+> fundamental problem identified: the current system treats engine state as primary truth
+> with the exchange as a correction layer. This is backwards for live trading.
 
-### 16.1 Why CSV Won't Scale
+### 16.1 Why the Current Architecture Cannot Scale
 
-The current `trades.csv` per-bot design works for single-instance paper/live bots.
-It breaks when scaling to multiple accounts:
+The current design has a structural flaw: **the engine is authoritative, the exchange is secondary**.
 
-| Limitation | Impact |
-|-----------|--------|
-| No concurrent writes | Multiple bot instances can't safely append to the same file |
-| No querying | Slicing by account, time range, coin, or P&L requires reading the entire file |
-| No atomicity | A crash mid-write can corrupt the CSV; databases handle this natively |
-| No cross-account reconciliation | Comparing positions across accounts needs joins, not file parsing |
-| No schema enforcement | Malformed rows silently corrupt data |
+| Current Problem | Impact |
+|----------------|--------|
+| Engine state (in-memory + JSON) is authoritative | Drift from actual exchange positions is possible at all times |
+| CSV records engine's TP-price fills, not exchange fills | Trade history reflects fictional prices, not actual execution |
+| Reconciliation runs periodically, not continuously | Window of incorrect state between reconciliation cycles |
+| No database — everything is JSON + CSV on disk | No atomic writes, no concurrent access, no audit queries |
+| Polls for TP fills every 65 seconds | 65-second window where exchange filled but engine doesn't know |
+| Single process, single machine | No redundancy; process death = blind spot until restart |
 
-### 16.2 Target Architecture
+This architecture works for paper bots (simulated, no real money). For live trading,
+the **exchange must be authoritative**, with the engine as a decision-maker only.
+
+### 16.2 Target Production Architecture
 
 ```
-trades.csv (per-bot)  →  trades table (shared database)
+Signal Engine (read-only)
+  → decides ENTRY signals + TP levels
+         ↓
+    Order Manager → Exchange API (REST + WebSocket)
+         ↓                    ↓
+    WebSocket fills ←── exchange pushes fills in real-time
+         ↓
+    PostgreSQL DB ← single source of truth
+    (trades, balances, positions, signals, audit log)
+         ↓
+    Dashboard API → reads from DB
+    Status/alerts → reads from DB
 ```
 
-**Schema extension:**
+**Key principles of the target architecture:**
+- **DB is truth** — not engine state, not CSV, not JSON files
+- **Exchange pushes fills via WebSocket** — not polling every 65 seconds
+- **Engine only decides entries** — all exits are exchange-driven (limit orders)
+- **Order Manager is separate from Signal Engine** — clear separation of concerns
+- **All prices are exchange prices** — engine never contributes fill price data
+- **Full audit trail in DB** — every order, fill, balance change is immutable
+
+### 16.3 Database Schema (Target)
+
 ```sql
-CREATE TABLE trades (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    account_id      TEXT NOT NULL,       -- e.g. 'paper-v14pm', 'live-hl-main'
-    deal_id         INTEGER NOT NULL,
+-- Positions (source of truth for open positions)
+CREATE TABLE positions (
+    id              SERIAL PRIMARY KEY,
+    account_id      TEXT NOT NULL,
     symbol          TEXT NOT NULL,
-    open_time       TEXT NOT NULL,
-    close_time      TEXT NOT NULL,
-    regime          TEXT,
+    side            TEXT NOT NULL,       -- 'long' | 'short'
+    layers          INTEGER,
+    avg_entry       REAL,
+    quantity        REAL,
+    tp_price        REAL,
+    tp_order_id     TEXT,               -- exchange order ID
+    opened_at       TIMESTAMPTZ,
+    updated_at      TIMESTAMPTZ
+);
+
+-- Fills (immutable exchange fill records)
+CREATE TABLE fills (
+    id              SERIAL PRIMARY KEY,
+    account_id      TEXT NOT NULL,
+    order_id        TEXT NOT NULL,
+    symbol          TEXT NOT NULL,
+    side            TEXT NOT NULL,
+    price           REAL NOT NULL,      -- actual exchange fill price
+    quantity        REAL NOT NULL,
+    fee             REAL,
+    filled_at       TIMESTAMPTZ NOT NULL,
+    raw_response    JSONB               -- full exchange API response
+);
+
+-- Trades (closed position records — derived from fills)
+CREATE TABLE trades (
+    id              SERIAL PRIMARY KEY,
+    account_id      TEXT NOT NULL,
+    symbol          TEXT NOT NULL,
+    open_time       TIMESTAMPTZ,
+    close_time      TIMESTAMPTZ,
     layers          INTEGER,
     invested        REAL,
-    pnl             REAL,
+    proceeds        REAL,               -- actual exchange proceeds
+    pnl             REAL,               -- proceeds - invested - fees
     return_pct      REAL,
-    duration_h      REAL,
-    recorded_at     TEXT,                -- wall-clock time of recording
-    UNIQUE(account_id, symbol, open_time, close_time)
+    duration_h      REAL
 );
 ```
 
-**Database choice:**
-- **SQLite** — simplest path. `candles.db` already uses it. Trades table could
-  live in the same file. Sufficient for single-server multi-account deployment.
-- **PostgreSQL** — required if multiple servers need write access to the same
-  trade ledger (e.g., cloud bot + local bot writing to central DB). Adds
-  operational complexity (backup, auth, networking).
+### 16.4 Migration Strategy: Aster-First
 
-**Recommendation:** Start with SQLite (add `trades` table to `candles.db`).
-Migrate to Postgres only when multi-server writes become a requirement.
+The production architecture will be built for Aster first (the current live bot),
+then scaled to V14PM. Paper bots remain on Windows throughout.
 
-### 16.3 Migration Path
+**Phase 1 (near-term):** Build exchange-as-truth architecture on Aster
+- WebSocket fill listener (replaces 65-second polling)
+- PostgreSQL DB as position truth (replaces state.json + trades.csv)
+- Order Manager service (replaces engine-embedded order logic)
+- LIVE GUARD already implemented as stepping stone
 
-1. Add `trades` table to `candles.db` schema
-2. Create `TradeStore` class (read/write/query) replacing CSV file I/O
-3. Import existing CSV data into the table (one-time migration script)
-4. Update `_write_status()` to query `TradeStore` instead of reading CSV
-5. Update `TradeTracker` to write to DB instead of CSV
-6. Keep CSV export as a read-only convenience (dashboard, debugging)
-7. Add `account_id` to all trade records for multi-account isolation
+**Phase 2 (medium-term):** Scale V14PM live on Aster OR Hyperliquid
+- Decision pending (see Cloud Migration Guide D7)
+- Same Order Manager pattern, different exchange adapter
+- Signal Engine reads DB positions, writes DB signals
 
-### 16.4 What This Enables
+**What this enables:**
+- Multi-account dashboard: single query across all accounts
+- True real-time fill processing: no polling latency
+- Immutable audit trail: every fill recorded at exchange time
+- Redundancy: DB survives process restarts; fills don't need re-processing
 
-- **Multi-account dashboard:** Single query across all accounts for total P&L
-- **Cross-account analytics:** Which account/strategy performs best on which coins
-- **Audit trail:** Immutable trade records with `recorded_at` timestamps
-- **Reconciliation queries:** Compare DB trades vs exchange order history
-- **Portfolio-level risk:** Aggregate exposure across accounts in real time
+### 16.5 CSV Migration Path
+
+When moving to PostgreSQL:
+1. Import all existing `trades.csv` files into `trades` table (one-time migration)
+2. Create `TradeStore` class replacing CSV file I/O
+3. Keep CSV export as read-only convenience (debugging, dashboards)
+4. Add `account_id` to all records for multi-account isolation
+
+---
+
+## 17. Incident Log
+
+### 17.1 2026-03-17: V14-ETF Retirement (Autonomous Direction Switch)
+
+**Component:** `run_v14etf_paper.py` (V14-ETF Paper Bot)
+**Severity:** High (demo bot capital lost; no real money)
+**Status:** ✅ Resolved — bot retired
+
+**What happened:** HBAR switched from LONG_DCA to SHORT_DCA autonomously without human approval.
+The SHORT_DCA grid was built as price continued rising, resulting in significant simulated losses.
+
+**Root cause:** No human-in-the-loop gate for Long↔Short direction changes.
+
+**Resolution:**
+- Bot stopped and scheduled task unregistered
+- `status.json` renamed to `status.json.retired`
+- Live trading rule added: Long↔Short direction flips require human approval (§6.8.6)
+- Lesson documented in §6.8.6
+
+### 17.2 2026-03-17: TP Fill Model Fix
+
+**Component:** `v14_dca_engine.py`, `v14_lifecycle_engine.py`
+**Severity:** Medium (missed TPs — opportunity cost)
+**Status:** ✅ Fixed
+
+**What happened:** TP detection checked candle **close** price, not high/low. Wicks that
+touched the TP price but closed below would not trigger a TP sell. Engine missed TPs that
+any exchange limit order would have filled.
+
+**Fix:** Engine now checks candle high (longs) / low (shorts) for TP detection. Fills at
+TP price on wick touch. See §5.2.
+
+### 17.3 2026-03-17: Resting Limit Orders on Aster
+
+**Component:** `run_v14_live_aster.py`, `exchange_client.py`
+**Severity:** Enhancement
+**Status:** ✅ Implemented
+
+**What happened:** Live bot relied on polling every 65 seconds to detect TP hits.
+Process death or API errors created windows where exchange filled but bot didn't know.
+
+**Fix:** Resting limit sell placed on exchange after every BUY. Exchange executes TP
+regardless of bot state. See §6.3.1, §6.8.2.
+
+### 17.4 2026-03-18: TP Catch-Up Bug Fix (Paper Bots)
+
+**Component:** `v14_lifecycle_engine.py`
+**Severity:** Medium (incorrect DCA behavior after price gap above TP)
+**Status:** ✅ Fixed
+
+**What happened:** Daily tick used previous-day OHLC. If price gapped above TP overnight
+but yesterday's high was below TP, engine would add a DCA layer instead of selling.
+
+**Fix:** "Live TP catch-up" block added after daily tick. Checks current candle against TP;
+if exceeded, runs TP tick with current data. Live mode only. See §6.9.
+
+### 17.5 2026-03-18: CRITICAL — Live Aster False TP Sell ($22 Loss)
+
+**Component:** `run_v14_live_aster.py`
+**Severity:** Critical (real capital loss)
+**Status:** ✅ Resolved — LIVE GUARD implemented
+
+**What happened:**
+1. Daily tick used previous-day OHLC (high ~$0.78)
+2. Previous-day high exceeded TP ($0.7436) → engine triggered internal TP sell
+3. Engine cancelled exchange limit order
+4. Market sell executed at ~$0.69 (below TP — price had already fallen back)
+5. Exchange API didn't return fill price → fill fell back to engine's TP price ($0.7436)
+6. Engine booked sell at $0.7436, actual proceeds ~$0.69 → $22 loss + incorrect PnL
+
+**Root cause:** Engine treated as authoritative over exchange. Daily tick could override
+active exchange limit orders via its internal TP detection.
+
+**Fix (LIVE GUARD — §6.8.1):**
+- Engine TP sells blocked when `_tp_order_id` is set
+- Engine state rolled back on blocked TP
+- Fill price fallback fixed: fetches ticker price, never falls back to engine price
+- PnL calculated from actual exchange proceeds
+- Engine capital corrected after sells
+- Startup reconciliation caught $22.73 drift and corrected
+
+### 17.6 2026-03-18: Scanner Summary Pick Fix
+
+**Component:** `v14_cycle_scanner.py`
+**Severity:** Low (incorrect summary labels)
+**Status:** ✅ Fixed
+
+**What happened:** Best/Fastest/Safest summary picks were derived from the full coin
+universe ranking, meaning poor-performing coins at the tail could appear as summary picks.
+
+**Fix:** Summary picks now derived from `scored_rankings[:5]` (top 5 only). See §4.1.
 
 ---
 
 _Document generated by Gee Gee — 2026-03-09_
 _Updated: 2026-03-10 (v1.2 — CSV-as-truth for all bots, exchange API equity for live bot, --fresh loads existing trades, future trade DB architecture)_
-_Next: Cloud Migration Guide (Phase 5)_
+_Updated: 2026-03-18 (v1.3 — LIVE GUARD, resting limit orders, fill price fix, TP catch-up, V14-ETF retirement, production architecture target, incident log §17)_
 _Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_

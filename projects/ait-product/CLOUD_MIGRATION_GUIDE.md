@@ -1,8 +1,8 @@
 # Adaptive Intelligence Trading — Cloud Migration Guide
 _V14PM Live Trading Deployment_
-_Version: 1.2 | Date: 2026-03-10 | Status: Draft — Pending Decisions_
+_Version: 1.3 | Date: 2026-03-18 | Status: Draft — Pending Decisions_
 
-**Reference:** See `V14PM_SYSTEM_ARCHITECTURE.md` for full system internals.
+**Reference:** See `V14PM_SYSTEM_ARCHITECTURE.md` (v1.3) for full system internals.
 
 ---
 
@@ -19,6 +19,7 @@ Everything else is fully specified.
 | D4 | Hyperliquid mainnet API key | ⚠️ PENDING | Must be created — see Section 4.2 |
 | D5 | Server region | ⚠️ PENDING | Closest to Hyperliquid infra = lowest latency |
 | D6 | Paper bots migrate or stay on Windows? | ⚠️ PENDING | Recommendation: stay on Windows (demo continuity) |
+| D7 | Aster or Hyperliquid for V14PM production? | ⚠️ PENDING | Aster-first strategy already proven; Hyperliquid for perps/leverage. Decision affects Phase 2 of production architecture. See §14. |
 
 ---
 
@@ -37,6 +38,7 @@ Everything else is fully specified.
 11. [Live Trading Cutover](#11-live-trading-cutover)
 12. [Ongoing Operations](#12-ongoing-operations)
 13. [Rollback Plan](#13-rollback-plan)
+14. [Production Architecture Target](#14-production-architecture-target)
 
 ---
 
@@ -57,9 +59,12 @@ Everything else is fully specified.
 | Component | Reason |
 |-----------|--------|
 | V14 Paper Bot | Customer demo — continuous runtime, familiar environment |
-| V14-ETF Paper Bot | Customer demo — same |
 | V14PM Paper Bot | Customer demo benchmark — compare against live |
-| V14 Live (Aster) | Aster DEX is a different exchange; no cloud benefit |
+| V14 Live (Aster) | Aster DEX proof-of-concept; $340 seed / $351.20 exchange-verified. Now has LIVE GUARD active, resting limit orders for TP, fill price from exchange. Reference implementation for live trading safeguards. |
+
+> **V14-ETF Paper Bot RETIRED (2026-03-17):** HBAR autonomously switched to DCA Short and
+> suffered losses. Bot stopped, scheduled task unregistered, `status.json` renamed to
+> `status.json.retired`. Not included in migration scope.
 
 The Windows paper bots continue pulling candle data from their local candles.db
 (updated by their own AIT_CandleCollector task). The cloud server maintains a
@@ -266,7 +271,7 @@ All 8 imports must pass before proceeding.
    implementation (§6.3.1 of Architecture doc).
 10. **CSV-as-truth for realized PnL:** The `_write_status()` method must always
     read `trades.csv` and use its PnL sum as `total_realized_pnl`. Engine counters
-    drift on restart. This is already implemented in all four current runners.
+    drift on restart. This is already implemented in all current runners.
 11. **`--fresh` must call `tracker.load_existing()`** to prevent `save_csv()` from
     overwriting trade history with an empty file.
 12. **TP fill model (engine-level):** The shared V14 engine checks TP against candle
@@ -275,27 +280,43 @@ All 8 imports must pass before proceeding.
     a market sell via the executor — the actual fill price comes from the exchange, not
     the engine. Ensure the live runner uses `result.get("price")` from the exchange
     response (as `run_v14_live_aster.py` already does) rather than the engine's TP price.
-13. **Resting limit orders for TP:** ✅ **IMPLEMENTED on `run_v14_live_aster.py` (2026-03-17)**
 
-    The live Aster bot now places a resting limit sell order on the exchange at the TP
-    price whenever a position is opened. This eliminates the poll-then-market-sell
-    failure modes documented in incident 2026-03-17:
-    - Bot process dies → limit order still on book, fills automatically
-    - Exchange API errors → bot is blind, but exchange executes the order
-    - Candle close below TP but wick above → limit sell fills on touch (already fixed by item 12)
+13. **LIVE GUARD pattern (MUST IMPLEMENT):**
+    When a TP limit order is active on the exchange (`_tp_order_id` is set), engine-initiated
+    TP sells must be **BLOCKED** and engine state **ROLLED BACK**. Only non-TP exits (phase
+    close, signal exit) may override the exchange. This prevents the engine from cancelling
+    active exchange limit orders based on stale daily tick data.
+    Reference: `run_v14_live_aster.py` (implemented 2026-03-18). See Architecture doc §6.8.1.
 
-    **Implemented behaviors (Aster bot):**
-    - After every BUY fill → cancel old TP order, place new limit sell at updated TP price for full position size
-    - On startup → recover existing limit order from `state.json` (`_tp_order_id`) or place a fresh one
-    - Each poll cycle → check if limit order was filled; if yes, sync engine state
+14. **Resting limit orders for TP (MUST IMPLEMENT):**
+    After every BUY fill, place a resting limit sell on the exchange at the TP price for
+    the full position size. The exchange must be the primary TP execution mechanism, not
+    bot polling. Reference: `run_v14_live_aster.py` (implemented 2026-03-17).
+    Implementation details:
+    - After BUY → cancel old TP order, place new limit sell at updated TP for full position
+    - On startup → recover `_tp_order_id` from state or place fresh
+    - Each poll cycle → check if filled, sync engine state
     - Phase change → cancel TP order before transition
-    - Engine candle-based TP detection retained as fallback (belt and suspenders)
-    - TP order ID persisted in `state.json` under `_tp_order_id` for crash recovery
+    - Engine candle-based detection retained as fallback
+    See Architecture doc §6.8.2 and §6.3.1.
 
-    **New methods on `SpotExchangeClient`:** `place_limit_sell()`, `cancel_tp_order()`, `check_order_status()`
+15. **Fill price handling (MUST IMPLEMENT):**
+    `execute_sell()` and `execute_buy()` must fetch the current ticker price if the exchange
+    API does not return a fill price. **Engine prices must NEVER be used as fill price
+    substitutes.** This was the root cause of incorrect bookkeeping in the 2026-03-18
+    incident ($22 loss from fill price falling back to engine TP price).
+    See Architecture doc §6.8.3.
 
-    **For `run_v14_portfolio_live.py`:** Follow the same pattern — already proven on Aster.
-    The implementation in `run_v14_live_aster.py` is the reference.
+16. **PnL from actual exchange fills:**
+    All PnL and capital accounting must use actual exchange proceeds. Engine capital must
+    be corrected after each sell to reflect the difference between expected and actual
+    exchange proceeds. See Architecture doc §6.8.4.
+
+17. **Human-in-the-loop for Long↔Short direction changes:**
+    Phase transitions from LONG_DCA to SHORT_DCA (or vice versa) must require explicit
+    human approval before execution on live bots. Autonomous direction switches on the
+    V14-ETF paper bot caused catastrophic losses (2026-03-17).
+    See Architecture doc §6.8.6.
 
 ---
 
@@ -732,6 +753,11 @@ print('USDC balance:', balance.get('USDC', {}).get('total', 0))
 
 ### 10.5 Live Bot Runner
 - [ ] `run_v14_portfolio_live.py` created (Section 5.4)
+- [ ] LIVE GUARD pattern implemented (§5.4 item 13)
+- [ ] Resting limit orders implemented (§5.4 item 14)
+- [ ] Fill price handling correct — never falls back to engine price (§5.4 item 15)
+- [ ] PnL from actual exchange fills (§5.4 item 16)
+- [ ] Human-in-the-loop for direction changes (§5.4 item 17)
 - [ ] Dry-run passes: `python -m trading.spot.run_v14_portfolio_live --dry-run`
 - [ ] Dry-run Telegram message received
 
@@ -809,6 +835,7 @@ Within 5 minutes of start, verify:
 - [ ] Log shows: "DCA Scanner loaded, [N] coins qualify"
 - [ ] First tier is correct for your capital level
 - [ ] No Python exceptions in log
+- [ ] LIVE GUARD is active (log confirms `_tp_order_id` handling)
 
 ### 11.5 First Hour Monitoring
 
@@ -816,6 +843,7 @@ Within 5 minutes of start, verify:
 - Verify first candle is fetched at the top of the next hour
 - Verify first position evaluation runs (may or may not enter — depends on signal state)
 - Confirm status.json updates each cycle
+- Verify resting limit order placed after first BUY fill (if one occurs)
 
 ### 11.6 Enable Auto-Start on Reboot
 
@@ -872,7 +900,8 @@ sudo systemctl restart ait-v14pm
 **Safety:** The bot gracefully handles restarts — `engine_state.json` preserves all
 engine positions, phases, signal state, and router allocations. On restart, the bot
 loads this file and resumes from the last processed candle. No `--fresh` or
-`--skip-backfill` flags needed.
+`--skip-backfill` flags needed. Resting limit orders persist on the exchange
+independently — even if the bot is down, the exchange will fill the TP.
 
 ### 12.3 Database Maintenance
 
@@ -929,24 +958,88 @@ python -u trading/spot/backfill_scanner_coins.py --coins NEW/USDT
 ### If the live bot crashes mid-trading
 
 1. Bot auto-restarts via systemd (`Restart=on-failure`)
-2. On restart, it reads `state.json` and reconciles with exchange
-3. Any open positions are recovered — the bot does not place duplicate orders
-4. Monitor Telegram for "Bot restarted" message
+2. On restart, it reads `engine_state.json` and reconciles with exchange
+3. Resting limit orders remain on exchange — TP fills continue regardless of bot status
+4. Any open positions are recovered — the bot does not place duplicate orders
+5. Monitor Telegram for "Bot restarted" message
 
 ### If capital is at risk (drawdown > threshold)
 
 1. Emergency stop: `sudo systemctl stop ait-v14pm`
 2. Open positions remain on exchange (are not closed by stopping the bot)
-3. Evaluate manually on Hyperliquid UI
-4. Decide: wait for DCA grid to recover, or close manually
-5. Do NOT re-enable until root cause is understood
+3. Resting limit TP orders remain active — they will fill if price hits TP
+4. Evaluate manually on Hyperliquid UI
+5. Decide: wait for DCA grid to recover, or close manually
+6. Do NOT re-enable until root cause is understood
 
 ### Full rollback
 
 1. Stop cloud bot: `sudo systemctl stop ait-v14pm && sudo systemctl disable ait-v14pm`
-2. Close any open positions manually on Hyperliquid
-3. Withdraw USDC back to main wallet
-4. Paper bots on Windows are unaffected throughout
+2. Cancel any resting limit orders manually on Hyperliquid
+3. Close any open positions manually on Hyperliquid
+4. Withdraw USDC back to main wallet
+5. Paper bots on Windows are unaffected throughout
+
+---
+
+## 14. Production Architecture Target
+
+> **New section (v1.3).** Identified 2026-03-18 after the live Aster false TP sell
+> incident exposed the fundamental flaw in the current engine-as-truth architecture.
+> See Architecture doc §16 for full design.
+
+### 14.1 Problem Statement
+
+The current system treats the engine as the primary source of truth with the exchange
+as a correction layer. This is fundamentally wrong for live trading:
+- Engine state (in-memory + JSON) is authoritative
+- CSV records engine's fictional prices, not actual exchange fills
+- Reconciliation catches drift periodically but there's always a window of incorrect state
+- No database — everything is JSON files and CSVs on disk
+- No real-time fill processing — polls for TP fills every 65 seconds
+- Single process, single machine — no redundancy
+
+### 14.2 Target Architecture
+
+```
+Signal Engine (read-only)
+  → decides ENTRY signals + TP levels
+         ↓
+    Order Manager → Exchange API (REST + WebSocket)
+         ↓                    ↓
+    WebSocket fills ←── exchange pushes fills in real-time
+         ↓
+    PostgreSQL DB ← single source of truth
+    (trades, balances, positions, signals, audit log)
+         ↓
+    Dashboard API → reads from DB
+    Status/alerts → reads from DB
+```
+
+**Key principles:**
+- **DB is truth** — not engine state, not CSV, not JSON files
+- **Exchange pushes fills via WebSocket** — not polling every 65 seconds
+- **Engine only decides entries** — all exits are exchange-driven (limit orders)
+- **Order Manager is separate from Signal Engine** — clear separation of concerns
+- **All prices are exchange prices** — engine never contributes fill price data
+- **Full audit trail in DB** — every order, fill, balance change is immutable
+
+### 14.3 Aster-First Migration Strategy
+
+Build the production architecture for Aster first (current live bot), then scale to
+V14PM on the exchange determined by D7.
+
+| Phase | Scope | Exchange |
+|-------|-------|----------|
+| Phase 1 | Build exchange-as-truth for live Aster bot | Aster DEX |
+| Phase 2 | Scale to V14PM live production | Aster OR Hyperliquid (D7) |
+
+Paper bots remain on Windows with the current JSON/CSV architecture throughout.
+The production architecture applies to live bots only.
+
+**LIVE GUARD (§5.4 item 13, Architecture doc §6.8.1) is the interim stepping stone:**
+It enforces exchange-as-truth at the application layer within the current architecture.
+The full production system replaces this with DB-as-truth at the infrastructure layer.
 
 ---
 
@@ -977,7 +1070,7 @@ python -u trading/spot/backfill_scanner_coins.py --coins NEW/USDT
 
 | Item | Owner | Status | Notes |
 |------|-------|--------|-------|
-| Create `run_v14_portfolio_live.py` | Engineering | PENDING | Copy paper runner, enable real orders, add `--confirm`/`--dry-run`, keep state persistence, add exchange reconciliation, remove PID lock, equity from exchange API, CSV-as-truth for realized PnL, `--fresh` loads existing trades. Resting limit orders for TP: follow `run_v14_live_aster.py` pattern (item 13). |
+| Create `run_v14_portfolio_live.py` | Engineering | PENDING | Copy paper runner, enable real orders, add `--confirm`/`--dry-run`, keep state persistence, add exchange reconciliation, remove PID lock, equity from exchange API, CSV-as-truth for realized PnL, `--fresh` loads existing trades. **Must implement:** LIVE GUARD (§5.4 item 13), resting limit orders (§5.4 item 14), fill price from exchange (§5.4 item 15), PnL from actual fills (§5.4 item 16), human-in-the-loop for direction changes (§5.4 item 17). Reference: `run_v14_live_aster.py`. |
 | Create `run_candle_collector.sh` (Linux) | Engineering | PENDING | Must include 3-step pipeline: collect → resample_daily → scanner. Template the Windows `.ps1` version. |
 | Create `sync_dashboard.sh` as git-committed file | Engineering | PENDING | Template in Section 9.1 above |
 | Centralize `DB_PATH` into `trading/spot/config.py` | Engineering | RECOMMENDED | 6 files independently define DB_PATH. Two had wrong paths. Single import eliminates this bug class. |
@@ -985,10 +1078,18 @@ python -u trading/spot/backfill_scanner_coins.py --coins NEW/USDT
 | Decide initial live capital | Brett | PENDING | D3 — determines coin cap tier at launch |
 | Create Hyperliquid API wallet | Brett | PENDING | D4 — must be done before deployment |
 | Choose cloud provider + region | Brett | PENDING | D1, D2, D5 |
+| Decide Aster vs Hyperliquid for V14PM production | Brett | PENDING | D7 — affects Phase 2 of production architecture. Aster already proven (live bot running); Hyperliquid enables perps/leverage. |
+| Production architecture Phase 1 (Aster) | Engineering | PLANNING | Build exchange-as-truth: WebSocket fills, PostgreSQL DB, Order Manager. Requires D7 for Phase 2 scope. |
+| Correct engine capital accounting for live bots | Engineering | ✅ DONE | Fill price fallback fixed (2026-03-18). PnL from actual proceeds. Engine capital corrected after sells. |
+| LIVE GUARD on Aster bot | Engineering | ✅ DONE | Implemented 2026-03-18 in `run_v14_live_aster.py`. Prevents engine from overriding exchange TP orders. |
+| Resting limit orders on Aster bot | Engineering | ✅ DONE | Implemented 2026-03-17 in `run_v14_live_aster.py`. Exchange-native TP mechanism. |
+| TP fill model fix (candle high/low) | Engineering | ✅ DONE | Fixed 2026-03-17 in `v14_dca_engine.py`, `v14_lifecycle_engine.py`. |
+| TP catch-up for paper bots | Engineering | ✅ DONE | Fixed 2026-03-18 in `v14_lifecycle_engine.py`. Live mode only. |
 
 ---
 
 _Document generated by Gee Gee — 2026-03-09_
 _Updated: 2026-03-10 (v1.2 — CSV-as-truth for all bots, exchange API equity for live, --fresh loads existing trades)_
-_Architecture reference: `V14PM_SYSTEM_ARCHITECTURE.md` (v1.1)_
+_Updated: 2026-03-18 (v1.3 — LIVE GUARD, resting limit orders, fill price fix, V14-ETF retirement, production architecture target, D7 decision added, live bot runner requirements expanded with items 13-17)_
+_Architecture reference: `V14PM_SYSTEM_ARCHITECTURE.md` (v1.3)_
 _Audit trail: `V14PM_FULL_AUDIT.md`, `PM_AUDIT_2026-03-10.md`_

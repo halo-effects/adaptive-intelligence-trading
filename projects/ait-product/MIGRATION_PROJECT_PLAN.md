@@ -1,5 +1,6 @@
 # AIT V14PM — Production Migration Project Plan
 _Owner: Brett | Agent: Gee Gee | Created: 2026-03-09 | Status: ACTIVE_
+_Last updated: 2026-03-18_
 
 ---
 
@@ -15,19 +16,22 @@ Produce a complete **System Architecture & Migration Guide** that a systems engi
 |-----------|------|
 | **V14PM** | ✅ **The product** — MVP for customer sales + Hyperliquid live trading |
 | V14 Paper (HBAR/ATOM/LINK/NEAR) | Demo account — shows the DCA engine performing |
-| V14-ETF Paper (SOL/XRP/LTC/HBAR/ADA) | Demo account — shows multi-coin ETF-style strategy |
-| V14 Live (ASTER/USDT) | Live proof-of-concept — validates engine with real capital |
+| V14 Live (ASTER/USDT) | Live proof-of-concept — validates engine with real capital ($340 seed, $351.20 exchange-verified). LIVE GUARD active. |
 | Dashboards | Customer-facing — demo the PM and strategy performance |
 
-The architecture doc and migration guide lead with **V14PM**. The paper bots are supporting cast — demos that must stay running but are not the migration target.
+> **V14-ETF Paper RETIRED (2026-03-17):** HBAR autonomously switched to DCA Short, causing
+> losses. Lesson: Long↔Short direction changes need human-in-the-loop approval. Scheduled task
+> unregistered. `status.json` renamed to `status.json.retired`. Files are no longer protected
+> under the safety rules (can be archived or deleted without risk).
 
-**Constraint:** The three paper trading bots (V14, V14-ETF, V14-PM) and their dashboards must remain running and uninterrupted throughout. They are live demos for customers and partners.
+**Constraint:** The paper trading bots (V14, V14-PM) and their dashboards must remain running
+and uninterrupted throughout. They are live demos for customers and partners.
 
 ---
 
 ## Approach
 
-We work in five sequential phases. Cleanup happens *before* final documentation, so the architecture doc reflects the actual clean system — not the current state with inherited debt.
+We work in six sequential phases. Cleanup happens *before* final documentation, so the architecture doc reflects the actual clean system — not the current state with inherited debt.
 
 ```
 Phase 1: Audit          ← inventory everything (code, docs, data, tasks)
@@ -35,7 +39,14 @@ Phase 2: Document Gather ← collect and link all existing specs into one index
 Phase 3: Cleanup        ← fix broken paths, move engine files, restore sources
 Phase 4: Architecture   ← write the definitive system architecture document
 Phase 5: Migration Guide ← step-by-step sysadmin runbook for cloud deployment
+Phase 6: Aster Production Architecture ← build exchange-as-truth for live trading
 ```
+
+> **Phase 6 added 2026-03-18** after the live Aster false TP sell incident ($22 loss) exposed
+> the fundamental flaw in the current engine-as-truth architecture. The incident proved that
+> the current design — engine state as primary truth with exchange as correction layer — is
+> structurally wrong for live trading. Phase 6 builds the correct architecture: exchange and
+> database as truth, engine as decision-maker only. See Architecture doc §16.
 
 ---
 
@@ -93,6 +104,137 @@ Phase 5: Migration Guide ← step-by-step sysadmin runbook for cloud deployment
 
 ---
 
+## Phase 3 — Codebase Cleanup
+**Goal:** Clean, documented, deployable set of source files with no path hacks or mystery dependencies.
+**Status:** 🔄 IN PROGRESS (engine files moved, requirements.txt created, some cleanup done)
+**Output:** Clean git commit tagged `v14pm-cloud-ready`
+
+### Task List
+
+#### 3.1 — Fix `sync_dashboard.ps1` (URGENT — caused today's outage)
+- [ ] Audit exactly what `sync_dashboard.ps1` copies and why it could overwrite `.py` files
+- [ ] Add explicit exclusions for all source `.py` files
+- [ ] Test sync doesn't touch anything outside `docs/` and `trading/spot/live|paper/*/`
+
+#### 3.2 — Promote V13 engine files to proper package
+- [x] Create `trading/spot/engine/` directory with `__init__.py`
+- [x] Move 7 files from `backtest_results/v13/` → `trading/spot/engine/`
+- [ ] Update `v14_lifecycle_engine.py`: replace `sys.path.insert()` with proper `from trading.spot.engine.X import Y`
+- [ ] Update `coin_scanner_v13.py`: update any direct imports
+- [ ] Verify all running bots still import cleanly after move
+- [ ] **Do not move** `backtest_results/v13/candles.db`, `build_daily_candles.py` — these are backtest artifacts
+
+#### 3.3 — Fix hardcoded DB path
+- [ ] Update `v14_dca_engine.py`: replace hardcoded `DB_PATH` with `os.environ.get('AIT_CANDLES_DB', fallback)`
+- [ ] Update `.env.template` to document `AIT_CANDLES_DB`
+- [ ] Verify all callers pass or default to `trading/spot/data/candles.db`
+
+#### 3.4 — Consolidate candle databases
+- [ ] Confirm `trading/spot/data/candles.db` is the authoritative live DB
+- [ ] Confirm `backtest_results/v13/candles.db` is only used for historical backtests
+- [ ] Document which scripts use which DB; add comments to clarify
+
+#### 3.5 — Rename misnamed files
+- [ ] Rename `run_scanner_v13.py` → `run_v14_scanner.py`
+- [ ] Update `V14CycleScanner` scheduled task to match new name
+- [ ] Rename `coin_scanner_v13.py` → `coin_scanner.py`
+
+#### 3.6 — Create `requirements.txt`
+- [x] Audit all imports across all `.py` files for third-party packages
+- [x] Generate `requirements.txt` with pinned versions from current environment
+- [x] Add dev/backtest extras in `requirements-dev.txt`
+
+#### 3.7 — Create `.env.template` for Hyperliquid
+- [ ] Create `trading/spot/live/v14pm/.env.template` for V14 PM live bot
+- [ ] Document all required env vars: API keys, Telegram token, DB path, etc.
+
+#### 3.8 — Clean up workspace root
+- [ ] Move `trading/test_api.py`, `trading/test_api2.py`, `trading/test_api3.py` → `trading/tests/` or delete
+- [ ] Move `trading/_check_rejected.py`, `trading/_fix_tp.py` → archive or delete
+- [ ] Confirm `trading/live/` (old legacy dir) vs `trading/spot/live/` — remove if obsolete
+
+---
+
+## Phase 4 — System Architecture Document
+**Goal:** Single authoritative document describing the complete V14PM system.
+**Status:** ✅ EXISTS (v1.2 → updating to v1.3 as of 2026-03-18)
+**Output:** `projects/ait-product/V14PM_SYSTEM_ARCHITECTURE.md`
+
+v1.3 additions include: LIVE GUARD pattern, resting limit orders, fill price handling,
+TP catch-up fix, V14-ETF retirement, production architecture target, incident log (§17).
+
+### Document Structure
+
+```
+1. System Overview (design philosophy, layers diagram, active components)
+2. Repository Structure
+3. Data Pipeline (candle collection, candles.db, daily resampling)
+4. Intelligence Layer (DCA score, trend multiplier, signal stack, ROUTER v2)
+5. V14 DCA Engine (phase machine, grid mechanics, risk profiles)
+6. V14 Lifecycle Engine (runtime loop, state persistence, equity calculation,
+   live bot exchange interaction, trade preservation, live trading safeguards,
+   TP catch-up)
+7. V14PM Portfolio Manager (CapitalRouter, allocation rules, rebalance)
+8. Exchange Client (Hyperliquid, Aster, live bot methods)
+9. Presentation Layer (dashboards, data flow)
+10. Scheduled Tasks (Windows)
+11. Monitoring & Alerting (Telegram, heartbeat, watchdog)
+12. Environment Variables
+13. CLI Reference
+14. Python Environment
+15. Key Design Decisions & Rationale
+16. Future Architecture: Production Trading System
+17. Incident Log (2026-03-17, 2026-03-18)
+```
+
+---
+
+## Phase 5 — Cloud Migration Guide
+**Goal:** Step-by-step runbook for a sysadmin to deploy V14PM on a production Linux server.
+**Status:** ✅ EXISTS (v1.2 → updating to v1.3 as of 2026-03-18)
+**Output:** `projects/ait-product/CLOUD_MIGRATION_GUIDE.md`
+
+v1.3 additions include: D7 decision (Aster vs Hyperliquid), live bot runner requirements
+expanded with LIVE GUARD, resting limit orders, fill price handling, human-in-the-loop for
+direction changes, production architecture target section (§14), V14-ETF removed.
+
+---
+
+## Phase 6 — Aster Production Architecture
+**Goal:** Build exchange-as-truth architecture for live Aster bot, then scale to V14PM.
+**Status:** 🔲 PLANNING (driven by 2026-03-18 incident)
+**Output:** Production-grade live trading infrastructure
+
+> This phase was added after the 2026-03-18 incident (live Aster false TP sell, $22 loss)
+> exposed the fundamental flaw in treating engine state as primary truth. The incident
+> proved that reconciliation-after-the-fact is insufficient — the exchange must be the
+> primary source of truth from the start.
+
+### 6.1 — Phase 1: Exchange-as-Truth on Aster (current live bot)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| LIVE GUARD pattern | ✅ DONE | Engine TP sells blocked when exchange limit order is active |
+| Resting limit orders | ✅ DONE | Exchange-native TP; fills without bot involvement |
+| Fill price from exchange | ✅ DONE | Never fall back to engine price |
+| PnL from actual proceeds | ✅ DONE | Engine capital corrected after sells |
+| WebSocket fill listener | 🔲 TODO | Replace 65-second polling with real-time fill push |
+| PostgreSQL DB as truth | 🔲 TODO | Replace state.json + trades.csv |
+| Order Manager service | 🔲 TODO | Separate from signal engine |
+
+### 6.2 — Phase 2: Scale to V14PM
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Decision: Aster or Hyperliquid | ⚠️ PENDING (D7) | Aster proven, Hyperliquid enables perps |
+| V14PM live runner with full safeguards | 🔲 TODO | Implements items 13-17 from Migration Guide §5.4 |
+| Multi-coin Order Manager | 🔲 TODO | Manages TP orders for N simultaneous positions |
+| Portfolio-level DB schema | 🔲 TODO | Positions, fills, trades for multi-coin PM |
+
+Paper bots remain on Windows with JSON/CSV architecture throughout.
+
+---
+
 ## ⛔ INVIOLABLE SAFETY RULES (applies to ALL phases)
 
 These rules are non-negotiable. No cleanup task overrides them.
@@ -104,11 +246,16 @@ trading/spot/live/v14/trades.csv       ← live trade log
 trading/spot/live/v14/status.json      ← live bot status
 trading/spot/paper/v14/state.json      ← V14 paper bot memory
 trading/spot/paper/v14/trades.csv
-trading/spot/paper/v14etf/state.json   ← V14-ETF paper bot memory
-trading/spot/paper/v14etf/trades.csv
 trading/spot/paper/v14_portfolio/      ← V14-PM paper bot (entire dir)
 docs/                                  ← dashboard HTML + data (customer-facing)
 ```
+
+> **V14-ETF files no longer protected (2026-03-17):** Bot retired. The following files
+> can be archived or deleted without risk:
+> ```
+> trading/spot/paper/v14etf/             ← RETIRED bot state (safe to archive)
+> trading/spot/paper/v14etf/status.json.retired
+> ```
 
 ### Procedures — ALWAYS
 1. **Copy before delete** — new location must exist and be verified before old is removed
@@ -134,196 +281,14 @@ If this fails at any point, stop and rollback before proceeding.
 
 ---
 
-## Phase 3 — Codebase Cleanup
-**Goal:** Clean, documented, deployable set of source files with no path hacks or mystery dependencies.
-**Status:** 🔲 NOT STARTED
-**Output:** Clean git commit tagged `v14pm-cloud-ready`
+## Active System Components (2026-03-18)
 
-### Task List
-
-#### 3.1 — Fix `sync_dashboard.ps1` (URGENT — caused today's outage)
-- [ ] Audit exactly what `sync_dashboard.ps1` copies and why it could overwrite `.py` files
-- [ ] Add explicit exclusions for all source `.py` files
-- [ ] Test sync doesn't touch anything outside `docs/` and `trading/spot/live|paper/*/`
-
-#### 3.2 — Promote V13 engine files to proper package
-- [ ] Create `trading/spot/engine/` directory with `__init__.py`
-- [ ] Move these 7 files from `backtest_results/v13/` → `trading/spot/engine/`:
-  - `v14_dca_engine.py`
-  - `v13_signals.py`
-  - `v13_router_engine_v1.py`
-  - `v13_router_engine_v2.py`
-  - `_steve_3check.py`
-  - `test_hvf_daily.py`
-  - `v13_phase_backtest_v8.py`
-- [ ] Update `v14_lifecycle_engine.py`: replace `sys.path.insert()` with proper `from trading.spot.engine.X import Y`
-- [ ] Update `coin_scanner_v13.py`: update any direct imports
-- [ ] Verify all 4 running bots still import cleanly after move
-- [ ] **Do not move** `backtest_results/v13/candles.db`, `build_daily_candles.py` — these are backtest artifacts
-
-#### 3.3 — Fix hardcoded DB path
-- [ ] Update `v14_dca_engine.py`: replace hardcoded `DB_PATH` with `os.environ.get('AIT_CANDLES_DB', fallback)`
-- [ ] Update `.env.template` to document `AIT_CANDLES_DB`
-- [ ] Verify all callers pass or default to `trading/spot/data/candles.db`
-
-#### 3.4 — Consolidate candle databases
-- [ ] Confirm `trading/spot/data/candles.db` is the authoritative live DB
-- [ ] Confirm `backtest_results/v13/candles.db` is only used for historical backtests
-- [ ] Document which scripts use which DB; add comments to clarify
-
-#### 3.5 — Rename misnamed files
-- [ ] Rename `run_scanner_v13.py` → `run_v14_scanner.py`
-- [ ] Update `V14CycleScanner` scheduled task to match new name
-- [ ] Rename `coin_scanner_v13.py` → `coin_scanner.py`
-
-#### 3.6 — Create `requirements.txt`
-- [ ] Audit all imports across all `.py` files for third-party packages
-- [ ] Generate `requirements.txt` with pinned versions from current environment
-- [ ] Add dev/backtest extras in `requirements-dev.txt`
-
-#### 3.7 — Create `trading/spot/live/v14/.env.template` for Hyperliquid
-- [ ] Create `trading/spot/live/v14pm/.env.template` for V14 PM live bot
-- [ ] Document all required env vars: API keys, Telegram token, DB path, etc.
-
-#### 3.8 — Clean up workspace root
-- [ ] Move `trading/test_api.py`, `trading/test_api2.py`, `trading/test_api3.py` → `trading/tests/` or delete
-- [ ] Move `trading/_check_rejected.py`, `trading/_fix_tp.py` → archive or delete
-- [ ] Confirm `trading/live/` (old legacy dir) vs `trading/spot/live/` — remove if obsolete
-
----
-
-## Phase 4 — System Architecture Document
-**Goal:** Single authoritative document describing the complete V14PM system.
-**Status:** 🔲 NOT STARTED (starts after Phase 3 complete)
-**Output:** `projects/ait-product/V14PM_SYSTEM_ARCHITECTURE.md`
-
-### Document Structure
-
-```
-1. System Overview
-   - Design philosophy
-   - System diagram (ASCII)
-   - Four-layer architecture
-
-2. Data Pipeline
-   - Candle collection (Hyperliquid API)
-   - candles.db schema
-   - Collector scheduling and failure handling
-
-3. Intelligence Layer
-   - DCA Cycle Velocity Score formula
-   - Coin scanner (45-coin universe)
-   - Signal stack: StochRSI, HVF, 3-check, Fib levels
-   - ROUTER v2: HybridDetector2D (top/bottom detection)
-   - Score history and trend multiplier
-
-4. V14 DCA Engine
-   - Phase machine: LONG_DCA → ROUTER → SHORT_DCA
-   - DCA grid mechanics (BO, deviation, multiplier, layers, TP)
-   - Risk profiles (Low / Medium / High)
-   - Backfill vs live mode
-
-5. V14 Lifecycle Engine
-   - Hourly candle loop
-   - Daily signal evaluation (midnight UTC)
-   - State persistence (snapshot/restore)
-   - Reconciliation
-
-6. V14 PM Portfolio Manager
-   - CapitalRouter: active/reserve pool split
-   - Adjusted Score = Base DCA Score × Trend Multiplier
-   - Dynamic coin slot management (10 slots)
-   - Capital rotation on deal close
-   - Incident schema and logging
-
-7. Exchange Client
-   - Hyperliquid API integration (perps)
-   - Aster DEX integration (spot)
-   - Order execution, balance reconciliation, fee handling
-   - Paper trading mode
-
-8. Presentation Layer
-   - Dashboard architecture (V14, V14-ETF, V14-PM, Live)
-   - Data flow: status.json → GitHub Pages → browser
-   - Sync mechanism and scheduling
-
-9. Operations
-   - Scheduled tasks (Windows) / systemd units (Linux)
-   - Monitoring and alerting (Telegram)
-   - Log files and rotation
-   - Restart procedures
-
-10. Configuration Reference
-    - All environment variables
-    - Risk profile parameters
-    - Bot launch flags
-```
-
----
-
-## Phase 5 — Cloud Migration Guide
-**Goal:** Step-by-step runbook for a sysadmin to deploy V14PM on a production Linux server.
-**Status:** 🔲 NOT STARTED (starts after Phase 4 complete)
-**Output:** `projects/ait-product/CLOUD_MIGRATION_GUIDE.md`
-
-### Document Structure
-
-```
-1. Infrastructure Specification
-   - Recommended cloud provider + instance spec
-   - OS: Ubuntu 22.04 LTS
-   - Network: static IP, firewall rules, VPN considerations
-   - Storage: SSD sizing for candles.db growth
-
-2. Server Setup
-   - OS hardening baseline
-   - Python 3.12 installation
-   - pip dependencies (requirements.txt)
-   - Git clone + SSH key setup for GitHub Pages sync
-
-3. Configuration
-   - Environment variables (.env files)
-   - Hyperliquid API credentials (mainnet)
-   - Telegram bot token
-   - GitHub PAT for dashboard sync
-
-4. Database Migration
-   - Copy candles.db from Windows → cloud
-   - Verify integrity
-   - Set AIT_CANDLES_DB env var
-
-5. Service Deployment (systemd)
-   - V14PMBot.service        (portfolio manager live)
-   - V14PaperBot.service     (demo — keep running)
-   - V14ETFPaperBot.service  (demo — keep running)
-   - V14CandleCollector.service
-   - V14Scanner.service
-   - AIT_DashboardSync.service + .timer
-
-6. Hyperliquid Live Trading Setup
-   - Confirm exchange_client.py live mode
-   - Mainnet API key generation and scoping
-   - Initial capital allocation recommendation
-   - Go-live checklist (test → paper → live)
-
-7. Dashboard Sync Migration
-   - Replace sync_dashboard.ps1 with shell script
-   - cron schedule
-
-8. Monitoring & Alerting
-   - Telegram alert setup
-   - Log rotation (logrotate config)
-   - systemd watchdog for auto-restart
-
-9. Demo Account Continuity Plan
-   - Paper bots remain on Windows during cutover
-   - GitHub Pages serves both Windows (paper) and cloud (live) data
-   - Cutover checklist — zero downtime procedure
-
-10. Rollback Plan
-    - How to revert if cloud deployment has issues
-    - State file backup procedure
-```
+| Component | Entry Point | Exchange | Capital | Status |
+|-----------|------------|----------|---------|--------|
+| **V14PM Paper** | `run_v14_portfolio_paper.py` | Hyperliquid | $50K paper (~$53,815 equity) | ✅ Running — 102 deals, 100% win rate |
+| **V14 Paper** | `run_v14_paper.py` | Hyperliquid | $10K paper (~$53,500 equity) | ✅ Running — 400 deals, 97.8% win rate |
+| **V14 Live (Aster)** | `run_v14_live_aster.py` | Aster DEX | $340 seed ($351.20 actual) | ✅ Running — LIVE GUARD active |
+| ~~V14-ETF Paper~~ | ~~`run_v14etf_paper.py`~~ | ~~Hyperliquid~~ | ~~$10K paper~~ | ❌ RETIRED 2026-03-17 |
 
 ---
 
@@ -336,6 +301,7 @@ The following can be completed without interrupting Brett:
 - Phase 3: Generate `requirements.txt` from current Python env
 - Phase 4: Write full architecture doc (from code + existing specs)
 - Phase 5: Write migration guide skeleton (infrastructure decisions need Brett input)
+- Phase 6.1: Continue implementing exchange-as-truth on Aster bot
 
 ## Decisions Needed from Brett
 
@@ -347,18 +313,25 @@ The following can be completed without interrupting Brett:
 | Paper bots: keep on Windows long-term or migrate too? | If migrated, demo continuity plan changes | 5 |
 | Hyperliquid API key creation | Brett must do this on Hyperliquid UI | 5 |
 | Coin universe for live PM | Same 45 coins as paper? Subset? | 4/5 |
+| **Aster or Hyperliquid for V14PM production? (D7)** | Aster proven with live capital; Hyperliquid enables perps/leverage. Affects Phase 6.2 scope. | 6 |
 
 ---
 
 ## Timeline Estimate
 
-| Phase | Effort | Who | ETA |
-|-------|--------|-----|-----|
-| 1 — Audit | ✅ Done | Gee Gee | 2026-03-09 |
-| 2 — Doc Gather | ~2h | Gee Gee (autonomous) | 2026-03-09 |
-| 3 — Cleanup | ~4h | Gee Gee (autonomous) | 2026-03-10 |
-| 4 — Architecture Doc | ~3h | Gee Gee (autonomous) | 2026-03-11 |
-| 5 — Migration Guide | ~4h | Gee Gee + Brett decisions | 2026-03-12 |
+| Phase | Effort | Who | ETA | Status |
+|-------|--------|-----|-----|--------|
+| 1 — Audit | ✅ Done | Gee Gee | 2026-03-09 | ✅ COMPLETE |
+| 2 — Doc Gather | ~2h | Gee Gee (autonomous) | 2026-03-09 | 🔄 IN PROGRESS |
+| 3 — Cleanup | ~4h | Gee Gee (autonomous) | 2026-03-10 | 🔄 IN PROGRESS (engine files moved, requirements.txt created) |
+| 4 — Architecture Doc | ~3h | Gee Gee (autonomous) | 2026-03-11 | ✅ EXISTS (v1.3 as of 2026-03-18) |
+| 5 — Migration Guide | ~4h | Gee Gee + Brett decisions | 2026-03-12 | ✅ EXISTS (v1.3 as of 2026-03-18) |
+| 6 — Aster Production Architecture | ~20h+ | Gee Gee + Brett decisions | TBD | 🔲 PLANNING |
+
+> **Phase 6 estimate:** Significantly larger than previous phases. WebSocket integration,
+> PostgreSQL setup, and Order Manager service are production infrastructure work, not
+> documentation. Phase 6.1 (Aster) estimated at ~20h engineering. Phase 6.2 (V14PM scale)
+> depends on D7 decision.
 
 ---
 
@@ -368,11 +341,14 @@ The following can be completed without interrupting Brett:
 projects/ait-product/
 ├── MIGRATION_PROJECT_PLAN.md          ← this file
 ├── V14_ARCHITECTURE_AUDIT.md          ← Phase 1 output ✅
-├── DOCUMENT_INDEX.md                  ← Phase 2 output (TBD)
-├── V14PM_SYSTEM_ARCHITECTURE.md       ← Phase 4 output (TBD)
-└── CLOUD_MIGRATION_GUIDE.md           ← Phase 5 output (TBD)
+├── DOCUMENT_INDEX.md                  ← Phase 2 output (in progress)
+├── V14PM_SYSTEM_ARCHITECTURE.md       ← Phase 4 output ✅ (v1.3)
+└── CLOUD_MIGRATION_GUIDE.md           ← Phase 5 output ✅ (v1.3)
 ```
 
 ---
 
-_Last updated: 2026-03-09 by Gee Gee_
+_Created: 2026-03-09 by Gee Gee_
+_Updated: 2026-03-18 — Phase statuses updated, Phase 6 added (Aster Production Architecture),
+V14-ETF retired, active components updated, safety rules updated, timeline revised.
+Driven by 2026-03-18 live incident exposing engine-as-truth flaw._

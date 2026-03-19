@@ -272,7 +272,13 @@ class AsterOrderExecutor:
             logger.info(f"Executing MARKET BUY {qty} {self.symbol} (${cost:.2f}) — {reason}")
             order = self.client.create_market_buy(self.symbol, qty)
 
-            fill_price = order.get("average") or order.get("price") or price
+            fill_price = order.get("average") or order.get("price")
+            if not fill_price:
+                logger.warning(
+                    "Exchange did not return fill price for BUY — using ticker"
+                )
+                ticker = self.client.fetch_ticker(self.symbol)
+                fill_price = (ticker or {}).get("last") or (ticker or {}).get("close") or price
             fill_qty = order.get("filled") or qty
             fill_cost = order.get("cost") or (fill_price * fill_qty)
             fee_cost = 0
@@ -353,10 +359,21 @@ class AsterOrderExecutor:
         # Execute market sell
         try:
             logger.info(f"Executing MARKET SELL {qty} {self.symbol} — {reason}")
+            logger.info(f"MARKET SELL {self.symbol} qty={qty:.8f}")
             order = self.client.create_market_sell(self.symbol, qty)
 
-            fill_price = order.get("average") or order.get("price") or price
+            fill_price = order.get("average") or order.get("price")
             fill_qty = order.get("filled") or qty
+            # NEVER fall back to engine's `price` param — it may be the TP
+            # price, not the actual market price. If exchange didn't return
+            # a fill price, fetch current market price as best estimate.
+            if not fill_price:
+                logger.warning(
+                    "Exchange did not return fill price — fetching current market price"
+                )
+                ticker = self.client.fetch_ticker(self.symbol)
+                fill_price = (ticker or {}).get("last") or (ticker or {}).get("close") or price
+                logger.warning(f"Using market price ${fill_price:.6f} as fill estimate")
             proceeds = order.get("cost") or (fill_price * fill_qty)
             fee_cost = 0
             if order.get("fee"):
@@ -1165,29 +1182,82 @@ class V14LiveBot:
                         )
 
         elif act_type == "SELL":
-            # Cancel resting TP limit sell before market sell to avoid double-fill
+            # ── LIVE GUARD: If a TP limit order is on the exchange, let the ──
+            # ── exchange handle TP. Do NOT cancel it based on engine's stale ──
+            # ── daily data. The engine uses previous-day OHLC which can       ──
+            # ── trigger false TPs when yesterday's high > TP but today's      ──
+            # ── price is below TP. Market selling would lose money.           ──
+            if self._tp_order_id and "TP" in reason:
+                logger.info(
+                    f"LIVE GUARD: Ignoring engine TP sell — TP limit order "
+                    f"{self._tp_order_id} is active on exchange. "
+                    f"Engine reason: {reason}, engine price: ${price:.6f}"
+                )
+                # Roll back engine state — the TP didn't actually happen
+                eng = self.engine._engine
+                if pre_tick_snapshot and eng:
+                    old_trades_len = pre_tick_snapshot.pop("_trades_len", None)
+                    for k, v in pre_tick_snapshot.items():
+                        setattr(eng, k, v)
+                    if old_trades_len is not None and len(eng.trades) > old_trades_len:
+                        eng.trades = eng.trades[:old_trades_len]
+                    logger.info(
+                        f"LIVE GUARD: Engine state rolled back — "
+                        f"{eng.long_layers} layers, {eng.long_coins:.4f} coins restored"
+                    )
+                return
+
+            # For non-TP sells (phase close, signal exit, etc.), proceed
             if self._tp_order_id:
                 logger.info(
-                    f"Cancelling TP limit sell {self._tp_order_id} before market sell"
+                    f"Cancelling TP limit sell {self._tp_order_id} before "
+                    f"non-TP sell ({reason})"
                 )
                 self.executor.cancel_tp_order(self._tp_order_id)
                 self._tp_order_id = None
 
             result = self.executor.execute_sell(qty, price, reason)
             if result and result.get("status") in ("filled", "dry_run"):
-                proceeds = result.get("proceeds", qty * price)
-                self.cash += proceeds
-                action["price"] = result.get("price", price)
-                action["qty"] = result.get("qty", qty)
-                pnl = action.get("pnl", 0)
-                emoji = "🟢" if pnl >= 0 else "🔴"
+                actual_proceeds = result.get("proceeds", 0)
+                actual_price = result.get("price", 0)
+                actual_qty = result.get("qty", qty)
+
+                # Calculate PnL from ACTUAL exchange fill, not engine's estimate
+                eng = self.engine._engine
+                invested = (eng.long_cost or 0.0) if eng else 0.0
+                fee = result.get("fee", 0) or 0
+                actual_pnl = actual_proceeds - invested - fee
+                actual_pnl_pct = (actual_pnl / invested * 100) if invested > 0 else 0.0
+
+                # Correct engine capital to reflect actual proceeds (not TP price)
+                if eng:
+                    # Engine already added TP-price proceeds to eng.capital
+                    # during the tick. Correct it to actual.
+                    engine_expected_proceeds = eng.long_tp * qty if eng.long_tp else qty * price
+                    correction = actual_proceeds - engine_expected_proceeds
+                    if abs(correction) > 0.01:
+                        eng.capital += correction
+                        logger.info(
+                            f"Engine capital corrected by ${correction:+.2f} "
+                            f"(actual fill vs engine TP)"
+                        )
+
+                self.cash = eng.capital if eng else self.cash + actual_proceeds
+
+                # Update action with actual exchange fill data
+                action["price"] = actual_price
+                action["qty"] = actual_qty
+                action["pnl"] = round(actual_pnl, 4)
+                action["pnl_pct"] = round(actual_pnl_pct, 2)
+
+                emoji = "🟢" if actual_pnl >= 0 else "🔴"
                 send_telegram(
                     f"{emoji} {TG_PREFIX} <b>Deal Closed</b>\n"
-                    f"PnL: ${pnl:.2f} ({action.get('pnl_pct', 0):.1f}%)\n"
+                    f"Fill: ${actual_price:.6f} × {actual_qty:.4f} = ${actual_proceeds:.2f}\n"
+                    f"PnL: ${actual_pnl:.2f} ({actual_pnl_pct:.1f}%)\n"
                     f"Reason: {reason}"
                 )
                 self.tracker.process_actions(self.symbol, [action], ts)
-                # TP order already cancelled above; ensure cleared
                 self._tp_order_id = None
             else:
                 # SELL FAILED — roll back engine state so it retries next tick

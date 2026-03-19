@@ -735,11 +735,12 @@ def send_telegram_summary(output: dict):
         f"{output['coins_scanned']} coins"
     )
 
-    # Derive picks from the Trade Score-ranked list (same window, same ranking)
-    if scored_rankings:
-        best_trade = scored_rankings[0]["coin"]
-        fastest = max(scored_rankings, key=lambda r: r.get("deals_per_week", 0))["coin"]
-        safest = min(scored_rankings, key=lambda r: r.get("max_drawdown_pct", 100))["coin"]
+    # Derive picks from top 5 only (match what's displayed above)
+    top5 = scored_rankings[:5] if scored_rankings else []
+    if top5:
+        best_trade = top5[0]["coin"]
+        fastest = max(top5, key=lambda r: r.get("deals_per_week", 0))["coin"]
+        safest = min(top5, key=lambda r: r.get("max_drawdown_pct", 100))["coin"]
         lines.append(f"\U0001f3c6 Best: {best_trade} | "
                      f"\u26a1 Fastest: {fastest} | "
                      f"\U0001f6e1\ufe0f Safest: {safest}")
