@@ -388,7 +388,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
   </div>
   <div class="header-right">
     <div class="header-meta">
-      <span class="header-badge leverage">1.5&times; Leverage</span>
+      <span class="header-badge leverage" id="hdrLeverage">--</span>
       <span class="header-badge" id="hdrRegime">--</span>
       <span class="header-badge" id="hdrTrend">--</span>
       <span class="header-coins" id="hdrCoins">--</span>
@@ -468,7 +468,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 <!-- 8. LIVE OPPORTUNITY DASHBOARD -->
 <div class="flow-section">
   <h2 style="text-align:center;font-size:1.15rem;color:var(--text);margin-bottom:4px">&#x1F4CA; Live Opportunity Dashboard</h2>
-  <div class="flow-sub" style="text-align:center">Each coin operates independently through V14 DCA phases — long grids, short grids, and routing evaluation</div>
+  <div class="flow-sub" style="text-align:center">Each coin operates independently through V14 DCA phases ï¿½ long grids, short grids, and routing evaluation</div>
 
   <!-- Phase Flow Diagram -->
   <div class="phase-flow" id="phaseFlow"></div>
@@ -488,7 +488,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th title="Base Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5×) &#x2192; stable (1.0×) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score × Trend Multiplier — the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="Base Score = Realized PnL ï¿½ (1 - DD%) ï¿½ Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5ï¿½) &#x2192; stable (1.0ï¿½) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score ï¿½ Trend Multiplier ï¿½ the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -597,9 +597,9 @@ var COIN_BASE = {
 function cm(sym){var b=sym.split('/')[0];return COIN_BASE[b]||{icon:b.toLowerCase(),label:b,name:b,color:'#6366f1'}}
 
 var PHASE_DESC = {
-  LONG_DCA:'Long grid active — buying dips, cycling TPs',
-  SHORT_DCA:'Short grid active — selling rallies, cycling TPs',
-  ROUTER:'Evaluating direction — waiting for signal confirmation'
+  LONG_DCA:'Long grid active ï¿½ buying dips, cycling TPs',
+  SHORT_DCA:'Short grid active ï¿½ selling rallies, cycling TPs',
+  ROUTER:'Evaluating direction ï¿½ waiting for signal confirmation'
 };
 var PHASES = ['LONG_DCA','ROUTER','SHORT_DCA'];
 var REGIME_CLS = {ACCUMULATION:'rb-ACCUMULATION',ACC:'rb-ACC',TRENDING:'rb-TRENDING',TREND:'rb-TREND',RANGING:'rb-RANGING',EXTREME:'rb-EXTREME',CRASH:'rb-CRASH',CHOPPY:'rb-CHOPPY',DISTRIBUTION:'rb-DISTRIBUTION',LONG_DCA:'rb-ACC',SHORT_DCA:'rb-EXTREME',ROUTER:'rb-RANGING'};
@@ -623,6 +623,9 @@ function render(){
   $('statusDot').className='status-dot '+(S.running?(S.halted?'stopped':'running'):'stopped');
   $('statusLabel').textContent=S.running?(S.halted?'Halted':'Running'):'Stopped';
   $('updateTime').textContent=S.last_update?new Date(S.last_update).toLocaleString():'--';
+
+  var lev=S.leverage||1;
+  $('hdrLeverage').textContent=lev+'\u00D7 Leverage';
 
   var rg=S.regime||'--';
   var rgClass='regime-dist';
@@ -658,7 +661,7 @@ function renderStats(){
   if(deals===0 && trades.length>0) deals=trades.length;
   var totalFees=S.total_fees||0;
   $('vRPnl').innerHTML='<span style="color:'+pC(rpnl)+'">'+(rpnl>=0?'+':'')+fUsd(rpnl)+'</span>';
-  $('vRPnlSub').textContent=deals+' completed deals'+(totalFees>0?' · after '+fUsd(totalFees)+' fees':'');
+  $('vRPnlSub').textContent=deals+' completed deals'+(totalFees>0?' ï¿½ after '+fUsd(totalFees)+' fees':'');
 
   var syms=S.symbols||Object.keys(S.coins||{});
   var totalUpnl=0, totalInv=0;
@@ -717,7 +720,7 @@ function renderRiskProfile(){
         '<div class="risk-param"><div class="rp-label">LAYERS</div><div class="rp-val">'+(profile==='high'?'12':'10')+'</div></div>'+
         '<div class="risk-param"><div class="rp-label">TP</div><div class="rp-val">1.5%</div></div>'+
         '<div class="risk-param"><div class="rp-label">MULT</div><div class="rp-val">1.5&times;</div></div>'+
-        '<div class="risk-param"><div class="rp-label">LEVERAGE</div><div class="rp-val">'+(profile==='low'?'1.0&times;':'1.5&times;')+'</div></div>'+
+        '<div class="risk-param"><div class="rp-label">LEVERAGE</div><div class="rp-val">'+(S.leverage||1)+'&times;</div></div>'+
       '</div>'+
     '</div>'+
     '<div class="risk-col" style="text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px 20px">'+

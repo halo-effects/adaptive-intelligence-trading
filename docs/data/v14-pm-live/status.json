@@ -7,8 +7,8 @@
   "leverage": 1.0,
   "bot_state": "RUNNING",
   "capital": 350.0,
-  "equity": 373.95,
-  "pnl_pct": 6.84,
+  "equity": 350.25,
+  "pnl_pct": 0.07,
   "total_pnl": 23.954,
   "deals_completed": 12,
   "win_rate": 100.0,
@@ -18,7 +18,7 @@
       "side": "none",
       "layers": 0,
       "avg_entry": 0.3737,
-      "current_price": 0.3737,
+      "current_price": 0.3824,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -39,16 +39,18 @@
   "approved_symbols": [
     "GRASS/USDT"
   ],
-  "regime": {
+  "regime": "NONE",
+  "regime_detail": {
     "alert_state": "NONE",
     "signal_type": null,
     "signal_count": 0
   },
+  "trend_direction": "bullish",
   "fear_greed_index": 49.25,
   "router": {
     "active_cash": 262.92,
     "reserve_cash": 87.5
   },
-  "uptime_hours": 0.04,
-  "last_update": "2026-03-19T17:42:40.772052+00:00"
+  "uptime_hours": 0.53,
+  "last_update": "2026-03-19T18:53:25.046276+00:00"
 }
