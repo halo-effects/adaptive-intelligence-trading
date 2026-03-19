@@ -1,4 +1,4 @@
-﻿"""
+"""
 V13 Coin Scanner ΓÇö Backtest all CFGI-compatible tokens through V13 phase engine.
 Outputs ranked results for the dashboard.
 """

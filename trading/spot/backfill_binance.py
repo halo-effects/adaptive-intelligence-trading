@@ -281,19 +281,51 @@ def main():
 
         cov = get_coverage(conn, db_sym)
 
-        if cov["count"] > 0:
-            # Incremental: start from last stored timestamp
+        if cov["count"] > 0 and cov["days"] >= 600:
+            # Already have 600+ days — just extend forward
             since_ms = cov["last"] - timedelta(hours=INCREMENTAL_BUFFER_HOURS)
             since_ms = int(since_ms.timestamp() * 1000)
-            logger.info(f"  {short}: existing {cov['days']:.0f}d — extending from {cov['last'].strftime('%Y-%m-%d')}")
+            logger.info(f"  {short}: existing {cov['days']:.0f}d ✅ — extending forward only")
+        elif cov["count"] > 0:
+            # Have data but < 600 days — backfill backwards THEN extend forward
+            logger.info(f"  {short}: existing {cov['days']:.0f}d — need backward backfill + forward extend")
         else:
-            # First time: fetch all available history
-            since_ms = int(datetime(2019, 1, 1, tzinfo=timezone.utc).timestamp() * 1000)
             logger.info(f"  {short}: no data — full backfill from Binance start")
 
         try:
-            candles = fetch_candles_from(exchange, binance_sym, since_ms, db_sym)
-            new_count = store_candles(conn, db_sym, candles)
+            new_count = 0
+
+            if cov["count"] > 0 and cov["days"] < 600:
+                # Phase 1: Backward backfill (from 2019 up to existing first candle)
+                backward_start = int(datetime(2019, 1, 1, tzinfo=timezone.utc).timestamp() * 1000)
+                backward_end   = int(cov["first"].timestamp() * 1000)
+                logger.info(f"  {short}: backward fill 2019-01-01 → {cov['first'].strftime('%Y-%m-%d')}")
+                backward_candles = fetch_candles_from(exchange, binance_sym, backward_start, db_sym)
+                # Only keep candles before existing data
+                backward_candles = [c for c in backward_candles if c[0] < backward_end]
+                new_count += store_candles(conn, db_sym, backward_candles)
+                logger.info(f"  {short}: +{new_count} backward candles")
+
+                # Phase 2: Forward extend
+                forward_since = cov["last"] - timedelta(hours=INCREMENTAL_BUFFER_HOURS)
+                forward_since = int(forward_since.timestamp() * 1000)
+                forward_candles = fetch_candles_from(exchange, binance_sym, forward_since, db_sym)
+                fwd_count = store_candles(conn, db_sym, forward_candles)
+                new_count += fwd_count
+
+            elif cov["count"] > 0:
+                # Already >= 600d, just extend forward
+                since_ms = cov["last"] - timedelta(hours=INCREMENTAL_BUFFER_HOURS)
+                since_ms = int(since_ms.timestamp() * 1000)
+                candles = fetch_candles_from(exchange, binance_sym, since_ms, db_sym)
+                new_count = store_candles(conn, db_sym, candles)
+
+            else:
+                # No data at all — full backfill
+                since_ms = int(datetime(2019, 1, 1, tzinfo=timezone.utc).timestamp() * 1000)
+                candles = fetch_candles_from(exchange, binance_sym, since_ms, db_sym)
+                new_count = store_candles(conn, db_sym, candles)
+
             total_new += new_count
             coins_updated += 1
 
