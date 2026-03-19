@@ -325,17 +325,31 @@ class AsterPerpClient:
                     "proceeds": 0, "average": price}
         try:
             logger.info(f"MARKET BUY {db_symbol} qty={qty:.8f} ({sym})")
-            order = self._exchange.create_market_buy_order(sym, exchange_qty)
+            order = self._exchange.create_market_buy_order(sym, exchange_qty,
+                                                           params={"positionSide": "BOTH"})
             fill = order.get("average") or order.get("price")
             if not fill:
-                logger.warning(f"Exchange did not return fill price for BUY — fetching ticker")
-                fill = self.fetch_ticker_price(db_symbol)
+                # Fetch actual trade fills from exchange — more accurate than ticker
+                logger.warning(f"Exchange did not return fill price for BUY — fetching trades")
+                try:
+                    import time as _time
+                    _time.sleep(1)  # Give exchange time to settle
+                    trades = self._exchange.fetch_my_trades(sym, limit=5)
+                    if trades:
+                        # Use the most recent trade matching our order
+                        latest = trades[-1]
+                        fill = float(latest.get("price", 0))
+                        logger.info(f"Got fill price from trades: ${fill}")
+                except Exception:
+                    pass
+                if not fill:
+                    fill = self.fetch_ticker_price(db_symbol)
+                    logger.warning(f"Fell back to ticker price: ${fill}")
             else:
-                # Reverse 1000-prefix scaling on price
-                if base in ("PEPE", "BONK", "FLOKI"):
-                    fill = float(fill) / 1000.0
-                else:
-                    fill = float(fill)
+                fill = float(fill)
+            # Reverse 1000-prefix scaling on price
+            if base in ("PEPE", "BONK", "FLOKI"):
+                fill = fill / 1000.0
             filled_qty = float(order.get("filled") or exchange_qty)
             if base in ("PEPE", "BONK", "FLOKI"):
                 filled_qty = filled_qty / 1000.0
@@ -365,7 +379,7 @@ class AsterPerpClient:
         try:
             logger.info(f"MARKET SELL {db_symbol} qty={qty:.8f} ({sym})")
             order = self._exchange.create_market_sell_order(sym, exchange_qty,
-                                                            params={"reduceOnly": True})
+                                                            params={"positionSide": "BOTH", "reduceOnly": True})
             fill = order.get("average") or order.get("price")
             if not fill:
                 logger.warning(f"Exchange did not return fill price for SELL — fetching ticker")
@@ -404,7 +418,7 @@ class AsterPerpClient:
             logger.info(f"PLACE TP LIMIT SELL {db_symbol} qty={qty:.8f} @ ${price:.8f}")
             order = self._exchange.create_limit_sell_order(
                 sym, exchange_qty, exchange_price,
-                params={"timeInForce": "GTC", "reduceOnly": True}
+                params={"timeInForce": "GTC", "positionSide": "BOTH", "reduceOnly": True}
             )
             oid = order.get("id")
             logger.info(f"TP limit order placed: {oid}")
@@ -611,7 +625,7 @@ class V14PortfolioLiveAster:
             engine_state = {}
             if cs.engine:
                 try:
-                    engine_state = cs.engine.save_state()
+                    engine_state = cs.engine.snapshot_state()
                 except Exception:
                     pass
             coin_states[sym] = {
@@ -691,6 +705,23 @@ class V14PortfolioLiveAster:
                     logger.info(f"  Restored engine for {sym}")
                 except Exception as e:
                     logger.error(f"  Failed to restore engine for {sym}: {e}")
+            else:
+                # No saved engine state — create fresh engine (warmed up for live)
+                try:
+                    engine = V14LifecycleEngine(
+                        symbol=sym,
+                        capital=cs.allocated_capital,
+                        profile=self.profile,
+                        leverage=self.leverage,
+                    )
+                    engine._live_mode = True
+                    engine._warmed_up = True
+                    cs.engine = engine
+                    # Reset candle ts so we process the next candle
+                    cs.last_candle_ts = 0
+                    logger.info(f"  Created fresh engine for {sym} (no saved state)")
+                except Exception as e:
+                    logger.error(f"  Failed to create engine for {sym}: {e}")
 
             self.coins[sym] = cs
 
@@ -975,10 +1006,31 @@ class V14PortfolioLiveAster:
                         eng.capital -= correction
                         logger.info(f"BUY capital correction for {sym}: ${correction:+.4f}")
 
+                    # ── CRITICAL: Recalculate TP from actual fill price ──
+                    # The engine sets TP based on candle close, but the market
+                    # buy fill is typically higher (ask side + slippage).
+                    # We must recalculate avg entry and TP from actual fills,
+                    # otherwise the TP spread is too thin and profits vanish.
+                    if eng.long_coins > 0 and eng.long_cost > 0:
+                        actual_avg = eng.long_cost / eng.long_coins
+                        # Also correct avg_entry and cost with actual fill
+                        old_cost = eng.long_cost - actual_cost  # cost before this buy
+                        old_coins = eng.long_coins - actual_qty  # coins before this buy
+                        corrected_cost = (old_cost + actual_price * actual_qty)
+                        eng.long_cost = corrected_cost
+                        eng.long_avg_entry = corrected_cost / eng.long_coins
+                        # Recalculate TP from corrected average entry
+                        tp_pct = 1.0 + (eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015)
+                        eng.long_tp = eng.long_avg_entry * tp_pct
+                        logger.info(
+                            f"TP recalculated from actual fill: avg_entry=${eng.long_avg_entry:.6f}, "
+                            f"TP=${eng.long_tp:.6f} (was engine price ${price:.6f})"
+                        )
+
                 self.tracker.on_buy(sym, actual_qty, actual_price,
                                     datetime.now(timezone.utc))
 
-                # Update/place TP limit order
+                # Update/place TP limit order (now using corrected TP)
                 self._place_tp_order(sym, cs)
 
                 send_telegram(
@@ -1087,6 +1139,10 @@ class V14PortfolioLiveAster:
                         leverage=self.leverage,
                     )
                     cs.engine._live_mode = True
+                    # Force warmup for live trading — we're trading against real
+                    # exchange data, no need to wait for a daily boundary.
+                    # The engine is initialized in LONG_DCA phase and ready to trade.
+                    cs.engine._warmed_up = True
                     self.coins[sym] = cs
                 else:
                     # Update allocation if no open position
@@ -1642,13 +1698,19 @@ class V14PortfolioLiveAster:
 
                         candle = self._fetch_latest_candle(sym)
                         if not candle:
+                            logger.warning(f"No candle data for {sym}")
                             continue
 
                         ts_ms = candle["timestamp"]
                         if ts_ms <= cs.last_candle_ts:
-                            continue
+                            continue  # Already processed this candle
 
                         ts_dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
+                        logger.info(
+                            f"Candle {sym}: {ts_dt.strftime('%H:%M')} UTC | "
+                            f"O={candle['open']:.6f} H={candle['high']:.6f} "
+                            f"L={candle['low']:.6f} C={candle['close']:.6f}"
+                        )
 
                         # Run engine tick
                         try:
@@ -1658,8 +1720,11 @@ class V14PortfolioLiveAster:
                             continue
 
                         if actions:
+                            logger.info(f"Engine actions for {sym}: {actions}")
                             for action in actions:
                                 self._execute_action(sym, cs, action)
+                        else:
+                            logger.info(f"Engine tick {sym}: no action (warmed_up={cs.engine._warmed_up})")
 
                         cs.last_candle_ts = ts_ms
                         cs.engine._last_candle_ts = ts_ms
