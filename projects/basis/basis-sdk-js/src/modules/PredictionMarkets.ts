@@ -275,6 +275,60 @@ export class PredictionMarketsModule {
    * Buys from order book and AMM in a single transaction.
    * Fills specified orders first, then routes remaining input to the AMM.
    */
+  async getNumOutcomes(marketToken: Address): Promise<bigint> {
+    return this.client.publicClient.readContract({
+      address: this.marketTradingAddress,
+      abi: AMarketTradingArtifact.abi,
+      functionName: 'getNumOutcomes',
+      args: [marketToken],
+    }) as Promise<bigint>;
+  }
+
+  async getOptionNames(marketToken: Address): Promise<string[]> {
+    return this.client.publicClient.readContract({
+      address: this.marketTradingAddress,
+      abi: AMarketTradingArtifact.abi,
+      functionName: 'getOptionNames',
+      args: [marketToken],
+    }) as Promise<string[]>;
+  }
+
+  async hasBettedOnMarket(marketToken: Address, user: Address): Promise<boolean> {
+    return this.client.publicClient.readContract({
+      address: this.marketTradingAddress,
+      abi: AMarketTradingArtifact.abi,
+      functionName: 'hasBettedOnMarket',
+      args: [marketToken, user],
+    }) as Promise<boolean>;
+  }
+
+  async getBountyPool(marketToken: Address): Promise<bigint> {
+    return this.client.publicClient.readContract({
+      address: this.marketTradingAddress,
+      abi: AMarketTradingArtifact.abi,
+      functionName: 'getBountyPool',
+      args: [marketToken],
+    }) as Promise<bigint>;
+  }
+
+  async getGeneralPot(marketToken: Address): Promise<bigint> {
+    return this.client.publicClient.readContract({
+      address: this.marketTradingAddress,
+      abi: AMarketTradingArtifact.abi,
+      functionName: 'getGeneralPot',
+      args: [marketToken],
+    }) as Promise<bigint>;
+  }
+
+  async getBuyOrderAmountsOut(marketToken: Address, orderId: bigint, usdbAmount: bigint) {
+    return this.client.publicClient.readContract({
+      address: this.marketTradingAddress,
+      abi: AMarketTradingArtifact.abi,
+      functionName: 'getBuyOrderAmountsOut',
+      args: [marketToken, orderId, usdbAmount],
+    });
+  }
+
   async buyOrdersAndContract(
     marketToken: Address,
     outcomeId: number,

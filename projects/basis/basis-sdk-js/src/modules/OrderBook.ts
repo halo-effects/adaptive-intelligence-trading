@@ -132,4 +132,16 @@ export class OrderBookModule {
       args: [marketToken, orderId, fill],
     });
   }
+
+  /**
+   * Preview how many shares can be bought for a given USDB amount on a P2P order.
+   */
+  async getBuyOrderAmountsOut(marketToken: Address, orderId: bigint, usdbAmount: bigint) {
+    return this.client.publicClient.readContract({
+      address: this.marketTradingAddress,
+      abi: AMarketTradingArtifact.abi,
+      functionName: 'getBuyOrderAmountsOut',
+      args: [marketToken, orderId, usdbAmount],
+    });
+  }
 }

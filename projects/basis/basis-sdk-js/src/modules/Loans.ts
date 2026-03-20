@@ -197,6 +197,27 @@ export class LoansModule {
   /**
    * Returns the number of loans a user has.
    */
+  /**
+   * Partially sell collateral from a hub loan position.
+   */
+  async hubPartialLoanSell(hubId: bigint, percentage: bigint, isLeverage: boolean, minOut: bigint) {
+    if (!this.client.walletClient || !this.client.walletClient.account) {
+      throw new Error("Stateful initialization (walletClient) is required for write methods.");
+    }
+
+    const { request } = await this.client.publicClient.simulateContract({
+      account: this.client.walletClient.account,
+      address: this.loanHubAddress,
+      abi: ALoanHubArtifact.abi,
+      functionName: 'hubPartialLoanSell',
+      args: [hubId, percentage, isLeverage, minOut],
+    });
+
+    const hash = await this.client.walletClient.writeContract(request);
+    const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
+    return { hash, receipt };
+  }
+
   async getUserLoanCount(user: Address): Promise<bigint> {
     return this.client.publicClient.readContract({
       address: this.loanHubAddress,

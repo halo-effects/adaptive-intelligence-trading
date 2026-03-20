@@ -76,4 +76,80 @@ export class TaxesModule {
 
     return { stasis, stable, default: defaultRate, prediction };
   }
+
+  /**
+   * Start a decaying surge tax on a factory token. Only callable by the token's DEV.
+   */
+  async startSurgeTax(startRate: bigint, endRate: bigint, duration: bigint, token: Address) {
+    if (!this.client.walletClient || !this.client.walletClient.account) {
+      throw new Error("Stateful initialization (walletClient) is required.");
+    }
+    const { request } = await this.client.publicClient.simulateContract({
+      account: this.client.walletClient.account,
+      address: this.taxesAddress,
+      abi: ATaxesArtifact.abi,
+      functionName: 'startSurgeTax',
+      args: [startRate, endRate, duration, token],
+    });
+    const hash = await this.client.walletClient.writeContract(request);
+    const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
+    return { hash, receipt };
+  }
+
+  /**
+   * End an active surge tax early. Only callable by the token's DEV.
+   */
+  async endSurgeTax(token: Address) {
+    if (!this.client.walletClient || !this.client.walletClient.account) {
+      throw new Error("Stateful initialization (walletClient) is required.");
+    }
+    const { request } = await this.client.publicClient.simulateContract({
+      account: this.client.walletClient.account,
+      address: this.taxesAddress,
+      abi: ATaxesArtifact.abi,
+      functionName: 'endSurgeTax',
+      args: [token],
+    });
+    const hash = await this.client.walletClient.writeContract(request);
+    const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
+    return { hash, receipt };
+  }
+
+  /**
+   * Add a developer revenue share wallet for a token. Only callable by the token's DEV.
+   */
+  async addDevShare(token: Address, wallet: Address, basisPoints: bigint) {
+    if (!this.client.walletClient || !this.client.walletClient.account) {
+      throw new Error("Stateful initialization (walletClient) is required.");
+    }
+    const { request } = await this.client.publicClient.simulateContract({
+      account: this.client.walletClient.account,
+      address: this.taxesAddress,
+      abi: ATaxesArtifact.abi,
+      functionName: 'addDevShare',
+      args: [token, wallet, basisPoints],
+    });
+    const hash = await this.client.walletClient.writeContract(request);
+    const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
+    return { hash, receipt };
+  }
+
+  /**
+   * Remove a developer revenue share wallet. Only callable by the token's DEV.
+   */
+  async removeDevShare(token: Address, wallet: Address) {
+    if (!this.client.walletClient || !this.client.walletClient.account) {
+      throw new Error("Stateful initialization (walletClient) is required.");
+    }
+    const { request } = await this.client.publicClient.simulateContract({
+      account: this.client.walletClient.account,
+      address: this.taxesAddress,
+      abi: ATaxesArtifact.abi,
+      functionName: 'removeDevShare',
+      args: [token, wallet],
+    });
+    const hash = await this.client.walletClient.writeContract(request);
+    const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
+    return { hash, receipt };
+  }
 }

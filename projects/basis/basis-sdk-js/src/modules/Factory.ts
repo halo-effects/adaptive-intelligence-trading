@@ -241,6 +241,36 @@ export class FactoryModule {
   /**
    * Removes a wallet from the whitelist on a FACTORYTOKEN contract.
    */
+  /**
+   * Claim accumulated USDB rewards from presale shares on a factory token.
+   */
+  async claimRewards(tokenAddress: Address) {
+    if (!this.client.walletClient || !this.client.walletClient.account) {
+      throw new Error("Wallet account is required.");
+    }
+    const { request } = await this.client.publicClient.simulateContract({
+      account: this.client.walletClient.account,
+      address: tokenAddress,
+      abi: FactoryTokenArtifact.abi,
+      functionName: 'claimRewards',
+    });
+    const hash = await this.client.walletClient.writeContract(request);
+    const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
+    return { hash, receipt };
+  }
+
+  /**
+   * Get claimable USDB rewards for an address on a factory token.
+   */
+  async getClaimableRewards(tokenAddress: Address, investor: Address): Promise<bigint> {
+    return this.client.publicClient.readContract({
+      address: tokenAddress,
+      abi: FactoryTokenArtifact.abi,
+      functionName: 'getClaimableRewards',
+      args: [investor],
+    }) as Promise<bigint>;
+  }
+
   async removeWhitelist(tokenAddress: Address, wallet: Address) {
     if (!this.client.walletClient || !this.client.walletClient.account) {
       throw new Error("Wallet account is required.");

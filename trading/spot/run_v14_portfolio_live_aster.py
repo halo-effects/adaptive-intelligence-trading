@@ -2206,7 +2206,7 @@ class V14PortfolioLiveAster:
                             with open(csv_path) as cf:
                                 reader = csv_mod.DictReader(cf)
                                 coin_pnl = sum(
-                                    float(t.get("pnl", 0))
+                                    float(t.get("pnl", 0) or 0)
                                     for t in reader if t.get("symbol") == sym
                                 )
                             coin_data["realized_pnl"] = round(coin_pnl, 4)
@@ -2215,6 +2215,9 @@ class V14PortfolioLiveAster:
 
                     coin_data["cumulative_funding"] = round(cs.cumulative_funding, 6)
                     coin_data["tp_order_id"] = cs.tp_order_id
+                    # Override engine TP with actual exchange TP price (source of truth)
+                    if cs.tp_limit_price:
+                        coin_data["next_tp_price"] = cs.tp_limit_price
                     if sym in self._cfgi_coins:
                         coin_data["cfgi"] = round(self._cfgi_coins[sym], 1)
                     coins[sym] = coin_data
@@ -2246,7 +2249,7 @@ class V14PortfolioLiveAster:
             "bot_state": self.bot_state,
             "capital": self.capital,
             "equity": round(equity, 2),
-            "cash": round(exchange_balance.get("usdt_total", 0), 2) if exchange_balance else 0,
+            "cash": round(exchange_balance.get("usdt_free", 0), 2) if exchange_balance else 0,
             "pnl_pct": round(pnl_pct, 2),
             "exchange_balance": exchange_balance if exchange_balance else None,
             "total_pnl": round(self.tracker.total_pnl, 4),
@@ -2262,7 +2265,9 @@ class V14PortfolioLiveAster:
             "approved_symbols": sorted(
                 self.router.active_allocations.keys()
             ),
-            "regime": self._regime_alert_state or "NONE",
+            "regime": (self._regime_alert_state
+                       if self._regime_alert_state and self._regime_alert_state != "NONE"
+                       else "RANGING"),
             "regime_detail": {
                 "alert_state": self._regime_alert_state,
                 "signal_type": self._regime_signal_type,
@@ -2277,8 +2282,37 @@ class V14PortfolioLiveAster:
             "uptime_hours": round(
                 (datetime.now(timezone.utc) - self._start_time).total_seconds() / 3600, 2
             ),
+            "timeframe": "1h",
             "last_update": datetime.now(timezone.utc).isoformat(),
         }
+
+        # Aggregate total_fees and total_realized_pnl from CSV (survives restarts)
+        try:
+            csv_path = OUTPUT_DIR / "trades.csv"
+            if csv_path.exists():
+                import csv as csv_mod
+                with open(csv_path) as cf:
+                    reader = csv_mod.DictReader(cf)
+                    csv_total_pnl = 0.0
+                    csv_total_fees = 0.0
+                    csv_deals = 0
+                    csv_wins = 0
+                    for t in reader:
+                        pnl = float(t.get("pnl", 0) or 0)
+                        fee = float(t.get("fee", 0) or 0)
+                        csv_total_pnl += pnl
+                        csv_total_fees += fee
+                        csv_deals += 1
+                        if pnl > 0:
+                            csv_wins += 1
+                    status["total_realized_pnl"] = round(csv_total_pnl, 4)
+                    status["total_fees"] = round(csv_total_fees, 4)
+                    status["deals_completed"] = csv_deals
+                    status["win_rate"] = round(
+                        csv_wins / csv_deals * 100 if csv_deals > 0 else 0, 1
+                    )
+        except Exception as e:
+            logger.warning(f"CSV aggregate for status failed: {e}")
 
         path = OUTPUT_DIR / "status.json"
         tmp  = path.with_suffix(".tmp")
@@ -2377,6 +2411,11 @@ class V14PortfolioLiveAster:
 
             # Startup reconciliation
             self._reconcile_with_exchange()
+
+            # Persist corrected state immediately — so next restart loads clean values
+            # even if the bot crashes before the first main loop save.
+            self._save_state()
+            logger.info("State saved after startup reconciliation.")
 
             # Audit #6: TP recovery — check if any TP orders filled while bot was down
             self._recover_tp_orders()
