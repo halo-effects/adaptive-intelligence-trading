@@ -1,33 +1,33 @@
 {
-  "saved_at": "2026-03-20T06:03:32.418485+00:00",
+  "saved_at": "2026-03-20T07:03:41.786377+00:00",
   "bot_state": "RUNNING",
   "capital": 350.0,
   "coins": {
     "GRASS/USDT": {
       "symbol": "GRASS/USDT",
       "allocated_capital": 50.10427361359381,
-      "tp_order_id": "222486541",
-      "tp_limit_price": 0.39985907411925703,
-      "last_candle_ts": 1773982800000,
-      "cumulative_funding": 0.0017342500000000001,
-      "last_funding_check_ms": 1773960859366,
+      "tp_order_id": "222535863",
+      "tp_limit_price": 0.4105674999999999,
+      "last_candle_ts": 1773986400000,
+      "cumulative_funding": 0.00628294,
+      "last_funding_check_ms": 1773989693882,
       "engine_state": {
         "symbol": "GRASS/USDT",
         "initial_capital": 56.06239500000001,
         "profile": "high",
         "leverage": 1.0,
         "phase": "LONG_DCA",
-        "capital": 25.788987671487753,
+        "capital": 37.248604316939144,
         "phase_start_date": "2026-03-19 15:00:00",
-        "long_coins": 68.06646092960082,
-        "long_avg_entry": 0.3939498267184799,
-        "long_layers": 2,
-        "long_last_buy": "2026-03-19 23:00:00",
-        "long_tp": 0.39985907411925703,
-        "long_cost": 26.814770488556427,
-        "long_trades": 0,
-        "long_wins": 0,
-        "long_pnl": 0.0,
+        "long_coins": 39.186270015971914,
+        "long_avg_entry": 0.40449999999999997,
+        "long_layers": 1,
+        "long_last_buy": "2026-03-20 06:00:00",
+        "long_tp": 0.4105674999999999,
+        "long_cost": 15.850846221460639,
+        "long_trades": -45,
+        "long_wins": 1,
+        "long_pnl": 0.4496,
         "short_coins": 0.0,
         "short_avg_entry": 0.0,
         "short_layers": 0,
@@ -46,23 +46,23 @@
         "top_detected": false,
         "conviction_fired": false,
         "markup_cycles_completed": 0,
-        "total_fees": 0.019875295441713473,
+        "total_fees": 0.18827305089364346,
         "adx_below_20_streak": 0,
         "router_from_top": false,
         "router_from_markdown": false,
         "_last_daily_date": "2026-03-20",
         "_live_mode": true,
-        "_last_candle_ts": 1773982800000,
+        "_last_candle_ts": 1773986400000,
         "start_time": 1773936951.952672,
-        "current_price": 0.3928
+        "current_price": 0.4045
       }
     }
   },
   "router": {
-    "active_pool_cash": 236.10027333731742,
+    "active_pool_cash": 247.4426271158568,
     "reserve_pool_cash": 87.5,
     "active_allocations": {
-      "GRASS/USDT": 26.814770488556427
+      "GRASS/USDT": 15.85084622146064
     },
     "reserve_allocations": {}
   },
@@ -74,11 +74,11 @@
   "tg_update_offset": 715173887,
   "open_deals": {
     "GRASS/USDT:long": {
-      "deal_id": 13,
+      "deal_id": 14,
       "symbol": "GRASS/USDT",
-      "open_time": "2026-03-19T20:05:04.677585+00:00",
-      "layers": 2,
-      "invested": 26.74364860441454
+      "open_time": "2026-03-20T07:00:26.276945+00:00",
+      "layers": 1,
+      "invested": 15.58437958535203
     }
   }
 }
