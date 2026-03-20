@@ -110,7 +110,7 @@ You don't need to pick one. Most successful agents combine several. But understa
 
 **Goal**: Profit from price movements.
 
-**How it works**: Buy tokens you think will go up, sell when they do. Use leverage to amplify returns at a fixed 2% cost. Use prediction markets to bet on outcomes you have conviction on.
+**How it works**: Buy tokens you think will go up, sell when they do. Use leverage to amplify returns (fee varies by position size — always simulate first). Use prediction markets to bet on outcomes you have conviction on.
 
 **Revenue streams**:
 - Trading PnL (buy low, sell high)
@@ -423,7 +423,11 @@ All trades route through STASIS. No direct token-to-token swaps.
 | Extension fee | 0.005% per day | Paid upfront when extending |
 | Repayment | Full collateral value | Always 100% of original |
 
-**No price liquidation.** Loans are valued at the floor price of the collateral. Since floors never decrease, collateral can't drop below the loan value. The only risk is time-based expiry — if your loan expires without repayment or extension, the collateral is burned.
+**LTV depends on token type:**
+- **Stable+ / Predict+**: 100% LTV at spot price (floor = spot for these tokens, so you borrow the full market value)
+- **Floor+**: 100% LTV at floor price (floor < spot, so you borrow less than market value — the gap is your safety margin)
+
+**No price liquidation.** Since floors never decrease, collateral can't drop below the loan value. The only risk is time-based expiry — if your loan expires without repayment or extension, the collateral is burned.
 
 **Critical rules**:
 - Interest is prepaid. Repaying early does NOT save money — unused days are forfeited.
@@ -457,11 +461,25 @@ Liquid → staking.repay() → Loan cleared, can now unlock
 
 ### How Leverage Works
 
-Leverage buy borrows and buys in one transaction. A leverage position IS a loan — same 2% origination fee, same 10-day minimum, same no-price-liquidation.
+Leverage is NOT a single loan. It's a **recursive loan-and-buy loop**:
 
-Leverage is **dynamic** — it fluctuates based on pool liquidity and position size. Smaller positions get higher leverage (up to ~28x on fresh pools). Larger positions get lower leverage due to price impact. Use `leverageSimulator.simulateLeverage()` to preview before executing.
+```
+$50 USDB → buy tokens → take 100% LTV loan on those tokens → receive ~$48 (minus 2% fee)
+→ buy more tokens with $48 → take another loan → receive ~$47
+→ buy more tokens → loan → buy → loan → ... until dust remains
+```
 
-**No price liquidation**: Since leverage is valued against the floor price and floors never decrease, your position can't be liquidated by price movements. Only by loan expiry.
+Each iteration takes a 2% origination fee, so the total leverage fee is **significantly more than 2%**. The effective fee depends on how many loops execute, which depends on pool depth and position size.
+
+**Leverage is dynamic** — it fluctuates based on pool liquidity and position size:
+- Smaller positions on deep pools = more loops = higher leverage (up to ~28x theoretical)
+- Larger positions = fewer effective loops = lower leverage due to price impact
+- **Stable+/Predict+ tokens**: Loans are at 100% LTV (floor = spot), so maximum leverage is available
+- **Floor+ tokens**: Loans are at floor price (not spot), so less leverage is available. The gap between spot and floor reduces how much each loan iteration yields.
+
+**Always simulate first**: Use `leverageSimulator.simulateLeverage()` (for STASIS path) or `leverageSimulator.simulateLeverageFactory()` (for factory token 3-hop path) to see the exact collateral, borrowed amount, fees, and effective leverage before executing.
+
+**No price liquidation**: Since leverage is valued against the floor price and floors never decrease, your position can't be liquidated by price movements. Only by time-based loan expiry.
 
 ### How Prediction Markets Work
 
@@ -715,7 +733,7 @@ How long will it be idle?
 
 ```
 How confident am I?
-├─ Very confident → Leverage buy (2% cost, amplified returns, no price liquidation)
+├─ Very confident → Leverage buy (simulate first to check fee, amplified returns, no price liquidation)
 ├─ Confident → Direct buy
 ├─ Somewhat → Smaller position, or prediction market bet
 └─ Unsure → Create a prediction market about it (earn fees either way)
@@ -754,7 +772,7 @@ Real mistakes discovered during live SDK testing.
 - ❌ **Re-originating instead of extending** → Each new loan = 2% fee. Extension = 0.005%/day.
 
 ### Vault Mistakes
-- ❌ **Staking small amounts** → Below ~$50, gas costs dominate.
+- ❌ **Not calculating your break-even** → Factor in gas costs (~$0.50-1.00 entry/exit) plus ~1.62% swap fees. Calculate whether expected yield exceeds total costs for your position size.
 - ❌ **Staking for hours** → Need ~1.62% yield to cover round-trip. Give it days.
 
 ### Trading Mistakes
