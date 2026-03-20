@@ -792,6 +792,8 @@ class V14PortfolioLiveAster:
                         leverage=self.leverage,
                     )
                     engine._live_mode = True
+                    if engine._engine:
+                        engine._engine.live_mode = True
                     engine._warmed_up = True
                     cs.engine = engine
                     # Reset candle ts so we process the next candle
@@ -2176,31 +2178,24 @@ class V14PortfolioLiveAster:
         signal.signal(signal.SIGINT,  _shutdown_handler)
         signal.signal(signal.SIGTERM, _shutdown_handler)
 
-        # PID lock — robust version with signature validation
-        # Stores "PID:TIMESTAMP:v14pm" to distinguish our bot from random PIDs.
-        # On Windows, os.kill(pid, 0) can return True for ANY process with that PID,
-        # including unrelated ones that inherited the PID after our crash.
-        pid_path = OUTPUT_DIR / "bot.pid"
-        if pid_path.exists():
-            try:
-                lock_content = pid_path.read_text().strip()
-                parts = lock_content.split(":")
-                old_pid = int(parts[0])
-                lock_sig = parts[2] if len(parts) >= 3 else ""
+        # ── Exclusive file lock (prevents duplicate instances) ────────────
+        # Uses msvcrt on Windows for advisory lock on bot.lock file.
+        # The lock is held for the entire lifetime of the process.
+        # If another instance tries to start, it will fail immediately.
+        import msvcrt
+        lock_path = OUTPUT_DIR / "bot.lock"
+        self._lock_fh = open(lock_path, "w")
+        try:
+            msvcrt.locking(self._lock_fh.fileno(), msvcrt.LK_NBLCK, 1)
+            self._lock_fh.write(f"{os.getpid()}:{int(time.time())}:v14pm\n")
+            self._lock_fh.flush()
+        except (OSError, IOError):
+            logger.error("Another V14PM instance is already running (file lock held). Exiting.")
+            self._lock_fh.close()
+            sys.exit(1)
 
-                # Only treat as conflict if signature matches (it's actually our bot)
-                if lock_sig == "v14pm":
-                    try:
-                        os.kill(old_pid, 0)
-                        # Process alive AND has our signature — real conflict
-                        logger.error(f"Another V14PM instance running (PID {old_pid}). Exiting.")
-                        sys.exit(1)
-                    except OSError:
-                        logger.warning(f"Stale PID lock (PID {old_pid}). Overwriting.")
-                else:
-                    logger.warning(f"PID lock has no/wrong signature ({lock_content!r}). Overwriting.")
-            except Exception:
-                logger.warning("Malformed PID lock file. Overwriting.")
+        # Also write PID file for monitoring/heartbeat (separate from lock)
+        pid_path = OUTPUT_DIR / "bot.pid"
         pid_path.write_text(f"{os.getpid()}:{int(time.time())}:v14pm")
 
         try:
@@ -2362,7 +2357,14 @@ class V14PortfolioLiveAster:
                     stored_pid = int(lock_content.split(":")[0])
                     if stored_pid == os.getpid():
                         pid_path.unlink()
-                        logger.info("PID lock released.")
+            except Exception:
+                pass
+            # Release file lock
+            try:
+                if hasattr(self, '_lock_fh') and self._lock_fh:
+                    import msvcrt
+                    msvcrt.locking(self._lock_fh.fileno(), msvcrt.LK_UNLCK, 1)
+                    self._lock_fh.close()
             except Exception:
                 pass
             logger.info("V14PM Live Aster shut down cleanly")

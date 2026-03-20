@@ -1,16 +1,16 @@
 {
-  "saved_at": "2026-03-20T01:04:20.631917+00:00",
+  "saved_at": "2026-03-20T02:03:23.435204+00:00",
   "bot_state": "RUNNING",
   "capital": 350.0,
   "coins": {
     "GRASS/USDT": {
       "symbol": "GRASS/USDT",
-      "allocated_capital": 50.10427361359381,
-      "tp_order_id": "222486541",
+      "allocated_capital": 233.29957166503877,
+      "tp_order_id": "222486559",
       "tp_limit_price": 0.39985907411925703,
-      "last_candle_ts": 1773964800000,
+      "last_candle_ts": 1773968400000,
       "cumulative_funding": 0.0017342500000000001,
-      "last_funding_check_ms": 1773960859366,
+      "last_funding_check_ms": 1773960868018,
       "engine_state": {
         "symbol": "GRASS/USDT",
         "initial_capital": 56.06239500000001,
@@ -52,14 +52,14 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-03-20",
         "_live_mode": true,
-        "_last_candle_ts": 1773964800000,
+        "_last_candle_ts": 1773968400000,
         "start_time": 1773936951.952672,
-        "current_price": 0.3872
+        "current_price": 0.3915
       }
     }
   },
   "router": {
-    "active_pool_cash": 236.10027333731742,
+    "active_pool_cash": 235.06887992144735,
     "reserve_pool_cash": 87.5,
     "active_allocations": {
       "GRASS/USDT": 26.814770488556427
@@ -78,7 +78,7 @@
       "symbol": "GRASS/USDT",
       "open_time": "2026-03-19T20:05:04.677585+00:00",
       "layers": 2,
-      "invested": 26.74364860441454
+      "invested": 26.746504034721838
     }
   }
 }
