@@ -88,7 +88,7 @@ LIVE_POLL_INTERVAL = 65        # seconds between exchange polls
 TP_CHECK_INTERVAL  = 65        # seconds between TP order status checks
 STATUS_WRITE_INTERVAL = 60     # seconds between status.json writes
 REGIME_EVAL_HOUR   = 0         # UTC hour for daily regime evaluation (midnight)
-REENTRY_COOLDOWN   = 60        # seconds to wait after TP fill before re-entry
+# REENTRY_COOLDOWN removed — old bot never had it, it masked bugs
 TG_PREFIX          = "[V14-PM]"
 
 # ── Unified production profile ────────────────────────────────────────────────
@@ -541,10 +541,16 @@ class AsterPerpClient:
                 if contracts == 0:
                     continue
                 symbol = p.get("symbol", "")
-                base = symbol.split("/")[0].lstrip("1000")
+                raw_base = symbol.split("/")[0]
+                is_1000 = raw_base.startswith("1000")
+                base = raw_base[4:] if is_1000 else raw_base
+                # Reverse 1000-prefix scaling: exchange reports in 1000PEPE units
+                qty = contracts / 1000.0 if is_1000 else contracts
+                entry = float(p.get("entryPrice") or 0)
+                entry = entry / 1000.0 if is_1000 else entry
                 result[base] = {
-                    "qty": contracts,
-                    "entry_price": float(p.get("entryPrice") or 0),
+                    "qty": qty,
+                    "entry_price": entry,
                     "side": p.get("side", "long"),
                     "unrealized_pnl": float(p.get("unrealizedPnl") or 0),
                 }
@@ -815,9 +821,9 @@ class V14PortfolioLiveAster:
                         engine._engine.live_mode = True
                     engine._warmed_up = True
                     cs.engine = engine
-                    # Reset candle ts so we process the next candle
-                    cs.last_candle_ts = 0
-                    logger.info(f"  Created fresh engine for {sym} (no saved state)")
+                    # Set candle ts to NOW — only process future candles, never replay history
+                    cs.last_candle_ts = int(time.time() * 1000)
+                    logger.info(f"  Created fresh engine for {sym} (no saved state, candle_ts=now)")
                 except Exception as e:
                     logger.error(f"  Failed to create engine for {sym}: {e}")
 
@@ -888,6 +894,50 @@ class V14PortfolioLiveAster:
 
             exchange_total = exchange_usdt + position_value
 
+            # ── Per-coin position sync (exchange → engine) on startup ─────
+            # Same logic as periodic recon — exchange is source of truth.
+            for sym, cs in self.coins.items():
+                if not cs.engine or not cs.engine._engine:
+                    continue
+                eng = cs.engine._engine
+                base = sym.split("/")[0]
+                ex_pos = positions.get(base, {})
+                ex_qty = ex_pos.get("qty", 0) or 0
+                ex_entry = ex_pos.get("entry_price", 0) or 0
+
+                if ex_qty > 0 and eng.long_coins > 0:
+                    qty_drift = abs(ex_qty - eng.long_coins)
+                    if qty_drift > 0.01:
+                        logger.warning(
+                            f"STARTUP RECON: {sym} qty drift — "
+                            f"exchange={ex_qty:.4f}, engine={eng.long_coins:.4f}. Correcting."
+                        )
+                        eng.long_coins = ex_qty
+                        eng.long_cost = ex_entry * ex_qty
+                        eng.long_avg_entry = ex_entry
+                        tp_pct = eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015
+                        eng.long_tp = ex_entry * (1 + tp_pct)
+                elif ex_qty > 0 and eng.long_coins == 0:
+                    logger.warning(
+                        f"STARTUP RECON: {sym} — exchange has {ex_qty:.4f}, engine has 0. Syncing."
+                    )
+                    eng.long_coins = ex_qty
+                    eng.long_cost = ex_entry * ex_qty
+                    eng.long_avg_entry = ex_entry
+                    eng.long_layers = max(eng.long_layers, 1)
+                    tp_pct = eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015
+                    eng.long_tp = ex_entry * (1 + tp_pct)
+                elif ex_qty == 0 and eng.long_coins > 0:
+                    logger.warning(
+                        f"STARTUP RECON: {sym} — exchange has 0, engine has {eng.long_coins:.4f}. Zeroing."
+                    )
+                    eng.long_coins = 0.0
+                    eng.long_avg_entry = 0.0
+                    eng.long_layers = 0
+                    eng.long_last_buy = None
+                    eng.long_tp = 0.0
+                    eng.long_cost = 0.0
+
             # Engine side: router cash + invested across all coin engines
             router_cash = self.router.active_pool_cash + self.router.reserve_pool_cash
             engine_invested = sum(
@@ -933,26 +983,104 @@ class V14PortfolioLiveAster:
     def _periodic_reconcile(self):
         """
         Periodic reconciliation (every 5 minutes).
-        Compares exchange USDT balance against router + engine totals.
-        Resets idle engine capitals to allocated amounts.
+
+        Exchange is source of truth. Syncs:
+          1. Per-coin position state (qty, avg entry, cost) from exchange positions
+          2. Total portfolio value (USDT + positions) against router + engines
+          3. Idle engine capitals reset to allocated amounts
+
+        Modeled after old bot's _maybe_reconcile() which always corrected the
+        engine to match exchange reality.
         """
         try:
             exchange_usdt = self.client.fetch_balance()
-
-            # Fetch open perp positions
-            position_value = 0.0
+            positions = {}
             try:
                 positions = self.client.fetch_open_positions()
-                for base, pos in positions.items():
-                    entry = pos.get("entry_price", 0)
-                    pqty = pos.get("qty", 0)
-                    position_value += entry * pqty
             except Exception as e:
                 logger.warning(f"Periodic recon: position fetch failed: {e}")
+                return  # Can't reconcile without position data
 
+            # ── Per-coin position sync (exchange → engine) ────────────────
+            for sym, cs in self.coins.items():
+                if not cs.engine or not cs.engine._engine:
+                    continue
+                eng = cs.engine._engine
+                base = sym.split("/")[0]
+                ex_pos = positions.get(base, {})
+                ex_qty = ex_pos.get("qty", 0) or 0
+                ex_entry = ex_pos.get("entry_price", 0) or 0
+
+                # Case 1: Exchange has position, engine agrees → check qty/entry
+                if ex_qty > 0 and eng.long_coins > 0:
+                    qty_drift = abs(ex_qty - eng.long_coins)
+                    if qty_drift > 0.01:
+                        logger.warning(
+                            f"PERIODIC RECON: {sym} qty drift — "
+                            f"exchange={ex_qty:.4f}, engine={eng.long_coins:.4f}. "
+                            f"Correcting engine."
+                        )
+                        eng.long_coins = ex_qty
+                        eng.long_cost = ex_entry * ex_qty
+                        eng.long_avg_entry = ex_entry
+                        # Recalculate TP from corrected avg entry
+                        tp_pct = eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015
+                        eng.long_tp = ex_entry * (1 + tp_pct)
+                    elif abs(ex_entry - eng.long_avg_entry) / ex_entry > 0.005:
+                        # Entry price drifted > 0.5% — correct
+                        logger.info(
+                            f"PERIODIC RECON: {sym} entry drift — "
+                            f"exchange=${ex_entry:.6f}, engine=${eng.long_avg_entry:.6f}. "
+                            f"Correcting engine."
+                        )
+                        eng.long_avg_entry = ex_entry
+                        eng.long_cost = ex_entry * eng.long_coins
+                        tp_pct = eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015
+                        eng.long_tp = ex_entry * (1 + tp_pct)
+
+                # Case 2: Exchange has position, engine thinks it's empty
+                elif ex_qty > 0 and eng.long_coins == 0:
+                    logger.warning(
+                        f"PERIODIC RECON: {sym} — exchange has {ex_qty:.4f} "
+                        f"but engine has 0. Syncing engine to exchange."
+                    )
+                    eng.long_coins = ex_qty
+                    eng.long_cost = ex_entry * ex_qty
+                    eng.long_avg_entry = ex_entry
+                    eng.long_layers = max(eng.long_layers, 1)
+                    tp_pct = eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015
+                    eng.long_tp = ex_entry * (1 + tp_pct)
+
+                # Case 3: Exchange has no position, engine thinks it does
+                elif ex_qty == 0 and eng.long_coins > 0:
+                    logger.warning(
+                        f"PERIODIC RECON: {sym} — exchange has 0 "
+                        f"but engine has {eng.long_coins:.4f}. Zeroing engine."
+                    )
+                    eng.long_coins = 0.0
+                    eng.long_avg_entry = 0.0
+                    eng.long_layers = 0
+                    eng.long_last_buy = None
+                    eng.long_tp = 0.0
+                    eng.long_cost = 0.0
+
+                # Case 4: Both empty — reset capital if needed
+                elif ex_qty == 0 and eng.long_coins == 0:
+                    if abs(eng.capital - cs.allocated_capital) > 0.01:
+                        old_cap = eng.capital
+                        eng.capital = cs.allocated_capital
+                        logger.info(
+                            f"PERIODIC RECON: {sym} engine capital reset "
+                            f"${old_cap:.2f} → ${cs.allocated_capital:.2f} (no position)"
+                        )
+
+            # ── Total portfolio drift (router cash correction) ────────────
+            position_value = sum(
+                p.get("entry_price", 0) * p.get("qty", 0)
+                for p in positions.values()
+            )
             exchange_total = exchange_usdt + position_value
 
-            # Engine side: router cash + invested across all coin engines
             router_cash = self.router.active_pool_cash + self.router.reserve_pool_cash
             engine_invested = sum(
                 cs.engine._engine.long_cost if cs.engine and cs.engine._engine else 0
@@ -961,30 +1089,15 @@ class V14PortfolioLiveAster:
             engine_total = router_cash + engine_invested
             drift = exchange_total - engine_total
 
-            # Correct router if drift > $1
             if abs(drift) > 1.0:
                 old_active = self.router.active_pool_cash
                 self.router.active_pool_cash += drift
                 logger.warning(
-                    f"PERIODIC RECON: drift=${drift:+.2f} | "
+                    f"PERIODIC RECON: total drift=${drift:+.2f} | "
                     f"active pool ${old_active:.2f} → ${self.router.active_pool_cash:.2f}"
                 )
             else:
                 logger.debug(f"Periodic recon OK: drift=${drift:+.2f}")
-
-            # Reset idle engine capitals to allocated amounts
-            for sym, cs in self.coins.items():
-                if not cs.engine or not cs.engine._engine:
-                    continue
-                eng = cs.engine._engine
-                if eng.long_coins == 0 and eng.long_layers == 0:
-                    if abs(eng.capital - cs.allocated_capital) > 0.01:
-                        old_cap = eng.capital
-                        eng.capital = cs.allocated_capital
-                        logger.info(
-                            f"PERIODIC RECON: {sym} engine capital reset "
-                            f"${old_cap:.2f} → ${cs.allocated_capital:.2f} (no position)"
-                        )
 
         except Exception as e:
             logger.error(f"Periodic reconciliation failed: {e}")
@@ -1252,11 +1365,26 @@ class V14PortfolioLiveAster:
         cs.cumulative_funding = 0.0
         self.tracker.save_csv()
 
-        # Immediate re-entry: reset candle timestamp so the engine re-evaluates
-        # on the next poll cycle (after cooldown). No need to wait for next hour.
-        cs.last_candle_ts = 0
-        self._reentry_cooldown_until = time.time() + REENTRY_COOLDOWN
-        logger.info(f"Re-entry enabled for {sym} after {REENTRY_COOLDOWN}s cooldown")
+        # Do NOT reset last_candle_ts — the old proven bot never does.
+        # The engine naturally re-enters on the next complete candle.
+        # Resetting to 0 caused the 635 GRASS incident (replayed 50 historical candles).
+        logger.info(f"TP fill complete for {sym} — engine will re-enter on next candle")
+
+        # Orphaned TP order cleanup: cancel any stale sell orders on the exchange
+        # that don't belong to our current state. This catches orders left behind
+        # from partial fills, replays, or crashes.
+        try:
+            open_orders = self.client.client.fetch_open_orders(
+                self.client._to_ccxt_symbol(sym)
+            )
+            for o in open_orders:
+                if o.get("side") == "sell":
+                    oid = o.get("id")
+                    # cs.tp_order_id is None at this point (cleared above)
+                    logger.info(f"Cleaning orphaned sell order {oid} for {sym}")
+                    self.client.cancel_tp_order(sym, oid)
+        except Exception as e:
+            logger.warning(f"Orphaned order cleanup failed for {sym}: {e}")
 
         # Wind-down check: if in WIND_DOWN and no positions remain, flip direction
         if self.bot_state == BotState.WIND_DOWN:
@@ -1361,14 +1489,6 @@ class V14PortfolioLiveAster:
             # PAUSED or WIND_DOWN: block new entries and DCA layers
             if self.bot_state in (BotState.PAUSED, BotState.WIND_DOWN):
                 logger.info(f"BUY blocked for {sym} — bot state is {self.bot_state}")
-                if cs.engine:
-                    cs.engine.reject_action(action)
-                return
-
-            # Re-entry cooldown: block buys immediately after TP fill
-            if time.time() < self._reentry_cooldown_until:
-                remaining = self._reentry_cooldown_until - time.time()
-                logger.info(f"BUY blocked for {sym} — re-entry cooldown ({remaining:.0f}s remaining)")
                 if cs.engine:
                     cs.engine.reject_action(action)
                 return
@@ -1516,7 +1636,24 @@ class V14PortfolioLiveAster:
                 cs.tp_order_id = None
                 cs.tp_limit_price = None
 
-            result = self.client.create_market_sell(sym, qty)
+            # Use exchange position qty (source of truth), not engine qty
+            # Old bot: bal["base_free"] with 1% tolerance cap
+            sell_qty = qty
+            try:
+                positions = self.client.fetch_open_positions()
+                base = sym.split("/")[0]
+                if base in positions and positions[base].get("qty", 0) > 0:
+                    exchange_qty = positions[base]["qty"]
+                    if abs(exchange_qty - qty) > 0.01:
+                        logger.info(
+                            f"SELL qty adjusted for {sym}: engine={qty:.4f}, "
+                            f"exchange={exchange_qty:.4f} — using exchange"
+                        )
+                        sell_qty = exchange_qty
+            except Exception as e:
+                logger.warning(f"Position fetch for sell qty failed ({sym}), using engine qty: {e}")
+
+            result = self.client.create_market_sell(sym, sell_qty)
             if result and result.get("status") in ("filled", "dry_run"):
                 actual_price    = result.get("price", 0)
                 actual_qty      = result.get("qty", qty)
