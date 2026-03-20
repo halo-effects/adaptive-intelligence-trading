@@ -306,7 +306,9 @@ class AsterPerpClient:
         return f"{exchange_base}/USDT:USDT"
 
     def fetch_balance(self) -> float:
-        """Return available USDT balance in Perp account."""
+        """Return available (free) USDT balance in Perp account.
+        Use for order-sizing checks where you need available margin.
+        """
         if self.dry_run:
             return 0.0
         try:
@@ -315,6 +317,23 @@ class AsterPerpClient:
         except Exception as e:
             logger.error(f"fetch_balance failed: {e}")
             return 0.0
+
+    def fetch_full_balance(self) -> dict:
+        """Return full USDT balance breakdown (free + total) for equity calcs.
+        Mirrors V14 Live's executor.get_balance() pattern.
+        """
+        if self.dry_run:
+            return {"usdt_free": 0.0, "usdt_total": 0.0}
+        try:
+            bal = self._exchange.fetch_balance({"type": "future"})
+            usdt = bal.get("USDT", {})
+            return {
+                "usdt_free": float(usdt.get("free", 0)),
+                "usdt_total": float(usdt.get("total", 0)),
+            }
+        except Exception as e:
+            logger.error(f"fetch_full_balance failed: {e}")
+            return {"usdt_free": 0.0, "usdt_total": 0.0}
 
     def fetch_ticker_price(self, db_symbol: str) -> float:
         """Fetch current market price."""
@@ -1966,17 +1985,17 @@ class V14PortfolioLiveAster:
     def _compute_equity(self) -> float:
         """Compute equity from exchange balance (source of truth) + unrealized PnL.
 
-        Exchange balance = free USDT (not in positions).
-        Unrealized = mark-to-market value of open positions minus cost basis.
-        Total equity = cash + unrealized.
+        Uses USDT.total (includes margin locked in positions) + unrealized PnL
+        from open positions.  Mirrors V14 Live's exchange-as-truth pattern.
         """
         try:
-            cash = self.client.fetch_balance()  # returns float: free USDT
-            if cash <= 0:
-                raise ValueError("Zero balance returned")
+            fb = self.client.fetch_full_balance()
+            usdt_total = fb["usdt_total"]
+            if usdt_total <= 0:
+                raise ValueError("Zero total balance returned")
         except Exception as e:
             logger.warning(f"Failed to fetch exchange balance for equity: {e}")
-            cash = self.capital  # fallback
+            return self.capital  # fallback
         unrealized = 0.0
         for cs in self.coins.values():
             if cs.engine and cs.engine._engine:
@@ -1985,7 +2004,7 @@ class V14PortfolioLiveAster:
                     current_price = self.client.fetch_ticker_price(cs.symbol)
                     if current_price:
                         unrealized += (current_price * eng.long_coins) - eng.long_cost
-        return cash + unrealized
+        return usdt_total + unrealized
 
     def _write_status(self):
         """Write status.json for dashboard and heartbeat monitoring."""
@@ -2065,14 +2084,17 @@ class V14PortfolioLiveAster:
             except Exception as e:
                 logger.error(f"get_status failed for {sym}: {e}")
 
-        # Compute equity from exchange balance (API truth, like old bot)
+        # Compute equity from exchange balance (API truth, like V14 Live bot)
+        # Uses USDT.total (includes locked margin) + unrealized PnL from positions
+        exchange_balance = {}
         try:
-            exchange_usdt = self.client.fetch_balance()
-            position_value = sum(
-                p.get("entry_price", 0) * p.get("qty", 0) + p.get("unrealized_pnl", 0)
+            exchange_balance = self.client.fetch_full_balance()
+            usdt_total = exchange_balance["usdt_total"]
+            unrealized = sum(
+                p.get("unrealized_pnl", 0)
                 for p in exchange_positions.values()
             )
-            equity = round(exchange_usdt + position_value, 2)
+            equity = round(usdt_total + unrealized, 2)
         except Exception:
             equity = self._compute_equity()
         pnl_pct = ((equity - self.capital) / self.capital * 100) if self.capital > 0 else 0.0
@@ -2087,7 +2109,9 @@ class V14PortfolioLiveAster:
             "bot_state": self.bot_state,
             "capital": self.capital,
             "equity": round(equity, 2),
+            "cash": round(exchange_balance.get("usdt_total", 0), 2) if exchange_balance else 0,
             "pnl_pct": round(pnl_pct, 2),
+            "exchange_balance": exchange_balance if exchange_balance else None,
             "total_pnl": round(self.tracker.total_pnl, 4),
             "total_realized_pnl": round(self.tracker.total_pnl, 4),
             "deals_completed": self.tracker.deal_count,
