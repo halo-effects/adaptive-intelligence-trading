@@ -7,8 +7,13 @@
   "leverage": 1.0,
   "bot_state": "RUNNING",
   "capital": 350.0,
-  "equity": 344.47,
-  "pnl_pct": -1.58,
+  "equity": 345.75,
+  "cash": 351.09,
+  "pnl_pct": -1.21,
+  "exchange_balance": {
+    "usdt_free": 103.82699798,
+    "usdt_total": 351.09420636
+  },
   "total_pnl": 8.6046,
   "total_realized_pnl": 8.6046,
   "deals_completed": 13,
@@ -20,7 +25,7 @@
       "layers": 3,
       "avg_entry": 0.389043,
       "current_price": 0.3822,
-      "unrealized_pnl": -6.5526,
+      "unrealized_pnl": -5.3422,
       "invested": 221.51,
       "realized_pnl": 0.6543,
       "lifecycle_phase": "LONG_DCA",
@@ -52,6 +57,6 @@
     "active_cash": 41.53,
     "reserve_cash": 87.5
   },
-  "uptime_hours": 13.27,
-  "last_update": "2026-03-20T14:23:29.604590+00:00"
+  "uptime_hours": 0.02,
+  "last_update": "2026-03-20T14:32:57.727522+00:00"
 }
