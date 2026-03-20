@@ -18,19 +18,21 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
-## AIT — Current State (2026-03-17)
-- **V14PM Paper (MVP)**: $53,579 equity, $50K capital, 10 coin slots
-- **V14 Live (Aster)**: $369.56 equity, $340 capital ($300 seed + $40 deposit), ASTER/USDT, 4 deals, 100% win rate
-- **V14 Paper**: $53,120 equity | **V14-ETF Paper**: $11,335 equity
-- **All 4 bots running** on Windows. Cloud migration pending.
-- **Resting limit orders LIVE (2026-03-17)**: `run_v14_live_aster.py` places limit sell on exchange at TP price after every BUY fill. Dual approach: limit order (primary) + candle detection (fallback). Verified on exchange (order 485775318). `run_v14_portfolio_live.py` should follow same pattern when built.
-- **TP fill model fix (2026-03-17)**: TP now checks candle high/low (not close). Simulates limit order fill on wick touch.
-- **Full audit complete 2026-03-10**: Fixed critical DB path bug (blind top/bottom detection), added state persistence (no more phantom trades), added daily resampling (19 blind coins now have signal data).
-- **CSV-as-truth fix applied** to all 4 runners. V14-ETF equity bug fixed to enforce capital + CSV logic strictly.
+## AIT - Current State (2026-03-19)
+- **V14PM Paper (MVP)**: $50K capital, 5 coin slots (concentration pivot)
+- **V14PM Live (Aster)**: GRASS/USDT, LONG_DCA, PID 6040. Dashboard data crossover fixed. LIVE GUARD active.
+- **V14 Paper**: +583.8% (~$68.4K equity)
+- **V14-ETF**: RETIRED (2026-03-17)
+- **3 bots running** on Windows (V14 Paper, V14PM Paper, V14PM Live). Cloud migration pending.
+- **Full V14PM vs V14 Live audit (2026-03-19)**: 20 critical paths, 12 gaps. 3× P0 trade-blocking (capital depletion, TP capital return bug, no periodic reconciliation). Audit doc: `V14PM_VS_V14_LIVE_AUDIT.md`.
+- **Order sizing issue**: CapitalRouter 20% per-coin cap too restrictive with few coins. Needs dynamic cap.
+- **Resting limit orders LIVE**: Exchange-side limit sell at TP price. LIVE GUARD blocks engine TP when exchange order exists.
+- **Exchange-as-truth architecture** decided (2026-03-18). V14PM = production target.
 
 ## Active Projects
-- **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.
-- **TrustedBusinessReviews.com**: WordPress â†’ static HTML. Malware cleanup.
+- **AIT**: Primary. V14PM is the MVP. Full audit found 12 gaps (3 P0). Next: fix P0 items, order sizing, cloud migration.
+- **Basis**: SDK testing milestone — Python 44/44 read + 8/8 write (live BSC), JS/TS 39/39. 18-decimal migration done. X/Twitter verification built. Social integration priority (X → Telegram → Moltbook).
+- **TrustedBusinessReviews.com**: WordPress → static HTML. Malware cleanup.
 - **ShadowQuery**: Deferred.
 
 ## LLM Config
