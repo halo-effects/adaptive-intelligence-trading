@@ -118,6 +118,7 @@ class V14DCAEngine:
         self.cfg = config or V14Config()
         self.coin = pack.coin
         self.daily = pack.daily
+        self.live_mode = False  # Set True by live bots; disables paper-trading caps
 
         # -- Phase State --
         self.phase = Phase.LONG_DCA if initial_phase == 'LONG_DCA' else Phase.SHORT_DCA
@@ -398,7 +399,10 @@ class V14DCAEngine:
                 order = available * cfg.DCA_BO_PCT
             else:
                 order = available * cfg.DCA_BO_PCT * (cfg.DCA_SO_MULTIPLIER ** min(self.long_layers, 4))
-            order = min(order, self.capital * 0.3)
+            # 30% cap: prevents any single layer from using too much capital.
+            # Disabled in live mode — the CapitalRouter manages allocation externally.
+            if not self.live_mode:
+                order = min(order, self.capital * 0.3)
             if order < 10 or order > self.capital:
                 return
 
@@ -513,7 +517,8 @@ class V14DCAEngine:
                 order = available * cfg.DCA_BO_PCT
             else:
                 order = available * cfg.DCA_BO_PCT * (cfg.DCA_SO_MULTIPLIER ** min(self.short_layers, 4))
-            order = min(order, self.capital * 0.3)
+            if not self.live_mode:
+                order = min(order, self.capital * 0.3)
             if order < 10 or order > self.capital:
                 return
 

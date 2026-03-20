@@ -564,6 +564,7 @@ class CoinState:
         self.last_candle_ts: int = 0
         self.cumulative_funding: float = 0.0
         self.last_funding_check_ms: int = 0
+        self._last_buy_time: float = 0.0  # Dedup guard: timestamp of last executed buy
 
     def to_dict(self) -> dict:
         return {
@@ -750,6 +751,9 @@ class V14PortfolioLiveAster:
                     )
                     engine.restore_state(engine_state)
                     engine._live_mode = True
+                    # Propagate live_mode to inner DCA engine (disables paper-trading caps)
+                    if engine._engine:
+                        engine._engine.live_mode = True
 
                     # LIVE FIX: Reset engine internal capital to allocated amount.
                     # The engine's paper-capital tracking drifts from reality in live mode
@@ -1348,6 +1352,18 @@ class V14PortfolioLiveAster:
                     cs.engine.reject_action(action)
                 return
 
+            # Order dedup guard: block duplicate buys within 30 seconds
+            ORDER_DEDUP_WINDOW = 30
+            if time.time() - cs._last_buy_time < ORDER_DEDUP_WINDOW:
+                elapsed_since = time.time() - cs._last_buy_time
+                logger.warning(
+                    f"DUPLICATE BUY blocked for {sym} — last buy was {elapsed_since:.0f}s ago "
+                    f"(dedup window: {ORDER_DEDUP_WINDOW}s)"
+                )
+                if cs.engine:
+                    cs.engine.reject_action(action)
+                return
+
             # Audit #3: Pre-flight checks
             cost = price * qty
             if cost < 5.0:
@@ -1433,6 +1449,9 @@ class V14PortfolioLiveAster:
 
                 self.tracker.on_buy(sym, actual_qty, actual_price,
                                     datetime.now(timezone.utc))
+
+                # Record buy timestamp for dedup guard
+                cs._last_buy_time = time.time()
 
                 # Place TP limit order (using corrected TP)
                 self._place_tp_order(sym, cs)
@@ -1553,6 +1572,10 @@ class V14PortfolioLiveAster:
         today = current_dt.date()
         if self._last_rebalance_date == today:
             return
+        # Timing guard: prevent rapid-fire rebalances (e.g. from duplicate loop iterations)
+        if hasattr(self, '_last_rebalance_ts') and time.time() - self._last_rebalance_ts < 60:
+            logger.warning("Rebalance blocked — less than 60s since last rebalance")
+            return
 
         logger.info(f"Daily rebalance for {today}")
         try:
@@ -1574,6 +1597,8 @@ class V14PortfolioLiveAster:
                         leverage=self.leverage,
                     )
                     cs.engine._live_mode = True
+                    if cs.engine._engine:
+                        cs.engine._engine.live_mode = True
                     # Force warmup for live trading — we're trading against real
                     # exchange data, no need to wait for a daily boundary.
                     # The engine is initialized in LONG_DCA phase and ready to trade.
@@ -1582,11 +1607,20 @@ class V14PortfolioLiveAster:
                     # Set leverage on exchange for new coin
                     self.client.ensure_leverage(sym, self.leverage)
                 else:
-                    # Update allocation if no open position
+                    # Update allocation
                     cs = self.coins[sym]
                     cs.allocated_capital = alloc
+                    # Sync engine capital when no position is open (prevents sizing drift)
+                    if cs.engine and cs.engine._engine:
+                        eng = cs.engine._engine
+                        if eng.long_coins == 0 and eng.short_coins == 0:
+                            old_cap = eng.capital
+                            eng.capital = alloc
+                            if abs(old_cap - alloc) > 1:
+                                logger.info(f"  {sym} engine capital synced: ${old_cap:.2f} -> ${alloc:.2f}")
 
             self._last_rebalance_date = today
+            self._last_rebalance_ts = time.time()
             logger.info(f"Rebalance complete: {len(self.coins)} active coins")
         except Exception as e:
             logger.error(f"Rebalance failed: {e}")
