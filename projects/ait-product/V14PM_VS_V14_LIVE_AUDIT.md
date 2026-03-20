@@ -20,7 +20,7 @@ versus the new PM bot (`run_v14_portfolio_live_aster.py`).
 | 7 | Engine tick cash_available | ✅ Passes self.cash | ❌ Passes 0 | **WRONG** |
 | 8 | PID lock management | ✅ acquire/release with cleanup | ⚠️ Inline, no release on crash | **FRAGILE** |
 | 9 | Exchange client timeout | ✅ SpotExchangeClient has timeouts | ❌ ccxt.aster() had no timeout | **FIXED** (today) |
-| 10 | Equity computation | ✅ Exchange balance (API truth) | ⚠️ fetch_balance only (no positions) | **PARTIAL** |
+| 10 | Equity computation | ✅ Exchange balance (API truth) | ✅ usdt_total + unrealized (fixed 03-20) | **FIXED** |
 | 11 | TP order recovery | ✅ Scans open orders on exchange | ⚠️ Only checks saved order IDs | **WEAKER** |
 | 12 | Deposit/withdrawal detection | ✅ Auto-detects via periodic recon | ❌ Not implemented | **MISSING** |
 | 13 | Error handling in main loop | ✅ try/except with 30s backoff | ✅ try/except with 10s backoff | OK |
@@ -29,7 +29,7 @@ versus the new PM bot (`run_v14_portfolio_live_aster.py`).
 | 16 | Sell failure rollback | ✅ Full state + phantom trade trim | ✅ Same pattern | OK |
 | 17 | TP limit order placement | ✅ Uses exchange base_free for qty | ⚠️ Uses eng.long_coins for qty | **DIFFERENT** |
 | 18 | Phase change handling | ✅ Cancels TP, notifies | ❌ Not implemented | **MISSING** |
-| 19 | Status.json equity source | ✅ Exchange balance × price | ⚠️ _compute_equity() | **DIFFERENT** |
+| 19 | Status.json equity source | ✅ Exchange balance × price | ✅ usdt_total + unrealized (fixed 03-20) | **FIXED** |
 | 20 | Candle fetch | ✅ via SpotExchangeClient | ✅ Direct ccxt | OK (timeout now added) |
 
 ---
@@ -191,17 +191,22 @@ in the PID file, or use a file lock (flock) instead.
 **PM bot:** Uses `ccxt.aster()` directly with no `timeout` parameter. API calls could
 hang indefinitely. **Fixed today** by adding `"timeout": 15000` to ccxt config.
 
-### 10. Equity Computation — **PARTIAL**
+### 10. Equity Computation — **FIXED** (2026-03-20)
 
 **Old bot:** `_write_status()` fetches exchange balance (USDT + base × price) for equity.
-Uses exchange API as the single source of truth.
+Uses exchange API as the single source of truth. Uses `usdt_total` (includes locked margin).
 
-**PM bot:** `_compute_equity()` calls `self.client.fetch_balance()` for USDT but doesn't
-add the value of open perp positions. For perps, unrealized PnL is reflected in the USDT
-balance on some exchanges but not all.
+**PM bot (was):** `_compute_equity()` called `fetch_balance()` which returned `USDT.free`
+(excludes margin locked in positions). `_write_status()` added full notional
+(`entry_price * qty + unrealized_pnl`) on top of `USDT.free` — double-counting margin.
+Result: equity reported as $102.94 instead of ~$350.
 
-**Fix needed:** Verify that Aster perps include unrealized PnL in the USDT balance.
-If not, add `fetch_open_positions()` to equity calculation (same as reconciliation does).
+**Fix applied (commit 812d5264):**
+- Added `fetch_full_balance()` returning `{usdt_free, usdt_total}`
+- `_compute_equity()` now uses `usdt_total + unrealized_pnl`
+- `_write_status()` equity = `usdt_total + unrealized` (mirrors V14 Live pattern)
+- Added `cash` and `exchange_balance` fields to status.json
+- Dashboard donut patched to fall back to `router.active_cash + router.reserve_cash`
 
 ### 11. TP Order Recovery — **WEAKER**
 
@@ -243,16 +248,20 @@ if self.engine.phase != prev_phase:
 **PM bot:** No phase change detection in the main loop. If the engine transitions
 phases (e.g., LONG_DCA → SHORT_DCA), stale TP orders remain on the exchange.
 
-### 19. Status.json Equity — **DIFFERENT**
+### 19. Status.json Equity — **FIXED** (2026-03-20)
 
 **Old bot:** Equity in status.json comes directly from exchange API:
 ```python
 exchange_equity = eb["usdt_total"] + eb["base_total"] * price
 st["equity"] = round(exchange_equity, 2)
+st["cash"] = round(eb["usdt_total"], 2)
 ```
 
-**PM bot:** Equity comes from `_compute_equity()` which calls `fetch_balance()` only.
-For perps, this may miss unrealized PnL depending on exchange behavior.
+**PM bot (was):** Equity came from `fetch_balance()` (USDT.free only) + full notional of positions.
+No `cash` field in status.json, breaking dashboard utilization donut.
+
+**Fix applied (commit 812d5264):** Now mirrors V14 Live — uses `usdt_total + unrealized_pnl`.
+Writes `cash` and `exchange_balance` to status.json.
 
 ---
 
@@ -272,5 +281,5 @@ For perps, this may miss unrealized PnL depending on exchange behavior.
 ### P2 — Operational gaps (fix soon)
 8. **Capital ledger** — deposit/withdrawal tracking
 9. **Periodic cash tracking** — double-entry verification
-10. **Equity computation** — include open position values
+10. ~~**Equity computation**~~ — ✅ FIXED 2026-03-20 (commit 812d5264)
 11. **Pass real cash_available to engine tick** — not 0
