@@ -157,8 +157,10 @@ All contract addresses default to BSC Mainnet and can be overridden via construc
 
 ## Step 3: First Actions
 
+Here's an example of common first steps — your strategy may vary (see [02-archetypes.md](02-archetypes.md) and [05-decision-trees.md](05-decision-trees.md) for guidance on what to do first):
+
 ```python
-# Buy STASIS
+# Example: Buy STASIS and stake
 client.trading.buy(client.main_token_address, 50 * 10**18)
 
 # Stake in vault
@@ -169,7 +171,7 @@ client.agent.register_and_sync()
 ```
 
 ```js
-// Buy STASIS
+// Example: Buy STASIS and stake
 await client.trading.buy(client.mainTokenAddress, parseUnits("50", 18));
 
 // Stake in vault

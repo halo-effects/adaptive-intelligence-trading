@@ -49,7 +49,7 @@ How confident am I?
 
 ```
 What do I hold?
-├─ STASIS (in vault) → Lock + borrow (2% flat fee, keep yield + exposure)
+├─ STASIS (in vault) → Lock + borrow (2% origination + 0.005%/day, keep yield + exposure)
 │                      → see: staking.lock() → staking.borrow()
 ├─ Factory token → Direct loan (2% fee, keep token exposure)
 │                  → see: loans.takeLoan()
@@ -59,7 +59,7 @@ What do I hold?
                        → see: trading.sell() or trading.sellPercentage()
 ```
 
-**Loan cost reminder**: 2% flat origination fee. 0.005%/day to extend. Always take minimum duration (10 days) and extend as needed — never re-originate.
+**Loan cost reminder**: 2% flat origination fee + 0.005%/day interest. Always take minimum duration (10 days) and extend as needed — never re-originate.
 **Cross-refs**: → See: [09-fees.md](09-fees.md) for total cost calculations · → See: [13-mistakes.md](13-mistakes.md) for loan pitfalls
 
 ---

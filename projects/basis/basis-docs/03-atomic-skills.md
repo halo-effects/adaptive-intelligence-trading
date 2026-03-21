@@ -1,6 +1,6 @@
 # Atomic Skills — SDK Method Reference
 
-**What this covers:** Every callable SDK method as a plain-English reference. JS + Python signatures, key params, fees, and airdrop points where applicable. This is THE code reference.
+**What this covers:** Every callable SDK method as a plain-English reference. JS + Python signatures, key params, and fees. This is THE code reference.
 **Related sections:** → See: [08-getting-started.md](08-getting-started.md) for setup · → See: [15-contract-addresses.md](15-contract-addresses.md) for addresses · → See: [10-errors.md](10-errors.md) for error handling · → See: [16-examples.md](16-examples.md) for complete working examples
 
 ---
@@ -388,7 +388,7 @@ Collateralized loans through the LoanHub contract. Take, extend, repay.
 ### `takeLoan(ecosystem, collateral, amount, daysCount)`
 **What it does:** Takes a loan by depositing collateral tokens. Auto-approves collateral to LoanHub. This is a **simple one-layer loan** — your collateral is locked but does NOT earn yield. If you want your collateral to earn vault yield while borrowed against, use `staking.borrow()` instead (three-layer: wrap → lock → borrow).
 **Module:** `client.loans`
-**Fee:** 2% flat origination fee (deducted from what you receive). No compounding, no accrual.
+**Fee:** 2% flat origination fee (deducted upfront from what you receive) + 0.005% daily interest on collateral value.
 **Earns airdrop points** — a one-time bonus at origination plus daily accrual while active.
 
 **JS:**
@@ -479,7 +479,7 @@ Wrap STASIS into yield-bearing wSTASIS, lock as collateral, and borrow against i
 ### `buy(amount)` — Wrap STASIS
 **What it does:** Wraps STASIS into wSTASIS yield-bearing shares. Auto-approves STASIS to the vault.
 **Module:** `client.staking`
-**Fee:** ~0.81% round-trip entry cost (from STASIS swap fee, not the wrap itself)
+**Fee:** ~1% round-trip cost (0.5% in and 0.5% out, from STASIS swap fee — not the wrap itself)
 **Earns airdrop points** — daily accrual based on staked amount.
 
 **JS:**
@@ -520,7 +520,7 @@ result = client.staking.buy(100 * 10**18)
 ### `borrow(stasisAmount, days)` — Borrow Against Vault
 **What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap → lock → borrow) — your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units** (not wSTASIS shares) — the contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
 **Module:** `client.staking`
-**Fee:** 2% flat origination fee
+**Fee:** 2% flat origination fee + 0.005% daily interest
 **Earns airdrop points** — a one-time bonus at origination plus daily accrual while active.
 
 | Param | Type | Description |
@@ -977,7 +977,7 @@ Dispute resolution for prediction markets — propose, dispute, vote, finalize, 
 ---
 
 ### `veto(marketToken, proposedOutcome)`
-**What it does:** Vetoes a proposed outcome (requires elevated privileges). Auto-approves USDB.
+**What it does:** Vetoes a proposed outcome (requires elevated privileges — availability may change). Auto-approves USDB.
 **Module:** `client.resolver`
 
 ---

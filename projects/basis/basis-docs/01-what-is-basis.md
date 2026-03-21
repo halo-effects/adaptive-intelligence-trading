@@ -74,7 +74,7 @@ These tokens can never decrease in price. If the collateral literally cannot los
 Floor+ tokens fluctuate in price, but leverage is calculated against the **floor price**, not the spot price. The floor never decreases, so there is no price liquidation risk here either. Effective leverage is highest at launch (when floor ≈ spot price) and after large sell events (when spot drops closer to floor).
 
 **How it works under the hood:**
-`leverageBuy()` recursively loops: buy tokens → take loan against them → buy more tokens → take loan → repeat. Each loop takes a 2% loan fee from the diminishing balance until your input capital is fully consumed by fees. The result: a much larger position than your input capital, with no liquidation risk. A $10 input can produce a ~$200 bag.
+`leverageBuy()` recursively loops: buy tokens → take loan against them → buy more tokens → take loan → repeat. Each loop takes a 2% origination fee from the diminishing balance until your input capital is fully consumed by fees. Daily interest of 0.005% also applies. The result: a much larger position than your input capital, with no liquidation risk. A $10 input can produce a ~$200 bag.
 
 Think of the fee relative to your total position, not your input. $10 for a $200 bag is a 5% effective cost.
 

@@ -47,6 +47,7 @@ All trades route through STASIS. No direct token-to-token swaps.
 | Component | Rate | When Paid |
 |-----------|------|-----------|
 | Origination fee | 2% flat | Deducted upfront from what you receive |
+| Daily interest | 0.005%/day | On collateral value, for all loans |
 | Extension fee | 0.005% per day | Paid upfront when extending |
 | Repayment | Full collateral value | Always 100% of original |
 

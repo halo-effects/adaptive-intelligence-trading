@@ -121,7 +121,7 @@
 
 ```
 1. Earn tokens from any activity
-2. Lock as collateral → borrow at 2% flat fee
+2. Lock as collateral → borrow at 2% origination + 0.005%/day interest
 3. Deploy into next opportunity
 4. When collateral appreciates → refinance → extract more
 5. Repeat — compound indefinitely without selling

@@ -21,7 +21,8 @@
 | Action | Fee | Notes |
 |--------|-----|-------|
 | Origination | 2% flat | Deducted upfront. One-time, non-refundable. |
-| Extension | 0.005% per day | On collateral value, paid upfront when extending |
+| Daily interest | 0.005% per day | On collateral value, applies to all loans |
+| Extension | 0.005% per day | Same rate as daily interest, paid upfront when extending |
 | Repayment | Full collateral value | No discount for early repay |
 | Expiry (no repay) | Loss of collateral | Collateral burned — irreversible |
 

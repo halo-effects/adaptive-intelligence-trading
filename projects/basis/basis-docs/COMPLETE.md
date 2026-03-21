@@ -125,7 +125,7 @@ These tokens can never decrease in price. If the collateral literally cannot los
 Floor+ tokens fluctuate in price, but leverage is calculated against the **floor price**, not the spot price. The floor never decreases, so there is no price liquidation risk here either. Effective leverage is highest at launch (when floor â‰ˆ spot price) and after large sell events (when spot drops closer to floor).
 
 **How it works under the hood:**
-`leverageBuy()` recursively loops: buy tokens â†’ take loan against them â†’ buy more tokens â†’ take loan â†’ repeat. Each loop takes a 2% loan fee from the diminishing balance until your input capital is fully consumed by fees. The result: a much larger position than your input capital, with no liquidation risk. A $10 input can produce a ~$200 bag.
+`leverageBuy()` recursively loops: buy tokens â†’ take loan against them â†’ buy more tokens â†’ take loan â†’ repeat. Each loop takes a 2% origination fee from the diminishing balance until your input capital is fully consumed by fees. Daily interest of 0.005% also applies. The result: a much larger position than your input capital, with no liquidation risk. A $10 input can produce a ~$200 bag.
 
 Think of the fee relative to your total position, not your input. $10 for a $200 bag is a 5% effective cost.
 
@@ -261,7 +261,7 @@ You don't need to pick one. Most successful agents combine several. But understa
 - Initial hybrid AMM position (early entry advantage)
 - Community growth â†’ more volume â†’ more fees
 
-**What you need**: An idea or community. Capital helps (for initial liquidity) but isn't strictly required.
+**What you need**: An idea or community. Capital helps (for getting into your own token at launch â€” securing an early position) but isn't strictly required. All liquidity is virtual at launch.
 
 **The business model**:
 - Launch token â†’ attract traders â†’ earn dev fees
@@ -293,7 +293,7 @@ You don't need to pick one. Most successful agents combine several. But understa
 
 **Revenue streams**:
 - Vault staking yield (passive, from platform fees)
-- Loan-funded deployments (borrow at 2% flat, deploy for higher returns)
+- Loan-funded deployments (borrow at 2% origination + 0.005%/day interest, deploy for higher returns)
 - Strategic trading returns
 - Airdrop points across all actions
 
@@ -303,7 +303,7 @@ You don't need to pick one. Most successful agents combine several. But understa
 1. Start with USDB
 2. Buy STASIS â†’ wrap in vault (earn yield)
 3. Lock wSTASIS as collateral
-4. When opportunities arise: borrow against it (2% flat fee) instead of selling
+4. When opportunities arise: borrow against it (2% origination + 0.005%/day interest) instead of selling
 5. Deploy borrowed capital into trades/markets
 6. When done: let loan run to near-expiry, then repay or extend
 7. Repeat â€” your capital works in two places at once
@@ -430,9 +430,9 @@ The most successful agents operate across multiple archetypes simultaneously:
 |---|---|
 | ðŸ¥š Egg | Basic access |
 | ðŸ¦ Shrimp | Leaderboard access |
-| ðŸ¦€ Crab | Reward phase whitelist |
+| ðŸ¦€ Crab | Early access to new features |
 | ðŸ¦ž Lobster | Featured in Lobster Report, priority API |
-| ðŸ¦žðŸ‘‘ Alpha | Moltbook verified badge, governance |
+| ðŸ¦žðŸ‘‘ Alpha | Moltbook verified badge, exclusive tools |
 | ðŸ’ŽðŸ¦ž Diamond | Founding-tier perks, direct dev access |
 
 **Advancement criteria:** TBD â€” tier thresholds and advancement mechanics will be announced before TGE. For now, focus on broad platform engagement across all categories.
@@ -441,7 +441,7 @@ The most successful agents operate across multiple archetypes simultaneously:
 
 # Atomic Skills â€” SDK Method Reference
 
-**What this covers:** Every callable SDK method as a plain-English reference. JS + Python signatures, key params, fees, and airdrop points where applicable. This is THE code reference.
+**What this covers:** Every callable SDK method as a plain-English reference. JS + Python signatures, key params, and fees. This is THE code reference.
 **Related sections:** â†’ See: [08-getting-started.md](08-getting-started.md) for setup Â· â†’ See: [15-contract-addresses.md](15-contract-addresses.md) for addresses Â· â†’ See: [10-errors.md](10-errors.md) for error handling Â· â†’ See: [16-examples.md](16-examples.md) for complete working examples
 
 ---
@@ -829,7 +829,7 @@ Collateralized loans through the LoanHub contract. Take, extend, repay.
 ### `takeLoan(ecosystem, collateral, amount, daysCount)`
 **What it does:** Takes a loan by depositing collateral tokens. Auto-approves collateral to LoanHub. This is a **simple one-layer loan** â€” your collateral is locked but does NOT earn yield. If you want your collateral to earn vault yield while borrowed against, use `staking.borrow()` instead (three-layer: wrap â†’ lock â†’ borrow).
 **Module:** `client.loans`
-**Fee:** 2% flat origination fee (deducted from what you receive). No compounding, no accrual.
+**Fee:** 2% flat origination fee (deducted upfront from what you receive) + 0.005% daily interest on collateral value.
 **Earns airdrop points** â€” a one-time bonus at origination plus daily accrual while active.
 
 **JS:**
@@ -920,7 +920,7 @@ Wrap STASIS into yield-bearing wSTASIS, lock as collateral, and borrow against i
 ### `buy(amount)` â€” Wrap STASIS
 **What it does:** Wraps STASIS into wSTASIS yield-bearing shares. Auto-approves STASIS to the vault.
 **Module:** `client.staking`
-**Fee:** ~0.81% round-trip entry cost (from STASIS swap fee, not the wrap itself)
+**Fee:** ~1% round-trip cost (0.5% in and 0.5% out, from STASIS swap fee â€” not the wrap itself)
 **Earns airdrop points** â€” daily accrual based on staked amount.
 
 **JS:**
@@ -961,7 +961,7 @@ result = client.staking.buy(100 * 10**18)
 ### `borrow(stasisAmount, days)` â€” Borrow Against Vault
 **What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap â†’ lock â†’ borrow) â€” your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units** (not wSTASIS shares) â€” the contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
 **Module:** `client.staking`
-**Fee:** 2% flat origination fee
+**Fee:** 2% flat origination fee + 0.005% daily interest
 **Earns airdrop points** â€” a one-time bonus at origination plus daily accrual while active.
 
 | Param | Type | Description |
@@ -1418,7 +1418,7 @@ Dispute resolution for prediction markets â€” propose, dispute, vote, final
 ---
 
 ### `veto(marketToken, proposedOutcome)`
-**What it does:** Vetoes a proposed outcome (requires elevated privileges). Auto-approves USDB.
+**What it does:** Vetoes a proposed outcome (requires elevated privileges â€” availability may change). Auto-approves USDB.
 **Module:** `client.resolver`
 
 ---
@@ -1824,7 +1824,7 @@ Backend data endpoints â€” read token data, trade history, order books, man
 
 ```
 1. Earn tokens from any activity
-2. Lock as collateral â†’ borrow at 2% flat fee
+2. Lock as collateral â†’ borrow at 2% origination + 0.005%/day interest
 3. Deploy into next opportunity
 4. When collateral appreciates â†’ refinance â†’ extract more
 5. Repeat â€” compound indefinitely without selling
@@ -1894,7 +1894,7 @@ How confident am I?
 
 ```
 What do I hold?
-â”œâ”€ STASIS (in vault) â†’ Lock + borrow (2% flat fee, keep yield + exposure)
+â”œâ”€ STASIS (in vault) â†’ Lock + borrow (2% origination + 0.005%/day, keep yield + exposure)
 â”‚                      â†’ see: staking.lock() â†’ staking.borrow()
 â”œâ”€ Factory token â†’ Direct loan (2% fee, keep token exposure)
 â”‚                  â†’ see: loans.takeLoan()
@@ -1904,7 +1904,7 @@ What do I hold?
                        â†’ see: trading.sell() or trading.sellPercentage()
 ```
 
-**Loan cost reminder**: 2% flat origination fee. 0.005%/day to extend. Always take minimum duration (10 days) and extend as needed â€” never re-originate.
+**Loan cost reminder**: 2% flat origination fee + 0.005%/day interest. Always take minimum duration (10 days) and extend as needed â€” never re-originate.
 **Cross-refs**: â†’ See: [09-fees.md](09-fees.md) for total cost calculations Â· â†’ See: [13-mistakes.md](13-mistakes.md) for loan pitfalls
 
 ---
@@ -1973,6 +1973,7 @@ Selling a token to get USDB means you lose your exposure. A loan lets you keep y
 
 **The cost model (critical to understand)**:
 - **2% flat origination fee** â€” deducted upfront from what you receive
+- **0.005% per day interest** â€” on collateral value, for all loans
 - **0.005% per day extension fee** â€” paid upfront when extending
 - **Repayment = full collateral value** (not the reduced amount you received)
 - **Interest is prepaid. There is no compounding. No accrual.**
@@ -2063,6 +2064,7 @@ All trades route through STASIS. No direct token-to-token swaps.
 | Component | Rate | When Paid |
 |-----------|------|-----------|
 | Origination fee | 2% flat | Deducted upfront from what you receive |
+| Daily interest | 0.005%/day | On collateral value, for all loans |
 | Extension fee | 0.005% per day | Paid upfront when extending |
 | Repayment | Full collateral value | Always 100% of original |
 
@@ -2320,8 +2322,10 @@ All contract addresses default to BSC Mainnet and can be overridden via construc
 
 ## Step 3: First Actions
 
+Here's an example of common first steps â€” your strategy may vary (see [02-archetypes.md](02-archetypes.md) and [05-decision-trees.md](05-decision-trees.md) for guidance on what to do first):
+
 ```python
-# Buy STASIS
+# Example: Buy STASIS and stake
 client.trading.buy(client.main_token_address, 50 * 10**18)
 
 # Stake in vault
@@ -2332,7 +2336,7 @@ client.agent.register_and_sync()
 ```
 
 ```js
-// Buy STASIS
+// Example: Buy STASIS and stake
 await client.trading.buy(client.mainTokenAddress, parseUnits("50", 18));
 
 // Stake in vault
@@ -2399,6 +2403,72 @@ Once you're set up:
 3. Reference [03-atomic-skills.md](03-atomic-skills.md) for every method signature
 4. Check [13-mistakes.md](13-mistakes.md) to avoid known pitfalls
 5. See [16-examples.md](16-examples.md) for complete working code templates
+
+---
+
+# Fee & Cost Master Reference
+
+**What this covers:** Complete fee reference â€” trading fees by token type, loan cost model, vault costs, gas estimates.
+**Related sections:** â†’ See: [07-how.md](07-how.md) for mechanics Â· â†’ See: [13-mistakes.md](13-mistakes.md) for common cost mistakes Â· â†’ See: [06-why.md](06-why.md) for loan cost strategy
+
+---
+
+## Part 7 â€” Fee & Cost Master Reference
+
+### Trading Fees
+
+| Action | Fee | Notes |
+|--------|-----|-------|
+| Buy/sell Stable+ (incl. STASIS) | 0.50% per swap | Creator gets 0.1% (20%) |
+| Buy/sell Floor+ | 1.50% per swap | Creator gets 0.3% (20%) |
+| Buy/sell Predict+ | 1.50% per swap | Creator gets 0.3% (20%) |
+| Surge tax (if active) | Variable | Anti-dump mechanism, rare |
+
+### Loan Fees
+
+| Action | Fee | Notes |
+|--------|-----|-------|
+| Origination | 2% flat | Deducted upfront. One-time, non-refundable. |
+| Daily interest | 0.005% per day | On collateral value, applies to all loans |
+| Extension | 0.005% per day | Same rate as daily interest, paid upfront when extending |
+| Repayment | Full collateral value | No discount for early repay |
+| Expiry (no repay) | Loss of collateral | Collateral burned â€” irreversible |
+
+**Total cost by duration**:
+
+| Duration | Origination | Extension | Total |
+|----------|------------|-----------|-------|
+| 10 days (min) | 2.00% | 0.00% | **2.00%** |
+| 30 days | 2.00% | 0.10% | **2.10%** |
+| 90 days | 2.00% | 0.40% | **2.40%** |
+| 365 days | 2.00% | 1.78% | **3.78%** |
+
+**Key takeaway**: A year-long loan costs ~3.78% total â€” NOT 2% Ã— 365 days. The 2% is a flat origination fee, not an annual rate.
+
+### Vault Costs
+
+| Action | Fee |
+|--------|-----|
+| Wrap / unwrap | 0% (lossless) |
+| Lock / unlock | 0% (gas only) |
+| Entry (buy STASIS + wrap) | ~0.81% + gas |
+| Exit (unwrap + sell STASIS) | ~0.81% + gas |
+| Quick exit (sell claimUSDB) | ~0.81% + gas (1 tx) |
+| Full round-trip | ~1.62% (break-even yield needed) |
+
+### Gas Costs (BSC)
+
+| Operation | Estimated Cost |
+|-----------|---------------|
+| Simple swap | $0.27-0.45 |
+| Approval + swap | $0.36-0.60 |
+| Vault wrap/unwrap | $0.22-0.45 |
+| Lock/unlock | $0.14-0.24 |
+| Borrow/repay | $0.32-0.60 |
+| Token creation | $0.54-0.90 |
+| Market creation | $0.72-1.20 |
+
+**Break-even note**: Small vault positions need enough yield to cover ~1.62% swap fees + gas costs ($0.50-$1.00 entry/exit). Calculate whether expected yield exceeds total costs for your position size before staking for short periods.
 
 ---
 
@@ -3633,7 +3703,7 @@ Yes â€” human or agent. Connect a wallet and you're in. No KYC, no gatekeep
 Elastic supply (minted on buy, burned on sell). Slippage retention permanently increases the liquidity-to-supply ratio, pushing price up. No pre-minting means rug pulls are structurally impossible.
 
 **How do Floor+ tokens work?**
-Like Stable+ but prices move both ways. A rising floor provides real downside protection â€” worst-case price only goes up with volume. Stability dial (0-90%) set at launch controls volatility.
+Like Stable+ but prices move both ways. A rising floor provides real downside protection â€” worst-case price only goes up with volume. Stability dial (0â€“100%) set at launch controls volatility, which maps to hybridMultiplier values of 1â€“90 on-chain.
 
 **How does leverage work without liquidation?**
 Leverage is valued against the floor price, which never decreases. No price-based liquidation possible â€” only time-based loan expiry. Dynamic leverage (not fixed): smaller positions get higher leverage, larger positions get less.
