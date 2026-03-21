@@ -88,6 +88,37 @@ This is the only time you can practice with the full platform, build your reputa
 
 **DeFi Primitives** â€” Loans, leverage, staking vault, vesting. All integrated. You can stake STASIS for yield, borrow against it, take leveraged positions with no price liquidation, and vest tokens for team distribution.
 
+### Leverage â€” No Liquidation, Ever
+
+On every other DeFi platform, leverage means liquidation risk. Price drops below your margin threshold, your position gets liquidated, you lose everything. On Basis, that can't happen.
+
+**Stable+ leverage** (STASIS, Stable+, Predict+ tokens):
+These tokens can never decrease in price. If the collateral literally cannot lose value, there is nothing to liquidate against. This makes very high leverage (20â€“36x) available at all times. Your only risk is the loan expiring â€” purely time-based, never price-based.
+
+**Floor+ leverage:**
+Floor+ tokens fluctuate in price, but leverage is calculated against the **floor price**, not the spot price. The floor never decreases, so there is no price liquidation risk here either. Effective leverage is highest at launch (when floor â‰ˆ spot price) and after large sell events (when spot drops closer to floor).
+
+**How it works under the hood:**
+`leverageBuy()` recursively loops: buy tokens â†’ take loan against them â†’ buy more tokens â†’ take loan â†’ repeat. Each loop takes a 2% loan fee from the diminishing balance until your input capital is fully consumed by fees. The result: a much larger position than your input capital, with no liquidation risk. A $10 input can produce a ~$200 bag.
+
+Think of the fee relative to your total position, not your input. $10 for a $200 bag is a 5% effective cost.
+
+**DIY leverage (advanced):**
+`leverageBuy()` maximizes leverage automatically. For less leverage with more control, manually loop `takeLoan()` â†’ `buy()` and stop at your target exposure. Same mechanics, fewer loops, lower fee-to-bag ratio.
+
+**What happens when your leverage position expires?**
+
+If you don't repay or extend before expiry, the position auto-closes and the debt is repaid from your collateral. The remaining balance is yours to claim.
+
+- **Stable+ expiry:** Tokens are burned to cover the debt (burning IS selling on elastic supply tokens â€” same mechanics). Since Stable+ tokens only go up, the debt is always covered. Your remaining tokens are claimable.
+- **Floor+ expiry:** Tokens are sold on market to cover the debt. Since the debt is based on the floor price, the number of tokens sold is usually small â€” especially if the token has appreciated. Example: $10 leveraged into a $200 bag (debt â‰ˆ $200). Token price goes 5x, bag is now worth $1,000. On expiry, only ~$200 worth of tokens are sold to cover debt. You claim the remaining ~$800 worth.
+
+The collateral always covers the debt. Worst case â€” no price increase â€” your entire bag is sold to repay the debt and there's nothing left to claim. But you never owe anything beyond your collateral. No margin calls, no additional capital required.
+
+**Best leverage plays:**
+- **Predict+ volume trading** â€” leverage buy at market launch, hold through activity, exit after post-resolution sell wave for maximum returns
+- **Floor+ launches** â€” leverage at launch when floor â‰ˆ spot gives highest effective leverage. Get a big bag at launch price with minimal capital
+
 ### The Core Tokens
 
 **USDB** â€” The test stablecoin (testing phase). Free from faucet. Will be replaced by a real stablecoin (USDC/USDT) at launch.
@@ -96,14 +127,39 @@ This is the only time you can practice with the full platform, build your reputa
 
 **Factory Tokens** â€” User-created tokens. Two types:
 
-**Stable+ (Up-Only):**
-Tokens are minted when bought and burned when sold (elastic supply â€” no pre-minting). Price appreciation comes from **slippage retention** â€” the value "lost" to price impact on each trade stays in the liquidity pool, permanently increasing the liquidity-to-supply ratio. This pushes the price up over time. STASIS and Predict+ tokens are both Stable+ types. Trading fee: 0.5%.
-
 **Floor+ (Rising Floor):**
-Like Stable+, but prices **go up on buys and down on sells**, offering real price movement and trading opportunity. The key innovation: a rising floor price that increases with trading volume. The worst-case price only goes up over time. A stability dial (0%â€“~90%) is set at launch â€” lower = more volatile, higher = more stable. Trading fee: 1.5%.
+Like Stable+, tokens are minted on buy and burned on sell â€” but prices go up on buys AND down on sells, creating real trading opportunity.
+
+The innovation: **sells don't hit as hard.** A whale dumping the same dollar amount on a traditional AMM token would crater the price â€” on Floor+, the hybrid AMM absorbs far more of the sell pressure. The price dips, not crashes.
+
+**Why this matters:** Tokens don't die from lack of buying â€” they die from panic selling. On traditional launch platforms, a single large sell triggers a cascade: price craters â†’ holders panic â†’ everyone sells â†’ token dead in hours. Floor+ breaks this cycle. The same sell creates a smaller dip, which looks like a buying opportunity instead of a death spiral. The community holds because there's no reason to panic.
+
+**The paradox:** Floor+ tokens go up slower per dollar of buy volume â€” but because they survive sells that would kill traditional tokens, they have the potential to go higher overall. You sacrifice the spike to kill the crash, and killing the crash is what actually matters.
+
+On top of this, a rising floor price increases with trading volume over time. Even this is secondary to the reduced sell impact â€” but it means the worst-case price only improves with activity.
+
+The **stability dial** (`hybridMultiplier`, 1â€“90) lets creators control exactly how much sell absorption they want. Lower = more price movement, higher = more stability. There is nothing like this in the market. Trading fee: 1.5%.
+
+**Stable+ (Up-Only):**
+Price can only go up. Tokens are minted when bought and burned when sold (elastic supply â€” no pre-minting). Price appreciation comes from **slippage retention** â€” the value "lost" to price impact on each trade stays in the liquidity pool, permanently increasing the liquidity-to-supply ratio.
+
+**The tradeoff:** Price appreciation slows as supply grows. This makes Stable+ tokens best suited for **cyclical use cases** â€” where tokens are regularly bought, used, and sold/burned â€” keeping supply low and the appreciation engine running.
+
+**Use cases:**
+- **Online casinos / gambling** â€” players buy tokens to play, house burns on wins, winners sell. Constant cycle keeps supply low and price slowly appreciating.
+- **Loyalty/reward tokens** â€” earn, spend at merchants, earn again
+- **Access tokens** â€” buy to use a service, token burned on use
+- **In-game currencies** â€” buy, spend in-game, tokens burned on use
+- **Tipping/creator tokens** â€” fans buy, tip creator, creator sells
+
+**The key insight:** Stable+ tokens thrive on velocity, not holding. The more the token cycles through buyâ†’useâ†’sell, the better it performs. STASIS and Predict+ tokens are both Stable+ types. Trading fee: 0.5%.
 
 **Predict+ (Prediction Market Tokens):**
-Each prediction market creates one Predict+ token (Stable+ type). Buying the token is **separate** from betting on outcomes â€” the token can be traded, held for appreciation, and used as loan collateral. Betting happens through a separate pool: buy shares in specific outcomes, and when the market resolves, winners split the entire losing pool. Trading fee: 1.5%.
+Each prediction market creates one Predict+ token â€” a Stable+ token with a short, defined lifecycle.
+
+This is the **ideal use case for Stable+ mechanics**: the token launches fresh with zero supply, gets the strongest price appreciation during the low-supply early period, and resolves before it ever hits the supply wall that long-lived Stable+ tokens eventually face.
+
+Buying the Predict+ token is **separate** from betting on outcomes â€” the token can be traded for appreciation, used as loan collateral, or held. Betting happens through a separate pool: buy shares in specific outcomes, and when the market resolves, winners split the entire losing pool â€” not capped at $1/share like Polymarket. Trading fee: 1.5%.
 
 **Anti-rug by design:** 100% elastic supply means every token in circulation was purchased at market price. Zero pre-minting, zero insider allocations. It's mathematically impossible for creators to dump insider tokens.
 
