@@ -255,22 +255,32 @@ print("Token:", result["token_address"])
 | `hybridMultiplier` | yes | Controls token type and stability. **1–90 = Floor+** (price moves both ways with rising floor; 1 = most volatile, 90 = most stable). **100 = Stable+** (up-only, price can never decrease). Do not use values 91–99. The dapp UI maps a 0%–100% slider to values 1–90 for Floor+, with a separate Stable+ toggle that sets 100. |
 | `startLP` | yes | Starting virtual liquidity paired with the token in the LP (100–10000, in USDB-equivalent via STASIS). Controls how much capital is needed to move the price. See examples below. |
 
-**startLP + hybridMultiplier interaction:**
+**hybridMultiplier price impact** *(tested on-chain, startLP=1000)*
 
-| hybridMultiplier | startLP | $1K buy moves price | $10K buy moves price |
+| Type | hybridMultiplier | Price increase per LP-equivalent buy | Floor growth |
 |---|---|---|---|
-| 1 (most volatile) | 1,000 | +$1.00 | +$10.00 |
-| 1 (most volatile) | 10,000 | +$0.10 | +$1.00 |
-| 50 (mid stability) | 1,000 | +fraction of $1 | +fraction of $10 |
-| 50 (mid stability) | 10,000 | +fraction of $0.10 | +fraction of $1 |
+| Floor+ | 1 (most volatile) | +$1.00 | Weakest |
+| Floor+ | 15 | +$0.83 | Low |
+| Floor+ | 30 | +$0.69 | Moderate |
+| Floor+ | 45 | +$0.54 | Moderate-high |
+| Floor+ | 60 | +$0.39 | High |
+| Floor+ | 90 (most stable) | +$0.11 | Very high |
+| Stable+ | 100 | price increases due to price impact | Maximum |
 
-**Key insight:** At hybridMultiplier=1, price moves $1 per startLP-equivalent in buys ($1K LP → $1 per $1K buy). At higher hybrid values, price moves a fraction of that (the stability dampens it). **The percentage change is the same regardless of startLP** — a $1K buy into a $1K LP pool moves the price the same *percentage* as a $10K buy into a $10K LP pool. startLP controls the *absolute dollar amount* needed to move the price and affects slippage at launch. Lower LP = more price impact per trade.
+> **How the floor works:** When you sell tokens, the price drops — but not all the way back. The difference between where the price was and where it lands after selling is the floor increase. This "lost" price impact from trading is what permanently raises the floor price. Higher hybridMultiplier means more of each trade's price impact is retained by the AMM, so the floor rises faster. At hybrid=100 (Stable+), all price impact is retained — the price never decreases.
+>
+> **LP-equivalent buy** = a buy equal to the startLP value (e.g., $1,000 on a startLP=1000 token). Hybrid 1 moves the price ~$1 per LP-equivalent bought. Higher values dampen this proportionally.
+
+**Contract-enforced limits** *(from Solidity source)*:
+- `hybridMultiplier`: 1–100 (values 91–99 technically work but are disallowed by convention — pick 1–90 for Floor+ or exactly 100 for Stable+)
+- `startLP`: 100–10,000
+- `usdbForBonding`: 0–150,000 (must be ≥1 if `frozen=true`)
 | `description` | no | Platform description |
 | `imageUrl` | no | Auto-resized to 512×512 WebP |
 | `website` / `telegram` / `twitterx` | no | Social links |
 | `frozen` | no | Start token frozen (default: false). When true, only whitelisted wallets can trade until you call `disableFreeze()`. Useful for controlled launches or pre-sale allocation. |
 | `usdbForBonding` | no | USDB volume threshold (18 decimals) that defines the reward phase (default: 0 = no reward phase). The reward phase lasts until this volume of trading is reached — early buyers during this period earn reward shares (claimable via `claimRewards()`). The creator sets this at token creation. Once the volume threshold is hit, `hasBonded` flips to true and the reward phase ends. *(Parameter name is legacy — this funds the reward phase, not a bonding curve.)* |
-| `autoVest` | no | Enable auto-vesting for the creator's tokens (default: false). When true, creator tokens are automatically locked in a vesting schedule instead of being immediately available. Signals long-term commitment. |
+| `autoVest` | no | Enable auto-vesting for tokens the creator buys (default: false). When true, any tokens the creator purchases are automatically locked in a vesting schedule instead of being immediately available. This is NOT pre-minting — there are zero insider allocations. The creator must buy tokens like anyone else; autoVest just locks what they buy. Signals long-term commitment. |
 | `autoVestDuration` | no | Vesting duration in days. Only applies when `autoVest` is true. |
 | `gradualAutovest` | no | When true, tokens vest gradually (linear unlock over the duration). When false, tokens vest as a cliff (all unlock at the end). Only applies when `autoVest` is true. |
 
