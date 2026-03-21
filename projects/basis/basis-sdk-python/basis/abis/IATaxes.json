@@ -37,11 +37,6 @@
           "internalType": "contract IERC20",
           "name": "originalToken",
           "type": "address"
-        },
-        {
-          "internalType": "bool",
-          "name": "isLeverage",
-          "type": "bool"
         }
       ],
       "name": "distributeTax",
