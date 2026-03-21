@@ -1521,12 +1521,18 @@ class V14PortfolioLiveAster:
 
             if granted <= 0:
                 logger.warning(f"Router denied capital for {sym} BUY (layer {layer})")
-                if cs.engine:
+                # Use full snapshot rollback (more reliable than reject_action's trade search)
+                if pre_tick_snapshot and cs.engine and cs.engine._engine:
+                    self._rollback_engine(cs.engine._engine, pre_tick_snapshot.copy())
+                elif cs.engine:
                     cs.engine.reject_action(action)
                 return
             if granted < cost:
                 logger.warning(f"Router partial capital for {sym} — rejecting")
-                if cs.engine:
+                # Use full snapshot rollback (more reliable than reject_action's trade search)
+                if pre_tick_snapshot and cs.engine and cs.engine._engine:
+                    self._rollback_engine(cs.engine._engine, pre_tick_snapshot.copy())
+                elif cs.engine:
                     cs.engine.reject_action(action)
                 self.router.return_capital(sym, granted)
                 return
@@ -2402,8 +2408,12 @@ class V14PortfolioLiveAster:
             else:
                 logger.info("FRESH start — clean state")
 
-            # Initial rebalance to set up coin engines
-            self._do_rebalance(datetime.now(timezone.utc))
+            # Initial rebalance: only if starting fresh (no saved state).
+            # When restoring from state, engines are already configured —
+            # skip startup rebalance to prevent it from overwriting the
+            # restored engine state before reconciliation can correct it.
+            if self.fresh or not self.coins:
+                self._do_rebalance(datetime.now(timezone.utc))
 
             # Set leverage on exchange for all active coins (Aster defaults to 5x Cross)
             for sym in list(self.coins.keys()):

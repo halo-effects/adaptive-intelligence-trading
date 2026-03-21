@@ -1025,3 +1025,50 @@ print(check["isAgent"])
 
 agents = client.agent.list_agents(page=1, limit=20)
 ```
+
+---
+
+### 6.8 Bug Reporting
+
+Report bugs and track their status. Verified bugs earn points (amount set by admin). Rate limited to 5 reports per day per wallet.
+
+**`POST /api/v1/bugs/reports`** · Auth: SIWE Session
+
+Submit a bug report.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | yes | Brief description of the bug |
+| `description` | string | yes | Detailed reproduction steps |
+| `severity` | string | yes | `low`, `medium`, `high`, or `critical` |
+| `category` | string | yes | Area of the platform affected |
+| `evidence` | string | no | Screenshots, tx hashes, or other proof |
+
+Returns: `{ id, wallet, title, status: "pending", createdAt }`
+
+**`GET /api/v1/bugs/reports`** · Auth: SIWE Session
+
+View your submitted reports. Admins see all reports and can filter by wallet or status.
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `wallet` | string | Filter by wallet (admin only) |
+| `status` | string | Filter: `pending`, `verified`, `duplicate`, `invalid` |
+
+Returns: `{ data: BugReport[] }`
+
+**`PATCH /api/v1/bugs/reports/{id}`** · Auth: Admin only
+
+Update report status and award points.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | `verified`, `duplicate`, or `invalid` |
+| `basePoints` | number | Points to award (verified reports only) |
+
+**`POST /api/v1/admin/block`** · Auth: Admin only — Block a wallet from submitting reports.
+**`DELETE /api/v1/admin/block`** · Auth: Admin only — Unblock a wallet.
+
+> **Severity guide:** `low` = cosmetic/typo/UI glitch. `medium` = feature works but behaves unexpectedly. `high` = feature broken or produces wrong results. `critical` = funds at risk, data loss, or security vulnerability.
+
+> **Admin wallets** are configured via the `ADMIN_WALLETS` environment variable (comma-separated addresses). The `/support` page on the dapp provides a form for submitting reports and viewing your submission history.

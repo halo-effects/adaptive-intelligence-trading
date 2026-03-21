@@ -31,7 +31,7 @@ _Curated essentials. For details, see the structured files below._
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. Full audit found 12 gaps (3 P0). Next: fix P0 items, order sizing, cloud migration.
-- **Basis**: Major milestone 2026-03-20. All 13 contracts redeployed. 15 events shipped. Sync API + read endpoints live. Unified docs created (37KB, 11-part "Complete Agent Guide" — `projects/basis/docs-unified.md`). Both SDKs updated to new addresses. Smoke test 7/8 pass. Next: write tests on new contracts, Diamond docs review, points system decisions (vesting values, anti-gaming), SDK publish.
+- **Basis**: Docs at 7/10 (2026-03-21). 144.6KB "Complete Agent Guide" in `projects/basis/basis-docs/COMPLETE.md` (17 sections + INDEX). hybridMultiplier/startLP empirically tested on-chain. Points spec complete (`points-system-complete-spec.md`). Tweet verification + bug reporting live. Action test: fresh agent designed 4-module bot unprompted. Next: Alex return schemas (7→8+), points backend build, clear TBD placeholders, prediction market testing.
 - **TrustedBusinessReviews.com**: WordPress → static HTML. Malware cleanup.
 - **ShadowQuery**: Deferred.
 

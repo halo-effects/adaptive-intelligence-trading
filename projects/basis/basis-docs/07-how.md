@@ -54,7 +54,7 @@ All trades route through STASIS. No direct token-to-token swaps.
 - **Stable+ / Predict+**: 100% LTV at spot price (floor = spot for these tokens, so you borrow the full market value)
 - **Floor+**: 100% LTV at floor price (floor < spot, so you borrow less than market value — the gap is your safety margin)
 
-**No price liquidation.** Since floors never decrease, collateral can't drop below the loan value. The only risk is time-based expiry — if your loan expires without repayment or extension, the collateral is burned.
+**No price liquidation.** Since floors never decrease, collateral can't drop below the loan value. The only risk is time-based expiry — if your loan expires without repayment or extension, collateral tokens are burned up to the value of the outstanding debt (an auto-repayment). Any remaining collateral balance above the debt becomes claimable by the borrower — it is not automatically returned, you must claim it.
 
 **Critical rules**:
 - Interest is prepaid. Repaying early does NOT save money — unused days are forfeited.

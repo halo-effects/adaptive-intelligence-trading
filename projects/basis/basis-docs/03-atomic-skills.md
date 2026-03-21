@@ -253,7 +253,25 @@ print("Token:", result["token_address"])
 | `symbol` | yes | Token ticker |
 | `name` | yes | Token full name |
 | `hybridMultiplier` | yes | Controls token type and stability. **1–90 = Floor+** (price moves both ways with rising floor; 1 = most volatile, 90 = most stable). **100 = Stable+** (up-only, price can never decrease). Do not use values 91–99. The dapp UI maps a 0%–100% slider to values 1–90 for Floor+, with a separate Stable+ toggle that sets 100. |
-| `startLP` | yes | Starting virtual liquidity paired with the token in the LP (100–10000, in USDB-equivalent via STASIS). Controls how much capital is needed to move the price. See examples below. |
+| `startLP` | yes | Starting virtual liquidity (100–10,000). Free — costs the creator nothing. Sets the **dollar scale** of price movement, not the stability (that's hybridMultiplier). See explanation below. |
+
+**Understanding startLP:**
+
+startLP is a scaling factor that controls how much capital is needed to move the price. It does NOT affect the percentage change — only the absolute dollar amounts. Think of it as the "zoom level" on the price chart.
+
+**Example:** A $100 buy into a 1,000 LP token has the **same percentage impact** as a $1,000 buy into a 10,000 LP token. The charts would look identical if you scaled the Y-axis proportionally.
+
+| startLP | $100 buy moves price | $1,000 buy moves price | Best for |
+|---|---|---|---|
+| 100 | very large move | extreme move | Micro-cap, tiny wallets |
+| 1,000 | ~$0.10 | ~$1.00 | Most tokens (default) |
+| 5,000 | ~$0.02 | ~$0.20 | Larger expected volume |
+| 10,000 | ~$0.01 | ~$0.10 | High-volume, smooth price |
+
+**The tradeoff:** Lower startLP = more visible price action (both up AND down) for the same trade volume. Higher startLP = more capital needed to create visible movement. Since it's free, the choice is purely about what trading experience you want:
+- **Low LP (100–500)**: Small buys/sells create noticeable price movement. Good for tokens where early participants have small wallets.
+- **Medium LP (1,000–3,000)**: Balanced — most tokens start here.
+- **High LP (5,000–10,000)**: Takes significant capital to move the price. Better for tokens expecting larger trades or wanting price to appear smoother.
 
 **hybridMultiplier price impact** *(tested on-chain, startLP=1000)*
 
@@ -265,7 +283,7 @@ print("Token:", result["token_address"])
 | Floor+ | 45 | +$0.54 | Moderate-high |
 | Floor+ | 60 | +$0.39 | High |
 | Floor+ | 90 (most stable) | +$0.11 | Very high |
-| Stable+ | 100 | price increases due to price impact | Maximum |
+| Stable+ | 100 (only goes up) | price increases due to price impact | Maximum |
 
 > **How the floor works:** When you sell tokens, the price drops — but not all the way back. The difference between where the price was and where it lands after selling is the floor increase. This "lost" price impact from trading is what permanently raises the floor price. Higher hybridMultiplier means more of each trade's price impact is retained by the AMM, so the floor rises faster. At hybrid=100 (Stable+), all price impact is retained — the price never decreases.
 >
@@ -281,7 +299,7 @@ print("Token:", result["token_address"])
 | `frozen` | no | Start token frozen (default: false). When true, only whitelisted wallets can trade until you call `disableFreeze()`. Useful for controlled launches or pre-sale allocation. |
 | `usdbForBonding` | no | USDB volume threshold (18 decimals) that defines the reward phase (default: 0 = no reward phase). The reward phase lasts until this volume of trading is reached — early buyers during this period earn reward shares (claimable via `claimRewards()`). The creator sets this at token creation. Once the volume threshold is hit, `hasBonded` flips to true and the reward phase ends. *(Parameter name is legacy — this funds the reward phase, not a bonding curve.)* |
 | `autoVest` | no | Enable auto-vesting for tokens the creator buys (default: false). When true, any tokens the creator purchases are automatically locked in a vesting schedule instead of being immediately available. This is NOT pre-minting — there are zero insider allocations. The creator must buy tokens like anyone else; autoVest just locks what they buy. Signals long-term commitment. |
-| `autoVestDuration` | no | Vesting duration in days. Only applies when `autoVest` is true. |
+| `autoVestDuration` | no | Vesting duration in days. Required when `autoVest` is true — there is no default; you must specify the schedule. |
 | `gradualAutovest` | no | When true, tokens vest gradually (linear unlock over the duration). When false, tokens vest as a cliff (all unlock at the end). Only applies when `autoVest` is true. |
 
 Returns: `{ hash, receipt, tokenAddress, imageUrl, metadata }`
@@ -368,7 +386,7 @@ Collateralized loans through the LoanHub contract. Take, extend, repay.
 ---
 
 ### `takeLoan(ecosystem, collateral, amount, daysCount)`
-**What it does:** Takes a loan by depositing collateral tokens. Auto-approves collateral to LoanHub.
+**What it does:** Takes a loan by depositing collateral tokens. Auto-approves collateral to LoanHub. This is a **simple one-layer loan** — your collateral is locked but does NOT earn yield. If you want your collateral to earn vault yield while borrowed against, use `staking.borrow()` instead (three-layer: wrap → lock → borrow).
 **Module:** `client.loans`
 **Fee:** 2% flat origination fee (deducted from what you receive). No compounding, no accrual.
 **Earns airdrop points** — a one-time bonus at origination plus daily accrual while active.
@@ -392,7 +410,7 @@ result = client.loans.take_loan(MAINTOKEN, collateral_token, 100 * 10**18, 30)
 ---
 
 ### `repayLoan(hubId)`
-**What it does:** Repays a loan in full. Auto-approves USDB to LoanHub. Repaying early does NOT save money — unused days are forfeited.
+**What it does:** Repays a loan in full. You repay the USDB debt and your collateral tokens are returned. Auto-approves USDB to LoanHub. Repaying early does NOT save money — unused days are forfeited.
 **Module:** `client.loans`
 
 ---
@@ -500,7 +518,7 @@ result = client.staking.buy(100 * 10**18)
 ---
 
 ### `borrow(stasisAmount, days)` — Borrow Against Vault
-**What it does:** Borrows USDB against your locked wSTASIS. The `stasisAmount` param is denominated in **STASIS units** (not wSTASIS shares) — the contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
+**What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap → lock → borrow) — your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units** (not wSTASIS shares) — the contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
 **Module:** `client.staking`
 **Fee:** 2% flat origination fee
 **Earns airdrop points** — a one-time bonus at origination plus daily accrual while active.
@@ -578,7 +596,7 @@ Create and manage token vesting schedules. Gradual (linear) or cliff. Can take l
 **JS:**
 ```js
 const result = await client.vesting.createGradualVesting(
-  "0xBeneficiary", "0xToken", 10000,
+  "0xBeneficiary", "0xToken", parseUnits("10000", 18),
   Math.floor(Date.now() / 1000) + 60, 365, 3, "Team allocation", MAINTOKEN
 );
 ```
@@ -586,7 +604,7 @@ const result = await client.vesting.createGradualVesting(
 ```python
 import time
 result = client.vesting.create_gradual_vesting(
-    "0xBeneficiary", "0xToken", 10000,
+    "0xBeneficiary", "0xToken", 10000 * 10**18,
     int(time.time()) + 60, 365, 3, "Team allocation", MAINTOKEN
 )
 ```
@@ -1009,12 +1027,14 @@ Private prediction markets with restricted access. Extends all Prediction Market
 
 ### Additional Private Market Write Methods
 
+**Resolution by voting:** Private markets are resolved by voter consensus, not the resolver module. The market creator can vote by default. Additional voters can be added via `manageVoter()`. After the market's end time, voters cast votes for the winning outcome. A majority of votes determines the winner. Once the voting timer elapses, anyone can call `finalize()` to lock the result. *(Voting timer duration: TBD — check with Alex.)*
+
 | Method | Description |
 |--------|-------------|
-| `vote(marketToken, outcomeId)` | Cast a vote to resolve a private market |
-| `finalize(marketToken)` | Finalize after voting |
+| `vote(marketToken, outcomeId)` | Cast a vote to resolve a private market (creator + whitelisted voters) |
+| `finalize(marketToken)` | Finalize after voting period ends (majority wins) |
 | `claimBounty(marketToken)` | Claim resolution bounty |
-| `manageVoter(marketToken, voter, add)` | Add/remove a voter (`add=true/false`) |
+| `manageVoter(marketToken, voter, add)` | Add/remove a voter (`add=true/false`). No bond required to vote. |
 | `togglePrivateEventBuyers(marketToken)` | Toggle whether non-whitelisted can buy |
 | `disableFreeze(marketToken)` | Open market to public |
 | `manageWhitelist(marketToken, wallets, amounts, tags)` | Manage buyer whitelist |
@@ -1120,7 +1140,7 @@ Returns: `number` — basis points (100 = 1%)
 ---
 
 ### `getCurrentSurgeTax(token)` *(read)*
-**What it does:** Returns the current surge tax (temporary extra fee during high-volume periods).
+**What it does:** Returns the current surge tax. Surge tax is a temporary extra fee that token creators can activate during hype cycles (or whenever they choose). It starts at the maximum rate and decays linearly to zero over the configured duration. For example: a 0.5% surge tax over 24 hours starts at +0.5% and drops to 0% over 24 hours. The extra fee is distributed in the same ratio as normal trading fees — it just generates more of them. Displayed on the dapp when active. *(Max surge rate limits: TBD — check with Alex.)*
 **Module:** `client.taxes`
 
 ---
