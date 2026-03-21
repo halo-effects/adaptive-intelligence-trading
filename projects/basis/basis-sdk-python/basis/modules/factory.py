@@ -153,7 +153,7 @@ class FactoryModule:
         func = token_contract.functions.DisableFreeze()
         return self._build_and_send_tx(func)
 
-    def set_whitelisted_wallet(self, token_address: str, wallets: list[str], amount: int, tag: int):
+    def set_whitelisted_wallet(self, token_address: str, wallets: list[str], amount: int, tag: str):
         checksum_addr = Web3.to_checksum_address(token_address)
         token_contract = self.client.web3.eth.contract(address=checksum_addr, abi=self.token_abi)
         checksum_wallets = [Web3.to_checksum_address(w) for w in wallets]

@@ -183,8 +183,8 @@ class PredictionMarketsModule:
         func = self.contract.functions.buyOrdersAndContract(checksum_market, outcome_id, order_ids, checksum_input, total_input, min_shares)
         return self._build_and_send_tx(func)
 
-    def get_initial_reserves(self, num_outcomes: int) -> int:
-        """Returns the initial reserves required for a given number of outcomes."""
+    def get_initial_reserves(self, num_outcomes: int) -> tuple:
+        """Returns (perOutcome, totalReserve) for a given number of outcomes."""
         return self.contract.functions.getInitialReserves(num_outcomes).call()
 
     def get_num_outcomes(self, market_token: str) -> int:

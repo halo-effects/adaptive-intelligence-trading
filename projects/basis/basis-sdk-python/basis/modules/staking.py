@@ -123,7 +123,7 @@ class StakingModule:
         return result
 
     def get_user_stake_details(self, user: str):
-        """Returns (wStasisBalance, lockedWStasis, pledgedStasis, availableStasis)."""
+        """Returns (liquidShares, lockedShares, totalShares, totalAssetValue)."""
         checksum_user = Web3.to_checksum_address(user)
         return self.contract.functions.getUserStakeDetails(checksum_user).call()
 
@@ -139,6 +139,10 @@ class StakingModule:
     def convert_to_assets(self, shares: int) -> int:
         """Converts wSTASIS shares to STASIS amount."""
         return self.contract.functions.convertToAssets(shares).call()
+
+    def total_assets(self) -> int:
+        """Returns total STASIS held by the vault (available + pledged)."""
+        return self.contract.functions.totalAssets().call()
 
     def add_to_loan(self, additional_stasis_to_borrow: int):
         """Adds to the existing staking loan by borrowing more."""

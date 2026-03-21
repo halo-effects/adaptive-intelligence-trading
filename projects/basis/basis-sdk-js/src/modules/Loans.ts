@@ -190,7 +190,7 @@ export class LoansModule {
     const loanDetails = await this.getUserLoanDetails(
       this.client.walletClient.account.address, hubId
     ) as any;
-    const collateral = loanDetails.collateral ?? loanDetails[4];
+    const collateral = loanDetails.collateralToken ?? loanDetails[3];
     await this.approveIfNeeded(collateral, this.loanHubAddress, amountToAdd);
 
     const { request } = await this.client.publicClient.simulateContract({

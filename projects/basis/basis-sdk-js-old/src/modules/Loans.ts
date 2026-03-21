@@ -12,6 +12,15 @@ export class LoansModule {
     this.loanHubAddress = loanHubAddress;
   }
 
+  private async _syncLoan(txHash: string) {
+    try {
+      await this.client.api.syncLoan(txHash);
+    } catch (e: any) {
+      // Non-fatal — sync failure should not break the transaction flow
+      console.warn('Loan sync warning:', e.message || e);
+    }
+  }
+
   private async approveIfNeeded(tokenAddress: Address, spender: Address, amount: bigint) {
     if (!this.client.walletClient || !this.client.walletClient.account) {
       throw new Error("Wallet account is required for approval.");
@@ -59,6 +68,7 @@ export class LoansModule {
     const hash = await this.client.walletClient.writeContract(request);
     const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
 
+    this._syncLoan(hash);
     return { hash, receipt };
   }
 
@@ -91,6 +101,7 @@ export class LoansModule {
     const hash = await this.client.walletClient.writeContract(request);
     const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
 
+    this._syncLoan(hash);
     return { hash, receipt };
   }
 
@@ -127,6 +138,7 @@ export class LoansModule {
     const hash = await this.client.walletClient.writeContract(request);
     const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
 
+    this._syncLoan(hash);
     return { hash, receipt };
   }
 
@@ -149,6 +161,7 @@ export class LoansModule {
     const hash = await this.client.walletClient.writeContract(request);
     const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
 
+    this._syncLoan(hash);
     return { hash, receipt };
   }
 
@@ -191,6 +204,7 @@ export class LoansModule {
     const hash = await this.client.walletClient.writeContract(request);
     const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
 
+    this._syncLoan(hash);
     return { hash, receipt };
   }
 
@@ -215,6 +229,7 @@ export class LoansModule {
 
     const hash = await this.client.walletClient.writeContract(request);
     const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
+    this._syncLoan(hash);
     return { hash, receipt };
   }
 

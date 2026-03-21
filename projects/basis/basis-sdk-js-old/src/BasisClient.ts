@@ -107,13 +107,13 @@ export class BasisClient {
     }
 
     // Default addresses
-    const factoryAddr = options.factoryAddress || '0x2A6aa5A45FB4b1d1836B06ca830df92a6C19946e';
-    const swapAddr = options.swapAddress || '0x4Fb70115DE58efFb4F5375A0acf96905F877f4d4';
-    const marketTradingAddr = options.marketTradingAddress || '0xCb64910a19B3641eb600b904741a074578Dda3F7';
-    const loanHubAddr = options.loanHubAddress || '0xA11A1f22fE398903F4108c299008D398fF47ECc7';
-    const vestingAddr = options.vestingAddress || '0x4CE85393dD457233f80b3e532ec88da60D945C35';
-    this.usdbAddress = options.usdbAddress || '0x78dD776204aA7e06BaF488959a90142f0B3027CE';
-    this.mainTokenAddress = options.mainTokenAddress || '0x76ACb5F98A422995a801008c8b7b28dBC23946Ff';
+    const factoryAddr = options.factoryAddress || '0xd80850a3b712E6B9dB4d3e487c76b7c1F904E273';
+    const swapAddr = options.swapAddress || '0xa2483dd5d22D1A8a01473878f247fEC8dC952f1e';
+    const marketTradingAddr = options.marketTradingAddress || '0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6';
+    const loanHubAddr = options.loanHubAddress || '0x504AeDa510D4cb5Fe6E29D000Dfc377f3f50cC30';
+    const vestingAddr = options.vestingAddress || '0x82D1a54fd9671Cd4fE8774f0f85A0CB8A96dee3b';
+    this.usdbAddress = options.usdbAddress || '0x217B82e4bAc4E4647B1F189F33554229Ce27c51A';
+    this.mainTokenAddress = options.mainTokenAddress || '0xE4b1ed74C77984EbFf1CE871E7F7c9414e5dd73b';
 
     this.api = new BasisAPI(this);
     this.factory = new FactoryModule(this, factoryAddr);
@@ -123,22 +123,22 @@ export class BasisClient {
     this.loans = new LoansModule(this, loanHubAddr);
     this.vesting = new VestingModule(this, vestingAddr);
 
-    const stakingAddr = options.stakingAddress || '0xb4D72acEa5E26B8438e3604b49A153eB58A7C578';
+    const stakingAddr = options.stakingAddress || '0x8E2C5267f2BA1A142A88a333C075E21719E330aC';
     this.staking = new StakingModule(this, stakingAddr);
 
-    const resolverAddr = options.resolverAddress || '0x9A3E39D819Fad125d3116CE0bCC788955238d856';
+    const resolverAddr = options.resolverAddress || '0x1AB2C2551429Bd4f9a5D8c781BEb5BC5497a42bd';
     this.resolver = new MarketResolverModule(this, resolverAddr);
 
-    const privateMarketAddr = options.privateMarketAddress || '0xab38766d7E51B066858671D19e804B5470554196';
+    const privateMarketAddr = options.privateMarketAddress || '0x4eCDD0A082b3f523c31F61eC8bEfF69A8182C0aD';
     this.privateMarkets = new PrivateMarketsModule(this, privateMarketAddr);
 
-    const readerAddr = options.readerAddress || '0x59EBF4D09AfEA6073c950a89382E500178D46643';
+    const readerAddr = options.readerAddress || '0xC8652aF90B1C2C9012ADe56B58EfA9572122d342';
     this.marketReader = new MarketReaderModule(this, readerAddr);
 
-    const leverageAddr = options.leverageAddress || '0xCa73033C4A35df22d5F375D1f8F5555dA071e522';
+    const leverageAddr = options.leverageAddress || '0x0030d46D3ba98287e7D62482c14E4395FbF52904';
     this.leverageSimulator = new LeverageSimulatorModule(this, leverageAddr);
 
-    const taxesAddr = options.taxesAddress || '0x03F61633694aDf1424D90746e314a232256ec508';
+    const taxesAddr = options.taxesAddress || '0x3CE0381C6515b7771a6E47d99abf1e42054121CD';
     this.taxes = new TaxesModule(this, taxesAddr);
     this.agent = new AgentIdentityModule(this);
   }

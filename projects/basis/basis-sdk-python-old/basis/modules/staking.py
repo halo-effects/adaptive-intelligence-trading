@@ -1,5 +1,8 @@
+import logging
 from web3 import Web3
 from .factory import load_abi
+
+logger = logging.getLogger(__name__)
 
 
 class StakingModule:
@@ -50,32 +53,52 @@ class StakingModule:
             'receipt': receipt
         }
 
+    def _sync_loan(self, tx_hash: str):
+        """Sync vault tx to backend. Non-fatal on failure."""
+        try:
+            if not tx_hash.startswith("0x"):
+                tx_hash = "0x" + tx_hash
+            self.client.api.sync_loan(tx_hash)
+        except Exception as e:
+            logger.warning("Loan sync warning: %s", e)
+
     def buy(self, amount: int):
         """Wraps STASIS (MAINTOKEN) into wSTASIS. Auto-approves."""
         self._approve_if_needed(self.client.main_token_address, self.staking_address, amount)
         func = self.contract.functions.buy(amount)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def sell(self, shares: int, claim_usdb: bool = False, min_usdb: int = 0):
         """Unwraps wSTASIS back to STASIS, optionally converting to USDB."""
         func = self.contract.functions.sell(shares, claim_usdb, min_usdb)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def lock(self, shares: int):
         """Locks wSTASIS as collateral for borrowing. Auto-approves."""
         self._approve_if_needed(self.staking_address, self.staking_address, shares)
         func = self.contract.functions.lock(shares)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def unlock(self, shares: int):
         """Unlocks wSTASIS collateral."""
         func = self.contract.functions.unlock(shares)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def borrow(self, stasis_amount_to_borrow: int, days: int):
-        """Borrows USDB against locked wSTASIS collateral."""
+        """Pledges STASIS as collateral and borrows USDB against it.
+        stasis_amount_to_borrow is the STASIS to pledge — USDB received is collateral value minus fees."""
         func = self.contract.functions.borrow(stasis_amount_to_borrow, days)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def repay(self):
         """Repays the active staking loan. Auto-approves USDB."""
@@ -88,12 +111,16 @@ class StakingModule:
         if balance > 0:
             self._approve_if_needed(self.client.usdb_address, self.staking_address, balance)
         func = self.contract.functions.repay()
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def extend_loan(self, days_to_add: int, pay_in_usdb: bool, refinance: bool):
         """Extends the active staking loan."""
         func = self.contract.functions.extendLoan(days_to_add, pay_in_usdb, refinance)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def get_user_stake_details(self, user: str):
         """Returns (wStasisBalance, lockedWStasis, pledgedStasis, availableStasis)."""
@@ -116,9 +143,13 @@ class StakingModule:
     def add_to_loan(self, additional_stasis_to_borrow: int):
         """Adds to the existing staking loan by borrowing more."""
         func = self.contract.functions.addToLoan(additional_stasis_to_borrow)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def settle_liquidation(self):
         """Settles a liquidation on the staking position."""
         func = self.contract.functions.settleLiquidation()
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result

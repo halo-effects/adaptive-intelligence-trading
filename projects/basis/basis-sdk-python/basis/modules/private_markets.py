@@ -66,7 +66,7 @@ class PrivateMarketsModule:
     # Write methods
     # ------------------------------------------------------------------
 
-    def create_market(self, market_name: str, symbol: str, end_time: int, option_names: list[str], maintoken: str, frozen: bool, bonding: int, seed_amount: int = 0):
+    def create_market(self, market_name: str, symbol: str, end_time: int, option_names: list[str], maintoken: str, private_event: bool, frozen: bool, bonding: int, seed_amount: int = 0):
         """Creates a private prediction market. Auto-fetches and attaches the creation fee."""
         checksum_maintoken = Web3.to_checksum_address(maintoken)
         eco_data = self.contract.functions.ecosystems(checksum_maintoken).call()
@@ -79,7 +79,7 @@ class PrivateMarketsModule:
         if seed_amount > 0:
             self._approve_if_needed(self.client.usdb_address, seed_amount)
 
-        func = self.contract.functions.createMarket(market_name, symbol, end_time, option_names, checksum_maintoken, frozen, bonding, seed_amount)
+        func = self.contract.functions.createMarket(market_name, symbol, end_time, option_names, checksum_maintoken, private_event, frozen, bonding, seed_amount)
         if not self.client.account:
             raise ValueError("Stateful initialization (private_key) is required for write methods.")
         tx = func.build_transaction({
@@ -148,6 +148,51 @@ class PrivateMarketsModule:
         self._sync_order(result['hash'])
         return result
 
+    def vote(self, market_token: str, outcome_id: int):
+        """Casts a vote on a private market outcome."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        func = self.contract.functions.vote(checksum_market, outcome_id)
+        return self._build_and_send_tx(func)
+
+    def finalize(self, market_token: str):
+        """Finalizes a private market after voting is complete."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        func = self.contract.functions.finalize(checksum_market)
+        return self._build_and_send_tx(func)
+
+    def claim_bounty(self, market_token: str):
+        """Claims the bounty reward for voting correctly."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        func = self.contract.functions.claimBounty(checksum_market)
+        return self._build_and_send_tx(func)
+
+    def manage_voter(self, market_token: str, voter: str, status: bool):
+        """Manages voter status for a private market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        checksum_voter = Web3.to_checksum_address(voter)
+        func = self.contract.functions.manageVoter(checksum_market, checksum_voter, status)
+        return self._build_and_send_tx(func)
+
+    def toggle_private_event_buyers(self, market_token: str, buyers: list[str], status: bool):
+        """Toggles whether specific addresses can buy in a private event market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        checksum_buyers = [Web3.to_checksum_address(b) for b in buyers]
+        func = self.contract.functions.togglePrivateEventBuyers(checksum_market, checksum_buyers, status)
+        return self._build_and_send_tx(func)
+
+    def disable_freeze(self, market_token: str):
+        """Disables the freeze on a private market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        func = self.contract.functions.DisableFreeze(checksum_market)
+        return self._build_and_send_tx(func)
+
+    def manage_whitelist(self, market_token: str, wallets: list[str], amount: int, tag: str, status: bool):
+        """Manages the whitelist for a private market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        checksum_wallets = [Web3.to_checksum_address(w) for w in wallets]
+        func = self.contract.functions.manageWhitelist(checksum_market, checksum_wallets, amount, tag, status)
+        return self._build_and_send_tx(func)
+
     # ------------------------------------------------------------------
     # Read methods
     # ------------------------------------------------------------------
@@ -160,13 +205,13 @@ class PrivateMarketsModule:
     def get_outcome(self, market_token: str, outcome_id: int):
         """Returns outcome data for a specific outcome."""
         checksum_market = Web3.to_checksum_address(market_token)
-        return self.contract.functions.getOutcome(checksum_market, outcome_id).call()
+        return self.contract.functions.outcomes(checksum_market, outcome_id).call()
 
     def get_user_shares(self, market_token: str, user: str, outcome_id: int):
         """Returns a user's shares for a specific outcome."""
         checksum_market = Web3.to_checksum_address(market_token)
         checksum_user = Web3.to_checksum_address(user)
-        return self.contract.functions.getUserShares(checksum_market, checksum_user, outcome_id).call()
+        return self.contract.functions.userShares(checksum_market, checksum_user, outcome_id).call()
 
     def get_buy_order_cost(self, market_token: str, order_id: int, fill: int):
         """Returns the cost to buy a specific order fill amount."""
@@ -176,3 +221,68 @@ class PrivateMarketsModule:
     def get_initial_reserves(self, num_outcomes: int) -> int:
         """Returns the initial reserves required for a given number of outcomes."""
         return self.contract.functions.getInitialReserves(num_outcomes).call()
+
+    def get_num_outcomes(self, market_token: str) -> int:
+        """Returns the number of outcomes for a market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        return self.contract.functions.getNumOutcomes(checksum_market).call()
+
+    def has_betted(self, market_token: str, user: str) -> bool:
+        """Returns whether a user has bet on a market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        checksum_user = Web3.to_checksum_address(user)
+        return self.contract.functions.hasBetted(checksum_market, checksum_user).call()
+
+    def get_bounty_pool(self, market_token: str) -> int:
+        """Returns the bounty pool amount for a market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        return self.contract.functions.bountyPool(checksum_market).call()
+
+    def get_buy_order_amounts_out(self, market_token: str, order_id: int, usdb_amount: int):
+        """Returns the amounts out when buying an order with a specific USDB amount."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        return self.contract.functions.getBuyOrderAmountsOut(checksum_market, order_id, usdb_amount).call()
+
+    def get_market_orders(self, market_token: str, order_id: int):
+        """Returns an order by market and order ID."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        return self.contract.functions.marketOrders(checksum_market, order_id).call()
+
+    def get_next_order_id(self, market_token: str) -> int:
+        """Returns the next order ID for a market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        return self.contract.functions.nextOrderId(checksum_market).call()
+
+    def is_market_voter(self, market_token: str, voter: str) -> bool:
+        """Returns whether an address is a voter for a market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        checksum_voter = Web3.to_checksum_address(voter)
+        return self.contract.functions.isMarketVoter(checksum_market, checksum_voter).call()
+
+    def get_voter_choice(self, market_token: str, voter: str) -> int:
+        """Returns the outcome a voter chose for a market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        checksum_voter = Web3.to_checksum_address(voter)
+        return self.contract.functions.voterChoice(checksum_market, checksum_voter).call()
+
+    def get_first_vote_time(self, market_token: str) -> int:
+        """Returns the first vote time for a market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        return self.contract.functions.firstVoteTime(checksum_market).call()
+
+    def can_user_buy(self, market_token: str, user: str) -> bool:
+        """Returns whether a user can buy in a private event market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        checksum_user = Web3.to_checksum_address(user)
+        return self.contract.functions.userCanBuyEvent(checksum_market, checksum_user).call()
+
+    def get_bounty_per_vote(self, market_token: str) -> int:
+        """Returns the bounty per correct vote for a market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        return self.contract.functions.bountyPerCorrectVote(checksum_market).call()
+
+    def has_claimed(self, market_token: str, voter: str) -> bool:
+        """Returns whether a voter has claimed the bounty for a market."""
+        checksum_market = Web3.to_checksum_address(market_token)
+        checksum_voter = Web3.to_checksum_address(voter)
+        return self.contract.functions.bountyClaimed(checksum_market, checksum_voter).call()

@@ -645,6 +645,148 @@ export class BasisAPI {
   }
 
   // -----------------------------------------------------------------------
+  // Loan & Vault sync (public, no auth required)
+  // -----------------------------------------------------------------------
+
+  /**
+   * POST /api/v1/sync — sync an on-chain loan or vault event to the database.
+   * Call after any loan, vault staking, or leverage transaction.
+   * No authentication required (public on-chain data). Rate limited to 20 req/min.
+   * Idempotent — submitting the same txHash twice is safe.
+   */
+  async syncLoan(
+    txHash: string,
+  ): Promise<{ success: boolean; events?: unknown[]; error?: string }> {
+    const url = `${this.client.apiDomain}/api/v1/sync`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ txHash }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Loan sync failed [${res.status}]: ${body}`);
+    }
+    return res.json();
+  }
+
+  // -----------------------------------------------------------------------
+  // Loans, Vault & Vesting read endpoints (session or API key)
+  // -----------------------------------------------------------------------
+
+  /**
+   * Internal helper: fetch with API key or session cookie.
+   */
+  private async fetchWithAuth(
+    endpoint: string,
+    options: RequestInit = {},
+  ): Promise<Response> {
+    const apiKey = this.client.apiKey;
+    const cookie = this.client.sessionCookie;
+    const headers: Record<string, string> = {
+      ...(options.headers as Record<string, string> | undefined),
+    };
+
+    if (apiKey) {
+      headers['X-API-Key'] = apiKey;
+    } else if (cookie) {
+      headers['Cookie'] = cookie;
+    } else {
+      throw new Error('Authentication required (API key or session cookie).');
+    }
+
+    const url = this.buildUrl(endpoint);
+    const res = await fetch(url, { ...options, headers });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`API request failed [${res.status}] ${res.statusText}: ${body}`);
+    }
+    return res;
+  }
+
+  /**
+   * GET /api/v1/loans — list loans for the authenticated wallet.
+   */
+  async getLoans(options: {
+    source?: string;
+    active?: boolean;
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{ data: unknown[]; pagination: Pagination }> {
+    const params = new URLSearchParams();
+    if (options.source !== undefined) params.set('source', options.source);
+    if (options.active !== undefined) params.set('active', String(options.active));
+    if (options.page !== undefined) params.set('page', String(options.page));
+    if (options.limit !== undefined) params.set('limit', String(options.limit));
+
+    const qs = params.toString();
+    const endpoint = `/api/v1/loans${qs ? `?${qs}` : ''}`;
+    const res = await this.fetchWithAuth(endpoint);
+    return res.json();
+  }
+
+  /**
+   * GET /api/v1/loans/events — list loan lifecycle events for the authenticated wallet.
+   */
+  async getLoanEvents(options: {
+    source?: string;
+    action?: string;
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{ data: unknown[]; pagination: Pagination }> {
+    const params = new URLSearchParams();
+    if (options.source !== undefined) params.set('source', options.source);
+    if (options.action !== undefined) params.set('action', options.action);
+    if (options.page !== undefined) params.set('page', String(options.page));
+    if (options.limit !== undefined) params.set('limit', String(options.limit));
+
+    const qs = params.toString();
+    const endpoint = `/api/v1/loans/events${qs ? `?${qs}` : ''}`;
+    const res = await this.fetchWithAuth(endpoint);
+    return res.json();
+  }
+
+  /**
+   * GET /api/v1/vault/events — list vault staking events for the authenticated wallet.
+   */
+  async getVaultEvents(options: {
+    action?: string;
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{ data: unknown[]; pagination: Pagination }> {
+    const params = new URLSearchParams();
+    if (options.action !== undefined) params.set('action', options.action);
+    if (options.page !== undefined) params.set('page', String(options.page));
+    if (options.limit !== undefined) params.set('limit', String(options.limit));
+
+    const qs = params.toString();
+    const endpoint = `/api/v1/vault/events${qs ? `?${qs}` : ''}`;
+    const res = await this.fetchWithAuth(endpoint);
+    return res.json();
+  }
+
+  /**
+   * GET /api/v1/vesting/events — list vesting events for the authenticated wallet.
+   */
+  async getVestingEvents(options: {
+    action?: string;
+    vestingId?: number;
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{ data: unknown[]; pagination: Pagination }> {
+    const params = new URLSearchParams();
+    if (options.action !== undefined) params.set('action', options.action);
+    if (options.vestingId !== undefined) params.set('vestingId', String(options.vestingId));
+    if (options.page !== undefined) params.set('page', String(options.page));
+    if (options.limit !== undefined) params.set('limit', String(options.limit));
+
+    const qs = params.toString();
+    const endpoint = `/api/v1/vesting/events${qs ? `?${qs}` : ''}`;
+    const res = await this.fetchWithAuth(endpoint);
+    return res.json();
+  }
+
+  // -----------------------------------------------------------------------
   // Twitter / X Verification
   // -----------------------------------------------------------------------
 

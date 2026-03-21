@@ -475,6 +475,113 @@ class BasisAPI:
             return self._session_request("POST", "/v1/orders/sync", json=body)
 
     # ------------------------------------------------------------------
+    # Loan & Vault sync (public, no auth required)
+    # ------------------------------------------------------------------
+
+    def sync_loan(self, tx_hash: str) -> Dict[str, Any]:
+        """Sync an on-chain loan or vault event to the database.
+
+        ``POST /api/v1/sync``
+
+        Call after any loan, vault staking, or leverage transaction.
+        No authentication required (public on-chain data). Rate limited to 20 req/min.
+        Idempotent — submitting the same txHash twice is safe.
+        """
+        url = f"{self.client.api_domain}/api/v1/sync"
+        response = self.session.post(url, json={"txHash": tx_hash})
+        response.raise_for_status()
+        return response.json()
+
+    # ------------------------------------------------------------------
+    # Loans, Vault & Vesting read endpoints (session or API key)
+    # ------------------------------------------------------------------
+
+    def _auth_request(self, method: str, endpoint: str, **kwargs: Any) -> Any:
+        """Make a request using API key (preferred) or session cookie."""
+        api_key = self.client.api_key
+        if api_key:
+            return self._api_key_request(method, endpoint, **kwargs)
+        else:
+            return self._session_request(method, endpoint, **kwargs)
+
+    def get_loans(
+        self,
+        source: Optional[str] = None,
+        active: Optional[bool] = None,
+        page: int = 1,
+        limit: int = 20,
+    ) -> Dict[str, Any]:
+        """List loans for the authenticated wallet.
+
+        ``GET /api/v1/loans``
+
+        Params: source (hub|vault|leverage|vesting), active (true|false), page, limit.
+        """
+        params: Dict[str, Any] = {"page": page, "limit": limit}
+        if source is not None:
+            params["source"] = source
+        if active is not None:
+            params["active"] = str(active).lower()
+        return self._auth_request("GET", "/v1/loans", params=params)
+
+    def get_loan_events(
+        self,
+        source: Optional[str] = None,
+        action: Optional[str] = None,
+        page: int = 1,
+        limit: int = 20,
+    ) -> Dict[str, Any]:
+        """List loan lifecycle events for the authenticated wallet.
+
+        ``GET /api/v1/loans/events``
+
+        Params: source, action (created|repaid|extended|increased|liquidated|partial_sell|liquidation_claimed), page, limit.
+        """
+        params: Dict[str, Any] = {"page": page, "limit": limit}
+        if source is not None:
+            params["source"] = source
+        if action is not None:
+            params["action"] = action
+        return self._auth_request("GET", "/v1/loans/events", params=params)
+
+    def get_vault_events(
+        self,
+        action: Optional[str] = None,
+        page: int = 1,
+        limit: int = 20,
+    ) -> Dict[str, Any]:
+        """List vault staking events for the authenticated wallet.
+
+        ``GET /api/v1/vault/events``
+
+        Params: action (wrap|unwrap|lock|unlock), page, limit.
+        """
+        params: Dict[str, Any] = {"page": page, "limit": limit}
+        if action is not None:
+            params["action"] = action
+        return self._auth_request("GET", "/v1/vault/events", params=params)
+
+    def get_vesting_events(
+        self,
+        action: Optional[str] = None,
+        vesting_id: Optional[int] = None,
+        page: int = 1,
+        limit: int = 20,
+    ) -> Dict[str, Any]:
+        """List vesting events for the authenticated wallet.
+
+        ``GET /api/v1/vesting/events``
+
+        Params: action (created|claimed|extended|beneficiary_changed), vestingId, page, limit.
+        """
+        params: Dict[str, Any] = {"page": page, "limit": limit}
+        if action is not None:
+            params["action"] = action
+        if vesting_id is not None:
+            params["vestingId"] = vesting_id
+        return self._auth_request("GET", "/v1/vesting/events", params=params)
+
+    # ------------------------------------------------------------------
     # Twitter / X Verification
     # ------------------------------------------------------------------
 

@@ -37,11 +37,11 @@ class LeverageSimulatorModule:
 
     def get_collateral_value(self, token_amount: int, reserve0: int, reserve1: int) -> int:
         """Returns the collateral value for a given token amount."""
-        return self.contract.functions.getCollateralValue(token_amount, reserve0, reserve1).call()
+        return self.contract.functions.getColleteralValue(token_amount, reserve0, reserve1).call()
 
     def get_collateral_value_hybrid(self, token_amount: int, reserve0: int, reserve1: int, xe_reserve0: int, xe_reserve1: int, multiplier: int, base_reserve0: int) -> int:
         """Returns the collateral value for a hybrid token."""
-        return self.contract.functions.getCollateralValueHybrid(token_amount, reserve0, reserve1, xe_reserve0, xe_reserve1, multiplier, base_reserve0).call()
+        return self.contract.functions.getColleteralValueHybrid(token_amount, reserve0, reserve1, xe_reserve0, xe_reserve1, multiplier, base_reserve0).call()
 
     def calculate_tokens_for_buy(self, usdb_amount: int, reserve0: int, reserve1: int) -> int:
         """Calculates the number of tokens received for a given USDB input."""

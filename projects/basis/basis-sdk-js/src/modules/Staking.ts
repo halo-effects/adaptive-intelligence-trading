@@ -226,7 +226,7 @@ export class StakingModule {
 
   /**
    * Gets staking details for a user.
-   * Returns [wStasisBalance, lockedWStasis, pledgedStasis, availableStasis].
+   * Returns [liquidShares, lockedShares, totalShares, totalAssetValue].
    */
   async getUserStakeDetails(user: Address) {
     return this.client.publicClient.readContract({
@@ -270,6 +270,17 @@ export class StakingModule {
       abi: AStasisVaultArtifact.abi,
       functionName: 'convertToAssets',
       args: [shares],
+    }) as Promise<bigint>;
+  }
+
+  /**
+   * Returns total STASIS held by the vault (available + pledged).
+   */
+  async totalAssets(): Promise<bigint> {
+    return this.client.publicClient.readContract({
+      address: this.stakingAddress,
+      abi: AStasisVaultArtifact.abi,
+      functionName: 'totalAssets',
     }) as Promise<bigint>;
   }
 

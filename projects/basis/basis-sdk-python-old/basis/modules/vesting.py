@@ -1,5 +1,9 @@
+import logging
+
 from web3 import Web3
 from .factory import load_abi
+
+logger = logging.getLogger(__name__)
 
 
 class VestingModule:
@@ -54,6 +58,15 @@ class VestingModule:
             'receipt': receipt
         }
 
+    def _sync_loan(self, tx_hash: str):
+        """Sync vesting tx to backend. Non-fatal on failure."""
+        try:
+            if not tx_hash.startswith("0x"):
+                tx_hash = "0x" + tx_hash
+            self.client.api.sync_loan(tx_hash)
+        except Exception as e:
+            logger.warning("Loan sync warning: %s", e)
+
     def create_gradual_vesting(self, beneficiary: str, token: str, total_amount: int, start_time: int, duration_in_days: int, time_unit: int, memo: str, ecosystem: str):
         """Creates a gradual vesting. Auto-approves token and attaches fee."""
         self._approve_if_needed(token, self.vesting_address, total_amount)
@@ -64,7 +77,9 @@ class VestingModule:
             total_amount, start_time, duration_in_days, time_unit, memo,
             Web3.to_checksum_address(ecosystem)
         )
-        return self._build_and_send_tx(func, value=fee)
+        result = self._build_and_send_tx(func, value=fee)
+        self._sync_loan(result['hash'])
+        return result
 
     def create_cliff_vesting(self, beneficiary: str, token: str, total_amount: int, unlock_time: int, memo: str, ecosystem: str):
         """Creates a cliff vesting. Auto-approves token and attaches fee."""
@@ -76,15 +91,21 @@ class VestingModule:
             total_amount, unlock_time, memo,
             Web3.to_checksum_address(ecosystem)
         )
-        return self._build_and_send_tx(func, value=fee)
+        result = self._build_and_send_tx(func, value=fee)
+        self._sync_loan(result['hash'])
+        return result
 
     def claim_tokens(self, vesting_id: int):
         func = self.contract.functions.claimTokens(vesting_id)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def take_loan_on_vesting(self, vesting_id: int):
         func = self.contract.functions.takeLoanOnVesting(vesting_id)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def repay_loan_on_vesting(self, vesting_id: int):
         """Repays a loan on vesting. Auto-approves USDB to vesting contract."""
@@ -97,7 +118,9 @@ class VestingModule:
         if balance > 0:
             self._approve_if_needed(self.client.usdb_address, self.vesting_address, balance)
         func = self.contract.functions.repayLoanOnVesting(vesting_id)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def get_vesting_details(self, vesting_id: int):
         return self.contract.functions.getVestingDetails(vesting_id).call()
@@ -117,7 +140,9 @@ class VestingModule:
             checksum_beneficiaries, checksum_token, total_amounts, user_memos,
             start_time, duration_in_days, time_unit, checksum_ecosystem
         )
-        return self._build_and_send_tx(func, value=fee)
+        result = self._build_and_send_tx(func, value=fee)
+        self._sync_loan(result['hash'])
+        return result
 
     def batch_create_cliff_vesting(self, beneficiaries: list[str], token: str, total_amounts: list[int], unlock_time: int, user_memos: list[str], ecosystem: str):
         """Creates cliff vestings for multiple beneficiaries. Auto-approves sum of amounts and attaches fee."""
@@ -131,17 +156,23 @@ class VestingModule:
             checksum_beneficiaries, checksum_token, total_amounts, unlock_time,
             user_memos, checksum_ecosystem
         )
-        return self._build_and_send_tx(func, value=fee)
+        result = self._build_and_send_tx(func, value=fee)
+        self._sync_loan(result['hash'])
+        return result
 
     def change_beneficiary(self, vesting_id: int, new_beneficiary: str):
         """Changes the beneficiary of a vesting."""
         func = self.contract.functions.changeBeneficiary(vesting_id, Web3.to_checksum_address(new_beneficiary))
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def extend_vesting_period(self, vesting_id: int, additional_days: int):
         """Extends the vesting period by additional days."""
         func = self.contract.functions.extendVestingPeriod(vesting_id, additional_days)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def add_tokens_to_vesting(self, vesting_id: int, additional_amount: int):
         """Adds tokens to an existing vesting. Reads vesting details to get token, then approves."""
@@ -149,12 +180,16 @@ class VestingModule:
         token = details[1]  # token address from vesting details
         self._approve_if_needed(token, self.vesting_address, additional_amount)
         func = self.contract.functions.addTokensToVesting(vesting_id, additional_amount)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def transfer_creator_role(self, vesting_id: int, new_creator: str):
         """Transfers the creator role of a vesting to a new address."""
         func = self.contract.functions.transferCreatorRole(vesting_id, Web3.to_checksum_address(new_creator))
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def get_vestings_by_beneficiary(self, beneficiary: str) -> list:
         """Returns all vesting IDs for a beneficiary."""

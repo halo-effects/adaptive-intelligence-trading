@@ -1,5 +1,9 @@
+import logging
 from web3 import Web3
 from .factory import load_abi
+
+logger = logging.getLogger(__name__)
+
 
 class TradingModule:
     def __init__(self, client, swap_address: str):
@@ -10,6 +14,15 @@ class TradingModule:
         self.token_abi = load_abi('FACTORYTOKEN.json')
         self.maintoken_abi = load_abi('MAINTOKEN.json')
         self.contract = self.client.web3.eth.contract(address=self.swap_address, abi=self.swap_abi)
+
+    def _sync_loan(self, tx_hash: str):
+        """Sync leverage tx to backend. Non-fatal on failure."""
+        try:
+            if not tx_hash.startswith("0x"):
+                tx_hash = "0x" + tx_hash
+            self.client.api.sync_loan(tx_hash)
+        except Exception as e:
+            logger.warning("Loan sync warning: %s", e)
 
     def _approve_if_needed(self, token_address: str, amount: int):
         if not self.client.account:
@@ -120,12 +133,16 @@ class TradingModule:
         if checksum_path:
             self._approve_if_needed(checksum_path[0], amount)
         func = self.contract.functions.leverageBuy(amount, min_out, checksum_path, number_of_days)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def partial_loan_sell(self, loan_id: int, percentage: int, is_leverage: bool, min_out: int = 0):
         """Partially sells collateral from a loan/leverage position. percentage must be divisible by 10 (10-100)."""
         func = self.contract.functions.partialLoanSell(loan_id, percentage, is_leverage, min_out)
-        return self._build_and_send_tx(func)
+        result = self._build_and_send_tx(func)
+        self._sync_loan(result['hash'])
+        return result
 
     def sell_percentage(self, token_address: str, percentage: int, to_usdb: bool = False, min_out: int = 0, swap_to_eth: bool = False):
         """Sells a percentage (1-100) of the user's token balance."""

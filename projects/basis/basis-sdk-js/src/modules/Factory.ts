@@ -163,7 +163,7 @@ export class FactoryModule {
     return this.client.publicClient.waitForTransactionReceipt({ hash });
   }
 
-  async setWhitelistedWallet(tokenAddress: Address, wallets: Address[], amount: bigint, tag: number) {
+  async setWhitelistedWallet(tokenAddress: Address, wallets: Address[], amount: bigint, tag: string) {
     if (!this.client.walletClient || !this.client.walletClient.account) {
       throw new Error("Wallet account is required.");
     }

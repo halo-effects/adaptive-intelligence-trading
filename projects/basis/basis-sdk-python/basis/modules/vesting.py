@@ -177,7 +177,7 @@ class VestingModule:
     def add_tokens_to_vesting(self, vesting_id: int, additional_amount: int):
         """Adds tokens to an existing vesting. Reads vesting details to get token, then approves."""
         details = self.get_vesting_details(vesting_id)
-        token = details[1]  # token address from vesting details
+        token = details[2]  # token address from vesting details (creator=0, beneficiary=1, token=2)
         self._approve_if_needed(token, self.vesting_address, additional_amount)
         func = self.contract.functions.addTokensToVesting(vesting_id, additional_amount)
         result = self._build_and_send_tx(func)
@@ -190,6 +190,28 @@ class VestingModule:
         result = self._build_and_send_tx(func)
         self._sync_loan(result['hash'])
         return result
+
+    def get_vested_amount(self, vesting_id: int) -> int:
+        """Returns the total vested amount for a vesting schedule."""
+        return self.contract.functions.getVestedAmount(vesting_id).call()
+
+    def get_active_loan(self, vesting_id: int) -> int:
+        """Returns the active loan ID for a vesting schedule."""
+        return self.contract.functions.getActiveLoan(vesting_id).call()
+
+    def get_token_vesting_ids(self, token: str, start_index: int, end_index: int) -> list:
+        """Returns vesting IDs for a given token within a specified index range."""
+        return self.contract.functions.getTokenVestingIds(
+            Web3.to_checksum_address(token), start_index, end_index
+        ).call()
+
+    def get_vesting_details_batch(self, vesting_ids: list):
+        """Returns vesting details for multiple vesting IDs in a single call."""
+        return self.contract.functions.getVestingDetailsBatch(vesting_ids).call()
+
+    def get_vesting_count(self) -> int:
+        """Returns the total number of vesting schedules created."""
+        return self.contract.functions.vestingCount().call()
 
     def get_vestings_by_beneficiary(self, beneficiary: str) -> list:
         """Returns all vesting IDs for a beneficiary."""

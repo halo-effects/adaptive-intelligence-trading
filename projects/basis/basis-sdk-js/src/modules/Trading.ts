@@ -7,7 +7,7 @@ import { Address, getAddress, getContract } from 'viem';
 // Inline ABI for leverage view functions on MAINTOKEN (not in compiled artifact)
 const leverageAbi = [
   {"inputs":[{"name":"","type":"address"}],"name":"leverageCount","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  {"inputs":[{"name":"","type":"address"},{"name":"","type":"uint256"}],"name":"leverages","outputs":[{"name":"user","type":"address"},{"name":"token","type":"address"},{"name":"collateralAmount","type":"uint256"},{"name":"liquidatedAmount","type":"uint256"},{"name":"fullAmount","type":"uint256"},{"name":"borrowedAmount","type":"uint256"},{"name":"liquidationTime","type":"uint256"},{"name":"liquidationClaim","type":"uint256"},{"name":"isLiquidated","type":"bool"},{"name":"active","type":"bool"},{"name":"creationTime","type":"uint256"},{"name":"timeOfClosure","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"name":"","type":"address"},{"name":"","type":"uint256"}],"name":"leverages","outputs":[{"name":"user","type":"address"},{"name":"token","type":"address"},{"name":"collateralAmount","type":"uint256"},{"name":"liquidatedAmount","type":"uint256"},{"name":"fullAmount","type":"uint256"},{"name":"borrowedAmount","type":"uint256"},{"name":"liquidationTime","type":"uint256"},{"name":"liquidationClaim","type":"uint256"},{"name":"isLiquidated","type":"bool"},{"name":"active","type":"bool"},{"name":"creationTime","type":"uint256"},{"name":"timeOfClosure","type":"uint256"},{"name":"leverage","type":"tuple","components":[{"name":"leverageBuyAmount","type":"uint256"},{"name":"cashedOut","type":"uint256"}]}],"stateMutability":"view","type":"function"},
 ] as const;
 
 export class TradingModule {

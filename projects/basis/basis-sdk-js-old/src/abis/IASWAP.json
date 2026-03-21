@@ -1,89 +1,32 @@
 {
   "_format": "hh-sol-artifact-1",
-  "contractName": "IASwap",
-  "sourceName": "contracts/MarketTrading.sol",
+  "contractName": "IASWAP",
+  "sourceName": "contracts/LOANS.sol",
   "abi": [
     {
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "amount",
+          "name": "loanId",
           "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "percentage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "isLeverage",
+          "type": "bool"
         },
         {
           "internalType": "uint256",
           "name": "minOut",
           "type": "uint256"
-        },
-        {
-          "internalType": "address[]",
-          "name": "path",
-          "type": "address[]"
-        },
-        {
-          "internalType": "bool",
-          "name": "wrapTokens",
-          "type": "bool"
         }
       ],
-      "name": "buyTokens",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "marketToken",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "inputToken",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "inputAmount",
-          "type": "uint256"
-        }
-      ],
-      "name": "convertToNative",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minOut",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address[]",
-          "name": "path",
-          "type": "address[]"
-        },
-        {
-          "internalType": "bool",
-          "name": "swapToETH",
-          "type": "bool"
-        }
-      ],
-      "name": "sellTokens",
+      "name": "partialLoanSell",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

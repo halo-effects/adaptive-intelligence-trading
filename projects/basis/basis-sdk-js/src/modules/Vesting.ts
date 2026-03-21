@@ -435,6 +435,65 @@ export class VestingModule {
   }
 
   /**
+   * Returns the total vested amount for a vesting schedule.
+   */
+  async getVestedAmount(vestingId: bigint): Promise<bigint> {
+    return this.client.publicClient.readContract({
+      address: this.vestingAddress,
+      abi: AVestingArtifact.abi,
+      functionName: 'getVestedAmount',
+      args: [vestingId],
+    }) as Promise<bigint>;
+  }
+
+  /**
+   * Returns the active loan ID for a vesting schedule.
+   */
+  async getActiveLoan(vestingId: bigint): Promise<bigint> {
+    return this.client.publicClient.readContract({
+      address: this.vestingAddress,
+      abi: AVestingArtifact.abi,
+      functionName: 'getActiveLoan',
+      args: [vestingId],
+    }) as Promise<bigint>;
+  }
+
+  /**
+   * Returns vesting IDs for a given token within a specified index range.
+   */
+  async getTokenVestingIds(token: Address, startIndex: bigint, endIndex: bigint): Promise<bigint[]> {
+    return this.client.publicClient.readContract({
+      address: this.vestingAddress,
+      abi: AVestingArtifact.abi,
+      functionName: 'getTokenVestingIds',
+      args: [token, startIndex, endIndex],
+    }) as Promise<bigint[]>;
+  }
+
+  /**
+   * Returns vesting details for multiple vesting IDs in a single call.
+   */
+  async getVestingDetailsBatch(vestingIds: bigint[]) {
+    return this.client.publicClient.readContract({
+      address: this.vestingAddress,
+      abi: AVestingArtifact.abi,
+      functionName: 'getVestingDetailsBatch',
+      args: [vestingIds],
+    });
+  }
+
+  /**
+   * Returns the total number of vesting schedules created.
+   */
+  async getVestingCount(): Promise<bigint> {
+    return this.client.publicClient.readContract({
+      address: this.vestingAddress,
+      abi: AVestingArtifact.abi,
+      functionName: 'vestingCount',
+    }) as Promise<bigint>;
+  }
+
+  /**
    * Returns all vesting IDs created by a given creator.
    */
   async getVestingsByCreator(creator: Address): Promise<bigint[]> {

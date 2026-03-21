@@ -262,18 +262,17 @@ export class PredictionMarketsModule {
   /**
    * Returns the initial reserves required for a given number of outcomes.
    */
-  async getInitialReserves(numOutcomes: bigint): Promise<bigint> {
+  async getInitialReserves(numOutcomes: bigint): Promise<readonly [bigint, bigint]> {
     return this.client.publicClient.readContract({
       address: this.marketTradingAddress,
       abi: AMarketTradingArtifact.abi,
       functionName: 'getInitialReserves',
       args: [numOutcomes],
-    }) as Promise<bigint>;
+    }) as Promise<readonly [bigint, bigint]>;
   }
 
   /**
-   * Buys from order book and AMM in a single transaction.
-   * Fills specified orders first, then routes remaining input to the AMM.
+   * Returns the number of outcomes for a market.
    */
   async getNumOutcomes(marketToken: Address): Promise<bigint> {
     return this.client.publicClient.readContract({

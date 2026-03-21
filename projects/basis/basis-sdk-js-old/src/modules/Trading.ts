@@ -19,6 +19,14 @@ export class TradingModule {
     this.swapAddress = swapAddress;
   }
 
+  private async _syncLoan(txHash: string) {
+    try {
+      await this.client.api.syncLoan(txHash);
+    } catch (e: any) {
+      console.warn('Loan sync warning:', e.message || e);
+    }
+  }
+
   /**
    * Automatically approves the token to be spent by the SWAP contract.
    * Internal helper function.
@@ -196,6 +204,7 @@ export class TradingModule {
     const hash = await this.client.walletClient.writeContract(request);
     const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
 
+    this._syncLoan(hash);
     return { hash, receipt };
   }
 
@@ -219,6 +228,7 @@ export class TradingModule {
     const hash = await this.client.walletClient.writeContract(request);
     const receipt = await this.client.publicClient.waitForTransactionReceipt({ hash });
 
+    this._syncLoan(hash);
     return { hash, receipt };
   }
 

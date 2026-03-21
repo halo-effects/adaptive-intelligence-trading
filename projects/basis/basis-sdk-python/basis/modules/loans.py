@@ -113,7 +113,7 @@ class LoansModule:
     def increase_loan(self, hub_id: int, amount_to_add: int):
         """Increases collateral on an existing loan. Auto-approves the collateral token."""
         loan_details = self.get_user_loan_details(self.client.account.address, hub_id)
-        collateral = loan_details[4]  # collateral address at index 4
+        collateral = loan_details[3]  # collateralToken at index 3 in FullLoanDetails struct
         self._approve_if_needed(collateral, self.loan_hub_address, amount_to_add)
         func = self.contract.functions.increaseLoan(hub_id, amount_to_add)
         result = self._build_and_send_tx(func)
