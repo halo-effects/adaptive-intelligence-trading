@@ -86,7 +86,7 @@ Locked → staking.borrow(amount, days) → Liquid STASIS
 Liquid → staking.repay() → Loan cleared, can now unlock
 ```
 
-**Quick exit**: `staking.sell(shares, claimUSDC=True)` does atomic unwrap→USDB in one transaction.
+**Quick exit**: `staking.sell(shares, claimUSDB=True)` does atomic unwrap→USDB in one transaction.
 
 ---
 

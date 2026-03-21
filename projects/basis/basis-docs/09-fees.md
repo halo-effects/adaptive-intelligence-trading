@@ -44,7 +44,7 @@
 | Lock / unlock | 0% (gas only) |
 | Entry (buy STASIS + wrap) | ~0.81% + gas |
 | Exit (unwrap + sell STASIS) | ~0.81% + gas |
-| Quick exit (sell claimUSDC) | ~0.81% + gas (1 tx) |
+| Quick exit (sell claimUSDB) | ~0.81% + gas (1 tx) |
 | Full round-trip | ~1.62% (break-even yield needed) |
 
 ### Gas Costs (BSC)

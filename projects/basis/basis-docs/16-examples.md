@@ -300,19 +300,19 @@ async function loanOperations() {
   const loanResult = await client.loans.takeLoan(MAINTOKEN, COLLATERAL_TOKEN, parseUnits("100", 18), 30n);
   console.log("Loan taken:", loanResult.hash);
 
-  // 2. Get loan details
+  // 2. Get loan details — hubId is 1-indexed (first loan = 1, not 0)
   const walletAddress = client.walletClient.account.address;
   const loanCount = await client.loans.getUserLoanCount(walletAddress);
-  const loanId = loanCount - 1;
-  const details = await client.loans.getUserLoanDetails(walletAddress, loanId);
+  const hubId = loanCount; // loanCount IS the latest hubId (1-indexed)
+  const details = await client.loans.getUserLoanDetails(walletAddress, hubId);
   console.log("Loan details:", details);
 
   // 3. Extend by 15 days (pay in USDB)
-  const extendResult = await client.loans.extendLoan(loanId, 15, true, false);
+  const extendResult = await client.loans.extendLoan(hubId, 15, true, false);
   console.log("Loan extended:", extendResult.hash);
 
   // 4. Repay in full
-  const repayResult = await client.loans.repayLoan(loanId);
+  const repayResult = await client.loans.repayLoan(hubId);
   console.log("Loan repaid:", repayResult.hash);
 }
 ```
@@ -331,15 +331,16 @@ def loan_operations():
     loan_result = client.loans.take_loan(MAINTOKEN, COLLATERAL_TOKEN, 100 * 10**18, 30)  # 100 tokens
     print("Loan taken:", loan_result["hash"])
 
+    # hubId is 1-indexed (first loan = 1, not 0)
     loan_count = client.loans.get_user_loan_count(client.wallet_address)
-    loan_id = loan_count - 1
-    details = client.loans.get_user_loan_details(client.wallet_address, loan_id)
+    hub_id = loan_count  # loan_count IS the latest hubId (1-indexed)
+    details = client.loans.get_user_loan_details(client.wallet_address, hub_id)
     print("Loan details:", details)
 
-    extend_result = client.loans.extend_loan(loan_id, 15, True, False)
+    extend_result = client.loans.extend_loan(hub_id, 15, True, False)
     print("Loan extended:", extend_result["hash"])
 
-    repay_result = client.loans.repay_loan(loan_id)
+    repay_result = client.loans.repay_loan(hub_id)
     print("Loan repaid:", repay_result["hash"])
 ```
 

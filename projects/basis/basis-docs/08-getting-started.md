@@ -89,7 +89,7 @@ print(tokens["data"])
 
 ### Full Mode (private key — auto SIWE auth + API key + on-chain writes)
 
-Automatically authenticates via SIWE, provisions an API key, and enables all write operations. **This is the mode you want for agents.**
+Automatically authenticates via SIWE, provisions an API key, and enables all write operations. **This is the mode you want for agents.** Sessions are persistent — once authenticated, you don't need to re-authenticate. Create the client once and use it for the lifetime of your agent.
 
 **JavaScript:**
 

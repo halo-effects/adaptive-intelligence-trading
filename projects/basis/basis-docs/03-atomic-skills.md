@@ -41,7 +41,7 @@ result = client.trading.buy("0xTokenAddress", 5 * 10**18)
 | `tokenAddress` | string | Token to buy |
 | `usdbAmount` | bigint/int | USDB amount (18 decimals) |
 | `minOut` | bigint/int | Min tokens to receive (slippage guard). Default: 0 |
-| `wrapTokens` | boolean | Wrap output. Default: false |
+| `wrapTokens` | boolean | When true, wraps the purchased tokens into their wrapped equivalent (e.g., STASIS → wSTASIS). Useful if you plan to stake immediately after buying — saves a separate wrap transaction. Default: false. |
 
 ---
 
@@ -213,7 +213,10 @@ Returns: `number`
 
 Create and manage tokens. All tokens created here earn the creator 20% of trading fees forever.
 
-**Stable+ vs Floor+**: These are separate token types controlled by a different parameter (not `hybridMultiplier`). `hybridMultiplier` only controls the stability/volatility level of **Floor+** tokens. The parameter that determines Stable+ vs Floor+ is TBD — check with Alex or the contract ABI.
+**Stable+ vs Floor+**: Both are controlled by `hybridMultiplier`:
+- **Floor+** (values 1–90): Price moves up and down with a rising floor. The value controls stability — 1 = most volatile (50% stabilized vs standard AMM), 90 = most stable (near Stable+ behavior). The dapp UI shows this as a 0%–100% stability slider.
+- **Stable+** (value 100): Price only goes up (up-only mechanics via slippage retention). 0.5% trading fee vs 1.5% for Floor+.
+- **Values 91–99: Do not use.** They work technically but are disallowed by convention — there's no practical difference between a 91 Floor+ and a Stable+. Pick 1–90 or exactly 100.
 
 ---
 
@@ -249,16 +252,27 @@ print("Token:", result["token_address"])
 |--------|----------|-------------|
 | `symbol` | yes | Token ticker |
 | `name` | yes | Token full name |
-| `hybridMultiplier` | yes | Price stability dial for Floor+ tokens (1–100). Controls how stabilized the token is compared to a standard constant-product AMM. **1 = 50% stabilized** (more volatile, price moves faster). **100 = 90% stabilized** (very stable but NOT Stable+ — that's a separate parameter). The range is a gradient from 50% to 90% stabilization. Higher = more stable, lower = more volatile. Does not apply to Stable+ tokens. |
-| `startLP` | yes | Starting virtual liquidity paired with the token in the LP (100–10000, in USDB-equivalent via STASIS). Controls price sensitivity: **lower = more volatile** (e.g., 1000 means price increases ~$1 per $1K in buys), **higher = smoother** (e.g., 10000 means price increases ~$1 per $10K in buys). **Note:** The ~$1 per unit of LP relationship only holds at hybridMultiplier=1. At higher hybrid values, the price increase per unit of LP is a fraction of $1 (since higher stability dampens price movement). The percentage change per trade is the same regardless of startLP — it only affects the absolute price gradient and slippage at launch. |
+| `hybridMultiplier` | yes | Controls token type and stability. **1–90 = Floor+** (price moves both ways with rising floor; 1 = most volatile, 90 = most stable). **100 = Stable+** (up-only, price can never decrease). Do not use values 91–99. The dapp UI maps a 0%–100% slider to values 1–90 for Floor+, with a separate Stable+ toggle that sets 100. |
+| `startLP` | yes | Starting virtual liquidity paired with the token in the LP (100–10000, in USDB-equivalent via STASIS). Controls how much capital is needed to move the price. See examples below. |
+
+**startLP + hybridMultiplier interaction:**
+
+| hybridMultiplier | startLP | $1K buy moves price | $10K buy moves price |
+|---|---|---|---|
+| 1 (most volatile) | 1,000 | +$1.00 | +$10.00 |
+| 1 (most volatile) | 10,000 | +$0.10 | +$1.00 |
+| 50 (mid stability) | 1,000 | +fraction of $1 | +fraction of $10 |
+| 50 (mid stability) | 10,000 | +fraction of $0.10 | +fraction of $1 |
+
+**Key insight:** At hybridMultiplier=1, price moves $1 per startLP-equivalent in buys ($1K LP → $1 per $1K buy). At higher hybrid values, price moves a fraction of that (the stability dampens it). **The percentage change is the same regardless of startLP** — a $1K buy into a $1K LP pool moves the price the same *percentage* as a $10K buy into a $10K LP pool. startLP controls the *absolute dollar amount* needed to move the price and affects slippage at launch. Lower LP = more price impact per trade.
 | `description` | no | Platform description |
 | `imageUrl` | no | Auto-resized to 512×512 WebP |
 | `website` / `telegram` / `twitterx` | no | Social links |
-| `frozen` | no | Start frozen (default: false) |
-| `usdbForBonding` | no | USDB for bonding (default: 0) *(reward phase allocation)* |
-| `autoVest` | no | Enable auto-vesting |
-| `autoVestDuration` | no | Vesting duration in days |
-| `gradualAutovest` | no | Gradual vs cliff vesting |
+| `frozen` | no | Start token frozen (default: false). When true, only whitelisted wallets can trade until you call `disableFreeze()`. Useful for controlled launches or pre-sale allocation. |
+| `usdbForBonding` | no | USDB volume threshold (18 decimals) that defines the reward phase (default: 0 = no reward phase). The reward phase lasts until this volume of trading is reached — early buyers during this period earn reward shares (claimable via `claimRewards()`). The creator sets this at token creation. Once the volume threshold is hit, `hasBonded` flips to true and the reward phase ends. *(Parameter name is legacy — this funds the reward phase, not a bonding curve.)* |
+| `autoVest` | no | Enable auto-vesting for the creator's tokens (default: false). When true, creator tokens are automatically locked in a vesting schedule instead of being immediately available. Signals long-term commitment. |
+| `autoVestDuration` | no | Vesting duration in days. Only applies when `autoVest` is true. |
+| `gradualAutovest` | no | When true, tokens vest gradually (linear unlock over the duration). When false, tokens vest as a cliff (all unlock at the end). Only applies when `autoVest` is true. |
 
 Returns: `{ hash, receipt, tokenAddress, imageUrl, metadata }`
 
@@ -476,14 +490,14 @@ result = client.staking.buy(100 * 10**18)
 ---
 
 ### `borrow(stasisAmount, days)` — Borrow Against Vault
-**What it does:** Pledges STASIS as collateral and borrows USDB against it. USDB received = collateral value minus 2% fee.
+**What it does:** Borrows USDB against your locked wSTASIS. The `stasisAmount` param is denominated in **STASIS units** (not wSTASIS shares) — the contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
 **Module:** `client.staking`
 **Fee:** 2% flat origination fee
 **Earns airdrop points** — a one-time bonus at origination plus daily accrual while active.
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `stasisAmount` | bigint/int | STASIS to pledge as collateral |
+| `stasisAmount` | bigint/int | STASIS-denominated amount to pledge as collateral (converted from wSTASIS shares internally using the current exchange ratio) |
 | `days` | bigint/int | Loan duration in days |
 
 ---
@@ -745,8 +759,8 @@ print("Market:", market["market_token_address"])
 | `maintoken` | yes | MAINTOKEN address |
 | `seedAmount` | no | USDB seed (min 50 for public) |
 | `description` / `imageUrl` / `website` / `telegram` / `twitterx` | no | Metadata |
-| `frozen` | no | Start frozen |
-| `bonding` | no | Bonding amount |
+| `frozen` | no | Start market frozen (default: false). When true, only whitelisted wallets can buy shares until unfrozen. |
+| `bonding` | no | USDB amount (18 decimals) to allocate to the reward phase for this market's Predict+ token (default: 0). Same concept as `usdbForBonding` on token creation — funds reward shares for early buyers. |
 
 Returns: `{ hash, receipt, marketTokenAddress, imageUrl, metadata }`
 
@@ -976,6 +990,10 @@ Private prediction markets with restricted access. Extends all Prediction Market
 ### `createMarket(marketName, symbol, endTime, optionNames, maintoken, privateEvent, frozen, bonding, seedAmount?)`
 **What it does:** Creates a private prediction market. Auto-fetches and attaches creation fee.
 **Module:** `client.privateMarkets`
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `privateEvent` | boolean | When true, restricts who can buy shares — only whitelisted wallets can participate until toggled via `togglePrivateEventBuyers()`. |
 
 ---
 
