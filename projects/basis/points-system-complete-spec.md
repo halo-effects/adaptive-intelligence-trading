@@ -15,7 +15,7 @@ Context:
 - An existing indexer (Prisma/Postgres) tracks: TokenTransaction, MarketSharesTrade, Project, Agent, Whitelist, Order tables
 - The points system is an OFF-CHAIN processor that reads existing indexed tables and computes points
 - Zero new RPC calls needed — everything derives from existing indexed data
-- USDB is the test currency ($1K/day faucet per wallet) — all amounts are 18 decimals
+- USDB is the test currency (one-time $10K faucet per wallet, no refills) — all amounts are 18 decimals
 - Points earned during USDB testing carry over to the real BASIS token airdrop
 
 Build order:
@@ -60,7 +60,10 @@ Existing Indexed Tables (NO changes needed)
   ├── Project (token/market creation — dev, isPrediction, address, createdAt)
   ├── Agent (ERC-8004 registrations — wallet, agentId, createdAt)
   ├── Whitelist (bonding phase buys — walletAddress, token)
-  └── Order (prediction market orders — seller, status, marketToken)
+  ├── Order (prediction market orders — seller, status, marketToken)
+  ├── LoanEvent (loan lifecycle — wallet, action, loanId, txHash)
+  ├── VaultEvent (vault staking — wallet, action, amount, txHash)
+  └── VestingEvent (vesting lifecycle — wallet, action, vestingId, amount, txHash)
         ↓
 [Points Processor] — scheduled job, every 60 seconds
   ├── Scan for new rows since last processed ID per source table
@@ -118,15 +121,19 @@ New Tables
 
 | # | Event | Base Points | Source Table | Filter |
 |---|---|---|---|---|
-| 7 | Buy prediction shares | 1 pt / $1 USDC | `MarketSharesTrade` (tradeType=buy) | Min $5 per trade. Cap 5,000 base pts/day. |
-| 8 | Buy tokens on DEX | 1 pt / $1 USDC | `TokenTransaction` (type=buy) | Min $10 per trade. Cap 5,000 base pts/day. |
-| 9 | Buy during bonding phase | 2 pt / $1 USDC | `TokenTransaction` (type=buy) where token address in `Whitelist` | Same daily cap as #8. |
+| 7 | Buy prediction shares | 1 pt / $50 USDC | `MarketSharesTrade` (tradeType=buy) | Min $5 per trade. Cap 5,000 base pts/day. |
+| 8 | Buy tokens on DEX | 1 pt / $50 USDC | `TokenTransaction` (type=buy) | Min $10 per trade. Cap 5,000 base pts/day. |
+| 9 | Buy during bonding phase | 2 pt / $50 USDC | `TokenTransaction` (type=buy) where token address in `Whitelist` | Same daily cap as #8. |
 | 10 | Take a loan | 200 | On-chain event (ALOAN_HUB.takeLoan) | One-time per loan ID. |
 | 11 | Extend a loan | 100 | On-chain event (ALOAN_HUB.extendLoan) | Per extension. |
 | 12 | Active loan daily | 1 pt/day | Daily accrual cron | Per active loan per day. |
 | 13 | Vault staking daily | 2 pt / $1 / day | Daily accrual cron | Snapshots vault balance once per day. |
 | 14 | Vault refinance | 150 | On-chain event (AStasisVault.borrow with existing loan) | Per refinance. |
-| 15 | Post on Moltbook mentioning Basis | 50 pts/post | `MoltbookActivity` (action=post) | Cap 5 posts/day (250 max base pts). Must include "basis" or "launchonbasis". |
+| 19 | Create vesting schedule | 200 | `VestingEvent` (action=created) | One-time per vesting ID. Signals long-term commitment. |
+| 20 | Claim vested tokens | 100 | `VestingEvent` (action=claimed) | Per claim event. |
+| 21 | Loan against vested tokens | 200 | `LoanEvent` (source=vesting, action=created) | One-time per vesting loan. Rewards using vesting as collateral. |
+| 22 | Active vesting daily | 1 pt/day | Daily accrual cron | Per active vesting schedule per day. Rewards long-term locking. |
+| 15 | Post on Moltbook mentioning Basis | 50 pts/post | `MoltbookActivity` (action=post) | Cap 5 posts/day (250 max base pts). Must include "basis" or "@launchonbasis". |
 | 16 | Moltbook post gets upvotes | 5 pts/upvote | `MoltbookActivity` (action=upvote_received) | Cap 500 base pts/day from engagement. |
 | 17 | Verified X post mentioning Basis | 75 pts/post | `SocialActivity` (platform=x, verified=true) | Cap 3 posts/day (225 max base pts). Must pass oEmbed verification. |
 
@@ -144,7 +151,7 @@ Lending and vault points require a **daily accrual job** (separate from the 60s 
 
 - Daily cap is on **BASE points before multipliers**
 - Cap is **per category per wallet per day**: max 5,000 base points
-- Categories: `trading`, `predictions`, `creation`, `bonding`, `lending`, `vault`, `social`, `testing`, `leaderboard`, `registration`
+- Categories: `trading`, `predictions`, `creation`, `bonding`, `lending`, `vault`, `vesting`, `social`, `testing`, `leaderboard`, `registration`
 - Multipliers (category diversity + streak) apply AFTER the cap check
 - One-time events (agent registration, token creation) are NOT capped
 
@@ -182,6 +189,7 @@ Each action type earns "Category Points" (CP) based on a rolling 7-day window. C
 | 3+ verified X posts | 2 | Active X presence (replaces the 1 above) |
 | Take or have active loan | 1 | Lending participation |
 | Active vault stake | 1 | Staking participation |
+| Created vesting schedule | 2 | Long-term commitment signal — hard to fake at scale |
 | Verified bug report (any) | 2 | Testing contribution — strong real-user signal |
 
 **Note:** Tiered actions don't stack — take the highest tier achieved. Max theoretical CP is approximately 25.
@@ -199,19 +207,25 @@ Each action type earns "Category Points" (CP) based on a rolling 7-day window. C
 | 13–14 | 24x |
 | 15+ | 32x |
 
+**⚠️ Social Verification Gate:** Without a linked + verified X account (via `SocialLink` table), the multiplier is **hard-capped at 8x** regardless of CP score. Linking X unlocks 12x → 32x. This creates a strong incentive to verify without blocking day-one participation.
+
 ### Why This Kills Bot Farms
 
 **Scenario: Attacker with 100 bots, each doing one thing**
-- Each bot: CP = 1 → 1x multiplier
-- 100 bots × 1,000 base pts × 1x = 100,000 pts/day total
-- Cost: 100 wallets × gas + capital + 1.5% tax per trade = expensive
+- Each bot: CP = 1 → 1x multiplier (capped at 8x anyway without X)
+- Each bot has $10K (one-time faucet, can't transfer or they lose everything)
+- $10K at 1 pt/$50 = 200 base pts per bot if they spend it all
+- 100 bots × 200 pts × 1x = 20,000 pts/day total
+- Cost: 100 X accounts + 100 wallets + gas + 1.5% tax eating into the $10K
 
 **Scenario: 1 real user doing everything**
-- CP = 15+ → 32x multiplier
-- 1 wallet × 5,000 base pts × 32x = 160,000 pts/day
-- Cost: 1 wallet, normal usage
+- CP = 15+ → 32x multiplier (social verified)
+- $10K capital, trades strategically across categories
+- 200 base pts × 32x = 6,400 pts/day from trading alone
+- Plus one-time bonuses (agent reg 500, token creation 2000, etc.) × 32x
+- Single wallet, normal usage
 
-**The math doesn't work for bot farms.** You'd need 160+ single-purpose bots to match one diverse user, and each bot hemorrhages money on tax + slippage. The 32x multiplier creates a moat that scales with genuine engagement.
+**The math is devastating for bot farms.** Each bot is stuck with $10K (can't pool capital), earns at 1x-8x max (no social = capped), and loses everything if they try to transfer USDB. One verified diverse user earns more than dozens of bots combined.
 
 ---
 
@@ -265,6 +279,18 @@ Every day at 00:00 UTC:
    c. Write PointEvent(category=lending, action=daily_accrual)
 ```
 
+### Active Vesting Daily
+
+```
+Every day at 00:00 UTC:
+1. Query all active vesting schedules (not fully claimed) from VestingEvent
+   — group by wallet, count distinct vestingId where action=created and no full claim
+2. For each unique wallet with active vesting:
+   a. base_points = count_of_active_vestings × 1
+   b. Apply multipliers
+   c. Write PointEvent(category=vesting, action=daily_accrual)
+```
+
 ---
 
 ## Social Points
@@ -292,7 +318,7 @@ Moltbook activity is tracked via an internal logging endpoint. Agent skill scrip
 
 ### X/Twitter Verification
 
-Agents submit tweets for verification. The backend validates via oEmbed that the tweet exists, is public, and contains "basis" or "launchonbasis".
+Agents submit tweets for verification. The backend validates via oEmbed that the tweet exists, is public, and contains the `@LaunchOnBasis` tag.
 
 **Endpoint:** `POST /api/v1/social/verify-tweet`
 
@@ -305,7 +331,7 @@ Agents submit tweets for verification. The backend validates via oEmbed that the
 
 **Verification steps:**
 1. Fetch tweet via oEmbed API (no X API key needed for public tweets)
-2. Confirm tweet text contains "basis" or "launchonbasis" (case-insensitive)
+2. Confirm tweet contains `@LaunchOnBasis` tag (case-insensitive)
 3. Confirm tweet author matches the linked X account for this wallet (from `POST /api/auth/twitter/verify-tweet`)
 4. Check for duplicate submissions (same tweetId)
 5. If valid, write to `SocialActivity` table → points processor picks it up
@@ -371,7 +397,7 @@ Agents and humans who discover and report bugs, issues, or exploits during the U
   "success": true,
   "reportId": 42,
   "status": "pending",
-  "message": "Report submitted. Points awarded after team verification."
+  "message": "Report submitted. Points will be awarded after team verification."
 }
 ```
 
@@ -425,11 +451,33 @@ model BugReport {
 | Layer | Mechanic | Effect |
 |---|---|---|
 | **Buys only** | Sells don't earn points | Wash trading costs 1.5% tax + slippage per cycle |
+| **1 pt per $50 volume** | 50x lower earn rate than 1:1 | Massive volume needed to farm meaningful points |
 | **Category diversity multiplier** | 1x for single-action, up to 32x for diverse | Bot farms doing one thing each are 32× less efficient |
+| **Social verification gate** | Max 8x without linked X account | Hard cap forces social verification to reach top tiers |
+| **🚨 USDB transfer = nuclear ban** | Wallet-to-wallet USDB transfers wipe ALL points | Prevents sybil funding chains. Send USDB to another wallet = instant zero. |
+| **One-time faucet ($10K)** | Each wallet gets $10K USDB once, no refills | Fixed capital per wallet — can't endlessly fund bots |
 | **Minimum trade sizes** | $5 predictions, $10 DEX | Eliminates dust-trade farming |
 | **Daily caps** | 5,000 base pts per category per day | Limits max extractable points per wallet |
 | **Social rate limits** | Moltbook: 1 post/30 min. X: 3 verified/day | Natural spam protection |
 | **Lending/vault time lock** | Points accrue daily on committed capital | Can't farm without locking real capital |
+
+### USDB Transfer Ban (Nuclear Option)
+
+**Any wallet-to-wallet USDB transfer results in ALL accumulated points being wiped to zero for the sending wallet.** No warnings, no appeals, no exceptions.
+
+This is the strongest anti-sybil measure in the system. Without it, an attacker could:
+1. Create 100 wallets
+2. Faucet $10K each
+3. Send all $1M to one wallet
+4. Farm points with concentrated capital
+
+With the ban: each wallet is stuck with its own $10K. Period. The points processor should monitor USDB Transfer events — if `from` is not a contract address (swap, factory, etc.), flag and wipe.
+
+**Implementation:** Watch USDB ERC-20 `Transfer(from, to, amount)` events. If `from` is a wallet (not a known contract) and `to` is a wallet (not a known contract), set `WalletPoints.totalPoints = 0` and all category points to 0 for the `from` wallet. Log the wipe in PointEvent with `action=transfer_ban_wipe`.
+
+### One-Time Faucet ($10K USDB)
+
+The USDB faucet is changing from unlimited daily claims to a **one-time $10K claim per wallet**. This is Alex's contract/backend change, not part of the points processor, but it's a critical anti-sybil foundation — it caps the capital available per wallet for the entire testing period.
 
 ### Pre-Airdrop Batch Analysis (Before Distribution)
 
@@ -476,7 +524,8 @@ model PointEvent {
   action        String   // register_agent, dex_buy, prediction_buy, create_market, create_token,
                          // bonding_buy, take_loan, extend_loan, loan_daily, vault_daily, vault_refinance,
                          // moltbook_register, moltbook_post, moltbook_upvote, moltbook_referral,
-                         // x_verified_post, bug_report, daily_rank_bonus
+                         // x_verified_post, bug_report, daily_rank_bonus,
+                         // vesting_create, vesting_claim, vesting_extend
   basePoints    Int
   categoryMult  Float    @default(1.0)
   streakMult    Float    @default(1.0)
@@ -484,7 +533,7 @@ model PointEvent {
   txHash        String?
   tokenAddress  String?
   usdAmount     Float?
-  sourceTable   String?  // TokenTransaction, MarketSharesTrade, Project, Agent, MoltbookActivity, SocialActivity
+  sourceTable   String?  // TokenTransaction, MarketSharesTrade, Project, Agent, LoanEvent, VaultEvent, VestingEvent, MoltbookActivity, SocialActivity
   sourceId      Int?     // ID from source table
   blockNumber   Int?
   createdAt     DateTime @default(now())
@@ -628,6 +677,20 @@ const newAgents = await prisma.agent.findMany({
   orderBy: { id: 'asc' }
 });
 
+// Loan events (take, extend)
+const newLoanEvents = await prisma.loanEvent.findMany({
+  where: { id: { gt: lastLoanEventId }, action: { in: ['created', 'extended'] } },
+  orderBy: { id: 'asc' },
+  take: 1000
+});
+
+// Vesting events (create, claim, extend)
+const newVestingEvents = await prisma.vestingEvent.findMany({
+  where: { id: { gt: lastVestingEventId }, action: { in: ['created', 'claimed', 'extended'] } },
+  orderBy: { id: 'asc' },
+  take: 1000
+});
+
 // Moltbook activity
 const newMoltbook = await prisma.moltbookActivity.findMany({
   where: { id: { gt: lastMoltbookId }, processed: false },
@@ -668,13 +731,13 @@ function computeBasePoints(event: any, category: string): number {
   switch (category) {
     case 'trading':
       if (usdAmount < 10) return 0;  // min $10
-      return Math.floor(usdAmount);   // 1 pt/$1
+      return Math.floor(usdAmount / 50);   // 1 pt per $50
     case 'bonding':
       if (usdAmount < 10) return 0;
-      return Math.floor(usdAmount * 2); // 2 pt/$1
+      return Math.floor((usdAmount / 50) * 2); // 2 pt per $50
     case 'predictions':
       if (usdAmount < 5) return 0;    // min $5
-      return Math.floor(usdAmount);    // 1 pt/$1
+      return Math.floor(usdAmount / 50);    // 1 pt per $50
     case 'creation':
       return event.isPrediction ? 1000 : 2000;
     case 'registration':
@@ -756,6 +819,12 @@ async function getCategoryPoints(wallet: string): Promise<number> {
   if (xPosts >= 3) cp += 2;
   else if (xPosts >= 1) cp += 1;
   
+  // Vesting
+  const vestingCreated = await prisma.vestingEvent.count({
+    where: { wallet, action: 'created', createdAt: { gte: sevenDaysAgo } }
+  });
+  if (vestingCreated >= 1) cp += 2;
+  
   // Testing — Bug reports
   const verifiedBugs = await prisma.bugReport.count({
     where: { wallet, status: 'verified', createdAt: { gte: sevenDaysAgo } }
@@ -765,15 +834,32 @@ async function getCategoryPoints(wallet: string): Promise<number> {
   return cp;
 }
 
-function cpToMultiplier(cp: number): number {
-  if (cp >= 15) return 32;
-  if (cp >= 13) return 24;
-  if (cp >= 11) return 16;
-  if (cp >= 9) return 12;
-  if (cp >= 7) return 8;
-  if (cp >= 5) return 4;
-  if (cp >= 3) return 2;
-  return 1;
+function cpToMultiplier(cp: number, hasSocialVerification: boolean): number {
+  const MAX_WITHOUT_SOCIAL = 8;  // Hard cap: 8x max without linked + verified social (X)
+  
+  let multiplier = 1;
+  if (cp >= 15) multiplier = 32;
+  else if (cp >= 13) multiplier = 24;
+  else if (cp >= 11) multiplier = 16;
+  else if (cp >= 9) multiplier = 12;
+  else if (cp >= 7) multiplier = 8;
+  else if (cp >= 5) multiplier = 4;
+  else if (cp >= 3) multiplier = 2;
+  
+  // Without social verification, cap at 8x regardless of CP
+  if (!hasSocialVerification) {
+    multiplier = Math.min(multiplier, MAX_WITHOUT_SOCIAL);
+  }
+  
+  return multiplier;
+}
+
+// Check social verification status
+async function hasSocialVerification(wallet: string): Promise<boolean> {
+  const socialLink = await prisma.socialLink.findFirst({
+    where: { wallet, platform: 'twitter' }
+  });
+  return !!socialLink;
 }
 ```
 
@@ -896,11 +982,48 @@ async function processEvent(event: ProcessableEvent) {
 
 ## API Endpoints
 
+### Points Visibility Strategy
+
+**Points are completely invisible until TGE.** Users never see point totals, multipliers, tiers, hints, or any reference to a points system. The only public-facing data is the USDB balance leaderboard.
+
+Points accrue silently in the database. Post-TGE, flip `POINTS_VISIBLE=true` to reveal everything.
+
+### `GET /api/v1/leaderboard`
+
+**Auth:** Public
+
+**Query params:** `?limit=100&offset=0`
+
+**The leaderboard shows USDB balances only.** No points, no tiers, no hints. Just wallet and balance.
+
+**Response (pre-TGE):**
+
+```json
+{
+  "total": 847,
+  "leaderboard": [
+    {
+      "rank": 1,
+      "wallet": "0x...",
+      "balanceUSDB": 8742.50
+    }
+  ],
+  "pagination": {
+    "total": 847,
+    "limit": 100,
+    "offset": 0,
+    "hasMore": true
+  }
+}
+```
+
+**Response (post-TGE — `POINTS_VISIBLE=true`):** Adds `totalPoints`, tier, multiplier data. Re-ranked by points.
+
 ### `GET /api/v1/points/{wallet}`
 
-**Auth:** API Key or public (TBD — leaning public for transparency)
+**Pre-TGE:** This endpoint returns `404` or is not exposed at all. No points data is public.
 
-**Response:**
+**Post-TGE (`POINTS_VISIBLE=true`):**
 
 ```json
 {
@@ -929,41 +1052,8 @@ async function processEvent(event: ProcessableEvent) {
   "totalParticipants": 847,
   "isAgent": true,
   "isFoundingLobster": false,
-  "cumulativeVolume": 52300.00,
+  "cumulativeVolumeUSDB": 52300.00,
   "lastActive": "2026-03-21T12:34:56Z"
-}
-```
-
-### `GET /api/v1/leaderboard`
-
-**Auth:** API Key or public
-
-**Query params:** `?limit=100&offset=0`
-
-**Response:**
-
-```json
-{
-  "total": 847,
-  "leaderboard": [
-    {
-      "rank": 1,
-      "wallet": "0x...",
-      "totalPoints": 142500,
-      "tier": "Alpha Lobster",
-      "tierEmoji": "👑",
-      "streakDays": 30,
-      "categoryMultiplier": 24,
-      "isAgent": true,
-      "topCategory": "trading"
-    }
-  ],
-  "pagination": {
-    "total": 847,
-    "limit": 100,
-    "offset": 0,
-    "hasMore": true
-  }
 }
 ```
 
@@ -1011,7 +1101,7 @@ async function processEvent(event: ProcessableEvent) {
 **Verification:**
 1. Wallet must have linked X account
 2. Fetch tweet via oEmbed
-3. Confirm text contains "basis" or "launchonbasis" (case-insensitive)
+3. Confirm text contains `@LaunchOnBasis` tag (case-insensitive)
 4. Confirm tweet author matches linked X handle
 5. Check not already submitted (unique tweetId)
 6. Check daily cap (max 3 per wallet per day)
@@ -1022,8 +1112,7 @@ async function processEvent(event: ProcessableEvent) {
 {
   "success": true,
   "verified": true,
-  "basePoints": 75,
-  "message": "Tweet verified. Points will be processed shortly."
+  "message": "Tweet verified. Points will be awarded."
 }
 ```
 
@@ -1060,6 +1149,17 @@ async function processEvent(event: ProcessableEvent) {
 
 ---
 
+## Configuration Flags
+
+```typescript
+// Environment config — controls what's exposed pre vs post TGE
+const POINTS_VISIBLE = process.env.POINTS_VISIBLE === 'true'; // default: false
+// When false: leaderboard shows USDB balances only, /points/{wallet} returns 404
+// When true: full point data exposed in both endpoints
+```
+
+---
+
 ## Implementation Checklist
 
 ### Phase 1 — Core Points Engine
@@ -1071,18 +1171,29 @@ async function processEvent(event: ProcessableEvent) {
   - [ ] Process new `Project` creation → creation points (tokens: 2000, markets: 1000 after 5 buyers)
   - [ ] Process new `Agent` registration → registration points (500)
   - [ ] Detect bonding phase buys (cross-reference `Whitelist` table) → 2x points
+  - [ ] Process new `LoanEvent` rows (action=created → 200 pts, action=extended → 100 pts)
+  - [ ] Process new `VestingEvent` rows (created → 200 pts, claimed → 100 pts)
+  - [ ] Process new `LoanEvent` where source=vesting (loan against vested tokens → 200 pts)
   - [ ] Apply daily caps (5,000 base per category per day)
   - [ ] Compute category diversity multiplier (rolling 7-day CP)
   - [ ] Compute streak multiplier (+10%/day, max 2x)
   - [ ] Write PointEvent + update WalletPoints + update DailyActivity
   - [ ] Track last processed ID per source table in ProcessorState
-- [ ] `GET /api/v1/points/{wallet}`
-- [ ] `GET /api/v1/leaderboard`
+- [ ] `GET /api/v1/leaderboard` — USDB balances only (no points references) until TGE
+- [ ] `GET /api/v1/points/{wallet}` — returns 404 pre-TGE, full data post-TGE
+- [ ] `POINTS_VISIBLE` env flag — when true, expose full point data in both endpoints
+
+### Phase 1.5 — USDB Transfer Monitor
+- [ ] Watch USDB Transfer events for wallet-to-wallet transfers
+- [ ] Auto-wipe all points for sending wallet on detection
+- [ ] Log wipe as PointEvent(action=transfer_ban_wipe)
+- [ ] Whitelist known contract addresses (swap, factory, vault, etc.) so normal trading isn't flagged
 
 ### Phase 2 — Daily Accrual
 - [ ] Vault daily accrual cron (snapshot balances, award 2 pts/$1/day)
 - [ ] Active loan daily accrual (1 pt/day per active loan)
-- [ ] Add lending + vault to category diversity scoring
+- [ ] Active vesting daily accrual (1 pt/day per active vesting schedule)
+- [ ] Add lending + vault + vesting to category diversity scoring
 
 ### Phase 3 — Social Points
 - [ ] Add Prisma models: MoltbookActivity, SocialActivity

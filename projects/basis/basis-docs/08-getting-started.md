@@ -1,0 +1,238 @@
+# Getting Started
+
+**What this covers:** Complete onboarding guide — getting USDB, installing the SDK, initialization modes, configuration options, first transactions.
+**Related sections:** → See: [15-contract-addresses.md](15-contract-addresses.md) for contract addresses · → See: [03-atomic-skills.md](03-atomic-skills.md) for all available methods · → See: [16-examples.md](16-examples.md) for complete working examples · → See: [10-errors.md](10-errors.md) for error handling
+
+---
+
+## Part 8 — Getting Started
+
+### Step 1: Get USDB
+
+Visit the faucet at [basis.exchange/faucet](https://basis.exchange/faucet). USDB is free — zero cost, zero risk. Get enough to experiment with.
+
+Your agent also needs a small amount of BNB for gas (~$0.01–$1.20 per transaction depending on complexity).
+
+---
+
+## SDK Overview
+
+The Basis SDK is a dual-language (TypeScript/JavaScript and Python) toolkit for interacting with the Basis DeFi ecosystem on Binance Smart Chain (BSC Mainnet). It provides a unified interface for token creation, trading, prediction markets, leveraged positions, lending, staking, vesting, and on-chain agent identity — all through a single client object.
+
+**Built for:** AI agents, algorithmic traders, and developers who need programmatic access to the Basis protocol. All methods return strongly-typed JSON that LLMs and automated systems can parse directly.
+
+---
+
+## 2. Installation
+
+**JavaScript / TypeScript:**
+
+```bash
+npm install basis-sdk
+```
+
+**Python:**
+
+```bash
+pip install basis-sdk
+```
+
+---
+
+## 3. Initialization Modes
+
+The SDK supports three initialization modes, each unlocking progressively more functionality.
+
+### Read-Only (no credentials)
+
+On-chain reads only. No private key or API key required.
+
+**JavaScript:**
+
+```js
+const { BasisClient } = require("basis-sdk");
+
+const client = new BasisClient();
+const price = await client.trading.getUSDPrice("0xTokenAddress...");
+console.log("USD price:", price);
+```
+
+**Python:**
+
+```python
+from basis import BasisClient
+
+client = BasisClient()
+price = client.trading.get_usd_price("0xTokenAddress...")
+print("USD price:", price)
+```
+
+### With API Key (read-only + off-chain data)
+
+Adds access to off-chain data endpoints (token lists, candles, trade history, etc.).
+
+**JavaScript:**
+
+```js
+const client = new BasisClient({ apiKey: "bsk_your_api_key" });
+const tokens = await client.api.getTokens({ limit: 10 });
+console.log(tokens.data);
+```
+
+**Python:**
+
+```python
+client = BasisClient(api_key="bsk_your_api_key")
+tokens = client.api.get_tokens(limit=10)
+print(tokens["data"])
+```
+
+### Full Mode (private key — auto SIWE auth + API key + on-chain writes)
+
+Automatically authenticates via SIWE, provisions an API key, and enables all write operations. **This is the mode you want for agents.**
+
+**JavaScript:**
+
+```js
+const client = await BasisClient.create({ privateKey: "0xYourPrivateKey..." });
+
+// Now you can trade, create tokens, take loans, etc.
+const { parseUnits } = require("viem");
+const result = await client.trading.buy("0xTokenAddress...", parseUnits("5", 18)); // 5 USDB
+console.log("Tx hash:", result.hash);
+```
+
+**Python:**
+
+```python
+client = BasisClient.create(private_key="0xYourPrivateKey...")
+
+result = client.trading.buy("0xTokenAddress...", 5_000_000_000_000_000_000)  # 5 USDB (18 decimals)
+print("Tx hash:", result["hash"])
+```
+
+---
+
+## 4. Configuration
+
+All options can be passed to the `BasisClient` constructor (or `BasisClient.create` for full mode).
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `privateKey` | `string` | — | Wallet private key. Enables write operations and automatic SIWE authentication. |
+| `apiKey` | `string` | — | API key for data endpoints. Auto-provisioned when `privateKey` is provided via `BasisClient.create`. |
+| `rpcUrl` | `string` | `https://bsc-dataseed.binance.org/` | Custom BSC RPC endpoint. Validated on connect — must return chainId 56. |
+| `apiDomain` | `string` | `https://launchonbasis.com` | Base URL for the Basis API. |
+| `agent` | `boolean` or `object` | — | ERC-8004 agent registration. Pass `true` for defaults, or `{ name, description, capabilities }` for custom metadata. |
+
+### Agent Registration at Initialization
+
+```js
+// Register with default metadata at startup
+const client = await BasisClient.create({ privateKey: "0x...", agent: true });
+
+// Register with custom metadata
+const client = await BasisClient.create({
+  privateKey: "0x...",
+  agent: { name: "MyBot", description: "Trading bot", capabilities: ["trade", "analyze"] }
+});
+```
+
+```python
+# Register with default metadata
+client = BasisClient.create(private_key="0x...", agent=True)
+
+# Register with custom metadata
+client = BasisClient.create(
+    private_key="0x...",
+    agent={"name": "MyBot", "description": "Trading bot", "capabilities": ["trade", "analyze"]}
+)
+```
+
+### Contract Address Overrides
+
+All contract addresses default to BSC Mainnet and can be overridden via constructor options. See [15-contract-addresses.md](15-contract-addresses.md) for all default addresses.
+
+---
+
+## Step 3: First Actions
+
+```python
+# Buy STASIS
+client.trading.buy(client.main_token_address, 50 * 10**18)
+
+# Stake in vault
+client.staking.buy(50 * 10**18)
+
+# Register as agent
+client.agent.register_and_sync()
+```
+
+```js
+// Buy STASIS
+await client.trading.buy(client.mainTokenAddress, parseUnits("50", 18));
+
+// Stake in vault
+await client.staking.buy(parseUnits("50", 18));
+
+// Register as agent
+await client.agent.registerAndSync();
+```
+
+You're now earning vault yield + airdrop points. Everything else builds from here.
+
+---
+
+## Step 4: Check Your Status
+
+```
+GET /api/v1/portfolio/{wallet}    — Full position summary
+GET /api/v1/points/{wallet}       — Airdrop points + tier + rank
+```
+
+Via SDK:
+```js
+const loans = await client.api.getLoans({ active: true });
+const tokens = await client.api.getTokens();
+```
+
+---
+
+## Token Amount Conventions
+
+All SDK methods expect raw integer amounts in the token's smallest unit. All Basis tokens use 18 decimals.
+
+| Token | Decimals | Example |
+|-------|----------|---------|
+| USDB | 18 | `5 * 10**18` = 5 USDB |
+| STASIS | 18 | `1 * 10**18` = 1 STASIS |
+| Factory tokens | 18 | `1 * 10**18` = 1 token |
+
+**JavaScript:**
+```js
+import { parseUnits, formatUnits } from "viem";
+const usdbRaw = parseUnits("5", 18);       // 5000000000000000000n
+const human = formatUnits(5000000000000000000n, 18);  // "5"
+```
+
+**Python:**
+```python
+usdb_raw = 5 * 10**18  # 5000000000000000000
+# or via web3:
+from web3 import Web3
+usdb_raw = Web3.to_wei(5, "ether")
+human = Web3.from_wei(5000000000000000000, "ether")  # 5
+```
+
+**Exception:** `sellPercentage()` takes a 1–100 integer, not a raw amount.
+
+---
+
+## Next Steps
+
+Once you're set up:
+1. Read [02-archetypes.md](02-archetypes.md) to identify your strategy
+2. Use [05-decision-trees.md](05-decision-trees.md) for situational decisions
+3. Reference [03-atomic-skills.md](03-atomic-skills.md) for every method signature
+4. Check [13-mistakes.md](13-mistakes.md) to avoid known pitfalls
+5. See [16-examples.md](16-examples.md) for complete working code templates

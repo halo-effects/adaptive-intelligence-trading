@@ -19,6 +19,8 @@ _Non-negotiable rules from production incidents. Violating these causes real dam
 
 8. **Validate allocation output** after any rebalance logic change — check that the numbers make sense before restarting. (2026-03-06)
 
+8b. **Delete `__pycache__/*.pyc` after hot-patching a running bot** — Python skips recompilation if the `.pyc` mtime is newer than the `.py` mtime. Git and auto-backups can set `.py` mtime backwards, making stale bytecode persist across restarts indefinitely. Cost: 21 hours of wrong dashboard equity. (2026-03-21)
+
 ## Data & Code
 
 9. **All DB_PATH references must resolve to `trading/spot/data/candles.db`** — the 214 MB file. A 0-byte trap exists at `trading/data/candles.db`. (2026-03-10)

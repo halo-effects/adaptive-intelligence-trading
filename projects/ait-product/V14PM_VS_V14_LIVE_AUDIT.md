@@ -281,5 +281,5 @@ Writes `cash` and `exchange_balance` to status.json.
 ### P2 — Operational gaps (fix soon)
 8. **Capital ledger** — deposit/withdrawal tracking
 9. **Periodic cash tracking** — double-entry verification
-10. ~~**Equity computation**~~ — ✅ FIXED 2026-03-20 (commit 812d5264)
+10. ~~**Equity computation**~~ — ✅ FIXED 2026-03-20 (commit 812d5264). **Post-mortem (2026-03-21):** Fix was on disk but not active for ~21 hours. Root cause: `.pyc` bytecode cache mtime (08:37:25) was 43 seconds newer than `.py` source mtime (08:36:42) due to git/auto-backup touching the file during an active editing session. Python skipped recompilation on every restart, serving stale bytecode with the old `fetch_balance()` (returns `usdt_free` ~$103) instead of the fixed `fetch_full_balance()` (returns `usdt_total` ~$351). Dashboard showed equity alternating between ~$103 (wrong, ~80% of syncs) and ~$346 (correct, when `fetch_open_positions()` compensated). Resolution: deleted stale `.pyc`, touched `.py`, restarted bot (PID 5036). **Lesson:** After code fixes to running bots, always delete `__pycache__/*.pyc` or use `python -B` to disable bytecode caching.
 11. **Pass real cash_available to engine tick** — not 0
