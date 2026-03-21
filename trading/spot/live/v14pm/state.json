@@ -1,14 +1,14 @@
 {
-  "saved_at": "2026-03-21T19:04:09.712150+00:00",
+  "saved_at": "2026-03-21T20:04:14.948296+00:00",
   "bot_state": "RUNNING",
   "capital": 350.0,
   "coins": {
     "GRASS/USDT": {
       "symbol": "GRASS/USDT",
-      "allocated_capital": 15.34125704831301,
-      "tp_order_id": "222544856",
-      "tp_limit_price": 0.4023675564855908,
-      "last_candle_ts": 1774116000000,
+      "allocated_capital": 262.58322710249047,
+      "tp_order_id": "222562153",
+      "tp_limit_price": 0.3962,
+      "last_candle_ts": 1774119600000,
       "cumulative_funding": 0.6562358500000002,
       "last_funding_check_ms": 1774105081113,
       "engine_state": {
@@ -17,14 +17,14 @@
         "profile": "high",
         "leverage": 1.0,
         "phase": "LONG_DCA",
-        "capital": 26.071788105598387,
+        "capital": 104.39540635,
         "phase_start_date": "2026-03-19 15:00:00",
-        "long_coins": 68.17351072954322,
-        "long_avg_entry": 0.39642123791683825,
+        "long_coins": 635.4,
+        "long_avg_entry": 0.3890432326094,
         "long_layers": 2,
         "long_last_buy": "2026-03-20 07:00:00",
-        "long_tp": 0.4023675564855908,
-        "long_cost": 27.02542751654238,
+        "long_tp": 0.39487888109854097,
+        "long_cost": 247.19807000001273,
         "long_trades": -45,
         "long_wins": 1,
         "long_pnl": 0.4496,
@@ -52,17 +52,17 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-03-21",
         "_live_mode": true,
-        "_last_candle_ts": 1774116000000,
+        "_last_candle_ts": 1774119600000,
         "start_time": 1773936951.952672,
         "current_price": 0.3831
       }
     }
   },
   "router": {
-    "active_pool_cash": 236.26804582077506,
-    "reserve_pool_cash": 87.5,
+    "active_pool_cash": 69.40656815000003,
+    "reserve_pool_cash": 35.0,
     "active_allocations": {
-      "GRASS/USDT": 27.025427516542383
+      "GRASS/USDT": 247.19807000001273
     },
     "reserve_allocations": {}
   },
@@ -71,7 +71,7 @@
     "signal_type": null,
     "alert_state": "NONE"
   },
-  "tg_update_offset": 715174393,
+  "tg_update_offset": 715174484,
   "open_deals": {
     "GRASS/USDT:long": {
       "deal_id": 14,
