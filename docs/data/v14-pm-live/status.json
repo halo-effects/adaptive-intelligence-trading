@@ -7,9 +7,15 @@
   "leverage": 1.0,
   "bot_state": "RUNNING",
   "capital": 350.0,
-  "equity": 103.58,
-  "pnl_pct": -70.41,
+  "equity": 344.82,
+  "cash": 104.49,
+  "pnl_pct": -1.48,
+  "exchange_balance": {
+    "usdt_free": 104.48539152,
+    "usdt_total": 351.75241396
+  },
   "total_pnl": 24.4036,
+  "total_realized_pnl": 24.4036,
   "deals_completed": 13,
   "win_rate": 100.0,
   "coins": {
@@ -17,19 +23,19 @@
       "state": "LONG_DCA",
       "side": "long",
       "layers": 2,
-      "avg_entry": 0.396421,
+      "avg_entry": 0.389043,
       "current_price": 0.3831,
-      "unrealized_pnl": -0.91,
-      "invested": 27.03,
-      "realized_pnl": 0.45,
+      "unrealized_pnl": -6.9359,
+      "invested": 247.2,
+      "realized_pnl": 0.6543,
       "lifecycle_phase": "LONG_DCA",
       "cfgi": null,
-      "next_tp_price": 0.4023675564855908,
+      "next_tp_price": 0.3962,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
       "total_fees": 0.19,
       "cumulative_funding": 0.656236,
-      "tp_order_id": "222544856"
+      "tp_order_id": "222562153"
     }
   },
   "symbols": [
@@ -39,7 +45,7 @@
   "approved_symbols": [
     "GRASS/USDT"
   ],
-  "regime": "NONE",
+  "regime": "RANGING",
   "regime_detail": {
     "alert_state": "NONE",
     "signal_type": null,
@@ -48,9 +54,11 @@
   "trend_direction": "bullish",
   "fear_greed_index": 40.95,
   "router": {
-    "active_cash": 236.27,
-    "reserve_cash": 87.5
+    "active_cash": 69.41,
+    "reserve_cash": 35.0
   },
-  "uptime_hours": 48.97,
-  "last_update": "2026-03-21T21:03:12.942736+00:00"
+  "uptime_hours": 4.77,
+  "timeframe": "1h",
+  "last_update": "2026-03-21T21:13:04.389561+00:00",
+  "total_fees": 0.0
 }
