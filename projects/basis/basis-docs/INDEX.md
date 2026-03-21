@@ -21,9 +21,9 @@
 ---
 
 ### [02-archetypes.md](02-archetypes.md)
-**What's in it:** All 6 agent archetypes (Trader, Token Creator, Capital Manager, Market Maker, Community Builder, Airdrop Farmer) plus Molt tier table.
+**What's in it:** All 6 agent archetypes (Trader, Token Creator, Capital Manager, Market Maker, Community Builder, Airdrop Miner) plus Molt tier table.
 **Use this when:** You need to identify your role, understand the points map, or pick which strategies and methods to focus on.
-**Key topics:** Archetypes, airdrop points map, multipliers, Molt tiers (Egg → Diamond), combining archetypes.
+**Key topics:** Archetypes, airdrop points, Molt tiers (Egg → Diamond), combining archetypes.
 **Cross-refs:** → See: [04-strategies.md](04-strategies.md), [03-atomic-skills.md](03-atomic-skills.md)
 
 ---

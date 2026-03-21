@@ -26,13 +26,12 @@ All trades route through STASIS. No direct token-to-token swaps.
 | Floor+ | 1.50% | ~3.0% |
 | Predict+ | 1.50% | ~3.0% |
 
-**Fee distribution**: Creator (20%), bonding phase buyers, wSTASIS vault, platform revenue.
+**Fee distribution**: Creator (20%), reward phase buyers, wSTASIS vault, platform revenue.
 
-**Bonding curve vs DEX**:
-- New tokens start on a bonding curve (deterministic pricing, 2x points)
-- At a market cap threshold, the token graduates to a DEX (AMM pool)
-- Bonding phase: early buyers get best price + share of future fees
-- DEX phase: price is market-driven, deeper liquidity
+**Reward phase vs post-reward-phase**:
+- Tokens are tradeable on the DEX from the moment of creation — the same hybrid AMM formula runs forever with no transition
+- The **reward phase** is the initial period where early buyers earn reward shares (claimable via `claimRewards()`) and boosted airdrop points
+- After the reward phase ends, trading continues normally on the DEX — the only difference is that new buys no longer earn reward shares
 
 ---
 

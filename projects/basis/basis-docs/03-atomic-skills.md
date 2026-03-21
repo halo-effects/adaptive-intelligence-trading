@@ -25,7 +25,7 @@ Buy and sell tokens through the Basis SWAP contract. All trades route through ST
 **What it does:** Buys a token using USDB. Auto-builds the correct 2- or 3-hop swap path and auto-approves USDB. The simplest way to buy.
 **Module:** `client.trading`
 **Fee:** 0.5% for Stable+ (incl. STASIS), 1.5% for Floor+ and Predict+
-**Airdrop points:** 1 pt per $1 volume (2x if token is still in bonding phase)
+**Earns airdrop points.** Trading volume contributes to your airdrop points; reward phase trades earn more.
 
 **JS:**
 ```js
@@ -49,7 +49,7 @@ result = client.trading.buy("0xTokenAddress", 5 * 10**18)
 **What it does:** Sells a token. Auto-builds swap path and auto-approves the token.
 **Module:** `client.trading`
 **Fee:** Same as buy (0.5% or 1.5% depending on token type)
-**Airdrop points:** 1 pt per $1 volume
+**Earns airdrop points.**
 
 **JS:**
 ```js
@@ -96,7 +96,7 @@ result = client.trading.sell_percentage("0xTokenAddress", 50)
 **What it does:** Opens a leveraged position. The protocol loops loan-and-buy recursively to amplify exposure. Always simulate first with `leverageSimulator.simulateLeverage()`.
 **Module:** `client.trading`
 **Fee:** Dynamic — each loop takes a 2% origination fee. Effective total fee depends on loops executed. Always simulate first.
-**Airdrop points:** 1 pt per $1 volume
+**Earns airdrop points.**
 **Note:** Auto-syncs loan state to backend after execution. Wait ~5 seconds before calling `partialLoanSell`.
 
 **JS:**
@@ -213,13 +213,15 @@ Returns: `number`
 
 Create and manage tokens. All tokens created here earn the creator 20% of trading fees forever.
 
+**Stable+ vs Floor+**: These are separate token types controlled by a different parameter (not `hybridMultiplier`). `hybridMultiplier` only controls the stability/volatility level of **Floor+** tokens. The parameter that determines Stable+ vs Floor+ is TBD — check with Alex or the contract ABI.
+
 ---
 
 ### `createTokenWithMetadata(options)` *(recommended)*
 **What it does:** Creates a new token AND registers metadata (image, description, social links) on IPFS in one call. This is the recommended method — ensures the token appears properly on the platform.
 **Module:** `client.factory`
 **Fee:** BNB creation fee (call `getFeeAmount()` to check current fee)
-**Airdrop points:** 500 pts (one-time)
+**Earns airdrop points** (one-time).
 **Requires:** SIWE authentication (auto-handled by `BasisClient.create`)
 
 **JS:**
@@ -247,13 +249,13 @@ print("Token:", result["token_address"])
 |--------|----------|-------------|
 | `symbol` | yes | Token ticker |
 | `name` | yes | Token full name |
-| `hybridMultiplier` | yes | Bonding curve multiplier (1–100) |
-| `startLP` | yes | Initial LP pool size (100–10000) |
+| `hybridMultiplier` | yes | Price stability dial for Floor+ tokens (1–100). Controls how stabilized the token is compared to a standard constant-product AMM. **1 = 50% stabilized** (more volatile, price moves faster). **100 = 90% stabilized** (very stable but NOT Stable+ — that's a separate parameter). The range is a gradient from 50% to 90% stabilization. Higher = more stable, lower = more volatile. Does not apply to Stable+ tokens. |
+| `startLP` | yes | Starting virtual liquidity paired with the token in the LP (100–10000, in USDB-equivalent via STASIS). Controls price sensitivity: **lower = more volatile** (e.g., 1000 means price increases ~$1 per $1K in buys), **higher = smoother** (e.g., 10000 means price increases ~$1 per $10K in buys). **Note:** The ~$1 per unit of LP relationship only holds at hybridMultiplier=1. At higher hybrid values, the price increase per unit of LP is a fraction of $1 (since higher stability dampens price movement). The percentage change per trade is the same regardless of startLP — it only affects the absolute price gradient and slippage at launch. |
 | `description` | no | Platform description |
 | `imageUrl` | no | Auto-resized to 512×512 WebP |
 | `website` / `telegram` / `twitterx` | no | Social links |
 | `frozen` | no | Start frozen (default: false) |
-| `usdbForBonding` | no | USDB for bonding (default: 0) |
+| `usdbForBonding` | no | USDB for bonding (default: 0) *(reward phase allocation)* |
 | `autoVest` | no | Enable auto-vesting |
 | `autoVestDuration` | no | Vesting duration in days |
 | `gradualAutovest` | no | Gradual vs cliff vesting |
@@ -288,7 +290,7 @@ Returns: `{ hash, receipt, tokenAddress, imageUrl, metadata }`
 ---
 
 ### `claimRewards(tokenAddress)` *(write)*
-**What it does:** Claims accumulated USDB rewards from presale shares on a factory token.
+**What it does:** Claims accumulated USDB rewards earned from buying during the reward phase. When you buy a token during its reward phase, you earn reward shares. As the token generates trading fees, your share of those fees accrues and can be claimed here. This is the reward phase buyer reward — separate from the 20% dev fee.
 **Module:** `client.factory`
 Returns: `{ hash, receipt }`
 
@@ -297,7 +299,7 @@ Returns: `{ hash, receipt }`
 ### `getTokenState(tokenAddress)` *(read)*
 **What it does:** Gets the current state of a factory token.
 **Module:** `client.factory`
-Returns: `{ frozen, hasBonded, totalSupply, usdPrice }`
+Returns: `{ frozen, hasBonded, totalSupply, usdPrice }` — `hasBonded`: true means the reward phase has ended
 
 ---
 
@@ -331,7 +333,11 @@ Returns: `string[]` — token addresses
 
 Collateralized loans through the LoanHub contract. Take, extend, repay.
 
-> **ID note:** All Loans module methods use `hubId` (user-scoped, on LoanHub). This is different from the `loanId` used by `trading.partialLoanSell`. Loan IDs are **1-indexed**.
+> **ID note:** There are two different loan ID systems:
+> - **`hubId`** — Used by all `client.loans` methods. User-scoped, on LoanHub. **1-indexed** (first loan = 1, second = 2, etc.). Get via `getUserLoanCount(user)` — the count IS the latest hubId since IDs start at 1.
+> - **`loanId`** — Used only by `trading.partialLoanSell()`. This is the MAINTOKEN contract's internal ID, NOT the same number as hubId.
+> 
+> Don't mix them up. If you call `extendLoan()`, pass `hubId`. If you call `partialLoanSell()`, pass `loanId`.
 
 > **Auto-sync:** All write methods auto-sync loan state to the backend. Fire-and-forget, non-fatal.
 
@@ -341,7 +347,7 @@ Collateralized loans through the LoanHub contract. Take, extend, repay.
 **What it does:** Takes a loan by depositing collateral tokens. Auto-approves collateral to LoanHub.
 **Module:** `client.loans`
 **Fee:** 2% flat origination fee (deducted from what you receive). No compounding, no accrual.
-**Airdrop points:** 200 pts (one-time) + 1 pt/day while active
+**Earns airdrop points** — a one-time bonus at origination plus daily accrual while active.
 
 **JS:**
 ```js
@@ -371,7 +377,7 @@ result = client.loans.take_loan(MAINTOKEN, collateral_token, 100 * 10**18, 30)
 **What it does:** Extends loan duration. Much cheaper than re-originating (0.005%/day vs 2% flat).
 **Module:** `client.loans`
 **Fee:** 0.005%/day on collateral value, paid upfront
-**Airdrop points:** 100 pts per extension
+**Earns airdrop points** per extension.
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -432,7 +438,7 @@ Wrap STASIS into yield-bearing wSTASIS, lock as collateral, and borrow against i
 **What it does:** Wraps STASIS into wSTASIS yield-bearing shares. Auto-approves STASIS to the vault.
 **Module:** `client.staking`
 **Fee:** ~0.81% round-trip entry cost (from STASIS swap fee, not the wrap itself)
-**Airdrop points:** 2 pts per $1/day staked
+**Earns airdrop points** — daily accrual based on staked amount.
 
 **JS:**
 ```js
@@ -473,7 +479,7 @@ result = client.staking.buy(100 * 10**18)
 **What it does:** Pledges STASIS as collateral and borrows USDB against it. USDB received = collateral value minus 2% fee.
 **Module:** `client.staking`
 **Fee:** 2% flat origination fee
-**Airdrop points:** 200 pts (one-time) + 1 pt/day while active
+**Earns airdrop points** — a one-time bonus at origination plus daily accrual while active.
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -498,7 +504,7 @@ result = client.staking.buy(100 * 10**18)
 **What it does:** Extends staking loan duration.
 **Module:** `client.staking`
 **Fee:** 0.005%/day
-**Airdrop points:** 150 pts per refinance (when `refinance=true`)
+**Earns airdrop points** when refinancing.
 
 ---
 
@@ -698,7 +704,7 @@ Create and trade prediction markets. Note: buying the Predict+ token is separate
 ### `createMarketWithMetadata(options)` *(recommended)*
 **What it does:** Creates a prediction market AND registers metadata (image, description) on IPFS in one call.
 **Module:** `client.predictionMarkets`
-**Airdrop points:** 300 pts (requires ≥5 unique participants)
+**Earns airdrop points** once the market attracts enough unique participants.
 **Fee:** Creator earns 20% of all trading fees on this market forever.
 **Requires:** SIWE authentication
 

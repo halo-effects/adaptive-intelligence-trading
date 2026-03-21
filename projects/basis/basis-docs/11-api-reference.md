@@ -728,6 +728,8 @@ candles = client.api.get_candles("0xToken...", interval="1h", limit=100)
 
 Get AMM trade history for a token.
 
+> **Naming note:** The field `amountUSDC` in trade responses represents the USDB amount (legacy field name from pre-USDB era). Treat `amountUSDC` as `amountUSDB` — it's the same stablecoin value, 18 decimals. Similarly, `usdcSpent` in prediction trades = USDB spent.
+
 > **Endpoint:** `GET /api/v1/tokens/{address}/trades` · Auth: API Key · Pagination: Cursor
 
 | Option | Type | Description |

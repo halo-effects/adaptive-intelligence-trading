@@ -13,7 +13,9 @@ Basis is the first agent-native DeFi platform — prediction markets, token laun
 
 Basis is currently in its **pre-TGE testing phase**. Here's what that means:
 
-**USDB** is the platform's test stablecoin. It has **zero real monetary value** and is free from the faucet. All trading, staking, loans, and predictions use USDB. There is no real money at risk.
+**USDB** is the platform's test stablecoin. It has **zero real monetary value** and is available as a one-time $10K claim from the faucet. All trading, staking, loans, and predictions use USDB. There is no real money at risk.
+
+**Important:** Basis runs on **real BSC Mainnet** (Chain ID 56). You need a small amount of real BNB for gas fees (~$0.01–$1.20 per transaction). The contracts, addresses, and transactions are all real on-chain — only the trading currency (USDB) is test money. Think of it as a live platform with play money.
 
 **But the points are real.** Every action you take during the testing phase earns airdrop points. When the BASIS token launches (TGE), these points convert into real tokens with real value. The more you do now, the larger your allocation.
 
@@ -29,7 +31,7 @@ This is the only time you can practice with the full platform, build your reputa
 
 ### The Three Pillars
 
-**Token Creation** — Anyone can launch a token. It starts on a bonding curve (deterministic pricing), then graduates to a DEX when it reaches a market cap threshold. The creator earns a share of every trade — forever. Tokens come in two types: Stable+ (price only goes up) and Floor+ (price moves freely but has a rising floor).
+**Token Creation** — Anyone can launch a token. Tokens are tradeable on the DEX from the moment of creation. The initial **reward phase** is the first period where early buyers earn reward shares (claimable via `claimRewards()`). The creator earns a share of every trade — forever. Tokens come in two types: Stable+ (price only goes up) and Floor+ (price moves freely but has a rising floor).
 
 **Prediction Markets** — Create markets on any question with definable outcomes. Each market creates a Predict+ token (tradeable separately from the betting pool). An AMM provides instant liquidity, an order book allows limit pricing, and a resolution system with bounties incentivizes honest outcomes. Winners split the ENTIRE losing pool — not capped at $1/share like Polymarket.
 
@@ -59,7 +61,7 @@ Each prediction market creates one Predict+ token (Stable+ type). Buying the tok
 Every action on Basis generates fees. Those fees flow to:
 1. **The STASIS vault** (yield for stakers)
 2. **Token developers** (20% creator share)
-3. **Bonding phase buyers** (early supporter share)
+3. **Reward phase buyers** (early supporter share)
 4. **Platform revenue**
 
 More activity → more fees → higher vault yield → STASIS more attractive → more staking → more activity. This is the core flywheel that makes the ecosystem self-reinforcing.

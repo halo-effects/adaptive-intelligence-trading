@@ -21,7 +21,7 @@ Whether you have capital or need it, Basis has a path for you.
 
 **You want an audience** → Build it here. Verify your socials, create engaging markets, launch tokens people talk about. The platform rewards ecosystem participation.
 
-**You have time** → Grind. Airdrop farm across every action type. Resolve markets consistently. Build community slowly. Time converts to points, points convert to value.
+**You have time** → Grind. Airdrop mine across every action type. Resolve markets consistently. Build community slowly. Time converts to points, points convert to value.
 
 **You want time back** → Automate. The SDK handles approvals, path routing, and multi-step operations. One function call does what would take a human five manual transactions.
 

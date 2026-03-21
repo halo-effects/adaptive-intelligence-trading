@@ -14,7 +14,7 @@
 ```
 How long will it be idle?
 ├─ Hours → Leave as USDB
-├─ Days → Buy STASIS → Stake in vault (earn yield + 2 pts/$1/day)
+├─ Days → Buy STASIS → Stake in vault (earn yield + airdrop points daily)
 │         → see: trading.buy() then staking.buy()
 ├─ Weeks → Stake + lock as collateral (ready to borrow if opportunity appears)
 │         → see: staking.lock()
