@@ -1,31 +1,31 @@
 {
-  "saved_at": "2026-03-21T03:03:33.317813+00:00",
+  "saved_at": "2026-03-21T05:03:42.090476+00:00",
   "bot_state": "RUNNING",
   "capital": 350.0,
   "coins": {
     "GRASS/USDT": {
       "symbol": "GRASS/USDT",
-      "allocated_capital": 254.64415758749044,
-      "tp_order_id": "222562153",
-      "tp_limit_price": 0.3962,
-      "last_candle_ts": 1774058400000,
+      "allocated_capital": 15.34125704831301,
+      "tp_order_id": "222544856",
+      "tp_limit_price": 0.4023675564855908,
+      "last_candle_ts": 1774065600000,
       "cumulative_funding": 0.27200850000000004,
-      "last_funding_check_ms": 1774047400293,
+      "last_funding_check_ms": 1774047392559,
       "engine_state": {
         "symbol": "GRASS/USDT",
         "initial_capital": 56.06239500000001,
         "profile": "high",
         "leverage": 1.0,
         "phase": "LONG_DCA",
-        "capital": 26.021149684192565,
+        "capital": 26.071788105598387,
         "phase_start_date": "2026-03-19 15:00:00",
-        "long_coins": 635.3999999999999,
-        "long_avg_entry": 0.38904323260940005,
+        "long_coins": 68.17351072954322,
+        "long_avg_entry": 0.39642123791683825,
         "long_layers": 2,
-        "long_last_buy": "2026-03-21 02:00:00",
-        "long_tp": 0.394878881098541,
-        "long_cost": 247.19807000001273,
-        "long_trades": -57,
+        "long_last_buy": "2026-03-20 07:00:00",
+        "long_tp": 0.4023675564855908,
+        "long_cost": 27.02542751654238,
+        "long_trades": -45,
         "long_wins": 1,
         "long_pnl": 0.4496,
         "short_coins": 0.0,
@@ -46,23 +46,23 @@
         "top_detected": false,
         "conviction_fired": false,
         "markup_cycles_completed": 0,
-        "total_fees": 0.24114638855847803,
+        "total_fees": 0.1905079671526598,
         "adx_below_20_streak": 0,
         "router_from_top": false,
         "router_from_markdown": false,
         "_last_daily_date": "2026-03-21",
         "_live_mode": true,
-        "_last_candle_ts": 1774058400000,
+        "_last_candle_ts": 1774065600000,
         "start_time": 1773936951.952672,
-        "current_price": 0.3708
+        "current_price": 0.3804
       }
     }
   },
   "router": {
-    "active_pool_cash": 16.35480241999994,
+    "active_pool_cash": 236.26804582077506,
     "reserve_pool_cash": 87.5,
     "active_allocations": {
-      "GRASS/USDT": 0.0
+      "GRASS/USDT": 27.025427516542383
     },
     "reserve_allocations": {}
   },
