@@ -19,7 +19,9 @@ _Non-negotiable rules from production incidents. Violating these causes real dam
 
 8. **Validate allocation output** after any rebalance logic change — check that the numbers make sense before restarting. (2026-03-06)
 
-8b. **Delete `__pycache__/*.pyc` after hot-patching a running bot** — Python skips recompilation if the `.pyc` mtime is newer than the `.py` mtime. Git and auto-backups can set `.py` mtime backwards, making stale bytecode persist across restarts indefinitely. Cost: 21 hours of wrong dashboard equity. (2026-03-21)
+8b. **Delete `__pycache__/*.pyc` after hot-patching a running bot** — Python skips recompilation if the `.pyc` mtime is newer than the `.py` mtime. Git and auto-backups can set `.py` mtime backwards, making stale bytecode persist across restarts indefinitely. Use `-B` flag for live bots. Cost: 21 hours of wrong dashboard equity. (2026-03-21)
+
+8c. **Kill ALL old bot processes before debugging status output** — check `Get-Process python` for zombie instances. An old bot writing to the same output directory will silently overwrite new bot's status.json every 60 seconds. PID 11164 ghost ran for 2.5 days from March 19, required admin kill. Wasted 2+ hours debugging "stale code" that was actually correct code being overwritten. (2026-03-21)
 
 ## Data & Code
 

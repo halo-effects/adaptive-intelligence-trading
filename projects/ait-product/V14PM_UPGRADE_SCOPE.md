@@ -1,7 +1,9 @@
 # V14PM Live Bot — Upgrade Scope
 
-**Date:** 2026-03-20
-**Status:** Scoping (awaiting review)
+> **Updated 2026-03-21** to reflect exchange-as-truth architecture refactor. LIVE GUARD, reconciliation, and snapshot/rollback have been removed. Exchange API is single source of truth.
+
+**Date:** 2026-03-21
+**Status:** Updated post-refactor
 
 ---
 
@@ -17,11 +19,13 @@
 - Capital loaded from ledger on startup (not just CLI arg)
 
 **PM live bot (`run_v14_portfolio_live_aster.py`) — NOT IMPLEMENTED:**
-- Capital is CLI arg only (`--capital 350`)
-- Periodic reconciliation detects drift but applies it as a generic "active pool adjustment" — no deposit/withdrawal distinction
+- Capital is CLI arg only (`--capital 340`)
+- `_sync_positions_from_exchange()` runs every 65s cycle, caching `_exchange_usdt_free` and `_exchange_usdt_total` — but drift is treated as a generic pool adjustment with no deposit/withdrawal distinction
 - No capital ledger
 - No way to add/remove capital without restarting the bot
 - Listed as P2 items #18, #19, #20 in the unified audit
+
+_Note: `_reconcile_with_exchange()` and `_periodic_reconcile()` were removed in the 2026-03-21 exchange-as-truth refactor. Exchange is now the single source of truth via `_sync_positions_from_exchange()`._
 
 ### What Needs to Change
 
@@ -31,15 +35,17 @@
 - CLI flags: `--deposit`, `--withdraw`, `--ledger`
 - On startup: if ledger exists, load `current_capital` from it instead of `--capital` arg (first run seeds the ledger)
 
-#### 1B. Auto-Detect Deposits/Withdrawals in Periodic Reconciliation
-- Enhance `_periodic_reconcile()` and `_reconcile_with_exchange()`:
+#### 1B. Auto-Detect Deposits/Withdrawals via Exchange Sync
+- Hook into the existing `_sync_positions_from_exchange()` (already runs every 65s cycle):
+  - Compare `_exchange_usdt_total` to `self.capital` + invested amount to detect drift
+  - No need for a separate reconciliation pass — the exchange sync already runs every cycle
   - When drift > threshold (e.g. $5 or 2%, whichever is larger):
     - **No open positions across all coins**: Classify as deposit (positive) or withdrawal (negative)
     - **Open positions exist**: Flag as suspicious drift, alert but don't auto-classify
   - On deposit detection:
     - Record to capital ledger
     - Update `self.capital` (the bot's tracking variable)
-    - Update `self.router.total_equity` and recalculate pool splits (90/10)
+    - Update `self.router.total_equity` and recalculate pool splits (75/25)
     - Trigger immediate rebalance so new capital is allocated
     - Telegram alert: "📥 Deposit detected: $X. Capital: $old → $new. Rebalancing."
   - On withdrawal detection:
@@ -60,8 +66,8 @@ The `CapitalRouter` needs a `resize(new_equity)` method:
 def resize(self, new_equity: float):
     """Dynamically resize pools after deposit/withdrawal."""
     self.total_equity = new_equity
-    self.active_pool_total = new_equity * 0.90
-    self.reserve_pool_total = new_equity * 0.10
+    self.active_pool_total = new_equity * 0.75   # 75% active trading
+    self.reserve_pool_total = new_equity * 0.25  # 25% reserve for DCA layers 6+
     # Recalculate cash = pool total - allocated
     allocated_active = sum(self.active_allocations.values())
     self.active_pool_cash = self.active_pool_total - allocated_active
@@ -91,7 +97,7 @@ def resize(self, new_equity: float):
 **Global PAUSE** (`PAUSE` / `RESUME` commands):
 - Sets `self.bot_state = BotState.PAUSED`
 - Blocks ALL new entries and DCA layers across ALL coins
-- Existing TP orders remain active on exchange (LIVE GUARD respects them)
+- Existing TP orders remain active natively (exchange-as-truth architecture — no LIVE GUARD needed)
 - Implemented and working
 
 **Per-coin:** Nothing. No way to pause individual coins.
@@ -324,17 +330,17 @@ if cs.paused or cs.regime_flagged:
 
 ### Test Plan: Upgrade 1 (Dynamic Capital Management)
 
-**Pre-requisite:** Bot running with $350 capital, 1 coin active (GRASS)
+**Pre-requisite:** Bot running with $340 capital, 1 coin active (GRASS)
 
 | # | Test | Steps | Expected Result |
 |---|------|-------|-----------------|
-| T1.1 | Manual deposit (no positions) | Close all positions → transfer $50 USDT to Futures → wait for next recon cycle (5 min) | Bot detects +$50 drift, records deposit, capital adjusts $350→$400, rebalance triggers |
+| T1.1 | Manual deposit (no positions) | Close all positions → transfer $50 USDT to Futures → wait for next recon cycle (65s) | Bot detects +$50 drift, records deposit, capital adjusts $340→$390, rebalance triggers |
 | T1.2 | Manual deposit (position open) | Transfer $50 USDT to Futures while GRASS position is open | Bot detects drift, alerts "deposit suspected but position open", records to ledger, adjusts pools |
 | T1.3 | Manual withdrawal | Transfer $25 USDT from Futures to Spot | Bot detects -$25 drift, records withdrawal, capital $400→$375 |
 | T1.4 | Telegram DEPOSIT command | Send `DEPOSIT 50` | Bot records manual deposit, adjusts capital, confirms via Telegram |
 | T1.5 | Telegram WITHDRAW command | Send `WITHDRAW 25` | Bot records withdrawal, adjusts capital. Verify: if withdrawal > free cash, bot refuses |
 | T1.6 | Telegram CAPITAL command | Send `CAPITAL` | Returns: seed, current, deposits total, withdrawals total, exchange balance |
-| T1.7 | Router resize on deposit | Deposit $100 → check allocations | Active pool grows from $315→$405, reserve $35→$45, tier cap recalculated |
+| T1.7 | Router resize on deposit | Deposit $100 → check allocations | Active pool grows from $255→$330, reserve $85→$110, tier cap recalculated |
 | T1.8 | Withdrawal safety | Attempt withdrawal larger than free cash | Bot refuses: "Cannot withdraw $X — only $Y free. Close positions first." |
 | T1.9 | State persistence | Deposit $50 → restart bot | Capital ledger survives restart, bot starts with $400 capital |
 | T1.10 | Dashboard accuracy | After deposit, check dashboard | Equity, capital, allocation donut all reflect new amounts |
@@ -381,19 +387,29 @@ if cs.paused or cs.regime_flagged:
 
 **Estimated effort:**
 - Upgrade 2: ~2-3 hours
-- Upgrade 1: ~3-4 hours (most is porting + Router resize)
+- Upgrade 1: ~2-3 hours (most is porting + Router resize; deposit/withdrawal detection is simpler now since `_sync_positions_from_exchange()` already runs every cycle — no separate reconciliation needed)
 - Upgrade 3: ~4-5 hours (new detection logic + auto-flag/unflag + dashboard)
 
 ---
 
 ## Open Questions
 
-1. **Deposit threshold:** What amount should trigger auto-detection? The old bot used 10% drift. For PM bot with $350 capital, 10% = $35. Should we use a fixed dollar floor (e.g., $5) instead?
+1. **Deposit threshold:** What amount should trigger auto-detection? The old bot used 10% drift. For PM bot with $340 capital, 10% = $34. Should we use a fixed dollar floor (e.g., $5) instead?
+
+   > **Recommendation:** Use $5 OR 2% (whichever is larger). With exchange-as-truth, drift detection is trivial since exact balances are already cached in `_exchange_usdt_total` — no estimation needed.
 
 2. **Withdrawal with open positions:** Should we allow partial withdrawals when positions are open (reduce reserve only), or require all positions closed first?
 
+   > **Recommendation:** Allow partial withdrawal from free balance. Exchange already protects margin — `usdt_free` is separate from `usdt_used`, so withdrawing free cash cannot liquidate open positions.
+
 3. **Per-coin pause capital:** When a coin is paused, should its allocated capital be redistributed to other coins, or held in reserve until unpaused?
+
+   > **Recommendation:** Hold paused capital in reserve until unpaused. Redistributing adds complexity and churn. The 25% reserve pool already provides buffer for new opportunities.
 
 4. **Regime flag persistence:** If a flagged coin's TP fills and it has no position, should it stay flagged (waiting for global flip) or auto-clear since there's nothing to protect?
 
+   > **Recommendation:** Auto-clear the flag when the TP fills and no position remains. The flag exists to protect open positions — there's nothing to protect if the position is gone.
+
 5. **Manual RESUME overriding regime flag:** If Brett manually resumes a regime-flagged coin, should it be immune to re-flagging for some cooldown period, or can it re-flag immediately on the next candle?
+
+   > **Recommendation:** 24h cooldown after manual RESUME before the coin can be re-flagged. If Brett overrode the flag, there's a reason — respect that intent for at least a day.

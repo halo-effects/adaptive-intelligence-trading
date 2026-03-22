@@ -1,30 +1,31 @@
 {
-  "saved_at": "2026-03-22T03:03:52.621193+00:00",
+  "saved_at": "2026-03-22T04:03:54.872156+00:00",
   "bot_state": "RUNNING",
-  "capital": 350.0,
+  "capital": 340.0,
   "coins": {
     "GRASS/USDT": {
       "symbol": "GRASS/USDT",
-      "allocated_capital": 15.207604208433203,
-      "tp_order_id": "222544856",
-      "tp_limit_price": 0.4023675564855908,
-      "last_candle_ts": 1774144800000,
+      "allocated_capital": 253.27285052997223,
+      "tp_order_id": "222739008",
+      "tp_limit_price": 0.3939,
+      "last_candle_ts": 1774148400000,
       "cumulative_funding": 0.8067818100000002,
       "last_funding_check_ms": 1774133942658,
+      "layer_count": 4,
       "engine_state": {
         "symbol": "GRASS/USDT",
         "initial_capital": 56.06239500000001,
         "profile": "high",
         "leverage": 1.0,
         "phase": "LONG_DCA",
-        "capital": 26.071788105598387,
+        "capital": 15.207604208433203,
         "phase_start_date": "2026-03-19 15:00:00",
-        "long_coins": 68.17351072954322,
-        "long_avg_entry": 0.39642123791683825,
-        "long_layers": 2,
+        "long_coins": 691.4,
+        "long_avg_entry": 0.3874117298236,
+        "long_layers": 4,
         "long_last_buy": "2026-03-20 07:00:00",
-        "long_tp": 0.4023675564855908,
-        "long_cost": 27.02542751654238,
+        "long_tp": 0.393222905770954,
+        "long_cost": 267.856470000037,
         "long_trades": -45,
         "long_wins": 1,
         "long_pnl": 0.4496,
@@ -52,9 +53,9 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-03-22",
         "_live_mode": true,
-        "_last_candle_ts": 1774144800000,
+        "_last_candle_ts": 1774148400000,
         "start_time": 1773936951.952672,
-        "current_price": 0.3669
+        "current_price": 0.3665
       }
     }
   },
@@ -77,8 +78,9 @@
       "deal_id": 14,
       "symbol": "GRASS/USDT",
       "open_time": "2026-03-20T07:00:26.276945+00:00",
-      "layers": 2,
-      "invested": 26.758960880433772
+      "layers": 4,
+      "invested": 267.86
     }
-  }
+  },
+  "last_rebalance_date": "2026-03-22"
 }

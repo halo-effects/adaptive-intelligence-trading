@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-print(f"[CANARY] Loading run_v14_portfolio_live_aster.py from {__file__}")
 """
 V14 Portfolio Manager — Live Trading Bot (Aster DEX Perpetuals)
 ==============================================================
