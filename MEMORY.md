@@ -19,18 +19,20 @@ _Curated essentials. For details, see the structured files below._
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
 ## AIT - Current State (2026-03-21)
-- **V14PM Live (Aster)**: GRASS/USDT, LONG_DCA. **Exchange-as-truth architecture LIVE** (2026-03-21). equity=$341, pnl=+0.39%.
+- **V14PM Live (Aster)**: GRASS/USDT, LONG_DCA. PID 6592. equity=$339.53, layers 4/12, position 691.4 GRASS. **Exchange-as-truth architecture LIVE** (2026-03-21).
 - **V14PM Paper (MVP)**: $50K capital, 5 coin slots (concentration pivot)
 - **V14 Paper**: +583.8% (~$68.4K equity)
 - **V14-ETF**: RETIRED (2026-03-17)
 - **3 bots running** on Windows (V14 Paper, V14PM Paper, V14PM Live). Cloud migration pending.
-- **Exchange-as-truth refactor (2026-03-21)**: Removed LIVE GUARD, rollbacks, reconciliation. Engine is signal-only; exchange API is single source of truth for positions. ~280 lines removed. Fixed -70% phantom drawdown (was $103 display, actually $341). Audit doc §21.
-- **Resting limit orders LIVE**: Exchange-side limit sell at TP price. Engine skips TP when exchange order exists.
-- Architecture doc v1.5: `V14PM_SYSTEM_ARCHITECTURE.md`
+- **Exchange-as-truth refactor (2026-03-21)**: Removed LIVE GUARD, rollbacks, reconciliation. Engine is signal-only; exchange API is single source of truth for positions. ~280 lines removed. Fixed -70% phantom drawdown (was $103 display, actually $341).
+- **Gap analysis (2026-03-21)**: 13 gaps found, all P1/P2 resolved. Key: orphaned TP cleanup, CapitalRouter 75/25, SHORT rejection, engine capital reset on BUY.
+- **Ghost process lesson (2026-03-21)**: Always `Get-Process python` first — zombie PID from March 19 wasted 2+ hours.
+- **Next upgrades**: Per-Coin Pause → Dynamic Capital → Per-Coin Regime Flagging (scope doc ready).
+- Architecture doc v1.6 (97.2KB): `V14PM_SYSTEM_ARCHITECTURE.md`
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. Exchange-as-truth architecture LIVE (2026-03-21). All P0/P1 audit items resolved by architecture refactor. Next: cloud migration, WebSocket fills, DB as position truth.
-- **Basis**: Docs at 7/10 (2026-03-21). 144.6KB "Complete Agent Guide" in `projects/basis/basis-docs/COMPLETE.md` (17 sections + INDEX). hybridMultiplier/startLP empirically tested on-chain. Points spec complete (`points-system-complete-spec.md`). Tweet verification + bug reporting live. Action test: fresh agent designed 4-module bot unprompted. Next: Alex return schemas (7→8+), points backend build, clear TBD placeholders, prediction market testing.
+- **Basis**: Docs at 7.5-8/10 (2026-03-21). 152.3KB "Complete Agent Guide" in `projects/basis/basis-docs/COMPLETE.md` (17 sections + INDEX). hybridMultiplier=100=Stable+ confirmed from Solidity. 5 test tokens on BSC. Contract-enforced limits documented. 25% airdrop confirmed (5% leaderboard top 50). Points spec complete. Tweet verification + bug reporting live. Action test: agent designed 4-module bot, "would build tonight." Next: Alex return schemas (7→8+), points backend build, clear TBD placeholders, prediction market testing.
 - **TrustedBusinessReviews.com**: WordPress → static HTML. Malware cleanup.
 - **ShadowQuery**: Deferred.
 
