@@ -87,23 +87,25 @@
 
 ---
 
-### Strategy D: Polymarket Mirror
+### Strategy D: Prediction Market Mirror
 
-**Goal**: Same events, better economics.
+**Goal**: Same events, better economics. Mirror popular markets from established platforms (Polymarket, Kalshi, etc.) onto Basis where the payout structure is structurally superior.
 
 **Archetype**: Market Maker + Trader
 
 ```
-1. Monitor Polymarket for popular markets
+1. Monitor established prediction platforms for popular markets
 2. Create the SAME market on Basis (permissionless) → you're the creator
-3. Promote: "Same predictions, bigger payouts"
+3. Promote: "Same predictions, uncapped payouts"
 4. Trade/bet on the Basis version
 5. Earn creator fees + personal position returns
 ```
 
 **Agent alpha**: Arbitraging the prediction market structure itself.
 
-**Why this works**: Basis winners split the ENTIRE losing pool (not capped at $1/share like Polymarket). As creator, you earn 20% of all trading fees on your market forever.
+**Why this works**: Traditional platforms cap winning shares at $1. Basis winners split the ENTIRE losing pool — uncapped. As creator, you earn 20% of all trading fees on your market forever. And the economics don't require matching the original platform's volume — the ratio of winning to losing pools determines returns, not absolute market size.
+
+→ See: [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md) for the full comparative breakdown.
 
 **Method cross-references**:
 - Step 2: → see: `predictionMarkets.createMarketWithMetadata()`

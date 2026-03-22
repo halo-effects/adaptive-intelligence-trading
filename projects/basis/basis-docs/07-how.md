@@ -125,6 +125,14 @@ Each iteration takes a 2% origination fee, so the total leverage fee is **signif
 
 These are separate paths. Buying the token ≠ betting on an outcome.
 
+**Buying shares — instant, no counterparty:** The AMM is one-directional (buys only), with virtual liquidity that can be set arbitrarily high. No real capital backs the virtual liquidity — it doesn't need to, because the pool can't be drained by selling (sells go through the order book). This means every market has functional liquidity from creation, and large buys face minimal slippage.
+
+**Selling shares — order book:** Shareholders list sell orders at their chosen price. Because winners split the entire losing pool (not capped at $1), shares can be worth far more than their buy price on resolution. This creates a unique secondary market dynamic: a seller who bought at 5c can sell at 90c (18x) while the buyer at 90c gets a share worth potentially $4+ on resolution. Both sides genuinely profit.
+
+**The general pot:** A portion of trading fees from all outcomes accumulates in a general pot, added to the winner's pool on resolution. This benefits all winners — especially latecomers who enter at high probability — by padding payouts above what the raw pool split alone would deliver.
+
+**Payout scales with outcomes, not volume:** In a multi-outcome market, the winner's pool absorbs ALL losing pools plus the general pot. More outcomes = larger multiplier. The ratio of winning to losing pools determines returns, not absolute volume — the economics are identical whether the market is $1M or $100M.
+
 **Resolution lifecycle**:
 ```
 Market ends → Propose outcome → Dispute window
@@ -135,6 +143,8 @@ Market ends → Propose outcome → Dispute window
 **Outcome types**: Normal (one winner), INVALID (proportional refund), EARLY (dispute reset).
 
 **Post-resolution selling**: On Basis, mass selling after resolution pushes the price UP (selling burns tokens → slippage stays in pool → price rises). Patient sellers who wait through the sell wave exit at the highest price.
+
+→ See: [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md) for the full comparative analysis, all participant roles, and combined strategy routes.
 
 ---
 

@@ -125,3 +125,11 @@
 **What's in it:** 5 complete working code examples — token creation, trading, prediction markets, leverage, DeFi operations (loans + staking).
 **Use this when:** You need a complete working template to adapt. Best starting point for new implementations.
 **Key topics:** Full JS + Python for: createTokenWithMetadata, buy/sell/sellPercentage, createMarketWithMetadata, leverageBuy, takeLoan, staking.buy/lock/borrow.
+
+---
+
+### [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md)
+**What's in it:** Comprehensive structural comparison of Basis prediction markets vs traditional platforms (Polymarket, Kalshi, etc.). Covers buying mechanics, uncapped payouts, volume independence, multiple outcome advantages, selling dynamics, general pot economics, all seven participant roles, and eight combined strategy routes.
+**Use this when:** You need to explain why Basis prediction markets are structurally different, compare payout economics, understand all the ways to participate, or stack multiple strategies on a single market.
+**Key topics:** AMM vs order book buying, uncapped vs $1-capped payouts, volume independence, multi-outcome multiplier, secondary market dynamics, general pot, Creator-Bettor/Full Stack/Leveraged Conviction/Hedged Creator/Capital Recycler/Market Maker Spread/Outsider routes.
+**Cross-refs:** → See: [04-strategies.md](04-strategies.md) for step-by-step playbooks · → See: [07-how.md](07-how.md) for market lifecycle · → See: [09-fees.md](09-fees.md) for fee structure

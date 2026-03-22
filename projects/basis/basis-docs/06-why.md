@@ -62,11 +62,19 @@ Vault staking is the set-and-forget treasury: your wSTASIS earns yield, serves a
 
 ### Why Use Prediction Markets
 
-**The short version**: Monetize opinions, knowledge, and information.
+**The short version**: Monetize opinions, knowledge, and information — with structurally better economics than any traditional prediction platform.
 
-Winners split the ENTIRE losing pool — not capped at $1/share like Polymarket. Multi-outcome markets can deliver 8x+ returns. As a creator, you earn 20% of all trading fees forever, regardless of the outcome.
+Winners split the ENTIRE losing pool — not capped at $1/share like traditional order-book platforms. Multi-outcome markets can deliver 8x+ returns. As a creator, you earn 20% of all trading fees forever, regardless of the outcome.
 
-Three roles: **bettor** (buy underpriced outcomes), **creator** (earn fees from volume), **resolver** (earn bounties for honest outcomes).
+**Why the payout model matters:** On traditional platforms, a winning share always pays exactly $1 — whether the market did $100K or $100M in volume. On Basis, winners split real money from real losers. The more conviction on the wrong side, the more winners earn. And this works at any volume level — the ratio of winning to losing pools determines returns, not absolute market size. The economics are superior from trade one.
+
+**Instant liquidity, no counterparty needed:** Traditional platforms require a counterparty for every trade — no seller, no fill. Basis uses a one-directional AMM with virtual liquidity, so anyone can buy outcome shares instantly at any time. Niche markets and off-peak hours aren't a problem.
+
+**Multiple outcomes multiply returns:** On traditional platforms, a 5-outcome market is just 5 separate binary books capped at $1 each. On Basis, the winner's pool absorbs ALL losing pools plus the general pot. Back the right outcome at 20% odds and you're splitting 80% of total market money.
+
+Seven distinct roles: **bettor** (buy underpriced outcomes), **trader** (buy/sell shares on momentum), **token trader** (buy Predict+ for volume-driven appreciation), **creator** (earn fees from volume), **resolver** (earn bounties for honest outcomes), **leveraged player** (double your capital's deployment), **capital recycler** (stake → borrow → deploy → repeat).
+
+→ See: [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md) for the complete analysis with combined strategy routes.
 
 ---
 

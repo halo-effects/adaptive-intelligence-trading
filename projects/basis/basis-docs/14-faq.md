@@ -21,6 +21,12 @@ Like Stable+ but prices move both ways. A rising floor provides real downside pr
 **How does leverage work without liquidation?**
 Leverage is valued against the floor price, which never decreases. No price-based liquidation possible — only time-based loan expiry. Dynamic leverage (not fixed): smaller positions get higher leverage, larger positions get less.
 
+**How do Basis prediction markets compare to traditional platforms like Polymarket or Kalshi?**
+Structurally different in three key ways: (1) Instant buying via AMM — no counterparty required, every market has liquidity from creation. (2) Uncapped payouts — winners split the entire losing pool instead of receiving a fixed $1/share. (3) Multiple roles — you can be the bettor, trader, token holder, creator, resolver, or leveraged player on the same market. → See: [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md) for the full breakdown.
+
+**Do I need to wait for more volume on Basis to see better payouts?**
+No. The payout ratio depends on the split between winning and losing pools, not absolute volume. A $1M market with a 70/30 split pays winners the same relative return as a $100M market with the same split. The economics are superior from trade one.
+
 **How much can BASIS stakers earn post-TGE?**
 90% of all platform revenue distributed as stablecoin to BASIS stakers, weighted by lock tier and amount.
 
