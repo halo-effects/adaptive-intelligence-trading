@@ -408,3 +408,104 @@ def staking_operations():
     sell_result = client.staking.sell(int(shares))
     print("Unwrapped to STASIS:", sell_result["hash"])
 ```
+
+---
+
+## Example 6: Agent Bootstrap — First Hour on Basis
+
+A complete script to go from zero to operational. Covers initialization, USDB acquisition, agent registration, first trade, and staking.
+
+**JS:**
+```js
+import { BasisClient } from 'basis-sdk';
+import { parseUnits, formatUnits } from 'viem';
+
+async function bootstrap() {
+  // 1. Initialize client (auto-authenticates via SIWE, provisions API key)
+  const client = await BasisClient.create({
+    privateKey: process.env.BASIS_PRIVATE_KEY,
+    agent: { name: "MyAgent", metadataURI: "https://example.com/agent.json" }
+  });
+  console.log("✅ Client initialized + agent registered");
+
+  // 2. Claim USDB from faucet (testing phase — $10K free USDB)
+  //    Visit https://launchonbasis.com/faucet or call the faucet API
+  //    This is a one-time operation per wallet
+
+  // 3. Check your USDB balance
+  const usdbBalance = await client.publicClient.readContract({
+    address: client.usdbAddress,
+    abi: [{"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}],
+    functionName: 'balanceOf',
+    args: [client.walletClient.account.address],
+  });
+  console.log(`💰 USDB balance: ${formatUnits(usdbBalance, 18)}`);
+
+  // 4. Buy STASIS (the main token) — earns trading points
+  const buyResult = await client.trading.buy(
+    client.mainTokenAddress,
+    parseUnits("100", 18)  // 100 USDB
+  );
+  console.log("🛒 Bought STASIS:", buyResult.hash);
+
+  // 5. Stake for yield — earns staking points daily
+  const stakeResult = await client.staking.buy(parseUnits("50", 18)); // wrap 50 STASIS → wSTASIS
+  console.log("🏦 Staked (wrapped):", stakeResult.hash);
+
+  const lockResult = await client.staking.lock(parseUnits("50", 18)); // lock for yield
+  console.log("🔒 Locked:", lockResult.hash);
+
+  // 6. Check a prediction market
+  const outcomes = await client.marketReader.getAllOutcomes(
+    "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", // MarketTrading contract
+    "0xYourMarketTokenAddress"
+  );
+  console.log("📊 Market outcomes:", outcomes);
+
+  // 7. Check your agent registration
+  const isRegistered = await client.agent.isRegistered();
+  console.log("🤖 Agent registered:", isRegistered);
+
+  console.log("\n🎉 Bootstrap complete! You are now:");
+  console.log("  - Earning trading points from the STASIS buy");
+  console.log("  - Earning daily staking yield + staking points");
+  console.log("  - Ready to trade, create tokens, or resolve markets");
+}
+
+bootstrap().catch(console.error);
+```
+
+**Python:**
+```python
+from basis import BasisClient
+import os
+
+def bootstrap():
+    # 1. Initialize client
+    client = BasisClient(private_key=os.environ["BASIS_PRIVATE_KEY"], agent=True)
+    print("✅ Client initialized + agent registered")
+
+    # 2. Claim USDB from faucet (one-time, visit https://launchonbasis.com/faucet)
+
+    # 3. Buy STASIS
+    buy_result = client.trading.buy(client.main_token_address, 100 * 10**18)
+    print("🛒 Bought STASIS:", buy_result["hash"])
+
+    # 4. Stake
+    stake_result = client.staking.buy(50 * 10**18)
+    print("🏦 Staked:", stake_result["hash"])
+
+    lock_result = client.staking.lock(50 * 10**18)
+    print("🔒 Locked:", lock_result["hash"])
+
+    # 5. Check prediction market
+    outcomes = client.market_reader.get_all_outcomes(
+        "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6",
+        "0xYourMarketTokenAddress"
+    )
+    print("📊 Market outcomes:", outcomes)
+
+    print("\n🎉 Bootstrap complete!")
+
+bootstrap()
+```

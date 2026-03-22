@@ -123,16 +123,16 @@ result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)
 ### `partialLoanSell(loanId, percentage, isLeverage, minOut)`
 **What it does:** Partially closes a leveraged position by selling a percentage of collateral.
 **Module:** `client.trading`
-**Note:** Uses `loanId` (MAINTOKEN contract ID) — NOT `hubId`. Requires ~5-second delay after `leverageBuy`.
+**Note:** Uses `loanId` (MAINTOKEN contract ID) - NOT `hubId`. Requires ~5-second delay after `leverageBuy`.
 
 | Param | Type | Description |
 |-------|------|-------------|
 | `loanId` | bigint/int | Leverage position ID (from MAINTOKEN, NOT hubId) |
-| `percentage` | bigint/int | 1–100 (any integer percentage) |
+| `percentage` | bigint/int | 10–100, **must be divisible by 10** (10, 20, 30... 100). Non-multiples cause a silent contract revert. |
 | `isLeverage` | boolean | `true` for leverage positions |
 | `minOut` | bigint/int | Min USDB output (slippage protection) |
 
-> ⚠️ **Constraint difference:** `trading.partialLoanSell()` accepts any percentage 1–100. `loans.hubPartialLoanSell()` requires multiples of 10 (10, 20, 30... 100). Using a non-multiple-of-10 value on the hub version will cause a silent contract revert.
+> **Note:** Both `trading.partialLoanSell()` and `loans.hubPartialLoanSell()` require percentage to be a multiple of 10. This is enforced at the contract level.
 
 **JS:**
 ```js
@@ -143,18 +143,28 @@ const result = await client.trading.partialLoanSell(positionId, 50, true, 0);
 result = client.trading.partial_loan_sell(position_id, 50, True, 0)
 ```
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `loanId` | bigint/int | Leverage position ID (on MAINTOKEN contract) |
-| `percentage` | number | 1-100 |
-| `isLeverage` | boolean | Must be `true` for leverage positions |
-| `minOut` | bigint/int | Min output |
+
 
 ---
 
 ### `buyTokens(amount, minOut, path, wrapTokens)` *(raw)*
-**What it does:** Raw buy with explicit swap path. Use when you need fine-grained path control.
+**What it does:** Raw buy with explicit swap path. Use when you need fine-grained path control instead of the simplified `buy()` method.
 **Module:** `client.trading`
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `amount` | bigint/int | Input amount (18 decimals) |
+| `minOut` | bigint/int | Minimum output tokens (slippage protection). Use `getAmountsOut()` to calculate. |
+| `path` | address[] | Swap path - 2-hop `[USDB, token]` for STASIS, 3-hop `[USDB, MAINTOKEN, token]` for factory tokens |
+| `wrapTokens` | boolean | If `true`, wraps output to wSTASIS (only for STASIS buys via vault entry) |
+
+**JS:**
+```js
+const amounts = await client.trading.getAmountsOut(parseUnits("10", 18), [USDB, MAINTOKEN]);
+const result = await client.trading.buyTokens(parseUnits("10", 18), amounts[1], [USDB, MAINTOKEN], false);
+```
+
+**When to use this instead of `buy()`:** When you need to control the exact swap path, set a custom `minOut` for slippage, or wrap to wSTASIS in the same transaction.
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -166,14 +176,38 @@ result = client.trading.partial_loan_sell(position_id, 50, True, 0)
 ---
 
 ### `sellTokens(amount, minOut, path, swapToETH)` *(raw)*
-**What it does:** Raw sell with explicit swap path.
+**What it does:** Raw sell with explicit swap path. Use when you need fine-grained control over the sell route.
 **Module:** `client.trading`
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `amount` | bigint/int | Token amount to sell (18 decimals) |
+| `minOut` | bigint/int | Minimum USDB output (slippage protection) |
+| `path` | address[] | Reverse swap path - `[token, USDB]` for STASIS, `[token, MAINTOKEN, USDB]` for factory tokens |
+| `swapToETH` | boolean | If `true`, converts output to native BNB instead of USDB |
+
+**JS:**
+```js
+const amounts = await client.trading.getAmountsOut(parseUnits("100", 18), [MAINTOKEN, USDB]);
+const result = await client.trading.sellTokens(parseUnits("100", 18), amounts[1], [MAINTOKEN, USDB], false);
+```
 
 ---
 
 ### `convertToNative(marketToken, inputToken, inputAmount)` *(write)*
-**What it does:** Converts any token (USDB, MAIN, or market token) to USDB via a market token's AMM. Auto-approves input.
+**What it does:** Converts any token (USDB, STASIS, or a market token) to USDB via a market token's AMM. Auto-approves input. Useful for consolidating various token positions back to USDB.
 **Module:** `client.trading`
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `marketToken` | address | The prediction market token whose AMM to route through |
+| `inputToken` | address | The token you're converting FROM |
+| `inputAmount` | bigint/int | Amount to convert (18 decimals) |
+
+**JS:**
+```js
+const result = await client.trading.convertToNative(marketTokenAddress, inputTokenAddress, parseUnits("50", 18));
+```
 
 ---
 
@@ -216,9 +250,10 @@ Returns: `number`
 **What it does:** Returns details of a specific leverage position.
 **Module:** `client.trading`
 
-**Returns** (from `leverages(address, uint256)` on MAIN_TOKEN - 12 fields):
-`user`, `token`, `collateralAmount`, `liquidatedAmount`, `fullAmount`, `borrowedAmount`, `liquidationTime`, `liquidationClaim`, `isLiquidated`, `active`, `creationTime`, `timeOfClosure`
-*Note: The nested Leverage struct fields (`leverageBuyAmount`, `cashedOut`) may or may not be included depending on Solidity auto-getter behavior - verify against compiled ABI.*
+**Returns** (from `leverages(address, uint256)` on MAINTOKEN - 14 fields):
+`user`, `token`, `collateralAmount`, `liquidatedAmount`, `fullAmount`, `borrowedAmount`, `liquidationTime`, `liquidationClaim`, `isLiquidated`, `active`, `creationTime`, `timeOfClosure`, `leverage.leverageBuyAmount`, `leverage.cashedOut`
+
+The nested `leverage` tuple IS included in the SDK's inline ABI - it returns as a sub-object with `leverageBuyAmount` (total tokens bought via leverage) and `cashedOut` (amount already cashed out from partial sells).
 
 ---
 
@@ -389,10 +424,12 @@ Returns: `string[]` - token addresses
 Collateralized loans through the LoanHub contract. Take, extend, repay.
 
 > **ID note:** Both loan systems use **1-indexed** IDs (Solidity `++count` pre-increment):
-> - **`hubId`** - Used by all `client.loans` methods. User-scoped, on LoanHub. Get via `getUserLoanCount(user)` - the count IS the latest hubId.
-> - **leverage position ID** - Used by `trading.partialLoanSell()` and `trading.getLeveragePosition()`. User-scoped, on MAINTOKEN contract. Get via `getLeverageCount(user)` - the count IS the latest position ID.
+> - **`hubId`** — Used by all `client.loans` methods. User-scoped, on LoanHub. Get via `getUserLoanCount(user)` — the count IS the latest hubId.
+> - **leverage position ID** — Used by `trading.partialLoanSell()` and `trading.getLeveragePosition()`. User-scoped, on MAINTOKEN contract. Get via `getLeverageCount(user)` — the count IS the latest position ID.
 >
 > Both are 1-indexed. First loan/position = 1, second = 2, etc. The count value equals the latest ID.
+>
+> **Coming soon:** A unified loan/leverage API endpoint will let you list all positions for a user without tracking IDs manually.
 
 > **Auto-sync:** All write methods auto-sync loan state to the backend. Fire-and-forget, non-fatal.
 
@@ -462,7 +499,7 @@ result = client.loans.take_loan(MAINTOKEN, collateral_token, 100 * 10**18, 30)
 | Param | Type | Description |
 |-------|------|-------------|
 | `hubId` | bigint/int | Hub loan ID |
-| `percentage` | bigint/int | 10–100, **must be divisible by 10** (10, 20, 30... 100). Non-multiples cause silent revert. |
+| `percentage` | bigint/int | 10-100, **must be divisible by 10** (10, 20, 30... 100). Non-multiples cause silent revert. |
 | `isLeverage` | boolean | `false` for regular loans |
 | `minOut` | bigint/int | Min USDB output |
 
@@ -495,7 +532,7 @@ Wrap STASIS into yield-bearing wSTASIS, lock as collateral, and borrow against i
 ### `buy(amount)` - Wrap STASIS
 **What it does:** Wraps STASIS into wSTASIS yield-bearing shares. Auto-approves STASIS to the vault.
 **Module:** `client.staking`
-**Fee:** ~1% round-trip cost (0.5% in and 0.5% out, from STASIS swap fee - not the wrap itself)
+**Fee:** ~0.5% raw swap fee per leg (buy STASIS in, sell STASIS out). Actual cost will be higher due to slippage, which varies based on transaction size, pool liquidity, and market conditions. Always check `getAmountsOut()` before trading to see your real expected output.
 **Earns airdrop points** - daily accrual based on staked amount.
 
 **JS:**
@@ -952,7 +989,30 @@ Returns: `{ fill, baseUsdb, buyerTax, totalCostToBuyer }`
 
 ## Module: Market Resolver (`client.resolver`)
 
-Dispute resolution for prediction markets - propose, dispute, vote, finalize, claim bounties.
+Dispute resolution for prediction markets — propose, dispute, vote, finalize, claim bounties.
+
+### Discovering Markets That Need Resolution
+
+Use the API to find prediction markets awaiting action:
+
+```js
+// Fetch all prediction markets
+const markets = await client.api.getTokens({ isPrediction: true, limit: 100 });
+
+// Filter for markets needing a proposal (ended but no outcome proposed yet)
+const needsProposal = markets.data.filter(m => m.predictionStatus === "awaiting_proposal");
+
+// Filter for markets in dispute (you can vote on these)
+const inDispute = markets.data.filter(m => m.predictionStatus === "disputed");
+
+// For each market, check on-chain state for timing details
+for (const market of needsProposal) {
+  const disputeData = await client.resolver.getDisputeData(market.address);
+  console.log(market.name, disputeData);
+}
+```
+
+`predictionStatus` values: `"active"`, `"awaiting_proposal"`, `"proposed"`, `"disputed"`, `"resolved"`
 
 **Key parameters:**
 - Proposal bond: **5 USDB**
@@ -1050,15 +1110,15 @@ Dispute resolution for prediction markets - propose, dispute, vote, finalize, cl
 
 | Getter | Current Value | Description |
 |--------|--------------|-------------|
-| `DISPUTE_PERIOD` | 30 min (target: 24h) | Voting period after dispute |
-| `PROPOSAL_PERIOD` | 30 min (target: 2h) | Challenge period before finalization |
+| `DISPUTE_PERIOD` | 30 min (target: 24h) | Voting period after a dispute is raised. Despite the name, this is the *voting window*, not the window to file a dispute. |
+| `PROPOSAL_PERIOD` | 30 min (target: 2h) | Challenge window after an outcome is proposed. This is when someone can dispute the proposal. Despite the name, this is the *dispute filing window*. |
 | `VETO_PERIOD` | 30 min (target: 1h) | Window for veto after voting |
 | `PROPOSAL_BOND` | 5 USDB | Bond to propose an outcome |
 | `MIN_QUORUM` | 2 | Minimum votes required |
 | `MAX_QUORUM` | 100 | Maximum quorum cap |
 | `VOTING_CONSENSUS` | 70 | 70% supermajority required to finalize |
 | `MIN_STAKE_AMOUNT` | 5 tokens (1e18) | Minimum stake to vote |
-| `VOTE_LOCK_DURATION` | TBD | How long staked tokens are locked after voting |
+| `VOTE_LOCK_DURATION` | 1 day (86400 seconds) | How long staked tokens are locked after voting. Readable on-chain from the MarketResolver contract. |
 
 **Note on staking:** The current resolver staking (STASIS tokens) is a placeholder anti-spam threshold. Post-TGE, this transitions to BASIS token staking - stakers who earn yield from the platform also serve as the dispute resolution voting body. The economic alignment is intentional: the people benefiting most from platform health are the ones ensuring prediction markets resolve honestly.
 
@@ -1082,7 +1142,7 @@ Private prediction markets with restricted access. Extends all Prediction Market
 
 ### Additional Private Market Write Methods
 
-**Resolution by voting:** Private markets are resolved by voter consensus, not the resolver module. The market creator can vote by default. Additional voters can be added via `manageVoter()`. After the market's end time, voters cast votes for the winning outcome. A majority of votes determines the winner. Once the voting timer elapses, anyone can call `finalize()` to lock the result. *(Voting timer duration: TBD - check with Alex.)*
+**Resolution by voting:** Private markets are resolved by voter consensus, not the resolver module. The market creator can vote by default. Additional voters can be added via `manageVoter()`. After the market's end time, voters cast votes for the winning outcome. A majority of votes determines the winner. Once the voting timer elapses, anyone can call `finalize()` to lock the result. The voting timer is **15 minutes after the first vote is cast**. Once the timer elapses and a majority exists, anyone can call `finalize()` to lock the result.
 
 | Method | Description |
 |--------|-------------|
@@ -1122,10 +1182,16 @@ Batch-read prediction market data. All read-only.
 **What it does:** Gets all outcomes with prices and probabilities in one call.
 **Module:** `client.marketReader`
 
+| Param | Type | Description |
+|-------|------|-------------|
+| `routerAddress` | address | The MarketTrading (PREDICTION) contract: `0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6`. This is the same address listed in Contract Addresses as "MarketTrading". |
+| `marketToken` | address | The prediction market's token address |
+
 **JS:**
 ```js
 const outcomes = await client.marketReader.getAllOutcomes(
-  "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", "0xMarketToken"
+  "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", // MarketTrading contract
+  "0xMarketToken"
 );
 ```
 
@@ -1144,6 +1210,8 @@ const outcomes = await client.marketReader.getAllOutcomes(
 ## Module: Leverage Simulator (`client.leverageSimulator`)
 
 Preview leveraged positions before committing. All read-only.
+
+> **Terminology note:** `xe` / `xereserve` references throughout this module refer to the STASIS/MAINTOKEN pool reserves. "XE" is a legacy name from when the main token was called "Xether." In current Basis, `xereserve0` and `xereserve1` are the USDB and STASIS reserves of the main trading pair. When you see `xe` in parameter names or return values, read it as "main token pool."
 
 ---
 
@@ -1177,7 +1245,7 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}, Borrowed
 ---
 
 ### `simulateLeverageFactory(amount, path, numberOfDays)` *(read)*
-**What it does:** Simulates leverage on a factory token (3-hop path: USDB → STASIS → FactoryToken). Same return type as `simulateLeverage()`.
+**What it does:** Simulates leverage on a factory token (3-hop path: USDB → STASIS → FactoryToken). Identical signature to `simulateLeverage()`, same return type.
 **Module:** `client.leverageSimulator`
 
 | Param | Type | Description |
@@ -1186,7 +1254,7 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}, Borrowed
 | `path` | address[] | **3-hop path:** `[USDB, MAINTOKEN, factoryTokenAddress]` |
 | `numberOfDays` | bigint/int | Loan duration in days (minimum 10) |
 
-**Returns** `EndResult` — same 12 fields as `simulateLeverage()`: `totalCollateral`, `totalBorrowed`, `totalFees`, `totalRepay`, `realLiquidity`, etc.
+**Returns** `EndResult` - same 12 fields as `simulateLeverage()`: `totalCollateral`, `totalBorrowed`, `totalFees`, `totalRepay`, `realLiquidity`, etc.
 
 **JS:**
 ```js
@@ -1213,10 +1281,13 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}")
 
 | Method | Description |
 |--------|-------------|
-| `calculateFloor(...)` | Calculate floor price for a leveraged position |
-| `getTokenPrice(tokenAddress)` | Token price in leverage context |
-| `getUSDPrice(tokenAddress)` | USD price in leverage context |
-| `getCollateralValue(...)` | Collateral value of a position |
+| `calculateFloor(hybridMultiplier, reserve0, reserve1, baseReserve0, xereserve0, xereserve1)` | Calculates floor price for a hybrid token given reserves and multiplier. All params are bigint. Returns floor price as bigint. |
+| `getTokenPrice(reserve0, reserve1)` | Returns token price given pool reserves. |
+| `getUSDPrice(reserve0, reserve1, xereserve0, xereserve1)` | Returns USD price given main pool and XE pool reserves. |
+| `getCollateralValue(tokenAmount, reserve0, reserve1)` | Returns USDB value of tokens at current reserves. Compare against `borrowedAmount` to assess position health. |
+| `getCollateralValueHybrid(tokenAmount, reserve0, reserve1, xereserve0, xereserve1, multiplier, basereserve0)` | Returns collateral value for hybrid (Floor+/Stable+) tokens with elastic reserve calculations. |
+| `calculateTokensForBuy(usdbAmount, reserve0, reserve1)` | Calculates how many tokens a given USDB input would purchase at current reserves. |
+| `calculateTokensToBurn(amountIn, multiplier, inputreserve0, inputreserve1, splitter)` | Calculates tokens to burn for a given sell input. |
 
 ---
 
@@ -1234,7 +1305,7 @@ Returns: `number` - basis points (100 = 1%)
 ---
 
 ### `getCurrentSurgeTax(token)` *(read)*
-**What it does:** Returns the current surge tax. Surge tax is a temporary extra fee that token creators can activate during hype cycles (or whenever they choose). It starts at the maximum rate and decays linearly to zero over the configured duration. For example: a 0.5% surge tax over 24 hours starts at +0.5% and drops to 0% over 24 hours. The extra fee is distributed in the same ratio as normal trading fees - it just generates more of them. Displayed on the dapp when active. *(Max surge rate limits: TBD - check with Alex.)*
+**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is distributed in the same ratio as normal trading fees. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` — the contract enforces limits via `availableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
 **Module:** `client.taxes`
 
 ---

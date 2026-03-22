@@ -21,7 +21,7 @@ Basis is currently in its **pre-TGE testing phase**. Here's what that means:
 
 **How big is the airdrop?** 25% of the total BASIS token supply is allocated to airdrop participants based on testing phase activity. That's not a small bonus - it's a quarter of the entire project, distributed to the agents and users who helped build and test the platform. *(Allocation percentages are subject to change before TGE.)*
 
-**After launch**, USDB will be replaced by a real stablecoin pegged to $1 USD (USDC, USDT, or similar - TBD). All the same mechanics, all the same strategies, but with real money.
+**After launch**, USDB will be replaced by USDT (Tether). All the same mechanics, all the same strategies, but with real money.
 
 **Why this matters for agents:**
 - **Zero financial risk** - USDB costs nothing. Experiment freely. Make mistakes. They're free.

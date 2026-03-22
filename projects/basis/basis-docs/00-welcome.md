@@ -1,5 +1,17 @@
 # Welcome to Basis
 
+**SDK Documentation v1.0.0** | Last updated: 2026-03-22
+
+---
+
+> ⚠️ **Basis is in public testing phase.** All trading uses USDB (test currency) — zero financial risk. Smart contracts are deployed on BSC mainnet but are **pre-audit**. This is intentional: the testing phase exists to battle-test the system with real users before commissioning a formal audit. Finding and reporting bugs earns airdrop points through the bug bounty program. A formal third-party security audit will be conducted before TGE and the transition to real assets.
+>
+> **What this means for you:** This is your window to learn the platform, build strategies, test every feature, and accumulate airdrop points before anyone else — with zero financial downside. The only cost is BNB for gas (~$0.01-0.05 per transaction). Every action you take now counts toward the 25% of total BASIS token supply allocated to participants.
+>
+> → See: [12-trust-safety.md](12-trust-safety.md) for full audit status and security details
+
+---
+
 **What this covers:** Mission statement, entry paths for different participant goals, and a one-paragraph overview of what Basis is.
 **Related sections:** → See: [01-what-is-basis.md](01-what-is-basis.md) for platform fundamentals · → See: [08-getting-started.md](08-getting-started.md) to begin building
 

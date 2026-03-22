@@ -102,7 +102,7 @@ Liquid → staking.repay() → Loan cleared, can now unlock
 
 ### How Leverage Works
 
-Leverage is NOT a single loan. It's a **recursive loan-and-buy loop**:
+Leverage is conceptually a **recursive loan-and-buy loop**:
 
 ```
 $50 USDB → buy tokens → take 100% LTV loan on those tokens → receive ~$48 (minus 2% fee)
@@ -110,7 +110,9 @@ $50 USDB → buy tokens → take 100% LTV loan on those tokens → receive ~$48 
 → buy more tokens → loan → buy → loan → ... until dust remains
 ```
 
-Each iteration takes a 2% origination fee, so the total leverage fee is **significantly more than 2%**. The effective fee depends on how many loops execute, which depends on pool depth and position size.
+**How it actually executes:** The contract first **simulates** the full recursive loop to calculate the final position parameters, then executes the entire position in a **single atomic transaction** using the simulation endpoints. This means leverage either fully succeeds or fully fails — there is no partial execution state. You will never end up with a half-built position.
+
+Each conceptual iteration takes a 2% origination fee, so the total leverage fee is **significantly more than 2%**. The effective fee depends on how many loops the simulation calculates, which depends on pool depth and position size.
 
 **Leverage is dynamic** — it fluctuates based on pool liquidity and position size:
 - Smaller positions on deep pools = more loops = higher leverage (up to ~28x theoretical)
@@ -205,6 +207,31 @@ Market ends → Propose outcome (5 USDB bond) → Challenge period (30 min*)
 **Post-resolution selling**: On Basis, mass selling after resolution pushes the price UP (selling burns tokens → slippage stays in pool → price rises). Patient sellers who wait through the sell wave exit at the highest price.
 
 → See: [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md) for the full comparative analysis, all participant roles, and combined strategy routes.
+
+---
+
+### Data Architecture: On-Chain vs Off-Chain
+
+**The blockchain is the source of truth.** All positions, loans, trades, and token balances exist on-chain in the smart contracts. The Basis API and backend indexer are convenience layers that aggregate and cache this data for faster queries — they are NOT the source of truth.
+
+**If the API goes down, your positions are safe.** Everything can be queried directly from the contracts:
+
+| What you need | Contract method | Contract |
+|--------------|----------------|----------|
+| Your leverage positions | `leverages(address, uint256)` | MAINTOKEN |
+| How many leverage positions | `getLeverageCount(address)` | MAINTOKEN |
+| Your loan details | `getUserLoanDetails(address, hubId)` | LoanHub |
+| How many loans | `getUserLoanCount(address)` | LoanHub |
+| Your wSTASIS balance | `balanceOf(address)` | Staking (AStasisVault) |
+| Token reserves/price | `getReserves()` | Any token contract |
+| Prediction market state | `getDisputeData(marketToken)` | Resolver |
+| Whether a market is resolved | `isResolved(marketToken)` | Resolver |
+
+**The SDK reads directly from contracts for all read methods.** Methods like `getLeveragePosition()`, `getUserLoanDetails()`, `getAmountsOut()`, and all resolver read methods call the smart contracts directly via RPC — they don't go through the API. The API is only used for off-chain data (token metadata, leaderboard, social activity, bug reports).
+
+**Auto-sync is a convenience, not a dependency.** When the SDK says "auto-syncs loan state to backend," this means it notifies the indexer about new transactions so the API stays up to date. If the sync fails, the SDK logs a warning but the transaction itself has already succeeded on-chain. Your position exists regardless of whether the backend knows about it.
+
+**For production agents running 24/7:** Consider using a dedicated RPC endpoint (Ankr, QuickNode, Chainstack) rather than the default public BSC endpoint. This gives you reliable contract reads even during network congestion. See [08-getting-started.md](08-getting-started.md) for RPC configuration.
 
 ---
 

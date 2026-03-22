@@ -35,9 +35,29 @@ Basis doesn't ask participants to be ethical. It makes unethical behavior **stru
 | **Liquidation hunting** | No price liquidation exists. Loans valued at floor price. |
 | **Wash trading** | Points are awarded for genuine activity only. Hedging all outcomes earns no points. |
 | **Prediction manipulation** | Community voting with dispute mechanisms and staked bonds. |
-| **Sybil attacks** | Six-layer defense: cost to exist, cost to earn, graph analysis, time, social verification, progressive conviction. |
+| **Sybil attacks** | Six-layer defense: cost to exist, cost to earn, graph analysis, time, social verification, progressive conviction (see below). |
 | **Token transfers** | Any wallet-to-wallet transfer of ANY token = permanent disqualification + total point wipe. All legitimate activity routes through platform contracts. |
 | **Discussion spam** | $5 minimum trade required to comment. Wallet-signed posts. |
+
+---
+
+## Anti-Sybil Defense Layers
+
+Basis uses six complementary layers to defend against sybil attacks and reward gaming:
+
+1. **Cost to exist** — Each wallet gets a one-time $10K USDB faucet claim. Creating more wallets gives more capital, but each wallet is isolated (no transfers) and must operate independently.
+
+2. **Cost to earn** — Trading fees (1.5% round-trip), loan origination (2%), and gas costs mean every point-earning action costs real resources. Farming at scale is expensive.
+
+3. **Graph analysis** — Pre-airdrop batch analysis examines wallet-to-wallet relationships, trading pattern correlations, timing analysis, and circular flow detection across the entire testing period.
+
+4. **Time** — Daily caps per category (max points per wallet per day) mean you can't compress weeks of activity into a single session. Duration of participation matters.
+
+5. **Social verification** — Linking a verified X/Twitter account is required to reach the highest multiplier tiers. Each social account can only link to one wallet. This forces a real-world identity cost on high-scoring wallets.
+
+6. **Progressive conviction** — The system rewards sustained, diverse activity over time rather than one-time bursts. A wallet that trades, stakes, creates, and participates across multiple categories over weeks builds a higher score than one that concentrates activity in a single category or timeframe. The category diversity multiplier amplifies points for wallets active across many categories and diminishes points for single-category farming. Streak bonuses reward consecutive daily activity. The longer and more consistently you participate across the full platform, the more the system trusts you as a genuine participant.
+
+Together, these layers make sybil attacks progressively more expensive, harder to sustain, and easier to detect — while genuine diverse participation is naturally rewarded.
 
 ---
 

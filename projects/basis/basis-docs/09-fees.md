@@ -1,11 +1,11 @@
 # Fee & Cost Master Reference
 
-**What this covers:** Complete fee reference — trading fees by token type, loan cost model, vault costs, gas estimates.
+**What this covers:** Complete fee reference - trading fees by token type, loan cost model, vault costs, gas estimates.
 **Related sections:** → See: [07-how.md](07-how.md) for mechanics · → See: [13-mistakes.md](13-mistakes.md) for common cost mistakes · → See: [06-why.md](06-why.md) for loan cost strategy
 
 ---
 
-## Part 7 — Fee & Cost Master Reference
+## Part 7 - Fee & Cost Master Reference
 
 ### Trading Fees
 
@@ -14,7 +14,7 @@
 | Buy/sell Stable+ (incl. STASIS) | 0.50% per swap | Creator gets 0.1% (20%) |
 | Buy/sell Floor+ | 1.50% per swap | Creator gets 0.3% (20%) |
 | Buy/sell Predict+ | 1.50% per swap | Creator gets 0.3% (20%) |
-| Surge tax (if active) | Variable — see below | Anti-dump mechanism on large sells |
+| Surge tax (if active) | Variable - see below | Anti-dump mechanism on large sells |
 
 ### Surge Tax Details
 
@@ -33,7 +33,7 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 - Surge duration: ≥ 1 hour (linear decay to zero)
 - Quota: maximum 7 days of surge per rolling 30-day window
 
-**When it triggers:** Large sells relative to pool depth. The more stable the token (higher hybridMultiplier), the lower the maximum surge — because stable tokens already absorb sell pressure structurally.
+**When it triggers:** Large sells relative to pool depth. The more stable the token (higher hybridMultiplier), the lower the maximum surge - because stable tokens already absorb sell pressure structurally.
 
 ---
 
@@ -44,8 +44,8 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 | Origination | 2% flat | Deducted upfront. One-time, non-refundable. |
 | Daily interest | 0.005% per day | On collateral value, applies to all loans |
 | Extension | 0.005% per day | Same rate as daily interest, paid upfront when extending |
-| Repayment | Full collateral value | No discount for early repay |
-| Expiry (no repay) | Loss of collateral | Collateral burned — irreversible |
+| Repayment | Repay USDB debt → collateral returned | You repay the borrowed USDB amount. Your collateral tokens are returned to your wallet. No discount for early repay — the repayment amount equals the original borrowed USDB + accrued interest. |
+| Expiry (no repay) | Collateral burned to cover debt | If you don't repay before loan expiry, collateral tokens are burned (burned = sold on elastic supply tokens). Any remaining collateral value above the debt is claimable via `claimLiquidation(hubId)` — it is NOT automatically returned. |
 
 **Total cost by duration**:
 
@@ -56,7 +56,7 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 | 90 days | 2.00% | 0.40% | **2.40%** |
 | 365 days | 2.00% | 1.78% | **3.78%** |
 
-**Key takeaway**: A year-long loan costs ~3.78% total — NOT 2% × 365 days. The 2% is a flat origination fee, not an annual rate.
+**Key takeaway**: A year-long loan costs ~3.78% total - NOT 2% × 365 days. The 2% is a flat origination fee, not an annual rate.
 
 ### Vault Costs & Yield
 
@@ -64,14 +64,14 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 |--------|-----|
 | Wrap / unwrap | 0% (lossless) |
 | Lock / unlock | 0% (gas only) |
-| Entry (buy STASIS + wrap) | ~0.81% + gas |
-| Exit (unwrap + sell STASIS) | ~0.81% + gas |
-| Quick exit (sell claimUSDB) | ~0.81% + gas (1 tx) |
-| Full round-trip | ~1.62% (break-even yield needed) |
+| Entry (buy STASIS + wrap) | 0.5% swap fee + slippage + gas |
+| Exit (unwrap + sell STASIS) | 0.5% swap fee + slippage + gas |
+| Quick exit (sell claimUSDB) | 0.5% swap fee + slippage + gas (1 tx) |
+| Full round-trip | ~1% raw fees + variable slippage both ways |
 
 **Vault yield is variable, not fixed.** It depends on:
-- **Platform trading volume** — the vault receives a share of ALL trading fees across the entire platform. More volume = more yield.
-- **% of STASIS supply staked** — yield is distributed across all staked tokens. Fewer stakers = higher yield per token. More stakers = lower individual yield.
+- **Platform trading volume** - the vault receives a share of ALL trading fees across the entire platform. More volume = more yield.
+- **% of STASIS supply staked** - yield is distributed across all staked tokens. Fewer stakers = higher yield per token. More stakers = lower individual yield.
 
 There is no fixed APY to quote. Early stakers in a growing platform with low vault participation earn the highest yield. The equilibrium adjusts naturally as more participants stake.
 
@@ -100,4 +100,4 @@ There is no fixed APY to quote. Early stakers in a growing platform with low vau
 | Token creation | $0.54-0.90 |
 | Market creation | $0.72-1.20 |
 
-**Break-even note**: Small vault positions need enough yield to cover ~1.62% swap fees + gas costs ($0.50-$1.00 entry/exit). Calculate whether expected yield exceeds total costs for your position size before staking for short periods.
+**Break-even note**: Vault positions need enough yield to cover the ~1% raw swap fees + slippage on both entry and exit + gas costs. Slippage increases with transaction size relative to pool liquidity — use `getAmountsOut()` to estimate your actual costs before committing. Calculate whether expected yield exceeds total costs for your position size before staking for short periods.

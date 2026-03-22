@@ -1,23 +1,23 @@
 # Getting Started
 
-**What this covers:** Complete onboarding guide — getting USDB, installing the SDK, initialization modes, configuration options, first transactions.
+**What this covers:** Complete onboarding guide - getting USDB, installing the SDK, initialization modes, configuration options, first transactions.
 **Related sections:** → See: [15-contract-addresses.md](15-contract-addresses.md) for contract addresses · → See: [03-atomic-skills.md](03-atomic-skills.md) for all available methods · → See: [16-examples.md](16-examples.md) for complete working examples · → See: [10-errors.md](10-errors.md) for error handling
 
 ---
 
-## Part 8 — Getting Started
+## Part 8 - Getting Started
 
 ### Step 1: Get USDB
 
-Visit the faucet at [basis.exchange/faucet](https://basis.exchange/faucet). USDB is free — zero cost, zero risk. Get enough to experiment with.
+Visit the faucet at [basis.exchange/faucet](https://basis.exchange/faucet). USDB is free - zero cost, zero risk. Get enough to experiment with.
 
-Your agent also needs a small amount of BNB for gas (~$0.01–$1.20 per transaction depending on complexity).
+Your agent also needs a small amount of BNB for gas (~$0.01-$1.20 per transaction depending on complexity).
 
 ---
 
 ## SDK Overview
 
-The Basis SDK is a dual-language (TypeScript/JavaScript and Python) toolkit for interacting with the Basis DeFi ecosystem on Binance Smart Chain (BSC Mainnet). It provides a unified interface for token creation, trading, prediction markets, leveraged positions, lending, staking, vesting, and on-chain agent identity — all through a single client object.
+The Basis SDK is a dual-language (TypeScript/JavaScript and Python) toolkit for interacting with the Basis DeFi ecosystem on Binance Smart Chain (BSC Mainnet). It provides a unified interface for token creation, trading, prediction markets, leveraged positions, lending, staking, vesting, and on-chain agent identity - all through a single client object.
 
 **Built for:** AI agents, algorithmic traders, and developers who need programmatic access to the Basis protocol. All methods return strongly-typed JSON that LLMs and automated systems can parse directly.
 
@@ -87,9 +87,11 @@ tokens = client.api.get_tokens(limit=10)
 print(tokens["data"])
 ```
 
-### Full Mode (private key — auto SIWE auth + API key + on-chain writes)
+### Full Mode (private key - auto SIWE auth + API key + on-chain writes)
 
-Automatically authenticates via SIWE, provisions an API key, and enables all write operations. **This is the mode you want for agents.** Sessions are persistent — once authenticated, you don't need to re-authenticate. Create the client once and use it for the lifetime of your agent.
+Automatically authenticates via SIWE, provisions an API key, and enables all write operations. **This is the mode you want for agents.**
+
+> **Session lifetime:** SIWE sessions expire when the browser closes (no TTL). For long-running agents, use **API key auth** instead — API keys bypass the session entirely and don't expire. `BasisClient.create()` auto-provisions an API key during initialization, so agents using the standard flow already have persistent auth. The API key is stored on the client and used for all subsequent requests.
 
 **JavaScript:**
 
@@ -119,22 +121,22 @@ All options can be passed to the `BasisClient` constructor (or `BasisClient.crea
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `privateKey` | `string` | — | Wallet private key. Enables write operations and automatic SIWE authentication. |
-| `apiKey` | `string` | — | API key for data endpoints. Auto-provisioned when `privateKey` is provided via `BasisClient.create`. |
-| `rpcUrl` | `string` | `https://bsc-dataseed.binance.org/` | Custom BSC RPC endpoint. Validated on connect — must return chainId 56. |
+| `privateKey` | `string` | - | Wallet private key. Enables write operations and automatic SIWE authentication. |
+| `apiKey` | `string` | - | API key for data endpoints. Auto-provisioned when `privateKey` is provided via `BasisClient.create`. |
+| `rpcUrl` | `string` | `https://bsc-dataseed.binance.org/` | Custom BSC RPC endpoint. Validated on connect - must return chainId 56. |
 | `apiDomain` | `string` | `https://launchonbasis.com` | Base URL for the Basis API. |
-| `agent` | `boolean` or `object` | — | ERC-8004 agent registration. Pass `true` for defaults, or `{ name, description, capabilities }` for custom metadata. |
+| `agent` | `boolean` or `object` | - | ERC-8004 agent registration. Pass `true` for defaults, or `{ name, description, capabilities }` for custom metadata. |
 
 ### 🔒 Private Key Security
 
 **Never hardcode private keys in source files or commit them to version control.**
 
-**JS — use environment variables:**
+**JS - use environment variables:**
 ```js
 const client = await BasisClient.create({ privateKey: process.env.BASIS_PRIVATE_KEY });
 ```
 
-**Python — use environment variables:**
+**Python - use environment variables:**
 ```python
 import os
 client = BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"])
@@ -143,7 +145,7 @@ client = BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"])
 **Best practices:**
 - Store keys in `.env` files (add `.env` to `.gitignore`)
 - Use a secrets manager for production deployments (AWS Secrets Manager, HashiCorp Vault, etc.)
-- Generate a dedicated wallet for your agent — don't reuse personal wallets
+- Generate a dedicated wallet for your agent - don't reuse personal wallets
 - During the USDB testing phase, the risk is time/gas only. Post-TGE with real assets, key security becomes critical.
 
 ### RPC Configuration
@@ -191,7 +193,7 @@ All contract addresses default to BSC Mainnet and can be overridden via construc
 
 ## Step 3: First Actions
 
-Here's an example of common first steps — your strategy may vary (see [02-archetypes.md](02-archetypes.md) and [05-decision-trees.md](05-decision-trees.md) for guidance on what to do first):
+Here's an example of common first steps - your strategy may vary (see [02-archetypes.md](02-archetypes.md) and [05-decision-trees.md](05-decision-trees.md) for guidance on what to do first):
 
 ```python
 # Example: Buy STASIS and stake
@@ -222,8 +224,8 @@ You're now earning vault yield + airdrop points. Everything else builds from her
 ## Step 4: Check Your Status
 
 ```
-GET /api/v1/portfolio/{wallet}    — Full position summary
-GET /api/v1/points/{wallet}       — Airdrop points + tier + rank
+GET /api/v1/portfolio/{wallet}    - Full position summary
+GET /api/v1/points/{wallet}       - Airdrop points + tier + rank
 ```
 
 Via SDK:
@@ -260,7 +262,7 @@ usdb_raw = Web3.to_wei(5, "ether")
 human = Web3.from_wei(5000000000000000000, "ether")  # 5
 ```
 
-**Exception:** `sellPercentage()` takes a 1–100 integer, not a raw amount.
+**Exception:** `sellPercentage()` takes a 1-100 integer, not a raw amount.
 
 ---
 

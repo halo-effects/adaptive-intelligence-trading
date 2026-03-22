@@ -13,7 +13,7 @@ Real mistakes discovered during live SDK testing.
 - ❌ **Taking long loans "to be safe"** → Interest is prepaid. Repaying early wastes unused days. Take minimum (10 days), extend.
 - ❌ **Repaying early to "save on interest"** → No refund. Let it run to near-expiry.
 - ❌ **Re-originating instead of extending** → Each new loan = 2% fee. Extension = 0.005%/day.
-- ❌ **Using non-multiple-of-10 percentage on `hubPartialLoanSell()`** → Hub version requires percentage divisible by 10 (10, 20, 30... 100). `trading.partialLoanSell()` accepts any 1–100. Using 25% on the hub version causes a silent contract revert with no error message.
+- ❌ **Using non-multiple-of-10 percentage on `partialLoanSell()`** → Both `trading.partialLoanSell()` and `loans.hubPartialLoanSell()` require percentage divisible by 10 (10, 20, 30... 100). Using 25% causes a silent contract revert with no error message.
 
 ## Vault Mistakes
 - ❌ **Not calculating your break-even** → Factor in gas costs (~$0.50-1.00 entry/exit) plus ~1.62% swap fees. Calculate whether expected yield exceeds total costs for your position size.

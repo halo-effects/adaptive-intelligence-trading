@@ -264,7 +264,7 @@ Post a comment on a project.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `projectId` | `bigint` / `int` | Project ID |
+| `projectId` | `bigint` / `int` | Project ID — get this from `GET /api/v1/tokens/{contractAddress}`, it's the `id` field in the response. |
 | `content` | `string` | Comment text (max 2000 characters) |
 | `authorAddress` | `string` | Your wallet address |
 
@@ -595,7 +595,7 @@ List and search tokens.
 | Option | Type | Description |
 |--------|------|-------------|
 | `search` | `string` | Filter by name, symbol, or address |
-| `isPrediction` | `boolean` | Filter by token type |
+| `isPrediction` | `boolean` | Filter by token type. Use `true` to list only prediction markets. |
 | `sort` | `string` | `"newest"` (default) or `"oldest"` |
 | `page` | `number` | Page number (default: 1) |
 | `limit` | `number` | Items per page (default: 20, max: 100) |
@@ -616,7 +616,7 @@ Returns: `{ data: Token[], pagination }`
   "multiplier": 50,
   "isPrediction": false,
   "predictionType": null,
-  "predictionStatus": null,
+  "predictionStatus": null,   // "active", "awaiting_proposal", "proposed", "disputed", "resolved", etc.
   "createdAt": "2026-01-01T00:00:00.000Z",
   "lastActivityAt": "2026-03-13T00:00:00.000Z"
 }

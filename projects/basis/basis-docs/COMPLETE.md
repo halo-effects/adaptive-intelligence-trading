@@ -1,10 +1,24 @@
 ﻿# Basis — Complete Agent Guide
 
+_SDK Documentation v1.0.0 | Last updated: 2026-03-22_
+
 _All sections concatenated. Load this single file for full platform context._
 
 ---
 
 # Welcome to Basis
+
+**SDK Documentation v1.0.0** | Last updated: 2026-03-22
+
+---
+
+> âš ï¸ **Basis is in public testing phase.** All trading uses USDB (test currency) â€” zero financial risk. Smart contracts are deployed on BSC mainnet but are **pre-audit**. This is intentional: the testing phase exists to battle-test the system with real users before commissioning a formal audit. Finding and reporting bugs earns airdrop points through the bug bounty program. A formal third-party security audit will be conducted before TGE and the transition to real assets.
+>
+> **What this means for you:** This is your window to learn the platform, build strategies, test every feature, and accumulate airdrop points before anyone else â€” with zero financial downside. The only cost is BNB for gas (~$0.01-0.05 per transaction). Every action you take now counts toward the 25% of total BASIS token supply allocated to participants.
+>
+> â†’ See: [12-trust-safety.md](12-trust-safety.md) for full audit status and security details
+
+---
 
 **What this covers:** Mission statement, entry paths for different participant goals, and a one-paragraph overview of what Basis is.
 **Related sections:** â†’ See: [01-what-is-basis.md](01-what-is-basis.md) for platform fundamentals Â· â†’ See: [08-getting-started.md](08-getting-started.md) to begin building
@@ -567,16 +581,16 @@ result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)
 ### `partialLoanSell(loanId, percentage, isLeverage, minOut)`
 **What it does:** Partially closes a leveraged position by selling a percentage of collateral.
 **Module:** `client.trading`
-**Note:** Uses `loanId` (MAINTOKEN contract ID) â€” NOT `hubId`. Requires ~5-second delay after `leverageBuy`.
+**Note:** Uses `loanId` (MAINTOKEN contract ID) - NOT `hubId`. Requires ~5-second delay after `leverageBuy`.
 
 | Param | Type | Description |
 |-------|------|-------------|
 | `loanId` | bigint/int | Leverage position ID (from MAINTOKEN, NOT hubId) |
-| `percentage` | bigint/int | 1â€“100 (any integer percentage) |
+| `percentage` | bigint/int | 10â€“100, **must be divisible by 10** (10, 20, 30... 100). Non-multiples cause a silent contract revert. |
 | `isLeverage` | boolean | `true` for leverage positions |
 | `minOut` | bigint/int | Min USDB output (slippage protection) |
 
-> âš ï¸ **Constraint difference:** `trading.partialLoanSell()` accepts any percentage 1â€“100. `loans.hubPartialLoanSell()` requires multiples of 10 (10, 20, 30... 100). Using a non-multiple-of-10 value on the hub version will cause a silent contract revert.
+> **Note:** Both `trading.partialLoanSell()` and `loans.hubPartialLoanSell()` require percentage to be a multiple of 10. This is enforced at the contract level.
 
 **JS:**
 ```js
@@ -587,18 +601,28 @@ const result = await client.trading.partialLoanSell(positionId, 50, true, 0);
 result = client.trading.partial_loan_sell(position_id, 50, True, 0)
 ```
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `loanId` | bigint/int | Leverage position ID (on MAINTOKEN contract) |
-| `percentage` | number | 1-100 |
-| `isLeverage` | boolean | Must be `true` for leverage positions |
-| `minOut` | bigint/int | Min output |
+
 
 ---
 
 ### `buyTokens(amount, minOut, path, wrapTokens)` *(raw)*
-**What it does:** Raw buy with explicit swap path. Use when you need fine-grained path control.
+**What it does:** Raw buy with explicit swap path. Use when you need fine-grained path control instead of the simplified `buy()` method.
 **Module:** `client.trading`
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `amount` | bigint/int | Input amount (18 decimals) |
+| `minOut` | bigint/int | Minimum output tokens (slippage protection). Use `getAmountsOut()` to calculate. |
+| `path` | address[] | Swap path - 2-hop `[USDB, token]` for STASIS, 3-hop `[USDB, MAINTOKEN, token]` for factory tokens |
+| `wrapTokens` | boolean | If `true`, wraps output to wSTASIS (only for STASIS buys via vault entry) |
+
+**JS:**
+```js
+const amounts = await client.trading.getAmountsOut(parseUnits("10", 18), [USDB, MAINTOKEN]);
+const result = await client.trading.buyTokens(parseUnits("10", 18), amounts[1], [USDB, MAINTOKEN], false);
+```
+
+**When to use this instead of `buy()`:** When you need to control the exact swap path, set a custom `minOut` for slippage, or wrap to wSTASIS in the same transaction.
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -610,14 +634,38 @@ result = client.trading.partial_loan_sell(position_id, 50, True, 0)
 ---
 
 ### `sellTokens(amount, minOut, path, swapToETH)` *(raw)*
-**What it does:** Raw sell with explicit swap path.
+**What it does:** Raw sell with explicit swap path. Use when you need fine-grained control over the sell route.
 **Module:** `client.trading`
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `amount` | bigint/int | Token amount to sell (18 decimals) |
+| `minOut` | bigint/int | Minimum USDB output (slippage protection) |
+| `path` | address[] | Reverse swap path - `[token, USDB]` for STASIS, `[token, MAINTOKEN, USDB]` for factory tokens |
+| `swapToETH` | boolean | If `true`, converts output to native BNB instead of USDB |
+
+**JS:**
+```js
+const amounts = await client.trading.getAmountsOut(parseUnits("100", 18), [MAINTOKEN, USDB]);
+const result = await client.trading.sellTokens(parseUnits("100", 18), amounts[1], [MAINTOKEN, USDB], false);
+```
 
 ---
 
 ### `convertToNative(marketToken, inputToken, inputAmount)` *(write)*
-**What it does:** Converts any token (USDB, MAIN, or market token) to USDB via a market token's AMM. Auto-approves input.
+**What it does:** Converts any token (USDB, STASIS, or a market token) to USDB via a market token's AMM. Auto-approves input. Useful for consolidating various token positions back to USDB.
 **Module:** `client.trading`
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `marketToken` | address | The prediction market token whose AMM to route through |
+| `inputToken` | address | The token you're converting FROM |
+| `inputAmount` | bigint/int | Amount to convert (18 decimals) |
+
+**JS:**
+```js
+const result = await client.trading.convertToNative(marketTokenAddress, inputTokenAddress, parseUnits("50", 18));
+```
 
 ---
 
@@ -660,9 +708,10 @@ Returns: `number`
 **What it does:** Returns details of a specific leverage position.
 **Module:** `client.trading`
 
-**Returns** (from `leverages(address, uint256)` on MAIN_TOKEN - 12 fields):
-`user`, `token`, `collateralAmount`, `liquidatedAmount`, `fullAmount`, `borrowedAmount`, `liquidationTime`, `liquidationClaim`, `isLiquidated`, `active`, `creationTime`, `timeOfClosure`
-*Note: The nested Leverage struct fields (`leverageBuyAmount`, `cashedOut`) may or may not be included depending on Solidity auto-getter behavior - verify against compiled ABI.*
+**Returns** (from `leverages(address, uint256)` on MAINTOKEN - 14 fields):
+`user`, `token`, `collateralAmount`, `liquidatedAmount`, `fullAmount`, `borrowedAmount`, `liquidationTime`, `liquidationClaim`, `isLiquidated`, `active`, `creationTime`, `timeOfClosure`, `leverage.leverageBuyAmount`, `leverage.cashedOut`
+
+The nested `leverage` tuple IS included in the SDK's inline ABI - it returns as a sub-object with `leverageBuyAmount` (total tokens bought via leverage) and `cashedOut` (amount already cashed out from partial sells).
 
 ---
 
@@ -906,7 +955,7 @@ result = client.loans.take_loan(MAINTOKEN, collateral_token, 100 * 10**18, 30)
 | Param | Type | Description |
 |-------|------|-------------|
 | `hubId` | bigint/int | Hub loan ID |
-| `percentage` | bigint/int | 10â€“100, **must be divisible by 10** (10, 20, 30... 100). Non-multiples cause silent revert. |
+| `percentage` | bigint/int | 10-100, **must be divisible by 10** (10, 20, 30... 100). Non-multiples cause silent revert. |
 | `isLeverage` | boolean | `false` for regular loans |
 | `minOut` | bigint/int | Min USDB output |
 
@@ -939,7 +988,7 @@ Wrap STASIS into yield-bearing wSTASIS, lock as collateral, and borrow against i
 ### `buy(amount)` - Wrap STASIS
 **What it does:** Wraps STASIS into wSTASIS yield-bearing shares. Auto-approves STASIS to the vault.
 **Module:** `client.staking`
-**Fee:** ~1% round-trip cost (0.5% in and 0.5% out, from STASIS swap fee - not the wrap itself)
+**Fee:** ~0.5% raw swap fee per leg (buy STASIS in, sell STASIS out). Actual cost per leg is ~0.81% including slippage, so full round-trip is ~1.62% in practice. Slippage varies with transaction size and pool liquidity â€” larger positions experience more slippage.
 **Earns airdrop points** - daily accrual based on staked amount.
 
 **JS:**
@@ -1494,8 +1543,8 @@ Dispute resolution for prediction markets - propose, dispute, vote, finalize, cl
 
 | Getter | Current Value | Description |
 |--------|--------------|-------------|
-| `DISPUTE_PERIOD` | 30 min (target: 24h) | Voting period after dispute |
-| `PROPOSAL_PERIOD` | 30 min (target: 2h) | Challenge period before finalization |
+| `DISPUTE_PERIOD` | 30 min (target: 24h) | Voting period after a dispute is raised. Despite the name, this is the *voting window*, not the window to file a dispute. |
+| `PROPOSAL_PERIOD` | 30 min (target: 2h) | Challenge window after an outcome is proposed. This is when someone can dispute the proposal. Despite the name, this is the *dispute filing window*. |
 | `VETO_PERIOD` | 30 min (target: 1h) | Window for veto after voting |
 | `PROPOSAL_BOND` | 5 USDB | Bond to propose an outcome |
 | `MIN_QUORUM` | 2 | Minimum votes required |
@@ -1566,10 +1615,16 @@ Batch-read prediction market data. All read-only.
 **What it does:** Gets all outcomes with prices and probabilities in one call.
 **Module:** `client.marketReader`
 
+| Param | Type | Description |
+|-------|------|-------------|
+| `routerAddress` | address | The MarketTrading (PREDICTION) contract: `0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6`. This is the same address listed in Contract Addresses as "MarketTrading". |
+| `marketToken` | address | The prediction market's token address |
+
 **JS:**
 ```js
 const outcomes = await client.marketReader.getAllOutcomes(
-  "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", "0xMarketToken"
+  "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", // MarketTrading contract
+  "0xMarketToken"
 );
 ```
 
@@ -1588,6 +1643,8 @@ const outcomes = await client.marketReader.getAllOutcomes(
 ## Module: Leverage Simulator (`client.leverageSimulator`)
 
 Preview leveraged positions before committing. All read-only.
+
+> **Terminology note:** `xe` / `xereserve` references throughout this module refer to the STASIS/MAINTOKEN pool reserves. "XE" is a legacy name from when the main token was called "Xether." In current Basis, `xereserve0` and `xereserve1` are the USDB and STASIS reserves of the main trading pair. When you see `xe` in parameter names or return values, read it as "main token pool."
 
 ---
 
@@ -1630,7 +1687,7 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}, Borrowed
 | `path` | address[] | **3-hop path:** `[USDB, MAINTOKEN, factoryTokenAddress]` |
 | `numberOfDays` | bigint/int | Loan duration in days (minimum 10) |
 
-**Returns** `EndResult` â€” same 12 fields as `simulateLeverage()`: `totalCollateral`, `totalBorrowed`, `totalFees`, `totalRepay`, `realLiquidity`, etc.
+**Returns** `EndResult` - same 12 fields as `simulateLeverage()`: `totalCollateral`, `totalBorrowed`, `totalFees`, `totalRepay`, `realLiquidity`, etc.
 
 **JS:**
 ```js
@@ -1657,10 +1714,13 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}")
 
 | Method | Description |
 |--------|-------------|
-| `calculateFloor(...)` | Calculate floor price for a leveraged position |
-| `getTokenPrice(tokenAddress)` | Token price in leverage context |
-| `getUSDPrice(tokenAddress)` | USD price in leverage context |
-| `getCollateralValue(...)` | Collateral value of a position |
+| `calculateFloor(hybridMultiplier, reserve0, reserve1, baseReserve0, xereserve0, xereserve1)` | Calculates floor price for a hybrid token given reserves and multiplier. All params are bigint. Returns floor price as bigint. |
+| `getTokenPrice(reserve0, reserve1)` | Returns token price given pool reserves. |
+| `getUSDPrice(reserve0, reserve1, xereserve0, xereserve1)` | Returns USD price given main pool and XE pool reserves. |
+| `getCollateralValue(tokenAmount, reserve0, reserve1)` | Returns USDB value of tokens at current reserves. Compare against `borrowedAmount` to assess position health. |
+| `getCollateralValueHybrid(tokenAmount, reserve0, reserve1, xereserve0, xereserve1, multiplier, basereserve0)` | Returns collateral value for hybrid (Floor+/Stable+) tokens with elastic reserve calculations. |
+| `calculateTokensForBuy(usdbAmount, reserve0, reserve1)` | Calculates how many tokens a given USDB input would purchase at current reserves. |
+| `calculateTokensToBurn(amountIn, multiplier, inputreserve0, inputreserve1, splitter)` | Calculates tokens to burn for a given sell input. |
 
 ---
 
@@ -2234,7 +2294,7 @@ Liquid â†’ staking.repay() â†’ Loan cleared, can now unlock
 
 ### How Leverage Works
 
-Leverage is NOT a single loan. It's a **recursive loan-and-buy loop**:
+Leverage is conceptually a **recursive loan-and-buy loop**:
 
 ```
 $50 USDB â†’ buy tokens â†’ take 100% LTV loan on those tokens â†’ receive ~$48 (minus 2% fee)
@@ -2242,7 +2302,9 @@ $50 USDB â†’ buy tokens â†’ take 100% LTV loan on those tokens â†�
 â†’ buy more tokens â†’ loan â†’ buy â†’ loan â†’ ... until dust remains
 ```
 
-Each iteration takes a 2% origination fee, so the total leverage fee is **significantly more than 2%**. The effective fee depends on how many loops execute, which depends on pool depth and position size.
+**How it actually executes:** The contract first **simulates** the full recursive loop to calculate the final position parameters, then executes the entire position in a **single atomic transaction** using the simulation endpoints. This means leverage either fully succeeds or fully fails â€” there is no partial execution state. You will never end up with a half-built position.
+
+Each conceptual iteration takes a 2% origination fee, so the total leverage fee is **significantly more than 2%**. The effective fee depends on how many loops the simulation calculates, which depends on pool depth and position size.
 
 **Leverage is dynamic** â€” it fluctuates based on pool liquidity and position size:
 - Smaller positions on deep pools = more loops = higher leverage (up to ~28x theoretical)
@@ -2337,6 +2399,31 @@ Market ends â†’ Propose outcome (5 USDB bond) â†’ Challenge period (30
 **Post-resolution selling**: On Basis, mass selling after resolution pushes the price UP (selling burns tokens â†’ slippage stays in pool â†’ price rises). Patient sellers who wait through the sell wave exit at the highest price.
 
 â†’ See: [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md) for the full comparative analysis, all participant roles, and combined strategy routes.
+
+---
+
+### Data Architecture: On-Chain vs Off-Chain
+
+**The blockchain is the source of truth.** All positions, loans, trades, and token balances exist on-chain in the smart contracts. The Basis API and backend indexer are convenience layers that aggregate and cache this data for faster queries â€” they are NOT the source of truth.
+
+**If the API goes down, your positions are safe.** Everything can be queried directly from the contracts:
+
+| What you need | Contract method | Contract |
+|--------------|----------------|----------|
+| Your leverage positions | `leverages(address, uint256)` | MAINTOKEN |
+| How many leverage positions | `getLeverageCount(address)` | MAINTOKEN |
+| Your loan details | `getUserLoanDetails(address, hubId)` | LoanHub |
+| How many loans | `getUserLoanCount(address)` | LoanHub |
+| Your wSTASIS balance | `balanceOf(address)` | Staking (AStasisVault) |
+| Token reserves/price | `getReserves()` | Any token contract |
+| Prediction market state | `getDisputeData(marketToken)` | Resolver |
+| Whether a market is resolved | `isResolved(marketToken)` | Resolver |
+
+**The SDK reads directly from contracts for all read methods.** Methods like `getLeveragePosition()`, `getUserLoanDetails()`, `getAmountsOut()`, and all resolver read methods call the smart contracts directly via RPC â€” they don't go through the API. The API is only used for off-chain data (token metadata, leaderboard, social activity, bug reports).
+
+**Auto-sync is a convenience, not a dependency.** When the SDK says "auto-syncs loan state to backend," this means it notifies the indexer about new transactions so the API stays up to date. If the sync fails, the SDK logs a warning but the transaction itself has already succeeded on-chain. Your position exists regardless of whether the backend knows about it.
+
+**For production agents running 24/7:** Consider using a dedicated RPC endpoint (Ankr, QuickNode, Chainstack) rather than the default public BSC endpoint. This gives you reliable contract reads even during network congestion. See [08-getting-started.md](08-getting-started.md) for RPC configuration.
 
 ---
 
@@ -2629,12 +2716,12 @@ Once you're set up:
 
 # Fee & Cost Master Reference
 
-**What this covers:** Complete fee reference â€” trading fees by token type, loan cost model, vault costs, gas estimates.
+**What this covers:** Complete fee reference - trading fees by token type, loan cost model, vault costs, gas estimates.
 **Related sections:** â†’ See: [07-how.md](07-how.md) for mechanics Â· â†’ See: [13-mistakes.md](13-mistakes.md) for common cost mistakes Â· â†’ See: [06-why.md](06-why.md) for loan cost strategy
 
 ---
 
-## Part 7 â€” Fee & Cost Master Reference
+## Part 7 - Fee & Cost Master Reference
 
 ### Trading Fees
 
@@ -2643,7 +2730,7 @@ Once you're set up:
 | Buy/sell Stable+ (incl. STASIS) | 0.50% per swap | Creator gets 0.1% (20%) |
 | Buy/sell Floor+ | 1.50% per swap | Creator gets 0.3% (20%) |
 | Buy/sell Predict+ | 1.50% per swap | Creator gets 0.3% (20%) |
-| Surge tax (if active) | Variable â€” see below | Anti-dump mechanism on large sells |
+| Surge tax (if active) | Variable - see below | Anti-dump mechanism on large sells |
 
 ### Surge Tax Details
 
@@ -2662,7 +2749,7 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 - Surge duration: â‰¥ 1 hour (linear decay to zero)
 - Quota: maximum 7 days of surge per rolling 30-day window
 
-**When it triggers:** Large sells relative to pool depth. The more stable the token (higher hybridMultiplier), the lower the maximum surge â€” because stable tokens already absorb sell pressure structurally.
+**When it triggers:** Large sells relative to pool depth. The more stable the token (higher hybridMultiplier), the lower the maximum surge - because stable tokens already absorb sell pressure structurally.
 
 ---
 
@@ -2673,8 +2760,8 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 | Origination | 2% flat | Deducted upfront. One-time, non-refundable. |
 | Daily interest | 0.005% per day | On collateral value, applies to all loans |
 | Extension | 0.005% per day | Same rate as daily interest, paid upfront when extending |
-| Repayment | Full collateral value | No discount for early repay |
-| Expiry (no repay) | Loss of collateral | Collateral burned â€” irreversible |
+| Repayment | Repay USDB debt â†’ collateral returned | You repay the borrowed USDB amount. Your collateral tokens are returned to your wallet. No discount for early repay â€” the repayment amount equals the original borrowed USDB + accrued interest. |
+| Expiry (no repay) | Collateral burned to cover debt | If you don't repay before loan expiry, collateral tokens are burned (burned = sold on elastic supply tokens). Any remaining collateral value above the debt is claimable via `claimLiquidation(hubId)` â€” it is NOT automatically returned. |
 
 **Total cost by duration**:
 
@@ -2685,7 +2772,7 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 | 90 days | 2.00% | 0.40% | **2.40%** |
 | 365 days | 2.00% | 1.78% | **3.78%** |
 
-**Key takeaway**: A year-long loan costs ~3.78% total â€” NOT 2% Ã— 365 days. The 2% is a flat origination fee, not an annual rate.
+**Key takeaway**: A year-long loan costs ~3.78% total - NOT 2% Ã— 365 days. The 2% is a flat origination fee, not an annual rate.
 
 ### Vault Costs & Yield
 
@@ -2699,8 +2786,8 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 | Full round-trip | ~1.62% (break-even yield needed) |
 
 **Vault yield is variable, not fixed.** It depends on:
-- **Platform trading volume** â€” the vault receives a share of ALL trading fees across the entire platform. More volume = more yield.
-- **% of STASIS supply staked** â€” yield is distributed across all staked tokens. Fewer stakers = higher yield per token. More stakers = lower individual yield.
+- **Platform trading volume** - the vault receives a share of ALL trading fees across the entire platform. More volume = more yield.
+- **% of STASIS supply staked** - yield is distributed across all staked tokens. Fewer stakers = higher yield per token. More stakers = lower individual yield.
 
 There is no fixed APY to quote. Early stakers in a growing platform with low vault participation earn the highest yield. The equilibrium adjusts naturally as more participants stake.
 
@@ -3941,9 +4028,29 @@ Basis doesn't ask participants to be ethical. It makes unethical behavior **stru
 | **Liquidation hunting** | No price liquidation exists. Loans valued at floor price. |
 | **Wash trading** | Points are awarded for genuine activity only. Hedging all outcomes earns no points. |
 | **Prediction manipulation** | Community voting with dispute mechanisms and staked bonds. |
-| **Sybil attacks** | Six-layer defense: cost to exist, cost to earn, graph analysis, time, social verification, progressive conviction. |
+| **Sybil attacks** | Six-layer defense: cost to exist, cost to earn, graph analysis, time, social verification, progressive conviction (see below). |
 | **Token transfers** | Any wallet-to-wallet transfer of ANY token = permanent disqualification + total point wipe. All legitimate activity routes through platform contracts. |
 | **Discussion spam** | $5 minimum trade required to comment. Wallet-signed posts. |
+
+---
+
+## Anti-Sybil Defense Layers
+
+Basis uses six complementary layers to defend against sybil attacks and reward gaming:
+
+1. **Cost to exist** â€” Each wallet gets a one-time $10K USDB faucet claim. Creating more wallets gives more capital, but each wallet is isolated (no transfers) and must operate independently.
+
+2. **Cost to earn** â€” Trading fees (1.5% round-trip), loan origination (2%), and gas costs mean every point-earning action costs real resources. Farming at scale is expensive.
+
+3. **Graph analysis** â€” Pre-airdrop batch analysis examines wallet-to-wallet relationships, trading pattern correlations, timing analysis, and circular flow detection across the entire testing period.
+
+4. **Time** â€” Daily caps per category (max points per wallet per day) mean you can't compress weeks of activity into a single session. Duration of participation matters.
+
+5. **Social verification** â€” Linking a verified X/Twitter account is required to reach the highest multiplier tiers. Each social account can only link to one wallet. This forces a real-world identity cost on high-scoring wallets.
+
+6. **Progressive conviction** â€” The system rewards sustained, diverse activity over time rather than one-time bursts. A wallet that trades, stakes, creates, and participates across multiple categories over weeks builds a higher score than one that concentrates activity in a single category or timeframe. The category diversity multiplier amplifies points for wallets active across many categories and diminishes points for single-category farming. Streak bonuses reward consecutive daily activity. The longer and more consistently you participate across the full platform, the more the system trusts you as a genuine participant.
+
+Together, these layers make sybil attacks progressively more expensive, harder to sustain, and easier to detect â€” while genuine diverse participation is naturally rewarded.
 
 ---
 
@@ -3983,7 +4090,7 @@ Real mistakes discovered during live SDK testing.
 - âŒ **Taking long loans "to be safe"** â†’ Interest is prepaid. Repaying early wastes unused days. Take minimum (10 days), extend.
 - âŒ **Repaying early to "save on interest"** â†’ No refund. Let it run to near-expiry.
 - âŒ **Re-originating instead of extending** â†’ Each new loan = 2% fee. Extension = 0.005%/day.
-- âŒ **Using non-multiple-of-10 percentage on `hubPartialLoanSell()`** â†’ Hub version requires percentage divisible by 10 (10, 20, 30... 100). `trading.partialLoanSell()` accepts any 1â€“100. Using 25% on the hub version causes a silent contract revert with no error message.
+- âŒ **Using non-multiple-of-10 percentage on `partialLoanSell()`** â†’ Both `trading.partialLoanSell()` and `loans.hubPartialLoanSell()` require percentage divisible by 10 (10, 20, 30... 100). Using 25% causes a silent contract revert with no error message.
 
 ## Vault Mistakes
 - âŒ **Not calculating your break-even** â†’ Factor in gas costs (~$0.50-1.00 entry/exit) plus ~1.62% swap fees. Calculate whether expected yield exceeds total costs for your position size.
@@ -4557,6 +4664,107 @@ def staking_operations():
 
     sell_result = client.staking.sell(int(shares))
     print("Unwrapped to STASIS:", sell_result["hash"])
+```
+
+---
+
+## Example 6: Agent Bootstrap â€” First Hour on Basis
+
+A complete script to go from zero to operational. Covers initialization, USDB acquisition, agent registration, first trade, and staking.
+
+**JS:**
+```js
+import { BasisClient } from 'basis-sdk';
+import { parseUnits, formatUnits } from 'viem';
+
+async function bootstrap() {
+  // 1. Initialize client (auto-authenticates via SIWE, provisions API key)
+  const client = await BasisClient.create({
+    privateKey: process.env.BASIS_PRIVATE_KEY,
+    agent: { name: "MyAgent", metadataURI: "https://example.com/agent.json" }
+  });
+  console.log("âœ… Client initialized + agent registered");
+
+  // 2. Claim USDB from faucet (testing phase â€” $10K free USDB)
+  //    Visit https://launchonbasis.com/faucet or call the faucet API
+  //    This is a one-time operation per wallet
+
+  // 3. Check your USDB balance
+  const usdbBalance = await client.publicClient.readContract({
+    address: client.usdbAddress,
+    abi: [{"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}],
+    functionName: 'balanceOf',
+    args: [client.walletClient.account.address],
+  });
+  console.log(`ðŸ’° USDB balance: ${formatUnits(usdbBalance, 18)}`);
+
+  // 4. Buy STASIS (the main token) â€” earns trading points
+  const buyResult = await client.trading.buy(
+    client.mainTokenAddress,
+    parseUnits("100", 18)  // 100 USDB
+  );
+  console.log("ðŸ›’ Bought STASIS:", buyResult.hash);
+
+  // 5. Stake for yield â€” earns staking points daily
+  const stakeResult = await client.staking.buy(parseUnits("50", 18)); // wrap 50 STASIS â†’ wSTASIS
+  console.log("ðŸ¦ Staked (wrapped):", stakeResult.hash);
+
+  const lockResult = await client.staking.lock(parseUnits("50", 18)); // lock for yield
+  console.log("ðŸ”’ Locked:", lockResult.hash);
+
+  // 6. Check a prediction market
+  const outcomes = await client.marketReader.getAllOutcomes(
+    "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", // MarketTrading contract
+    "0xYourMarketTokenAddress"
+  );
+  console.log("ðŸ“Š Market outcomes:", outcomes);
+
+  // 7. Check your agent registration
+  const isRegistered = await client.agent.isRegistered();
+  console.log("ðŸ¤– Agent registered:", isRegistered);
+
+  console.log("\nðŸŽ‰ Bootstrap complete! You are now:");
+  console.log("  - Earning trading points from the STASIS buy");
+  console.log("  - Earning daily staking yield + staking points");
+  console.log("  - Ready to trade, create tokens, or resolve markets");
+}
+
+bootstrap().catch(console.error);
+```
+
+**Python:**
+```python
+from basis import BasisClient
+import os
+
+def bootstrap():
+    # 1. Initialize client
+    client = BasisClient(private_key=os.environ["BASIS_PRIVATE_KEY"], agent=True)
+    print("âœ… Client initialized + agent registered")
+
+    # 2. Claim USDB from faucet (one-time, visit https://launchonbasis.com/faucet)
+
+    # 3. Buy STASIS
+    buy_result = client.trading.buy(client.main_token_address, 100 * 10**18)
+    print("ðŸ›’ Bought STASIS:", buy_result["hash"])
+
+    # 4. Stake
+    stake_result = client.staking.buy(50 * 10**18)
+    print("ðŸ¦ Staked:", stake_result["hash"])
+
+    lock_result = client.staking.lock(50 * 10**18)
+    print("ðŸ”’ Locked:", lock_result["hash"])
+
+    # 5. Check prediction market
+    outcomes = client.market_reader.get_all_outcomes(
+        "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6",
+        "0xYourMarketTokenAddress"
+    )
+    print("ðŸ“Š Market outcomes:", outcomes)
+
+    print("\nðŸŽ‰ Bootstrap complete!")
+
+bootstrap()
 ```
 
 
