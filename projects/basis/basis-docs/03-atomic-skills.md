@@ -239,7 +239,7 @@ Returns: `string` - price in USD.
 ### `getLeverageCount(user)` *(read)*
 **What it does:** Returns the number of leverage positions for a wallet.
 **Module:** `client.trading`
-Returns: `number`
+Returns: `bigint`
 
 ---
 
@@ -524,7 +524,7 @@ result = client.loans.take_loan(MAINTOKEN, collateral_token, 100 * 10**18, 30)
 ### `getUserLoanCount(user)` *(read)*
 **What it does:** Returns the total number of loans for a wallet.
 **Module:** `client.loans`
-Returns: `number`
+Returns: `bigint`
 
 ---
 
@@ -1387,7 +1387,7 @@ Returns: `number` - basis points (100 = 1%)
 ---
 
 ### `getCurrentSurgeTax(token)` *(read)*
-**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is distributed in the same ratio as normal trading fees. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` — the contract enforces limits via `getAvailableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
+**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is added entirely to the dev (creator) portion of fee distribution. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` — the contract enforces limits via `getAvailableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
 **Module:** `client.taxes`
 
 > **Tip:** Surge tax is automatically reflected in `getAmountsOut()` previews. If you always preview trades before executing (which you should for slippage protection), you're inherently protected from unexpected surge costs — the preview shows the effective price including any active surge.

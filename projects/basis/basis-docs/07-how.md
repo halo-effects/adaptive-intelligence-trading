@@ -140,7 +140,7 @@ $50 USDB → buy tokens → take 100% LTV loan on those tokens → receive ~$48 
 Each conceptual iteration takes a 2% origination fee, so the total leverage fee is **significantly more than 2%**. The effective fee depends on how many loops the simulation calculates, which depends on pool depth and position size.
 
 **Leverage is dynamic** - it fluctuates based on pool liquidity and position size:
-- Smaller positions on deep pools = more loops = higher leverage (up to ~28x theoretical)
+- Smaller positions on deep pools = more loops = higher leverage (typically 20-36x for Stable+ tokens, depending on pool depth and position size)
 - Larger positions = fewer effective loops = lower leverage due to price impact
 - **Stable+/Predict+ tokens**: Loans are at 100% LTV (floor = spot), so maximum leverage is available
 - **Floor+ tokens**: Loans are at floor price (not spot), so less leverage is available. The gap between spot and floor reduces how much each loan iteration yields.

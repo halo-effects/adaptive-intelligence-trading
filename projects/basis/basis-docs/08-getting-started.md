@@ -164,7 +164,6 @@ All options can be passed to the `BasisClient` constructor (or `BasisClient.crea
 | `client.usdb_address` | str | USDB contract address |
 | `client.main_token_address` | str | STASIS/MAINTOKEN contract address |
 | `client.api_key` | str | Auto-provisioned API key (persistent, no expiry) |
-| `client.apiKey` | string | Auto-provisioned API key (persistent, no expiry) |
 
 ### 🔒 Private Key Security
 

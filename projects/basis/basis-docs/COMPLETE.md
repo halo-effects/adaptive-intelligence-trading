@@ -719,7 +719,7 @@ Returns: `string` - price in USD.
 ### `getLeverageCount(user)` *(read)*
 **What it does:** Returns the number of leverage positions for a wallet.
 **Module:** `client.trading`
-Returns: `number`
+Returns: `bigint`
 
 ---
 
@@ -1004,7 +1004,7 @@ result = client.loans.take_loan(MAINTOKEN, collateral_token, 100 * 10**18, 30)
 ### `getUserLoanCount(user)` *(read)*
 **What it does:** Returns the total number of loans for a wallet.
 **Module:** `client.loans`
-Returns: `number`
+Returns: `bigint`
 
 ---
 
@@ -1867,7 +1867,7 @@ Returns: `number` - basis points (100 = 1%)
 ---
 
 ### `getCurrentSurgeTax(token)` *(read)*
-**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is distributed in the same ratio as normal trading fees. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` â€” the contract enforces limits via `getAvailableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
+**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is added entirely to the dev (creator) portion of fee distribution. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` â€” the contract enforces limits via `getAvailableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
 **Module:** `client.taxes`
 
 > **Tip:** Surge tax is automatically reflected in `getAmountsOut()` previews. If you always preview trades before executing (which you should for slippage protection), you're inherently protected from unexpected surge costs â€” the preview shows the effective price including any active surge.
@@ -2524,7 +2524,7 @@ $50 USDB â†’ buy tokens â†’ take 100% LTV loan on those tokens â†�
 Each conceptual iteration takes a 2% origination fee, so the total leverage fee is **significantly more than 2%**. The effective fee depends on how many loops the simulation calculates, which depends on pool depth and position size.
 
 **Leverage is dynamic** - it fluctuates based on pool liquidity and position size:
-- Smaller positions on deep pools = more loops = higher leverage (up to ~28x theoretical)
+- Smaller positions on deep pools = more loops = higher leverage (typically 20-36x for Stable+ tokens, depending on pool depth and position size)
 - Larger positions = fewer effective loops = lower leverage due to price impact
 - **Stable+/Predict+ tokens**: Loans are at 100% LTV (floor = spot), so maximum leverage is available
 - **Floor+ tokens**: Loans are at floor price (not spot), so less leverage is available. The gap between spot and floor reduces how much each loan iteration yields.
@@ -2819,7 +2819,6 @@ All options can be passed to the `BasisClient` constructor (or `BasisClient.crea
 | `client.usdb_address` | str | USDB contract address |
 | `client.main_token_address` | str | STASIS/MAINTOKEN contract address |
 | `client.api_key` | str | Auto-provisioned API key (persistent, no expiry) |
-| `client.apiKey` | string | Auto-provisioned API key (persistent, no expiry) |
 
 ### ðŸ”’ Private Key Security
 
