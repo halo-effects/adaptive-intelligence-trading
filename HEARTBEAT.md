@@ -8,7 +8,7 @@
 - **Capital: ~$340** real USDT. Alert if balance drifts significantly.
 - Profile: High grid, 1x leverage, 30d scanner, Aster Perps, 50-coin universe
 - Telegram commands: PAUSE, RESUME, CLOSE <COIN>, CLOSE ALL, APPROVE, DENY
-- Manual restart: `python -u -m trading.spot.run_v14_portfolio_live_aster --capital 340 --confirm --skip-backfill`
+- Manual restart: `python -B -u -m trading.spot.run_v14_portfolio_live_aster --capital 340 --confirm --skip-backfill`
 - Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
 - Dashboard: `docs/dashboardV14PM.html` (reads from `docs/data/v14-pm/`)
 - State file: `trading/spot/live/v14pm/state.json` (persists across restarts)

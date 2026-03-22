@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+print(f"[CANARY] Loading run_v14_portfolio_live_aster.py from {__file__}")
 """
 V14 Portfolio Manager — Live Trading Bot (Aster DEX Perpetuals)
 ==============================================================
@@ -688,7 +689,7 @@ class V14PortfolioLiveAster:
         self._last_status_write: float = 0.0
 
         # Re-entry cooldown (prevents rapid-fire after TP fills)
-        self._reentry_cooldown_until: float = 0.0
+        # _reentry_cooldown_until removed (dead code — superseded by ORDER_DEDUP_WINDOW)
 
         # Exchange-as-truth: cached position data (refreshed every cycle by _sync_positions_from_exchange)
         self._exchange_usdt_free: float = 0.0
@@ -737,6 +738,7 @@ class V14PortfolioLiveAster:
             },
             "tg_update_offset": self._tg_update_offset,
             "open_deals": self.tracker._open_deals,
+            "last_rebalance_date": str(self._last_rebalance_date) if self._last_rebalance_date else None,
         }
 
         path = OUTPUT_DIR / "state.json"
@@ -797,23 +799,30 @@ class V14PortfolioLiveAster:
                     # The engine's paper-capital tracking drifts from reality in live mode
                     # (CapitalRouter manages real capital). A depleted engine capital can
                     # cause order sizes to fall below the $10 minimum, silently blocking
-                    # trades. Reset to allocated capital when no position is open.
+                    # trades via the `order > self.capital` guard in v14_dca_engine.py.
+                    #
+                    # GAP-13 FIX: Reset capital ALWAYS, not just when no position.
+                    # Mid-DCA, the engine capital is irrelevant — the router manages
+                    # real capital. But the engine still uses it for order sizing guards.
+                    # A depleted paper capital would permanently block further DCA layers.
                     eng_inner = engine._engine
-                    if eng_inner and eng_inner.long_coins == 0 and eng_inner.short_coins == 0:
+                    if eng_inner:
                         old_cap = eng_inner.capital
                         eng_inner.capital = cs.allocated_capital
-                        # Sanitize stale fields from closed positions
-                        eng_inner.long_avg_entry = 0
-                        eng_inner.long_tp = 0
-                        eng_inner.long_cost = 0
-                        eng_inner.long_last_buy = None
-                        eng_inner.long_layers = 0
-                        if eng_inner.long_trades < 0:
-                            eng_inner.long_trades = 0
+                        if eng_inner.long_coins == 0 and eng_inner.short_coins == 0:
+                            # No position — also sanitize stale fields
+                            eng_inner.long_avg_entry = 0
+                            eng_inner.long_tp = 0
+                            eng_inner.long_cost = 0
+                            eng_inner.long_last_buy = None
+                            eng_inner.long_layers = 0
+                            if eng_inner.long_trades < 0:
+                                eng_inner.long_trades = 0
                         if abs(old_cap - cs.allocated_capital) > 1:
                             logger.info(
                                 f"  {sym} engine capital reset: ${old_cap:.2f} -> "
-                                f"${cs.allocated_capital:.2f} (no open position)"
+                                f"${cs.allocated_capital:.2f}"
+                                f"{' (no position)' if eng_inner.long_coins == 0 else ' (mid-DCA)'}"
                             )
 
                     cs.engine = engine
@@ -858,6 +867,16 @@ class V14PortfolioLiveAster:
 
         # Restore Telegram offset
         self._tg_update_offset = state.get("tg_update_offset", 0)
+
+        # Restore rebalance date (prevents duplicate rebalance on restart)
+        saved_rebalance = state.get("last_rebalance_date")
+        if saved_rebalance:
+            try:
+                from datetime import date as date_cls
+                self._last_rebalance_date = date_cls.fromisoformat(saved_rebalance)
+                logger.info(f"Restored last rebalance date: {self._last_rebalance_date}")
+            except (ValueError, TypeError):
+                pass
 
         # Restore open deals
         open_deals = state.get("open_deals", {})
@@ -904,14 +923,19 @@ class V14PortfolioLiveAster:
                 eng.long_avg_entry = ex_entry
                 tp_pct = eng.cfg.DCA_TP_PCT if hasattr(eng, 'cfg') and hasattr(eng.cfg, 'DCA_TP_PCT') else 0.015
                 eng.long_tp = ex_entry * (1 + tp_pct)
-                # Sync layer count from CoinState tracker (not engine internal)
-                # If layer_count is 0 but exchange has a position, derive from engine state
+                # Sync layer count: ensure consistency between CoinState, engine, and exchange
                 if cs.layer_count == 0 and ex_qty > 0:
-                    # Engine's long_layers from state restore is our best estimate
-                    if eng.long_layers > 0:
-                        cs.layer_count = eng.long_layers
-                    else:
-                        cs.layer_count = max(1, eng.long_layers)  # At least 1 if exchange has position
+                    # Position exists but layer_count is 0 — derive from engine state
+                    cs.layer_count = max(1, eng.long_layers)
+                elif cs.layer_count > 0 and ex_qty == 0:
+                    # No position but layer_count > 0 — stale, reset
+                    cs.layer_count = 0
+                # Always sync engine layers to match CoinState
+                if eng.long_layers != cs.layer_count:
+                    logger.info(
+                        f"Layer sync {sym}: eng.long_layers={eng.long_layers} -> "
+                        f"cs.layer_count={cs.layer_count}"
+                    )
                 eng.long_layers = cs.layer_count
             else:
                 eng.long_coins = 0.0
@@ -1058,9 +1082,12 @@ class V14PortfolioLiveAster:
                 logger.error(f"TP recovery check failed for {sym}: {e}")
 
         # Phase 2: Scan exchange for orphaned sell orders (ported from old bot)
+        # Skip coins where Phase 1 already confirmed TP order is live
         for sym, cs in list(self.coins.items()):
             if not cs.engine:
                 continue
+            if cs.tp_order_id:
+                continue  # Phase 1 confirmed this order is still open — no scan needed
             eng = cs.engine._engine
             has_position = eng is not None and (eng.long_coins > 0 or eng.long_layers > 0)
 
@@ -1200,9 +1227,7 @@ class V14PortfolioLiveAster:
         # that don't belong to our current state. This catches orders left behind
         # from partial fills, replays, or crashes.
         try:
-            open_orders = self.client.client.fetch_open_orders(
-                self.client._to_ccxt_symbol(sym)
-            )
+            open_orders = self.client.fetch_open_orders(sym)
             for o in open_orders:
                 if o.get("side") == "sell":
                     oid = o.get("id")
@@ -1366,6 +1391,13 @@ class V14PortfolioLiveAster:
                 # Track layer count (exchange sync will confirm, but track locally too)
                 cs.layer_count += 1
 
+                # GAP-13 FIX: Reset engine capital after each BUY to prevent
+                # paper-capital depletion from blocking future DCA layers.
+                # The engine decrements eng.capital on each buy (paper tracking),
+                # but in live mode the CapitalRouter manages real capital.
+                if cs.engine and cs.engine._engine:
+                    cs.engine._engine.capital = cs.allocated_capital
+
                 # Place TP limit order
                 self._place_tp_order(sym, cs)
 
@@ -1452,6 +1484,19 @@ class V14PortfolioLiveAster:
                     f"Symbol: {sym} | Reason: {reason}\n"
                     f"Will retry on next candle (exchange synced next cycle)"
                 )
+
+        elif act_type in ("SHORT_OPEN", "SHORT_CLOSE"):
+            # Short actions are not supported on live Aster Perps (long-only mode).
+            # Explicitly reject to keep engine state consistent and prevent silent drift.
+            logger.warning(
+                f"SHORT action {act_type} for {sym} — not supported in live mode. "
+                f"Rejecting to keep engine consistent."
+            )
+            if cs.engine:
+                cs.engine.reject_action(action)
+
+        else:
+            logger.warning(f"Unknown action type '{act_type}' for {sym} — ignoring")
 
     # ── Capital Router integration ────────────────────────────────────────────
 
@@ -1793,8 +1838,17 @@ class V14PortfolioLiveAster:
             send_telegram(f"❓ {TG_PREFIX} No open position for {sym}")
             return
 
+        # Use exchange position as source of truth (not engine qty)
         eng = cs.engine._engine
-        qty = eng.long_coins
+        qty = eng.long_coins  # fallback
+        try:
+            positions = self.client.fetch_open_positions()
+            base = sym.split("/")[0]
+            if base in positions and positions[base].get("qty", 0) > 0:
+                qty = positions[base]["qty"]
+        except Exception as e:
+            logger.warning(f"Position fetch failed for force-close {sym}, using engine qty: {e}")
+
         if not qty:
             send_telegram(f"❓ {TG_PREFIX} No open position for {sym}")
             return
@@ -2040,6 +2094,9 @@ class V14PortfolioLiveAster:
         except Exception as e:
             logger.warning(f"CSV aggregate for status failed: {e}")
 
+        # CANARY: Mark status with code version to detect stale code
+        status["_code_version"] = "exchange-truth-v2"
+
         path = OUTPUT_DIR / "status.json"
         tmp  = path.with_suffix(".tmp")
         try:
@@ -2100,14 +2157,18 @@ class V14PortfolioLiveAster:
         signal.signal(signal.SIGTERM, _shutdown_handler)
 
         # ── Exclusive file lock (prevents duplicate instances) ────────────
-        # Uses msvcrt on Windows for advisory lock on bot.lock file.
+        # Uses msvcrt on Windows, fcntl on Linux/Mac.
         # The lock is held for the entire lifetime of the process.
         # If another instance tries to start, it will fail immediately.
-        import msvcrt
         lock_path = OUTPUT_DIR / "bot.lock"
         self._lock_fh = open(lock_path, "w")
         try:
-            msvcrt.locking(self._lock_fh.fileno(), msvcrt.LK_NBLCK, 1)
+            if sys.platform == "win32":
+                import msvcrt
+                msvcrt.locking(self._lock_fh.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(self._lock_fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             self._lock_fh.write(f"{os.getpid()}:{int(time.time())}:v14pm\n")
             self._lock_fh.flush()
         except (OSError, IOError):
@@ -2281,8 +2342,12 @@ class V14PortfolioLiveAster:
             # Release file lock
             try:
                 if hasattr(self, '_lock_fh') and self._lock_fh:
-                    import msvcrt
-                    msvcrt.locking(self._lock_fh.fileno(), msvcrt.LK_UNLCK, 1)
+                    if sys.platform == "win32":
+                        import msvcrt
+                        msvcrt.locking(self._lock_fh.fileno(), msvcrt.LK_UNLCK, 1)
+                    else:
+                        import fcntl
+                        fcntl.flock(self._lock_fh.fileno(), fcntl.LOCK_UN)
                     self._lock_fh.close()
             except Exception:
                 pass

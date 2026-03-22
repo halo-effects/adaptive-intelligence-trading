@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading — V14PM System Architecture
-_Version: 1.5 | Date: 2026-03-19 | Status: Production — Live on Aster Perps_
+_Version: 1.6 | Date: 2026-03-21 | Status: Production — Live on Aster Perps_
 
 ---
 
@@ -153,6 +153,26 @@ changes requiring human approval. The core engine is exchange-agnostic via CCXT.
 > direction and suffered significant losses. Lesson learned: Long↔Short strategy direction
 > changes require human-in-the-loop approval. Scheduled task unregistered. State preserved
 > at `paper/v14etf/status.json.retired`.
+
+### 1.5 Class & Module Quick Reference
+
+Quick reference for all primary classes in the V14PM system. For full method-level details
+and per-function traces, see `V14PM_CODE_AUDIT_2026-03-21.md`.
+
+| Class | File | Description |
+|-------|------|-------------|
+| `BotState` | `run_v14_portfolio_live_aster.py` | Named constants for bot operational state (`RUNNING` / `PAUSED` / `WIND_DOWN`) |
+| `TradeTracker` | `run_v14_portfolio_live_aster.py` | Records closed trade history to `trades.csv`; tracks open deals and per-coin PnL |
+| `AsterPerpClient` | `run_v14_portfolio_live_aster.py` | Aster DEX Perpetuals exchange client; wraps `ccxt.aster` with perp-specific helpers |
+| `CoinState` | `run_v14_portfolio_live_aster.py` | Tracks live state for a single coin slot (TP order ID, layer count, funding, candle timestamp) |
+| `V14PortfolioLiveAster` | `run_v14_portfolio_live_aster.py` | Main bot class; orchestrates all trading logic, Telegram commands, and state persistence |
+| `CapitalRouter` | `v14_capital_manager.py` | Manages capital distribution across active coins (75/25 active/reserve pools, equity-tiered coin cap) |
+| `V14LifecycleEngine` | `v14_lifecycle_engine.py` | Per-coin live wrapper around `V14DCAEngine`; manages signal pack, daily ticks, state persistence |
+| `V14DCAEngine` | `engine/v14_dca_engine.py` | DCA phase machine + grid; generates `BUY`/`SELL` actions from candle data |
+| `V13SignalPack` | `engine/v13_signals.py` | StochRSI, ADX, HH/HL structure detectors; shared signal library for V13 and V14 engines |
+| `HybridDetector2D` | `engine/v13_router_engine_v2.py` | Composite top/bottom detection (2D RSI divergence + 3D SMA death cross) |
+| `V13BacktestV8` | `engine/v13_phase_backtest_v8.py` | Backtest engine for historical phase simulation (not used in live trading) |
+| `SpotExchangeClient` | `exchange_client.py` | Universal exchange client for Hyperliquid + Aster (used by paper bots; imported but **not used** by the live PM bot) |
 
 ---
 
@@ -956,6 +976,43 @@ Strategy direction changes (LONG_DCA ↔ SHORT_DCA) across all **live bots** req
 human approval before execution. Autonomous direction switches remain enabled for paper bots
 where capital risk is simulated.
 
+#### 6.8.7 Data Source Map
+
+Every significant runtime variable, its authoritative source, and when it is updated.
+This map reflects the exchange-as-truth architecture — position data originates from the
+exchange API, not the engine's internal state.
+
+| Variable | Authoritative Source | Updated When | Used By |
+|----------|---------------------|--------------|---------|
+| `eng.long_coins` | Exchange (`fetch_open_positions`) | Every cycle (exchange sync) | BUY sizing, TP qty, status |
+| `eng.long_avg_entry` | Exchange (`fetch_open_positions.entry_price`) | Every cycle (exchange sync) | Status display |
+| `eng.long_cost` | Exchange (`entry_price × qty`) | Every cycle (exchange sync) | PnL calc, equity |
+| `eng.long_tp` | Engine (calculated: `entry × 1.015`) | Exchange sync overwrites; engine recalculates on buy | TP placement |
+| `eng.long_layers` | `cs.layer_count` (CoinState) | BUY (+1), SELL/TP (0), exchange sync (copies layer_count) | Status, DCA logic |
+| `eng.capital` | Init to `allocated_capital`; decremented by engine on buys; reset on TP fill and rebalance | On buy (−), TP fill (reset), rebalance (reset if no position) | Buy sizing |
+| `cs.allocated_capital` | `router.rebalance_daily()` | Daily rebalance | Engine capital reset, status |
+| `cs.tp_order_id` | `_place_tp_order()` (exchange order ID) | On BUY (set), on SELL/TP fill (cleared) | TP fill detection, TP cancel |
+| `cs.tp_limit_price` | `_place_tp_order()` (stored separately from `eng.long_tp`) | On BUY (set), on SELL/TP fill (cleared) | Status display, fill correction logging |
+| `cs.layer_count` | `_execute_action` BUY (+1); SELL/TP fill (0) | On every buy/sell | TP qty, status |
+| `cs.last_candle_ts` | Main loop after each processed candle | Per candle | Dedup — prevent reprocessing |
+| `cs.cumulative_funding` | `_update_funding()` | Every 8h per open position | Status, TP fill message |
+| `_exchange_usdt_free` | `client.fetch_full_balance()` | Every cycle (exchange sync) | Status (`cash` field) |
+| `_exchange_usdt_total` | `client.fetch_full_balance()` | Every cycle (exchange sync) | Status (equity calc) |
+| `_last_exchange_positions` | `client.fetch_open_positions()` | Every cycle (exchange sync) | Status (per-coin position data) |
+| `router.active_pool_cash` | CapitalRouter: +/− on request/return | On every BUY (−) and SELL/TP (+ proceeds) | Capital availability |
+| `router.active_allocations` | CapitalRouter: +amount on request; 0 on return | On every BUY and SELL/TP | Accounting |
+| `router.tier_coin_cap` | `EQUITY_TIER_CAPS` lookup on equity | On rebalance | Max simultaneous coins |
+| `tracker._open_deals` | `on_buy()` (create/extend); `on_sell()` (pop) | On every BUY and SELL | PnL calculation, layer count for pool routing |
+| `tracker.trades` | `on_sell()` (append) | On every SELL/TP fill | CSV, win_rate, total_pnl |
+| `_cfgi_market` | CFGI API | Hourly | Status, regime eval message |
+| `_cfgi_coins` | CFGI API | Hourly | Per-coin status |
+| `_regime_signal_count` | `_evaluate_regime()` | Daily at midnight UTC | Telegram alerts |
+| `_regime_alert_state` | `_evaluate_regime()`, `_handle_command()` | On regime signal / APPROVE / DENY | BUY blocking (WIND_DOWN), status |
+| `bot_state` | `_handle_command()`, `_check_wind_down_complete()` | On PAUSE/RESUME/APPROVE/wind-down complete | BUY guard, status |
+| `_tg_update_offset` | `_process_telegram_commands()` | On each Telegram update processed | Telegram dedup |
+| `_last_rebalance_date` | `_do_rebalance()` | On successful rebalance | Prevents duplicate rebalances per day |
+| `_last_status_write` | `_write_status()` | On each status write | 60s throttle |
+
 ### 6.9 TP Catch-Up (Paper Bots)
 
 **Bug (pre-2026-03-18):** The daily tick uses the **previous day's OHLC** data. If today's
@@ -1292,6 +1349,59 @@ Methods on `SpotExchangeClient` for production trading:
 > - Short positions: SELL to open, BUY to close
 > - Position mode: ONE-WAY (not hedge mode) — simpler for 1x DCA
 > - TP limit orders: `TAKE_PROFIT_MARKET` or `LIMIT` with GTC
+
+### 8.6 External API Dependencies
+
+Complete inventory of all external calls made by the V14PM live bot
+(`run_v14_portfolio_live_aster.py`). For detailed call-site context (when in the main loop,
+what data flows in/out), see `V14PM_CODE_AUDIT_2026-03-21.md` §4.
+
+#### Exchange API Calls (Aster DEX Perpetuals via `ccxt.aster`)
+
+| Call | `AsterPerpClient` Method | When Called |
+|------|--------------------------|-------------|
+| Load markets | `load_markets()` | Startup once |
+| Set leverage | `set_leverage(1, sym)` | Per new coin (once each) |
+| Fetch balance (free) | `fetch_balance({"type":"future"})` | BUY pre-flight check |
+| Fetch balance (full) | `fetch_balance({"type":"future"})` | Exchange sync every cycle, `_compute_equity`, status write |
+| Fetch positions | `fetch_positions()` | Exchange sync every cycle, TP placement |
+| Fetch ticker | `fetch_ticker(sym)` | Status write (per coin), fill price fallback |
+| Fetch OHLCV | `fetch_ohlcv(sym, "1h", limit=50)` | Candle fetch every cycle per coin |
+| Market buy | `create_market_buy_order(sym, qty, {positionSide:"BOTH"})` | BUY execution |
+| Market sell | `create_market_sell_order(sym, qty, {positionSide:"BOTH", reduceOnly:True})` | SELL execution, force-close |
+| Fetch my trades | `fetch_my_trades(sym, limit=5)` | Fill price fallback when `order.average` is missing |
+| Limit sell (TP) | `create_limit_sell_order(sym, qty, price, {GTC, positionSide, reduceOnly})` | TP placement after every BUY |
+| Cancel order | `cancel_order(order_id, sym)` | TP cancellation before SELL or on phase change |
+| Fetch order status | `fetch_order(order_id, sym)` | TP fill check every 65s per coin |
+| Fetch open orders | `fetch_open_orders(sym)` | TP recovery at startup, orphan cleanup post-TP |
+| Fetch funding history | `fetch_funding_history(sym, params)` | Every 8h per open position |
+
+#### File I/O
+
+| File | Path | Operations | Frequency |
+|------|------|------------|-----------|
+| State | `OUTPUT_DIR/state.json` | Read on startup; atomic write via `.tmp` rename | Every 65s |
+| Status | `OUTPUT_DIR/status.json` | Atomic write via `.tmp` rename | Every 60s |
+| Trades | `OUTPUT_DIR/trades.csv` | Read on startup; atomic write via `.tmp` rename | On every trade + every cycle |
+| Bot log | `OUTPUT_DIR/bot.log` | Append (all `logging` output) | Continuous |
+| Bot lock | `OUTPUT_DIR/bot.lock` | Create + OS lock on startup; unlock on shutdown | Startup/shutdown |
+| Bot PID | `OUTPUT_DIR/bot.pid` | Write PID on startup; delete on clean shutdown | Startup/shutdown |
+| Scanner JSON | `SCANNER_PATH` (`docs/data/v14/cycle_scanner.json`) | Read on rebalance + regime eval | Daily |
+| Candles DB | `DB_PATH` (`trading/spot/data/candles.db`) | Read by `V13SignalPack` via SQLite3 | On engine init + daily signal refresh |
+
+#### Database Queries (`candles.db`)
+
+Not made directly from the main runner. All DB access is via `V13SignalPack(coin)` inside
+`V14LifecycleEngine.__init__()` and during the daily boundary tick. Queries fetch per-coin
+historical OHLCV + computed indicators from `candles_daily`.
+
+#### External HTTP Calls
+
+| Service | Endpoint | Frequency | Auth |
+|---------|----------|-----------|------|
+| Telegram sendMessage | `https://api.telegram.org/bot{token}/sendMessage` | On events (BUY, SELL, TP hit, alerts, startup/shutdown) | `AIT_TG_TOKEN` |
+| Telegram getUpdates | `https://api.telegram.org/bot{token}/getUpdates` | Every 15 seconds | `AIT_TG_TOKEN` |
+| CFGI API | `CFGIClient.get_current(...)` | Hourly | `CFGI_API_KEY` |
 
 ---
 
@@ -1783,10 +1893,114 @@ universe ranking, meaning poor-performing coins at the tail could appear as summ
 
 ---
 
+## 18. Code Audit & Gap Analysis (2026-03-21)
+
+Point-in-time audit of `run_v14_portfolio_live_aster.py` and supporting modules, conducted
+2026-03-21 during the exchange-as-truth refactor. 13 gaps were identified and resolved.
+Full per-function traces and detailed flow analysis: `V14PM_CODE_AUDIT_2026-03-21.md`.
+
+### 18.1 Gap Summary Table
+
+| Gap | Description | Severity | Status |
+|-----|-------------|----------|--------|
+| GAP-01 | `_handle_tp_fill`: broken orphaned order cleanup — `self.client.client` and `._to_ccxt_symbol()` don't exist; orphaned sell orders never cleaned up | P1 | ✅ FIXED |
+| GAP-02 | `CapitalRouter.rebalance_daily` silently changes pool split from 90/10 → 75/25 without adjusting cash amounts; docstring contradicted code | P1 | ✅ FIXED |
+| GAP-03 | `_last_rebalance_date` and `_regime_last_eval_date` not persisted in `state.json` — both reset to `None` on restart, triggering immediate rebalance | P2 | ✅ FIXED |
+| GAP-04 | `_reentry_cooldown_until` declared in `__init__` but never read or updated (dead code) | P2 | ✅ FIXED |
+| GAP-05 | `_force_close_coin` uses stale `eng.long_coins` instead of fetching current exchange position qty | P1 | ✅ FIXED |
+| GAP-06 | `_write_status` reads `trades.csv` N+1 times per 60s write (once per coin + once for aggregates) | P3 | ⏸️ DEFERRED |
+| GAP-07 | `V14LifecycleEngine.get_status()` hardcodes `'exchange': 'hyperliquid'` — wrong for live bot | P2 | 🚫 WON'T FIX |
+| GAP-08 | `msvcrt` file lock is Windows-only — crashes with `ModuleNotFoundError` on Linux/cloud | P1 | ✅ FIXED |
+| GAP-09 | `_compute_equity` potential double-count: `usdt_total + unrealized` — needed API verification | P1 | ✅ NOT A BUG |
+| GAP-10 | `SHORT_OPEN` / `SHORT_CLOSE` engine actions silently ignored in `_execute_action` — engine state drifts | P2 | ✅ FIXED |
+| GAP-11 | `_place_tp_order` makes redundant `fetch_open_positions` call immediately after a BUY | P3 | ⏸️ DEFERRED |
+| GAP-12 | `_recover_tp_orders` Phase 2 (orphan scan) runs on coins already fully handled by Phase 1 | P2 | ✅ FIXED |
+| GAP-13 | Engine capital depletes mid-DCA, potentially blocking further layers on restart with open position | P1 | ✅ FIXED |
+
+### 18.2 Gap Details
+
+**GAP-01 — FIXED (2026-03-21):** After a TP fill, the code attempted
+`self.client.client.fetch_open_orders()` and `self.client._to_ccxt_symbol()`.
+`AsterPerpClient` has no `.client` attribute (it has `._exchange`) and no `._to_ccxt_symbol()`
+method (the correct method is `._aster_symbol()`). Always raised `AttributeError`, silently
+swallowed by a bare `except`. Orphaned sell orders were never cleaned up after TP fills.
+**Fix:** Changed to `self.client.fetch_open_orders(sym)`.
+
+**GAP-02 — FIXED (2026-03-21):** `CapitalRouter.__init__` set 90/10 pool split; `rebalance_daily()`
+silently changed to 75/25 without adjusting `active_pool_cash` / `reserve_pool_cash`. Only the
+`total` reference values changed, not the actual cash. Docstring said "90/10 Pool Split".
+**Fix:** Both constructor and `rebalance_daily()` now consistently use 75/25. Reserve pool
+is the correct home for DCA layers 6+ (deep drawdown buffer).
+
+**GAP-03 — FIXED (2026-03-21):** `_last_rebalance_date` was not saved in `state.json` — always
+reset to `None` on restart, triggering an immediate rebalance on every restart regardless of
+whether it had already run that day. `_regime_last_eval_date` had the same issue.
+**Fix:** Both fields are now persisted in `state.json` and restored on startup.
+
+**GAP-04 — FIXED (2026-03-21):** `self._reentry_cooldown_until = 0.0` declared in `__init__`,
+never read or updated anywhere in the codebase. Was presumably superseded by the 30-second
+`ORDER_DEDUP_WINDOW` in `_execute_action`. **Fix:** Removed dead attribute.
+
+**GAP-05 — FIXED (2026-03-21):** `_force_close_coin` sold using `eng.long_coins` (last set by
+exchange sync, potentially stale if called soon after a buy). The `_execute_action` SELL path
+correctly fetches exchange position qty, but `_force_close_coin` did not.
+**Fix:** Now calls `client.fetch_open_positions()` first; falls back to `eng.long_coins` if
+exchange returns nothing.
+
+**GAP-06 — DEFERRED (P3):** `_write_status` re-reads `trades.csv` once per active coin (for
+per-coin realized PnL) and once more for aggregate stats — N+1 reads per 60-second cycle. At
+current coin counts (1–3) this is negligible. **Fix when needed:** Read once, compute all
+per-coin and aggregate stats in a single pass.
+
+**GAP-07 — WON'T FIX:** `V14LifecycleEngine.get_status()` returns `'exchange': 'hyperliquid'`
+(hardcoded from the paper bot template). Lives in shared `v14_lifecycle_engine.py` used by all
+bots — modifying it risks breaking paper bots without clear benefit. The main runner's
+`_write_status()` already overrides the top-level `"exchange"` field with `"aster_perp"`.
+The wrong value never reaches `status.json` uncorrected.
+
+**GAP-08 — FIXED (2026-03-21):** `import msvcrt; msvcrt.locking(...)` in the startup path is
+Windows-only. Would raise `ModuleNotFoundError` on any Linux/cloud deployment.
+**Fix:** Platform check — uses `msvcrt.locking` on `win32`, `fcntl.flock` on Linux.
+
+**GAP-09 — NOT A BUG:** `_compute_equity()` computes `equity = usdt_total + unrealized_pnl`.
+Concern was that `usdt_total` might already include unrealized PnL.
+**Verified via Aster API:** `usdt_total = free + used` where `used` = margin posted as
+collateral, NOT unrealized PnL. Adding engine-computed unrealized PnL on top is therefore
+correct — it does not double-count.
+
+**GAP-10 — FIXED (2026-03-21):** `_execute_action` only handled `"BUY"` and `"SELL"` action
+types. The engine can emit `"SHORT_OPEN"` and `"SHORT_CLOSE"` when a coin is in `SHORT_DCA`
+phase. These were silently dropped (no exchange order, no rollback), causing the engine's
+internal position state to drift into an inconsistent state.
+**Fix:** `SHORT_OPEN` and `SHORT_CLOSE` are now explicitly rejected via `engine.reject_action()`
+to prevent state drift. Short-side trading is not currently enabled.
+
+**GAP-11 — DEFERRED (P3):** `_place_tp_order` calls `client.fetch_open_positions()` to get the
+exchange qty for the TP order, even though positions were already fetched at the top of the
+cycle and the buy order result contains the filled qty.
+**Fix when needed:** Use `actual_qty` from the BUY result directly for TP placement.
+
+**GAP-12 — FIXED (2026-03-21):** `_recover_tp_orders` Phase 1 checks if known TP orders are
+still valid (filled or live). Phase 2 then scanned for orphan orders on all coins — including
+coins where Phase 1 had already confirmed the TP order was alive. Redundant exchange API calls
+and risk of mis-classifying a valid TP order as an orphan.
+**Fix:** Phase 2 now skips coins where Phase 1 confirmed the TP order is still valid.
+
+**GAP-13 — FIXED (2026-03-21):** The DCA engine's internal `capital` field is decremented
+each time a layer is added (part of the DCA sizing design). On restart with an open position,
+the engine could have near-zero capital, causing the `order > self.capital` guard to block
+further DCA layers — even though the `CapitalRouter` had real capital available.
+**Fix:** Engine capital is reset to `cs.allocated_capital` on every restart (for coins with
+open positions) AND after every confirmed BUY fill. The router manages real capital; the
+engine's capital is a sizing reference that resets each cycle.
+
+---
+
 _Document generated by Gee Gee — 2026-03-09_
 _Updated: 2026-03-10 (v1.2 — CSV-as-truth, exchange API equity, --fresh loads existing trades)_
 _Updated: 2026-03-18 (v1.3 — LIVE GUARD, resting limit orders, fill price fix, TP catch-up, V14-ETF retirement, production architecture target, incident log §17)_
 _Updated: 2026-03-19 (v1.4 — Production architecture locked: Aster Perps, 50-coin universe, unified profile, global direction, regime monitor §7.5, wind-down §7.6, PAUSE/RESUME §7.7, Telegram commands §7.8, funding rate §7.9, exchange client updates §8, env vars §12, CLI §13, migration strategy §16.4)_
 _Updated: 2026-03-21 (v1.5 — Exchange-as-truth architecture: removed LIVE GUARD, engine rollbacks, reconciliation. Exchange API is single source of truth for positions and balances. §6.8 rewritten, §7.1 architecture updated, §16.4 Phase 3 partially implemented.)_
+_Updated: 2026-03-21 (v1.6 — Code audit merge from V14PM\_CODE\_AUDIT\_2026-03-21.md: §1.5 Class & Module Quick Reference, §6.8.7 Data Source Map, §8.6 External API Dependencies, §18 Code Audit & Gap Analysis (13 gaps, all resolved). Architecture doc is now single source of truth for design-level findings.)_
 _Decisions reference: PRODUCTION_DECISIONS_2026-03-19.md_
 _Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md, V14PM_VS_V14_LIVE_AUDIT.md_

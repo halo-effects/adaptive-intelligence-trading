@@ -43,8 +43,8 @@ class CapitalRouter:
         self.total_equity = initial_capital
         
         # 90/10 Pool Split (active trading / emergency reserve)
-        self.active_pool_total = self.total_equity * 0.90
-        self.reserve_pool_total = self.total_equity * 0.10
+        self.active_pool_total = self.total_equity * 0.75
+        self.reserve_pool_total = self.total_equity * 0.25
         
         # Track available cash
         self.active_pool_cash = self.active_pool_total
@@ -58,8 +58,8 @@ class CapitalRouter:
         self.tier_coin_cap: int = self.get_tier_coin_cap(self.total_equity)
 
         logger.info(f"Initialized CapitalRouter with ${self.total_equity:.2f} total equity.")
-        logger.info(f"Active Pool (90%): ${self.active_pool_total:.2f}")
-        logger.info(f"Reserve Pool (10%): ${self.reserve_pool_total:.2f}")
+        logger.info(f"Active Pool (75%): ${self.active_pool_total:.2f}")
+        logger.info(f"Reserve Pool (25%): ${self.reserve_pool_total:.2f}")
         logger.info(f"Tier coin cap: {self.tier_coin_cap} coins")
 
     @staticmethod
