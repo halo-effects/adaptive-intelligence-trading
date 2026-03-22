@@ -10,10 +10,16 @@ Built from run_v14_live_aster.py (proven live execution) with PM components:
   - Portfolio Regime Monitor (weighted composite, tiered alerts)
   - Telegram command interface (APPROVE, DENY, PAUSE, RESUME, CLOSE)
   - Wind-down phase (graceful direction change)
-  - LIVE GUARD (exchange TP orders override engine)
+  - Exchange-as-truth: positions synced from exchange every cycle
   - Resting limit orders (TP executed by exchange, not polling)
   - Actual fill prices from exchange (never engine fallback)
-  - Startup reconciliation (engine capital vs exchange balance)
+  - No LIVE GUARD, no engine rollbacks, no periodic reconciliation
+
+Architecture (2026-03-21):
+  Exchange API is the SINGLE source of truth for all position data.
+  _sync_positions_from_exchange() overwrites engine state every main loop
+  iteration before candle processing. Engine is used only for signal
+  generation; all position fields come from exchange.
 
 Unified production profile (locked 2026-03-19):
   - Exchange: Aster DEX Perpetuals (1x leverage, no liquidation risk)
@@ -590,6 +596,7 @@ class CoinState:
         self.cumulative_funding: float = 0.0
         self.last_funding_check_ms: int = 0
         self._last_buy_time: float = 0.0  # Dedup guard: timestamp of last executed buy
+        self.layer_count: int = 0         # Layers in current position (synced from exchange)
 
     def to_dict(self) -> dict:
         return {
@@ -600,6 +607,7 @@ class CoinState:
             "last_candle_ts": self.last_candle_ts,
             "cumulative_funding": self.cumulative_funding,
             "last_funding_check_ms": self.last_funding_check_ms,
+            "layer_count": self.layer_count,
         }
 
 
@@ -612,12 +620,14 @@ class V14PortfolioLiveAster:
     Execution layer from run_v14_live_aster.py (battle-tested with real money).
     PM logic from run_v14_portfolio_paper.py (capital rotation, regime detection).
 
-    Key safeguards (all inherited from Aster live bot):
-      - LIVE GUARD: Engine TP sells blocked when exchange limit order is active
+    Architecture: Exchange-as-truth
+      - _sync_positions_from_exchange() runs at top of every main loop iteration
+      - Engine position fields (long_coins, long_cost, etc.) are overwritten from
+        exchange every cycle — engine is used only for signal generation
       - Resting limit orders: Exchange handles TP, not polling
       - Fill price from exchange: Never fall back to engine price
       - PnL from actual proceeds: Not engine estimates
-      - Startup reconciliation: Engine capital vs exchange balance
+      - No LIVE GUARD, no engine rollbacks, no periodic reconciliation
     """
 
     def __init__(self, capital: float, confirm: bool = False,
@@ -680,8 +690,10 @@ class V14PortfolioLiveAster:
         # Re-entry cooldown (prevents rapid-fire after TP fills)
         self._reentry_cooldown_until: float = 0.0
 
-        # Periodic reconciliation timer
-        self._last_periodic_recon: float = 0.0
+        # Exchange-as-truth: cached position data (refreshed every cycle by _sync_positions_from_exchange)
+        self._exchange_usdt_free: float = 0.0
+        self._exchange_usdt_total: float = 0.0
+        self._last_exchange_positions: dict = {}
 
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         logger.info(
@@ -763,6 +775,7 @@ class V14PortfolioLiveAster:
             cs.last_candle_ts = cs_data.get("last_candle_ts", 0)
             cs.cumulative_funding = cs_data.get("cumulative_funding", 0.0)
             cs.last_funding_check_ms = cs_data.get("last_funding_check_ms", 0)
+            cs.layer_count = cs_data.get("layer_count", 0)
 
             engine_state = cs_data.get("engine_state", {})
             if engine_state:
@@ -858,249 +871,55 @@ class V14PortfolioLiveAster:
         )
         return True
 
-    # ── Reconciliation ────────────────────────────────────────────────────────
+    # ── Exchange-as-truth position sync ──────────────────────────────────────
 
-    def _reconcile_with_exchange(self):
-        """
-        Reconcile engine state against actual exchange state.
-        Called on startup. Includes perp positions (Audit #4).
-
-        Compares:
-          Exchange: USDT balance + open position values
-          Engine: router cash + engine invested amounts
-
-        Uses additive correction (not multiplicative ratio).
-        """
+    def _sync_positions_from_exchange(self):
+        """Overwrite engine position state from exchange API every cycle. Exchange is truth."""
         try:
-            exchange_usdt = self.client.fetch_balance()
-            logger.info(f"Exchange USDT balance: ${exchange_usdt:.2f}")
-
-            # Fetch open perp positions for position-aware reconciliation
-            position_value = 0.0
-            try:
-                positions = self.client.fetch_open_positions()
-                for base, pos in positions.items():
-                    entry = pos.get("entry_price", 0)
-                    pqty = pos.get("qty", 0)
-                    unrealized = pos.get("unrealized_pnl", 0)
-                    pval = entry * pqty
-                    position_value += pval
-                    logger.info(
-                        f"  Position: {base} {pqty} @ ${entry:.6f} "
-                        f"(unrealized: ${unrealized:+.2f})"
-                    )
-            except Exception as e:
-                logger.warning(f"Position fetch failed (using engine data): {e}")
-
-            exchange_total = exchange_usdt + position_value
-
-            # ── Per-coin position sync (exchange → engine) on startup ─────
-            # Same logic as periodic recon — exchange is source of truth.
-            for sym, cs in self.coins.items():
-                if not cs.engine or not cs.engine._engine:
-                    continue
-                eng = cs.engine._engine
-                base = sym.split("/")[0]
-                ex_pos = positions.get(base, {})
-                ex_qty = ex_pos.get("qty", 0) or 0
-                ex_entry = ex_pos.get("entry_price", 0) or 0
-
-                if ex_qty > 0 and eng.long_coins > 0:
-                    qty_drift = abs(ex_qty - eng.long_coins)
-                    if qty_drift > 0.01:
-                        logger.warning(
-                            f"STARTUP RECON: {sym} qty drift — "
-                            f"exchange={ex_qty:.4f}, engine={eng.long_coins:.4f}. Correcting."
-                        )
-                        eng.long_coins = ex_qty
-                        eng.long_cost = ex_entry * ex_qty
-                        eng.long_avg_entry = ex_entry
-                        tp_pct = eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015
-                        eng.long_tp = ex_entry * (1 + tp_pct)
-                elif ex_qty > 0 and eng.long_coins == 0:
-                    logger.warning(
-                        f"STARTUP RECON: {sym} — exchange has {ex_qty:.4f}, engine has 0. Syncing."
-                    )
-                    eng.long_coins = ex_qty
-                    eng.long_cost = ex_entry * ex_qty
-                    eng.long_avg_entry = ex_entry
-                    eng.long_layers = max(eng.long_layers, 1)
-                    tp_pct = eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015
-                    eng.long_tp = ex_entry * (1 + tp_pct)
-                elif ex_qty == 0 and eng.long_coins > 0:
-                    logger.warning(
-                        f"STARTUP RECON: {sym} — exchange has 0, engine has {eng.long_coins:.4f}. Zeroing."
-                    )
-                    eng.long_coins = 0.0
-                    eng.long_avg_entry = 0.0
-                    eng.long_layers = 0
-                    eng.long_last_buy = None
-                    eng.long_tp = 0.0
-                    eng.long_cost = 0.0
-
-            # Engine side: router cash + invested across all coin engines
-            router_cash = self.router.active_pool_cash + self.router.reserve_pool_cash
-            engine_invested = sum(
-                cs.engine._engine.long_cost if cs.engine and cs.engine._engine else 0
-                for cs in self.coins.values()
-            )
-            engine_total = router_cash + engine_invested
-
-            drift = exchange_total - engine_total
-
-            logger.info(
-                f"RECONCILIATION:\n"
-                f"  Exchange: ${exchange_usdt:.2f} USDT + ${position_value:.2f} positions "
-                f"= ${exchange_total:.2f} total\n"
-                f"  Engine:   ${router_cash:.2f} cash + ${engine_invested:.2f} invested "
-                f"= ${engine_total:.2f} total\n"
-                f"  Drift: ${drift:+.2f}"
-            )
-
-            DRIFT_THRESHOLD = 1.0
-            if abs(drift) > DRIFT_THRESHOLD:
-                # Additive correction applied to router active pool (Audit #4)
-                old_active = self.router.active_pool_cash
-                self.router.active_pool_cash += drift
-                logger.warning(
-                    f"RECONCILIATION ADJUSTMENT: active pool "
-                    f"${old_active:.2f} → ${self.router.active_pool_cash:.2f} "
-                    f"(adjusted by ${drift:+.2f})"
-                )
-                send_telegram(
-                    f"🔧 {TG_PREFIX} <b>Reconciliation</b>\n"
-                    f"Exchange: ${exchange_total:.2f} | Engine: ${engine_total:.2f}\n"
-                    f"Drift: ${drift:+.2f} — corrected (active pool)"
-                )
-            else:
-                logger.info(f"Reconciliation OK: drift=${drift:+.2f}")
-
+            balance = self.client.fetch_full_balance()
+            self._exchange_usdt_free = balance["usdt_free"]
+            self._exchange_usdt_total = balance["usdt_total"]
         except Exception as e:
-            logger.error(f"Reconciliation failed: {e}\n{traceback.format_exc()}")
+            logger.warning(f"Exchange balance sync failed: {e}")
+            return  # Keep previous values
 
-    # ── Periodic reconciliation ──────────────────────────────────────────────
-
-    def _periodic_reconcile(self):
-        """
-        Periodic reconciliation (every 5 minutes).
-
-        Exchange is source of truth. Syncs:
-          1. Per-coin position state (qty, avg entry, cost) from exchange positions
-          2. Total portfolio value (USDT + positions) against router + engines
-          3. Idle engine capitals reset to allocated amounts
-
-        Modeled after old bot's _maybe_reconcile() which always corrected the
-        engine to match exchange reality.
-        """
         try:
-            exchange_usdt = self.client.fetch_balance()
-            positions = {}
-            try:
-                positions = self.client.fetch_open_positions()
-            except Exception as e:
-                logger.warning(f"Periodic recon: position fetch failed: {e}")
-                return  # Can't reconcile without position data
-
-            # ── Per-coin position sync (exchange → engine) ────────────────
-            for sym, cs in self.coins.items():
-                if not cs.engine or not cs.engine._engine:
-                    continue
-                eng = cs.engine._engine
-                base = sym.split("/")[0]
-                ex_pos = positions.get(base, {})
-                ex_qty = ex_pos.get("qty", 0) or 0
-                ex_entry = ex_pos.get("entry_price", 0) or 0
-
-                # Case 1: Exchange has position, engine agrees → check qty/entry
-                if ex_qty > 0 and eng.long_coins > 0:
-                    qty_drift = abs(ex_qty - eng.long_coins)
-                    if qty_drift > 0.01:
-                        logger.warning(
-                            f"PERIODIC RECON: {sym} qty drift — "
-                            f"exchange={ex_qty:.4f}, engine={eng.long_coins:.4f}. "
-                            f"Correcting engine."
-                        )
-                        eng.long_coins = ex_qty
-                        eng.long_cost = ex_entry * ex_qty
-                        eng.long_avg_entry = ex_entry
-                        # Recalculate TP from corrected avg entry
-                        tp_pct = eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015
-                        eng.long_tp = ex_entry * (1 + tp_pct)
-                    elif abs(ex_entry - eng.long_avg_entry) / ex_entry > 0.005:
-                        # Entry price drifted > 0.5% — correct
-                        logger.info(
-                            f"PERIODIC RECON: {sym} entry drift — "
-                            f"exchange=${ex_entry:.6f}, engine=${eng.long_avg_entry:.6f}. "
-                            f"Correcting engine."
-                        )
-                        eng.long_avg_entry = ex_entry
-                        eng.long_cost = ex_entry * eng.long_coins
-                        tp_pct = eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015
-                        eng.long_tp = ex_entry * (1 + tp_pct)
-
-                # Case 2: Exchange has position, engine thinks it's empty
-                elif ex_qty > 0 and eng.long_coins == 0:
-                    logger.warning(
-                        f"PERIODIC RECON: {sym} — exchange has {ex_qty:.4f} "
-                        f"but engine has 0. Syncing engine to exchange."
-                    )
-                    eng.long_coins = ex_qty
-                    eng.long_cost = ex_entry * ex_qty
-                    eng.long_avg_entry = ex_entry
-                    eng.long_layers = max(eng.long_layers, 1)
-                    tp_pct = eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015
-                    eng.long_tp = ex_entry * (1 + tp_pct)
-
-                # Case 3: Exchange has no position, engine thinks it does
-                elif ex_qty == 0 and eng.long_coins > 0:
-                    logger.warning(
-                        f"PERIODIC RECON: {sym} — exchange has 0 "
-                        f"but engine has {eng.long_coins:.4f}. Zeroing engine."
-                    )
-                    eng.long_coins = 0.0
-                    eng.long_avg_entry = 0.0
-                    eng.long_layers = 0
-                    eng.long_last_buy = None
-                    eng.long_tp = 0.0
-                    eng.long_cost = 0.0
-
-                # Case 4: Both empty — reset capital if needed
-                elif ex_qty == 0 and eng.long_coins == 0:
-                    if abs(eng.capital - cs.allocated_capital) > 0.01:
-                        old_cap = eng.capital
-                        eng.capital = cs.allocated_capital
-                        logger.info(
-                            f"PERIODIC RECON: {sym} engine capital reset "
-                            f"${old_cap:.2f} → ${cs.allocated_capital:.2f} (no position)"
-                        )
-
-            # ── Total portfolio drift (router cash correction) ────────────
-            position_value = sum(
-                p.get("entry_price", 0) * p.get("qty", 0)
-                for p in positions.values()
-            )
-            exchange_total = exchange_usdt + position_value
-
-            router_cash = self.router.active_pool_cash + self.router.reserve_pool_cash
-            engine_invested = sum(
-                cs.engine._engine.long_cost if cs.engine and cs.engine._engine else 0
-                for cs in self.coins.values()
-            )
-            engine_total = router_cash + engine_invested
-            drift = exchange_total - engine_total
-
-            if abs(drift) > 1.0:
-                old_active = self.router.active_pool_cash
-                self.router.active_pool_cash += drift
-                logger.warning(
-                    f"PERIODIC RECON: total drift=${drift:+.2f} | "
-                    f"active pool ${old_active:.2f} → ${self.router.active_pool_cash:.2f}"
-                )
-            else:
-                logger.debug(f"Periodic recon OK: drift=${drift:+.2f}")
-
+            positions = self.client.fetch_open_positions()
         except Exception as e:
-            logger.error(f"Periodic reconciliation failed: {e}")
+            logger.warning(f"Exchange position sync failed: {e}")
+            return  # Don't overwrite engine with empty data on API failure
+
+        for sym, cs in self.coins.items():
+            if not cs.engine or not cs.engine._engine:
+                continue
+            eng = cs.engine._engine
+            base = sym.split("/")[0]
+            pos = positions.get(base, {})
+            ex_qty = pos.get("qty", 0) or 0
+            ex_entry = pos.get("entry_price", 0) or 0
+
+            if ex_qty > 0:
+                eng.long_coins = ex_qty
+                eng.long_cost = ex_entry * ex_qty
+                eng.long_avg_entry = ex_entry
+                tp_pct = eng.cfg.DCA_TP_PCT if hasattr(eng, 'cfg') and hasattr(eng.cfg, 'DCA_TP_PCT') else 0.015
+                eng.long_tp = ex_entry * (1 + tp_pct)
+                # Sync layer count from CoinState tracker (not engine internal)
+                eng.long_layers = cs.layer_count
+            else:
+                eng.long_coins = 0.0
+                eng.long_cost = 0.0
+                eng.long_avg_entry = 0.0
+                eng.long_layers = 0
+                eng.long_tp = 0.0
+                cs.layer_count = 0  # Reset when exchange has no position
+
+        self._last_exchange_positions = positions  # Cache for status write
+        logger.debug(
+            f"Exchange sync: free=${self._exchange_usdt_free:.2f} "
+            f"total=${self._exchange_usdt_total:.2f} "
+            f"positions={list(positions.keys())}"
+        )
 
     # ── Funding rate tracking ─────────────────────────────────────────────────
 
@@ -1430,52 +1249,17 @@ class V14PortfolioLiveAster:
             logger.error(f"fetch_candles({sym}): {e}")
             return []
 
-    # ── Pre-tick snapshot (Audit #1) ─────────────────────────────────────────
-
-    def _snapshot_engine(self, eng) -> dict:
-        """Take a full snapshot of engine state before tick.
-        Enables complete rollback on LIVE GUARD or failed orders."""
-        if eng is None:
-            return {}
-        return {
-            "long_coins": eng.long_coins,
-            "long_avg_entry": eng.long_avg_entry,
-            "long_layers": eng.long_layers,
-            "long_last_buy": eng.long_last_buy,
-            "long_tp": eng.long_tp,
-            "long_cost": eng.long_cost,
-            "long_trades": eng.long_trades,
-            "long_wins": eng.long_wins,
-            "long_pnl": eng.long_pnl,
-            "capital": eng.capital,
-            "_trades_len": len(eng.trades),
-        }
-
-    def _rollback_engine(self, eng, snapshot: dict):
-        """Restore engine to pre-tick snapshot. Trims phantom trades."""
-        if not snapshot or eng is None:
-            return
-        old_trades_len = snapshot.pop("_trades_len", None)
-        for k, v in snapshot.items():
-            setattr(eng, k, v)
-        if old_trades_len is not None and len(eng.trades) > old_trades_len:
-            removed = eng.trades[old_trades_len:]
-            eng.trades = eng.trades[:old_trades_len]
-            logger.warning(
-                f"Rolled back {len(removed)} phantom trade(s): "
-                f"{[t.get('action','?') for t in removed]}"
-            )
-
     # ── Action execution ──────────────────────────────────────────────────────
 
-    def _execute_action(self, sym: str, cs: CoinState, action: dict,
-                        pre_tick_snapshot: dict = None):
+    def _execute_action(self, sym: str, cs: CoinState, action: dict):
         """
         Execute a single engine action against the exchange.
 
+        Exchange-as-truth architecture: no engine rollbacks needed.
+        Engine position state is overwritten from exchange at the top of every
+        main loop iteration by _sync_positions_from_exchange().
+
         Audit fixes applied:
-          #1: Full pre-tick snapshot for LIVE GUARD rollback
-          #2: Complete engine cleanup on TP fill
           #3: Pre-flight order validation (min amount, precision)
           #7: Spread logging
           #8: Store TP limit price separately in CoinState
@@ -1521,18 +1305,12 @@ class V14PortfolioLiveAster:
 
             if granted <= 0:
                 logger.warning(f"Router denied capital for {sym} BUY (layer {layer})")
-                # Use full snapshot rollback (more reliable than reject_action's trade search)
-                if pre_tick_snapshot and cs.engine and cs.engine._engine:
-                    self._rollback_engine(cs.engine._engine, pre_tick_snapshot.copy())
-                elif cs.engine:
+                if cs.engine:
                     cs.engine.reject_action(action)
                 return
             if granted < cost:
                 logger.warning(f"Router partial capital for {sym} — rejecting")
-                # Use full snapshot rollback (more reliable than reject_action's trade search)
-                if pre_tick_snapshot and cs.engine and cs.engine._engine:
-                    self._rollback_engine(cs.engine._engine, pre_tick_snapshot.copy())
-                elif cs.engine:
+                if cs.engine:
                     cs.engine.reject_action(action)
                 self.router.return_capital(sym, granted)
                 return
@@ -1573,34 +1351,15 @@ class V14PortfolioLiveAster:
                         f"Engine: ${price:.6f} | Fill: ${actual_price:.6f}"
                     )
 
-                # Correct engine for actual fill vs expected
-                if cs.engine and cs.engine._engine:
-                    eng = cs.engine._engine
-                    correction = actual_cost - cost
-                    if abs(correction) > 0.01:
-                        eng.capital -= correction
-                        logger.info(f"BUY capital correction for {sym}: ${correction:+.4f}")
-
-                    # Recalculate TP from actual fill price (not engine's candle close)
-                    if eng.long_coins > 0 and eng.long_cost > 0:
-                        old_cost = eng.long_cost - actual_cost
-                        corrected_cost = old_cost + (actual_price * actual_qty)
-                        eng.long_cost = corrected_cost
-                        eng.long_avg_entry = corrected_cost / eng.long_coins
-                        tp_pct = 1.0 + (eng.tp_pct if hasattr(eng, 'tp_pct') else 0.015)
-                        eng.long_tp = eng.long_avg_entry * tp_pct
-                        logger.info(
-                            f"TP recalculated from actual fill: avg=${eng.long_avg_entry:.6f}, "
-                            f"TP=${eng.long_tp:.6f} (engine was ${price:.6f})"
-                        )
-
                 self.tracker.on_buy(sym, actual_qty, actual_price,
                                     datetime.now(timezone.utc))
 
                 # Record buy timestamp for dedup guard
                 cs._last_buy_time = time.time()
+                # Track layer count (exchange sync will confirm, but track locally too)
+                cs.layer_count += 1
 
-                # Place TP limit order (using corrected TP)
+                # Place TP limit order
                 self._place_tp_order(sym, cs)
 
                 send_telegram(
@@ -1617,22 +1376,10 @@ class V14PortfolioLiveAster:
                     cs.engine.reject_action(action)
 
         elif act_type == "SELL":
-            # ── LIVE GUARD (Audit #1: full rollback) ──────────────────────
-            # If a TP limit order is on the exchange, the exchange handles TP.
-            # Block engine-generated TP sells. Roll back ALL engine state.
+            # If a TP limit order is active on exchange, skip engine TP sells.
+            # Exchange will fill the TP; next cycle sync will clear engine state.
             if cs.tp_order_id and "TP" in reason:
-                logger.info(
-                    f"LIVE GUARD: Blocking engine TP sell for {sym} — "
-                    f"TP order {cs.tp_order_id} is active on exchange. "
-                    f"Engine price: ${price:.6f}"
-                )
-                # Full rollback from pre-tick snapshot
-                if pre_tick_snapshot and cs.engine and cs.engine._engine:
-                    self._rollback_engine(cs.engine._engine, pre_tick_snapshot.copy())
-                    logger.info(
-                        f"LIVE GUARD: Full engine rollback for {sym} — "
-                        f"restored to pre-tick state"
-                    )
+                logger.info(f"Skipping engine TP for {sym} — exchange TP order active")
                 return
 
             # Non-TP sell: cancel TP order first, then market sell
@@ -1671,23 +1418,8 @@ class V14PortfolioLiveAster:
                     sym, actual_qty, actual_price, actual_proceeds, fee, ts
                 )
                 self.router.return_capital(sym, actual_proceeds)
-
-                # Audit #2: Complete engine cleanup after sell
-                if cs.engine and cs.engine._engine:
-                    eng = cs.engine._engine
-                    eng.capital += actual_proceeds
-                    eng.long_trades = (eng.long_trades or 0) + 1
-                    pnl = record.get("pnl", 0) if record else 0
-                    if pnl >= 0:
-                        eng.long_wins = (eng.long_wins or 0) + 1
-                    eng.long_pnl = (eng.long_pnl or 0.0) + pnl
-                    # Zero out ALL position fields
-                    eng.long_coins = 0.0
-                    eng.long_avg_entry = 0.0
-                    eng.long_layers = 0
-                    eng.long_last_buy = None
-                    eng.long_tp = 0.0
-                    eng.long_cost = 0.0
+                # Engine position fields will be zeroed by next _sync_positions_from_exchange()
+                cs.layer_count = 0
 
                 if record:
                     pnl = record["pnl"]
@@ -1707,27 +1439,12 @@ class V14PortfolioLiveAster:
                     self._check_wind_down_complete()
 
             else:
-                # SELL FAILED — full rollback from pre-tick snapshot
-                if pre_tick_snapshot and cs.engine and cs.engine._engine:
-                    self._rollback_engine(cs.engine._engine, pre_tick_snapshot.copy())
-                    logger.warning(
-                        f"SELL FAILED for {sym} — full engine rollback. "
-                        f"Will retry on next candle."
-                    )
-                    send_telegram(
-                        f"⚠️ {TG_PREFIX} <b>SELL FAILED — engine rolled back</b>\n"
-                        f"Symbol: {sym} | Reason: {reason}\n"
-                        f"Will retry on next candle"
-                    )
-                else:
-                    logger.error(
-                        f"SELL FAILED for {sym} and no pre-tick snapshot! "
-                        f"Engine state may be inconsistent."
-                    )
-                    send_telegram(
-                        f"🔴 {TG_PREFIX} <b>SELL FAILED — NO ROLLBACK</b>\n"
-                        f"Symbol: {sym} | Manual intervention may be needed"
-                    )
+                logger.error(f"SELL FAILED for {sym} — will retry on next candle")
+                send_telegram(
+                    f"⚠️ {TG_PREFIX} <b>SELL FAILED</b>\n"
+                    f"Symbol: {sym} | Reason: {reason}\n"
+                    f"Will retry on next candle (exchange synced next cycle)"
+                )
 
     # ── Capital Router integration ────────────────────────────────────────────
 
@@ -2150,100 +1867,93 @@ class V14PortfolioLiveAster:
         return usdt_total + unrealized
 
     def _write_status(self):
-        """Write status.json for dashboard and heartbeat monitoring."""
+        """Write status.json for dashboard and heartbeat monitoring.
+
+        Uses cached exchange data from _sync_positions_from_exchange() —
+        no extra API calls needed. Exchange is source of truth for all
+        position and balance data; engine contributes only phase/signal state.
+        """
         now = time.time()
         if now - self._last_status_write < STATUS_WRITE_INTERVAL:
             return
         self._last_status_write = now
 
-        # Fetch live prices and positions from exchange for accurate PnL
-        live_prices = {}
-        exchange_positions = {}
-        try:
-            exchange_positions = self.client.fetch_open_positions()
-            if exchange_positions:
-                logger.debug(f"Status write: fetched {len(exchange_positions)} positions: {list(exchange_positions.keys())}")
-        except Exception as e:
-            logger.warning(f"Status write: position fetch failed: {e}")
+        # Use cached data from _sync_positions_from_exchange()
+        exchange_positions = self._last_exchange_positions
+        usdt_free  = self._exchange_usdt_free
+        usdt_total = self._exchange_usdt_total
+
+        # Equity = total USDT (includes margin) + unrealized PnL from positions
+        unrealized_total = sum(
+            p.get("unrealized_pnl", 0) for p in exchange_positions.values()
+        )
+        equity = round(usdt_total + unrealized_total, 2)
+        invested = round(sum(
+            p.get("entry_price", 0) * p.get("qty", 0)
+            for p in exchange_positions.values()
+        ), 2)
+        pnl_pct = ((equity - self.capital) / self.capital * 100) if self.capital > 0 else 0.0
 
         coins = {}
         for sym, cs in self.coins.items():
             if not cs.engine:
                 continue
             try:
+                # Engine contributes: phase, signal state
                 st = cs.engine.get_status()
+                coin_data = {}
                 if "coins" in st:
                     coin_data = st["coins"].get(sym, {})
 
-                    # Override current_price with live ticker (engine only updates on candle)
-                    try:
-                        live_price = self.client.fetch_ticker_price(sym)
-                        if live_price > 0:
-                            coin_data["current_price"] = round(live_price, 6)
-                            live_prices[sym] = live_price
-                    except Exception:
-                        pass
+                # Override position data from exchange (source of truth)
+                base = sym.split("/")[0]
+                pos = exchange_positions.get(base, {})
+                ex_qty   = pos.get("qty", 0) or 0
+                ex_entry = pos.get("entry_price", 0) or 0
+                ex_unrealized = pos.get("unrealized_pnl", 0) or 0
 
-                    # Recalculate unrealized PnL from exchange position data
-                    base = sym.split("/")[0]
-                    logger.info(
-                        f"Status write {sym}: base={base}, "
-                        f"exchange_positions_keys={list(exchange_positions.keys())}, "
-                        f"match={base in exchange_positions}"
-                    )
-                    if base in exchange_positions:
-                        pos = exchange_positions[base]
-                        coin_data["unrealized_pnl"] = round(pos.get("unrealized_pnl", 0), 4)
-                        # Use exchange entry price (more accurate than engine after corrections)
-                        if pos.get("entry_price", 0) > 0:
-                            coin_data["avg_entry"] = round(pos["entry_price"], 6)
-                    elif coin_data.get("current_price") and coin_data.get("avg_entry"):
-                        eng = cs.engine._engine
-                        if eng and eng.long_coins > 0:
-                            coin_data["unrealized_pnl"] = round(
-                                (coin_data["current_price"] - coin_data["avg_entry"]) * eng.long_coins, 4
+                if ex_qty > 0:
+                    coin_data["avg_entry"]      = round(ex_entry, 8)
+                    coin_data["unrealized_pnl"] = round(ex_unrealized, 4)
+                    coin_data["position_size"]  = round(ex_qty, 8)
+                else:
+                    coin_data["avg_entry"]      = 0
+                    coin_data["unrealized_pnl"] = 0
+                    coin_data["position_size"]  = 0
+
+                # Live price for display (ticker — still needed for current_price display)
+                try:
+                    live_price = self.client.fetch_ticker_price(sym)
+                    if live_price > 0:
+                        coin_data["current_price"] = round(live_price, 6)
+                except Exception:
+                    pass
+
+                # Per-coin realized PnL from CSV (survives restarts)
+                try:
+                    csv_path = OUTPUT_DIR / "trades.csv"
+                    if csv_path.exists():
+                        import csv as csv_mod
+                        with open(csv_path) as cf:
+                            reader = csv_mod.DictReader(cf)
+                            coin_pnl = sum(
+                                float(t.get("pnl", 0) or 0)
+                                for t in reader if t.get("symbol") == sym
                             )
+                        coin_data["realized_pnl"] = round(coin_pnl, 4)
+                except Exception as csv_err:
+                    logger.warning(f"CSV PnL read failed for {sym}: {csv_err}")
 
-                    # Per-coin realized PnL from CSV (engine counter resets on restart)
-                    try:
-                        csv_path = OUTPUT_DIR / "trades.csv"
-                        if csv_path.exists():
-                            import csv as csv_mod
-                            with open(csv_path) as cf:
-                                reader = csv_mod.DictReader(cf)
-                                coin_pnl = sum(
-                                    float(t.get("pnl", 0) or 0)
-                                    for t in reader if t.get("symbol") == sym
-                                )
-                            coin_data["realized_pnl"] = round(coin_pnl, 4)
-                    except Exception as csv_err:
-                        logger.warning(f"CSV PnL read failed for {sym}: {csv_err}")
-
-                    coin_data["cumulative_funding"] = round(cs.cumulative_funding, 6)
-                    coin_data["tp_order_id"] = cs.tp_order_id
-                    # Override engine TP with actual exchange TP price (source of truth)
-                    if cs.tp_limit_price:
-                        coin_data["next_tp_price"] = cs.tp_limit_price
-                    if sym in self._cfgi_coins:
-                        coin_data["cfgi"] = round(self._cfgi_coins[sym], 1)
-                    coins[sym] = coin_data
+                coin_data["cumulative_funding"] = round(cs.cumulative_funding, 6)
+                coin_data["tp_order_id"]  = cs.tp_order_id
+                coin_data["layer_count"]  = cs.layer_count
+                if cs.tp_limit_price:
+                    coin_data["next_tp_price"] = cs.tp_limit_price
+                if sym in self._cfgi_coins:
+                    coin_data["cfgi"] = round(self._cfgi_coins[sym], 1)
+                coins[sym] = coin_data
             except Exception as e:
                 logger.error(f"get_status failed for {sym}: {e}")
-
-        # Compute equity from exchange balance (API truth, like V14 Live bot)
-        # Uses USDT.total (includes locked margin) + unrealized PnL from positions
-        exchange_balance = {}
-        try:
-            exchange_balance = self.client.fetch_full_balance()
-            usdt_total = exchange_balance["usdt_total"]
-            unrealized = sum(
-                p.get("unrealized_pnl", 0)
-                for p in exchange_positions.values()
-            )
-            equity = round(usdt_total + unrealized, 2)
-        except Exception:
-            equity = self._compute_equity()
-        pnl_pct = ((equity - self.capital) / self.capital * 100) if self.capital > 0 else 0.0
 
         status = {
             "running": True,
@@ -2254,10 +1964,14 @@ class V14PortfolioLiveAster:
             "leverage": self.leverage,
             "bot_state": self.bot_state,
             "capital": self.capital,
-            "equity": round(equity, 2),
-            "cash": round(exchange_balance.get("usdt_free", 0), 2) if exchange_balance else 0,
+            "equity": equity,
+            "cash": round(usdt_free, 2),
+            "invested": invested,
+            "exchange_balance": {
+                "usdt_free":  round(usdt_free, 2),
+                "usdt_total": round(usdt_total, 2),
+            },
             "pnl_pct": round(pnl_pct, 2),
-            "exchange_balance": exchange_balance if exchange_balance else None,
             "total_pnl": round(self.tracker.total_pnl, 4),
             "total_realized_pnl": round(self.tracker.total_pnl, 4),
             "deals_completed": self.tracker.deal_count,
@@ -2268,21 +1982,20 @@ class V14PortfolioLiveAster:
             "coins": coins,
             "symbols": list(self.coins.keys()),
             "tier_coin_cap": self.router.tier_coin_cap,
-            "approved_symbols": sorted(
-                self.router.active_allocations.keys()
-            ),
+            "approved_symbols": sorted(self.router.active_allocations.keys()),
             "regime": (self._regime_alert_state
                        if self._regime_alert_state and self._regime_alert_state != "NONE"
                        else "RANGING"),
             "regime_detail": {
-                "alert_state": self._regime_alert_state,
-                "signal_type": self._regime_signal_type,
+                "alert_state":  self._regime_alert_state,
+                "signal_type":  self._regime_signal_type,
                 "signal_count": self._regime_signal_count,
             },
             "trend_direction": "bearish" if self._regime_signal_type == "TOP" else "bullish",
             "fear_greed_index": self._cfgi_market,
+            "cfgi": self._cfgi_market,
             "router": {
-                "active_cash": round(self.router.active_pool_cash, 2),
+                "active_cash":  round(self.router.active_pool_cash, 2),
                 "reserve_cash": round(self.router.reserve_pool_cash, 2),
             },
             "uptime_hours": round(
@@ -2292,29 +2005,29 @@ class V14PortfolioLiveAster:
             "last_update": datetime.now(timezone.utc).isoformat(),
         }
 
-        # Aggregate total_fees and total_realized_pnl from CSV (survives restarts)
+        # Aggregate totals from CSV (survives restarts)
         try:
             csv_path = OUTPUT_DIR / "trades.csv"
             if csv_path.exists():
                 import csv as csv_mod
                 with open(csv_path) as cf:
                     reader = csv_mod.DictReader(cf)
-                    csv_total_pnl = 0.0
+                    csv_total_pnl  = 0.0
                     csv_total_fees = 0.0
-                    csv_deals = 0
-                    csv_wins = 0
+                    csv_deals      = 0
+                    csv_wins       = 0
                     for t in reader:
                         pnl = float(t.get("pnl", 0) or 0)
                         fee = float(t.get("fee", 0) or 0)
-                        csv_total_pnl += pnl
+                        csv_total_pnl  += pnl
                         csv_total_fees += fee
-                        csv_deals += 1
+                        csv_deals      += 1
                         if pnl > 0:
                             csv_wins += 1
                     status["total_realized_pnl"] = round(csv_total_pnl, 4)
-                    status["total_fees"] = round(csv_total_fees, 4)
-                    status["deals_completed"] = csv_deals
-                    status["win_rate"] = round(
+                    status["total_fees"]         = round(csv_total_fees, 4)
+                    status["deals_completed"]    = csv_deals
+                    status["win_rate"]           = round(
                         csv_wins / csv_deals * 100 if csv_deals > 0 else 0, 1
                     )
         except Exception as e:
@@ -2419,13 +2132,9 @@ class V14PortfolioLiveAster:
             for sym in list(self.coins.keys()):
                 self.client.ensure_leverage(sym, self.leverage)
 
-            # Startup reconciliation
-            self._reconcile_with_exchange()
-
-            # Persist corrected state immediately — so next restart loads clean values
-            # even if the bot crashes before the first main loop save.
-            self._save_state()
-            logger.info("State saved after startup reconciliation.")
+            # Initial exchange sync (exchange-as-truth: overwrite engine state from exchange)
+            self._sync_positions_from_exchange()
+            logger.info("Initial exchange position sync complete.")
 
             # Audit #6: TP recovery — check if any TP orders filled while bot was down
             self._recover_tp_orders()
@@ -2464,10 +2173,8 @@ class V14PortfolioLiveAster:
                         self._update_funding()
                         last_tp_check = time.time()
 
-                    # Periodic reconciliation every 5 minutes
-                    if time.time() - self._last_periodic_recon >= 300:
-                        self._periodic_reconcile()
-                        self._last_periodic_recon = time.time()
+                    # Sync positions from exchange (exchange-as-truth, every cycle)
+                    self._sync_positions_from_exchange()
 
                     # Process each active coin (Audit #5: 50 candles, process all missed)
                     for sym, cs in list(self.coins.items()):
@@ -2494,10 +2201,6 @@ class V14PortfolioLiveAster:
                                 f"L={candle['low']:.6f} C={candle['close']:.6f}"
                             )
 
-                            # Audit #1: Take pre-tick snapshot for rollback
-                            eng = cs.engine._engine if cs.engine else None
-                            pre_tick = self._snapshot_engine(eng)
-
                             # Run engine tick
                             try:
                                 actions = cs.engine.tick(candle, cash_available=cs.allocated_capital)
@@ -2508,8 +2211,7 @@ class V14PortfolioLiveAster:
                             if actions:
                                 logger.info(f"Engine actions for {sym}: {actions}")
                                 for action in actions:
-                                    self._execute_action(sym, cs, action,
-                                                         pre_tick_snapshot=pre_tick)
+                                    self._execute_action(sym, cs, action)
                             else:
                                 logger.info(
                                     f"Engine tick {sym}: no action "
