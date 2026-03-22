@@ -7,14 +7,14 @@
   "leverage": 1.0,
   "bot_state": "RUNNING",
   "capital": 340.0,
-  "equity": 339.8,
+  "equity": 340.15,
   "cash": 104.57,
   "invested": 247.2,
   "exchange_balance": {
     "usdt_free": 104.57,
     "usdt_total": 351.84
   },
-  "pnl_pct": -0.06,
+  "pnl_pct": 0.04,
   "total_pnl": 24.4036,
   "total_realized_pnl": 24.4036,
   "deals_completed": 13,
@@ -25,8 +25,8 @@
       "side": "long",
       "layers": 0,
       "avg_entry": 0.38904323,
-      "current_price": 0.3701,
-      "unrealized_pnl": -12.0365,
+      "current_price": 0.3707,
+      "unrealized_pnl": -11.689,
       "invested": 247.2,
       "realized_pnl": 0.6543,
       "lifecycle_phase": "LONG_DCA",
@@ -55,14 +55,14 @@
     "signal_count": 0
   },
   "trend_direction": "bullish",
-  "fear_greed_index": null,
-  "cfgi": null,
+  "fear_greed_index": 44.05,
+  "cfgi": 44.05,
   "router": {
     "active_cash": 236.27,
     "reserve_cash": 87.5
   },
-  "uptime_hours": 0.17,
+  "uptime_hours": 0.02,
   "timeframe": "1h",
-  "last_update": "2026-03-22T00:23:23.387611+00:00",
+  "last_update": "2026-03-22T00:33:30.749767+00:00",
   "total_fees": 0.0
 }
