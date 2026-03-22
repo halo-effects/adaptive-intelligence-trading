@@ -651,6 +651,10 @@ Returns: `number`
 **What it does:** Returns details of a specific leverage position.
 **Module:** `client.trading`
 
+**Returns** (from `leverages(address, uint256)` on MAIN_TOKEN â€” 12 fields):
+`user`, `token`, `collateralAmount`, `liquidatedAmount`, `fullAmount`, `borrowedAmount`, `liquidationTime`, `liquidationClaim`, `isLiquidated`, `active`, `creationTime`, `timeOfClosure`
+*Note: The nested Leverage struct fields (`leverageBuyAmount`, `cashedOut`) may or may not be included depending on Solidity auto-getter behavior â€” verify against compiled ABI.*
+
 ---
 
 ## Module: Factory (`client.factory`)
@@ -902,6 +906,9 @@ result = client.loans.take_loan(MAINTOKEN, collateral_token, 100 * 10**18, 30)
 ### `getUserLoanDetails(user, hubId)` *(read)*
 **What it does:** Returns full details of a loan including collateral, amount, expiry, status.
 **Module:** `client.loans`
+
+**Returns** `FullLoanDetails` (14 fields):
+`hubId`, `ecosystem`, `coreLoanId`, `collateralToken`, `token`, `collateralAmount`, `liquidatedAmount`, `fullAmount`, `borrowedAmount`, `liquidationTime`, `liquidationClaim`, `isLiquidated`, `active`, `creationTime`
 
 ---
 
@@ -1382,46 +1389,64 @@ Returns: `{ fill, baseUsdb, buyerTax, totalCostToBuyer }`
 
 Dispute resolution for prediction markets â€” propose, dispute, vote, finalize, claim bounties.
 
+**Key parameters:**
+- Proposal bond: **5 USDB**
+- Dispute bond: **5 USDB** (no escalation across rounds)
+- Challenge period: **30 minutes** (production target: 2 hours â€” configurable via `configResolver`)
+- Voting period: **30 minutes** (production target: 24 hours â€” configurable)
+- Minimum stake to vote: **5 tokens** of any active ecosystem token
+- Voting: **one-staker-one-vote** (staking above minimum gives no extra power)
+- Quorum: `bountyPool / (50 Ã— $1)`, clamped between **2** (min) and **100** (max)
+
+**Special outcome IDs:**
+- **0â€“252**: Normal outcomes
+- **253 (EARLY)**: Only the disputer can propose. Resets market to fresh proposal cycle (round increments)
+- **254 (INVALID)**: Anyone can propose/vote. Proportional refund to all participants
+
+â†’ See: [07-how.md](07-how.md) for the full resolution deep dive with bond outcomes, bounty distribution, and veto mechanics.
+
 ---
 
 ### `proposeOutcome(marketToken, outcomeId)`
-**What it does:** Proposes the winning outcome for a resolved market. Auto-approves USDB for proposal bond.
+**What it does:** Proposes the winning outcome for a market past its end time. Auto-approves 5 USDB for proposal bond. If uncontested after the challenge period, the proposer gets bond back + 100% of bounty pool.
 **Module:** `client.resolver`
 
 ---
 
 ### `dispute(marketToken, newOutcomeId)`
-**What it does:** Disputes the currently proposed outcome. Auto-approves USDB for dispute bond.
+**What it does:** Disputes the currently proposed outcome with an alternative. Auto-approves 5 USDB for dispute bond. Triggers the voting period.
 **Module:** `client.resolver`
+**Note:** Only the disputer can propose EARLY (253). Anyone can propose INVALID (254).
 
 ---
 
 ### `vote(marketToken, outcomeId)`
-**What it does:** Casts a vote during a dispute round.
+**What it does:** Casts a vote during a dispute round. Requires prior staking of â‰¥5 tokens via `stake()`. One vote per staker â€” staking more doesn't give more votes.
 **Module:** `client.resolver`
+**Note:** Ties cause finalization to revert ("Tie - vote more"). Tie must be broken within the voting period.
 
 ---
 
 ### `stake(token)` / `unstake(token)`
-**What it does:** Stakes/unstakes tokens to participate in dispute resolution.
+**What it does:** Stakes/unstakes tokens to participate in dispute resolution. Minimum: 5 tokens of any active ecosystem token. Staking is required before voting.
 **Module:** `client.resolver`
 
 ---
 
 ### `finalizeUncontested(marketToken)`
-**What it does:** Finalizes a market whose proposed outcome was not disputed within the challenge period.
+**What it does:** Finalizes a market whose proposed outcome was not disputed within the challenge period. Anyone can call this. Proposer receives bond back + full bounty.
 **Module:** `client.resolver`
 
 ---
 
 ### `finalizeMarket(marketToken)`
-**What it does:** Finalizes a market after dispute resolution is complete.
+**What it does:** Finalizes a market after dispute voting is complete. Requires quorum met and no tie.
 **Module:** `client.resolver`
 
 ---
 
 ### `veto(marketToken, proposedOutcome)`
-**What it does:** Vetoes a proposed outcome (requires elevated privileges â€” availability may change). Auto-approves USDB.
+**What it does:** Vetoes a disputed market's resolution after the voting period expires. Requires 5 USDB bond. One veto per market. Cannot veto with the disputer's outcome or EARLY. Halts voting â€” resolution escalates to `resolveByBasis` (platform admin). Post-TGE: transitions to BASIS staker governance.
 **Module:** `client.resolver`
 
 ---
@@ -1429,6 +1454,12 @@ Dispute resolution for prediction markets â€” propose, dispute, vote, final
 ### `claimBounty(marketToken)` / `claimEarlyBounty(marketToken, round)`
 **What it does:** Claims bounty reward for correct dispute participation.
 **Module:** `client.resolver`
+
+**Bounty distribution rules:**
+- Uncontested: 100% to proposer
+- Disputed, normal outcome wins: 100% split equally among correct voters. Bond winner gets bonds only (not bounty)
+- INVALID proposed by a party: that party gets 100% of bounty + both bonds
+- EARLY: half of proposer's bond split among EARLY voters
 
 ---
 
@@ -1444,12 +1475,27 @@ Dispute resolution for prediction markets â€” propose, dispute, vote, final
 | `getDisputeData(marketToken)` | Dispute details |
 | `getUserStake(marketToken, user)` | `string` |
 | `isVoter(marketToken, user)` | `boolean` |
-| `getConstants(marketToken)` | Resolution parameters |
 | `getVoteCount(marketToken, outcomeId)` | `number` |
 | `hasVoted(marketToken, user)` | `boolean` |
 | `getVoterChoice(marketToken, user)` | `number` |
 | `getBountyPerVote(marketToken)` | `string` |
 | `hasClaimed(marketToken, user)` | `boolean` |
+
+**Resolution config** (individual public getters on the resolver contract â€” no single `getConstants()` method):
+
+| Getter | Current Value | Description |
+|--------|--------------|-------------|
+| `DISPUTE_PERIOD` | 30 min (target: 24h) | Voting period after dispute |
+| `PROPOSAL_PERIOD` | 30 min (target: 2h) | Challenge period before finalization |
+| `VETO_PERIOD` | 30 min (target: 1h) | Window for veto after voting |
+| `PROPOSAL_BOND` | 5 USDB | Bond to propose an outcome |
+| `MIN_QUORUM` | 2 | Minimum votes required |
+| `MAX_QUORUM` | 100 | Maximum quorum cap |
+| `VOTING_CONSENSUS` | 70 | 70% supermajority required to finalize |
+| `MIN_STAKE_AMOUNT` | 5 tokens (1e18) | Minimum stake to vote |
+| `VOTE_LOCK_DURATION` | TBD | How long staked tokens are locked after voting |
+
+**Note on staking:** The current resolver staking (STASIS tokens) is a placeholder anti-spam threshold. Post-TGE, this transitions to BASIS token staking â€” stakers who earn yield from the platform also serve as the dispute resolution voting body. The economic alignment is intentional: the people benefiting most from platform health are the ones ensuring prediction markets resolve honestly.
 
 ---
 
@@ -1539,6 +1585,9 @@ Preview leveraged positions before committing. All read-only.
 ### `simulateLeverage(amount, path, numberOfDays)` *(read)*
 **What it does:** Simulates a leverage position on MAINTOKEN. Shows expected position size, effective leverage, and total fees before you commit.
 **Module:** `client.leverageSimulator`
+
+**Returns** `EndResult` (12 fields):
+`newXeReserve0`, `newXeReserve1`, `newReserve0`, `newReserve1`, `totalRepay`, `totalBorrowed`, `totalColleteral`, `totalFees`, `realLiquidity`, `xeAdded`, `usdcAdded`, `tokenAdded`
 **Always use this before `trading.leverageBuy()`.**
 
 **JS:**
@@ -2169,12 +2218,63 @@ These are separate paths. Buying the token â‰  betting on an outcome.
 
 **Resolution lifecycle**:
 ```
-Market ends â†’ Propose outcome â†’ Dispute window
-  â”œâ”€ No dispute â†’ Finalize â†’ Winners redeem
-  â””â”€ Disputed â†’ Counter-proposal â†’ Voters decide â†’ Finalize â†’ Winners redeem
+Market ends â†’ Propose outcome (5 USDB bond) â†’ Challenge period (30 min*)
+  â”œâ”€ No dispute â†’ finalizeUncontested() â†’ Proposer gets bond back + full bounty â†’ Winners redeem
+  â””â”€ Disputed (5 USDB bond) â†’ Voting period (30 min*) â†’ Voters decide â†’ Finalize â†’ Winners redeem
+      â””â”€ EARLY outcome wins â†’ Round resets, fresh proposal cycle begins
 ```
+*\*Current testing values. Production targets: 2 hour challenge period, 24 hour voting period. Configurable via `configResolver`.*
 
-**Outcome types**: Normal (one winner), INVALID (proportional refund), EARLY (dispute reset).
+### Resolution Deep Dive
+
+**Proposal phase:**
+- After market end time, anyone can call `proposeOutcome(marketToken, outcomeId)` with a 5 USDB bond
+- The proposal enters the challenge period (currently 30 minutes)
+- If uncontested, anyone calls `finalizeUncontested()` â€” proposer gets bond back + 100% of bounty pool
+
+**Dispute phase:**
+- During the challenge period, anyone can call `dispute(marketToken, newOutcomeId)` with a 5 USDB bond
+- Bonds do NOT escalate across rounds â€” always 5 USDB
+- This triggers the voting period (currently 30 minutes)
+
+**Voting:**
+- To vote, you must stake at least 5 tokens of any active ecosystem token via `resolver.stake(token)` *(current staking on STASIS is a placeholder anti-spam measure â€” post-TGE, transitions to BASIS token staking)*
+- Voting is **one-staker-one-vote** â€” staking above the minimum gives no extra voting power
+- **70% supermajority** required to finalize (VOTING_CONSENSUS = 70)
+- Quorum: `bountyPool / (50 Ã— $1)`, clamped between 2 (minimum) and 100 (maximum). Based on total votes across all outcomes
+- **Ties / no supermajority:** Finalization reverts with "Tie - vote more". Must reach 70% consensus within the voting period
+
+**Bond outcomes:**
+- Correct proposer or disputer gets BOTH bonds (theirs + opponent's)
+- Neither correct â†’ insurance pool gets both bonds
+- Uncontested â†’ proposer gets bond back + full bounty
+
+**Bounty distribution:**
+- Uncontested: 100% to proposer
+- Disputed, normal outcome wins: 100% split equally among correct voters (per vote). Bond winner gets bonds only, not bounty
+- INVALID proposed by a party: that party gets 100% of bounty + both bonds
+- EARLY: half of proposer's bond split among EARLY voters
+
+**Special outcomes:**
+
+| Outcome | ID | Who Can Propose | Effect |
+|---------|-----|----------------|--------|
+| **Normal** | 0â€“252 | Anyone (propose or dispute) | Standard resolution â€” winners redeem |
+| **INVALID** | 254 | Anyone (proposers, disputers, voters, vetoers) | Proportional refund to all participants |
+| **EARLY** | 253 | Only the disputer (voters can vote for it, vetoers cannot propose it) | Market resets â€” round increments, fresh proposal cycle begins |
+| **UNRESOLVED** | 255 | Internal | Default state before any proposal |
+
+**Veto mechanism:**
+- After the voting period expires on a disputed market, anyone can veto within the veto window (30 minutes, target: 1 hour) with a 5 USDB bond
+- One veto per market. Cannot veto with the disputer's outcome or EARLY
+- Veto halts voting â€” resolution escalates to `resolveByBasis` (platform admin decision)
+- Post-TGE plan: veto power transitions to BASIS staker governance
+
+**Private market resolution** (different system):
+- Resolved by voter consensus, not the resolver module
+- Market creator can vote by default; additional voters added via `manageVoter()`
+- Voting window: 15 minutes from first vote cast
+- Majority of votes determines winner; anyone can call `finalize()` after 15 minutes
 
 **Post-resolution selling**: On Basis, mass selling after resolution pushes the price UP (selling burns tokens â†’ slippage stays in pool â†’ price rises). Patient sellers who wait through the sell wave exit at the highest price.
 
@@ -2451,7 +2551,28 @@ Once you're set up:
 | Buy/sell Stable+ (incl. STASIS) | 0.50% per swap | Creator gets 0.1% (20%) |
 | Buy/sell Floor+ | 1.50% per swap | Creator gets 0.3% (20%) |
 | Buy/sell Predict+ | 1.50% per swap | Creator gets 0.3% (20%) |
-| Surge tax (if active) | Variable | Anti-dump mechanism, rare |
+| Surge tax (if active) | Variable â€” see below | Anti-dump mechanism on large sells |
+
+### Surge Tax Details
+
+The surge tax is an anti-dump mechanism that adds a temporary fee on sells when large or rapid selling occurs. The fee decays linearly over time back to zero.
+
+**Maximum surge tax by token type** (additive on base trading fee):
+
+| hybridMultiplier | Max Surge Tax | Max Total Fee (base + surge) |
+|-----------------|---------------|------------------------------|
+| 1 (most volatile Floor+) | 15% (1500 BP) | 16.5% |
+| 45 (mid Floor+) | 8% (800 BP) | 9.5% |
+| 90 (high stability Floor+) | 1% (100 BP) | 2.5% |
+| 100 (Stable+ / Predict+) | 0.5% (50 BP) | 1.0% |
+
+**Timing constraints:**
+- Surge duration: â‰¥ 1 hour (linear decay to zero)
+- Quota: maximum 7 days of surge per rolling 30-day window
+
+**When it triggers:** Large sells relative to pool depth. The more stable the token (higher hybridMultiplier), the lower the maximum surge â€” because stable tokens already absorb sell pressure structurally.
+
+---
 
 ### Loan Fees
 
@@ -2484,6 +2605,19 @@ Once you're set up:
 | Exit (unwrap + sell STASIS) | ~0.81% + gas |
 | Quick exit (sell claimUSDB) | ~0.81% + gas (1 tx) |
 | Full round-trip | ~1.62% (break-even yield needed) |
+
+### Prediction Market Resolution Costs
+
+| Action | Cost | Notes |
+|--------|------|-------|
+| Propose outcome | 5 USDB bond | Returned if correct + uncontested = full bounty |
+| Dispute outcome | 5 USDB bond | Winner of dispute gets both bonds |
+| Veto | 5 USDB bond | One per market, post-voting only |
+| Stake to vote | 5 tokens minimum | Any active ecosystem token. One-staker-one-vote |
+
+**Bond outcomes:** Correct party gets both bonds. Neither correct â†’ insurance gets both. Uncontested â†’ proposer gets bond + 100% bounty. See [07-how.md](07-how.md) for full distribution rules.
+
+---
 
 ### Gas Costs (BSC)
 
@@ -4418,7 +4552,9 @@ Buy the Predict+ token itself (completely separate from outcome shares). It's a 
 Launch the market, earn 20% of all trading fees forever. You don't need to bet. You don't need to be right. You just need to create markets people care about. Traditional platforms give creators nothing â€” the platform captures all the value.
 
 ### Resolver
-After the market ends, propose the correct outcome, earn the bounty pool. On traditional platforms, resolution is centralized â€” the platform decides. On Basis, anyone can resolve, and the financial incentive to do it honestly grows proportionally with how much is at stake. High-volume market = large bounty = strong incentive for accurate, timely resolution.
+After the market ends, propose the correct outcome (5 USDB bond), earn the bounty pool. On traditional platforms, resolution is centralized â€” the platform decides. On Basis, anyone can resolve, and the financial incentive to do it honestly grows proportionally with how much is at stake. High-volume market = large bounty = strong incentive for accurate, timely resolution.
+
+The resolution system has real teeth: if your proposal is wrong and someone disputes it (also 5 USDB bond), you lose your bond to the correct party. Staked voters decide the dispute â€” one-staker-one-vote, minimum 5 tokens staked. Correct voters split the bounty pool equally. The quorum scales with the bounty (bigger market = more votes needed), ensuring important markets get adequate oversight. Post-TGE, the voting army expands to all BASIS stakers â€” the people with the most skin in the platform's success become the arbiters of truth.
 
 ### Leveraged Player
 Buy Predict+ tokens, take a loan against them, use the borrowed USDB to buy outcome shares. Your original capital works twice: once as appreciating collateral, once as an active bet. Win on resolution, repay the loan, still own the tokens, exit at peak.

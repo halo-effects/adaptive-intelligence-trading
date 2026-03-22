@@ -135,12 +135,63 @@ These are separate paths. Buying the token ≠ betting on an outcome.
 
 **Resolution lifecycle**:
 ```
-Market ends → Propose outcome → Dispute window
-  ├─ No dispute → Finalize → Winners redeem
-  └─ Disputed → Counter-proposal → Voters decide → Finalize → Winners redeem
+Market ends → Propose outcome (5 USDB bond) → Challenge period (30 min*)
+  ├─ No dispute → finalizeUncontested() → Proposer gets bond back + full bounty → Winners redeem
+  └─ Disputed (5 USDB bond) → Voting period (30 min*) → Voters decide → Finalize → Winners redeem
+      └─ EARLY outcome wins → Round resets, fresh proposal cycle begins
 ```
+*\*Current testing values. Production targets: 2 hour challenge period, 24 hour voting period. Configurable via `configResolver`.*
 
-**Outcome types**: Normal (one winner), INVALID (proportional refund), EARLY (dispute reset).
+### Resolution Deep Dive
+
+**Proposal phase:**
+- After market end time, anyone can call `proposeOutcome(marketToken, outcomeId)` with a 5 USDB bond
+- The proposal enters the challenge period (currently 30 minutes)
+- If uncontested, anyone calls `finalizeUncontested()` — proposer gets bond back + 100% of bounty pool
+
+**Dispute phase:**
+- During the challenge period, anyone can call `dispute(marketToken, newOutcomeId)` with a 5 USDB bond
+- Bonds do NOT escalate across rounds — always 5 USDB
+- This triggers the voting period (currently 30 minutes)
+
+**Voting:**
+- To vote, you must stake at least 5 tokens of any active ecosystem token via `resolver.stake(token)` *(current staking on STASIS is a placeholder anti-spam measure — post-TGE, transitions to BASIS token staking)*
+- Voting is **one-staker-one-vote** — staking above the minimum gives no extra voting power
+- **70% supermajority** required to finalize (VOTING_CONSENSUS = 70)
+- Quorum: `bountyPool / (50 × $1)`, clamped between 2 (minimum) and 100 (maximum). Based on total votes across all outcomes
+- **Ties / no supermajority:** Finalization reverts with "Tie - vote more". Must reach 70% consensus within the voting period
+
+**Bond outcomes:**
+- Correct proposer or disputer gets BOTH bonds (theirs + opponent's)
+- Neither correct → insurance pool gets both bonds
+- Uncontested → proposer gets bond back + full bounty
+
+**Bounty distribution:**
+- Uncontested: 100% to proposer
+- Disputed, normal outcome wins: 100% split equally among correct voters (per vote). Bond winner gets bonds only, not bounty
+- INVALID proposed by a party: that party gets 100% of bounty + both bonds
+- EARLY: half of proposer's bond split among EARLY voters
+
+**Special outcomes:**
+
+| Outcome | ID | Who Can Propose | Effect |
+|---------|-----|----------------|--------|
+| **Normal** | 0–252 | Anyone (propose or dispute) | Standard resolution — winners redeem |
+| **INVALID** | 254 | Anyone (proposers, disputers, voters, vetoers) | Proportional refund to all participants |
+| **EARLY** | 253 | Only the disputer (voters can vote for it, vetoers cannot propose it) | Market resets — round increments, fresh proposal cycle begins |
+| **UNRESOLVED** | 255 | Internal | Default state before any proposal |
+
+**Veto mechanism:**
+- After the voting period expires on a disputed market, anyone can veto within the veto window (30 minutes, target: 1 hour) with a 5 USDB bond
+- One veto per market. Cannot veto with the disputer's outcome or EARLY
+- Veto halts voting — resolution escalates to `resolveByBasis` (platform admin decision)
+- Post-TGE plan: veto power transitions to BASIS staker governance
+
+**Private market resolution** (different system):
+- Resolved by voter consensus, not the resolver module
+- Market creator can vote by default; additional voters added via `manageVoter()`
+- Voting window: 15 minutes from first vote cast
+- Majority of votes determines winner; anyone can call `finalize()` after 15 minutes
 
 **Post-resolution selling**: On Basis, mass selling after resolution pushes the price UP (selling burns tokens → slippage stays in pool → price rises). Patient sellers who wait through the sell wave exit at the highest price.
 

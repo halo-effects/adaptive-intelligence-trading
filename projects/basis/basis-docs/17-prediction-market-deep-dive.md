@@ -122,7 +122,9 @@ Buy the Predict+ token itself (completely separate from outcome shares). It's a 
 Launch the market, earn 20% of all trading fees forever. You don't need to bet. You don't need to be right. You just need to create markets people care about. Traditional platforms give creators nothing — the platform captures all the value.
 
 ### Resolver
-After the market ends, propose the correct outcome, earn the bounty pool. On traditional platforms, resolution is centralized — the platform decides. On Basis, anyone can resolve, and the financial incentive to do it honestly grows proportionally with how much is at stake. High-volume market = large bounty = strong incentive for accurate, timely resolution.
+After the market ends, propose the correct outcome (5 USDB bond), earn the bounty pool. On traditional platforms, resolution is centralized — the platform decides. On Basis, anyone can resolve, and the financial incentive to do it honestly grows proportionally with how much is at stake. High-volume market = large bounty = strong incentive for accurate, timely resolution.
+
+The resolution system has real teeth: if your proposal is wrong and someone disputes it (also 5 USDB bond), you lose your bond to the correct party. Staked voters decide the dispute — one-staker-one-vote, minimum 5 tokens staked. Correct voters split the bounty pool equally. The quorum scales with the bounty (bigger market = more votes needed), ensuring important markets get adequate oversight. Post-TGE, the voting army expands to all BASIS stakers — the people with the most skin in the platform's success become the arbiters of truth.
 
 ### Leveraged Player
 Buy Predict+ tokens, take a loan against them, use the borrowed USDB to buy outcome shares. Your original capital works twice: once as appreciating collateral, once as an active bet. Win on resolution, repay the loan, still own the tokens, exit at peak.
