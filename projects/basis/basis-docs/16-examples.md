@@ -374,10 +374,11 @@ async function stakingOperations() {
   console.log("Repaid staking loan:", repayResult.hash);
 
   // 5. Unlock and unwrap
-  const unlockResult = await client.staking.unlock(Number(shares));
+  // Note: pass shares as BigInt directly — do NOT convert with Number() as it loses precision for large values
+  const unlockResult = await client.staking.unlock(shares);
   console.log("Unlocked:", unlockResult.hash);
 
-  const sellResult = await client.staking.sell(Number(shares));
+  const sellResult = await client.staking.sell(shares);
   console.log("Unwrapped to STASIS:", sellResult.hash);
 }
 ```

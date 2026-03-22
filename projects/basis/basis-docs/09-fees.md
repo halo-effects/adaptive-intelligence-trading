@@ -58,7 +58,7 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 
 **Key takeaway**: A year-long loan costs ~3.78% total — NOT 2% × 365 days. The 2% is a flat origination fee, not an annual rate.
 
-### Vault Costs
+### Vault Costs & Yield
 
 | Action | Fee |
 |--------|-----|
@@ -68,6 +68,12 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 | Exit (unwrap + sell STASIS) | ~0.81% + gas |
 | Quick exit (sell claimUSDB) | ~0.81% + gas (1 tx) |
 | Full round-trip | ~1.62% (break-even yield needed) |
+
+**Vault yield is variable, not fixed.** It depends on:
+- **Platform trading volume** — the vault receives a share of ALL trading fees across the entire platform. More volume = more yield.
+- **% of STASIS supply staked** — yield is distributed across all staked tokens. Fewer stakers = higher yield per token. More stakers = lower individual yield.
+
+There is no fixed APY to quote. Early stakers in a growing platform with low vault participation earn the highest yield. The equilibrium adjusts naturally as more participants stake.
 
 ### Prediction Market Resolution Costs
 

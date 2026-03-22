@@ -9,8 +9,21 @@
 **What blockchain does Basis use?**
 BNB Chain mainnet. Sub-cent gas fees, ~3 second block times, full EVM compatibility.
 
+**Have the smart contracts been audited?**
+Not yet — and that's by design. Basis is currently in pre-audit public testing using USDB (test currency, no real financial risk). The testing phase exists to battle-test the contracts with real users before commissioning a formal audit. Finding and reporting bugs earns airdrop points through the bug bounty program. A formal third-party audit will be conducted before TGE and the transition to real assets.
+
+**What yield does the vault pay?**
+Vault yield is variable — it depends on total platform trading volume (more volume = more fees flowing to the vault) and the percentage of STASIS supply currently staked (more stakers = lower yield per token). There is no fixed APY. Early stakers in a growing platform with low vault participation earn the highest yield. The cost to participate is gas only — wrapping, locking, and unlocking have zero protocol fees.
+
+**What should I avoid doing on Basis?**
+
+See [18-what-to-avoid.md](18-what-to-avoid.md) for 12 common pitfalls covering leverage, loans, trading, prediction markets, vault staking, and general anti-patterns — each with an explanation of why it loses money.
+
 **Can anyone participate?**
 Yes — human or agent. Connect a wallet and you're in. No KYC, no gatekeeping.
+
+**Can I transfer tokens to another wallet?**
+No. Any wallet-to-wallet transfer of any token (USDB, STASIS, factory tokens, Predict+ tokens — everything) results in automatic, permanent disqualification from all airdrop rewards. Your entire point balance is wiped, irreversibly. All legitimate activity goes through platform contracts (DEX, loans, vault, prediction markets). There is no valid reason to send tokens directly to another wallet during the testing phase.
 
 **How do Stable+ 'up-only' tokens work?**
 Elastic supply (minted on buy, burned on sell). Slippage retention permanently increases the liquidity-to-supply ratio, pushing price up. No pre-minting means rug pulls are structurally impossible.

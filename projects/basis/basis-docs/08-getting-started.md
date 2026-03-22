@@ -94,7 +94,7 @@ Automatically authenticates via SIWE, provisions an API key, and enables all wri
 **JavaScript:**
 
 ```js
-const client = await BasisClient.create({ privateKey: "0xYourPrivateKey..." });
+const client = await BasisClient.create({ privateKey: process.env.BASIS_PRIVATE_KEY });
 
 // Now you can trade, create tokens, take loans, etc.
 const { parseUnits } = require("viem");
@@ -105,7 +105,7 @@ console.log("Tx hash:", result.hash);
 **Python:**
 
 ```python
-client = BasisClient.create(private_key="0xYourPrivateKey...")
+client = BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"])
 
 result = client.trading.buy("0xTokenAddress...", 5_000_000_000_000_000_000)  # 5 USDB (18 decimals)
 print("Tx hash:", result["hash"])
@@ -125,26 +125,60 @@ All options can be passed to the `BasisClient` constructor (or `BasisClient.crea
 | `apiDomain` | `string` | `https://launchonbasis.com` | Base URL for the Basis API. |
 | `agent` | `boolean` or `object` | — | ERC-8004 agent registration. Pass `true` for defaults, or `{ name, description, capabilities }` for custom metadata. |
 
+### 🔒 Private Key Security
+
+**Never hardcode private keys in source files or commit them to version control.**
+
+**JS — use environment variables:**
+```js
+const client = await BasisClient.create({ privateKey: process.env.BASIS_PRIVATE_KEY });
+```
+
+**Python — use environment variables:**
+```python
+import os
+client = BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"])
+```
+
+**Best practices:**
+- Store keys in `.env` files (add `.env` to `.gitignore`)
+- Use a secrets manager for production deployments (AWS Secrets Manager, HashiCorp Vault, etc.)
+- Generate a dedicated wallet for your agent — don't reuse personal wallets
+- During the USDB testing phase, the risk is time/gas only. Post-TGE with real assets, key security becomes critical.
+
+### RPC Configuration
+
+The default BSC RPC (`bsc-dataseed.binance.org`) works for development but has no uptime guarantees. For production agents running 24/7:
+
+```js
+const client = await BasisClient.create({
+  privateKey: process.env.BASIS_PRIVATE_KEY,
+  rpcUrl: "https://your-dedicated-rpc.example.com"  // Ankr, QuickNode, Chainstack, etc.
+});
+```
+
+Consider using multiple RPC endpoints with failover logic for high-availability agents.
+
 ### Agent Registration at Initialization
 
 ```js
 // Register with default metadata at startup
-const client = await BasisClient.create({ privateKey: "0x...", agent: true });
+const client = await BasisClient.create({ privateKey: process.env.BASIS_PRIVATE_KEY, agent: true });
 
 // Register with custom metadata
 const client = await BasisClient.create({
-  privateKey: "0x...",
+  privateKey: process.env.BASIS_PRIVATE_KEY,
   agent: { name: "MyBot", description: "Trading bot", capabilities: ["trade", "analyze"] }
 });
 ```
 
 ```python
 # Register with default metadata
-client = BasisClient.create(private_key="0x...", agent=True)
+client = BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"], agent=True)
 
 # Register with custom metadata
 client = BasisClient.create(
-    private_key="0x...",
+    private_key=os.environ["BASIS_PRIVATE_KEY"],
     agent={"name": "MyBot", "description": "Trading bot", "capabilities": ["trade", "analyze"]}
 )
 ```

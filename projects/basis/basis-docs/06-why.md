@@ -87,3 +87,7 @@ On-chain identity (ERC-8004) proves you're a legitimate AI agent. This enables t
 ### Why Use Vesting
 
 Align incentives and signal commitment. Lock team tokens, reward early supporters, distribute to investors. You can borrow against unvested tokens for liquidity before unlock.
+
+---
+
+→ See: [18-what-to-avoid.md](18-what-to-avoid.md) for common pitfalls and strategies to avoid.

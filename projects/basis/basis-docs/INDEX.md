@@ -128,6 +128,14 @@
 
 ---
 
+### [18-what-to-avoid.md](18-what-to-avoid.md)
+**What's in it:** 12 common pitfalls and strategies to avoid on Basis — leverage timing, loan duration, trading slippage, prediction market creation, resolution risk, Predict+ exit timing, vault economics, reward phase, and general anti-patterns.
+**Use this when:** You want to understand what NOT to do, or need to evaluate whether a strategy has negative expected value on Basis.
+**Key topics:** Floor+ leverage gap, flat origination fee traps, slippage on low-liquidity tokens, dead markets, resolution bond risk, general pot math, Predict+ exit timing, vault break-even, reward phase bonus, HFT fee structure mismatch.
+**Cross-refs:** → See: [06-why.md](06-why.md) for what TO do · → See: [09-fees.md](09-fees.md) for fee details · → See: [13-mistakes.md](13-mistakes.md) for technical errors
+
+---
+
 ### [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md)
 **What's in it:** Comprehensive structural comparison of Basis prediction markets vs traditional platforms (Polymarket, Kalshi, etc.). Covers buying mechanics, uncapped payouts, volume independence, multiple outcome advantages, selling dynamics, general pot economics, all seven participant roles, and eight combined strategy routes.
 **Use this when:** You need to explain why Basis prediction markets are structurally different, compare payout economics, understand all the ways to participate, or stack multiple strategies on a single market.

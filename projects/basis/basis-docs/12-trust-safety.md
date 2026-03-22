@@ -6,6 +6,23 @@
 
 ---
 
+## Platform Maturity & Audit Status
+
+Basis is currently in **pre-audit public testing** using USDB (test currency). Smart contracts are deployed on BSC mainnet but have NOT yet undergone a formal third-party security audit.
+
+**This is intentional.** The testing phase exists specifically to battle-test the contracts with real users before committing to an audit. The bug reporting system and bug bounty program reward participants who discover issues — this is how the platform hardens before real capital is at stake.
+
+**What this means for builders:**
+- All contracts are live and functional on BSC mainnet
+- The platform uses test money (USDB) — no real financial risk during testing
+- Finding and reporting bugs earns airdrop points (severity-scaled rewards)
+- A formal security audit will be conducted before TGE and the transition to real assets
+- The testing phase IS the community audit — your participation makes the platform safer for everyone
+
+**Bug reporting:** `POST /api/v1/bugs/report` — see [11-api-reference.md](11-api-reference.md) for full API docs. Reports are reviewed by the team, and points are awarded on verification.
+
+---
+
 ## Architecture Over Rules
 
 Basis doesn't ask participants to be ethical. It makes unethical behavior **structurally unprofitable.**
@@ -19,6 +36,7 @@ Basis doesn't ask participants to be ethical. It makes unethical behavior **stru
 | **Wash trading** | Points are awarded for genuine activity only. Hedging all outcomes earns no points. |
 | **Prediction manipulation** | Community voting with dispute mechanisms and staked bonds. |
 | **Sybil attacks** | Six-layer defense: cost to exist, cost to earn, graph analysis, time, social verification, progressive conviction. |
+| **Token transfers** | Any wallet-to-wallet transfer of ANY token = permanent disqualification + total point wipe. All legitimate activity routes through platform contracts. |
 | **Discussion spam** | $5 minimum trade required to comment. Wallet-signed posts. |
 
 ---

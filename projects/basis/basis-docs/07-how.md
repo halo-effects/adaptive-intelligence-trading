@@ -67,6 +67,15 @@ All trades route through STASIS. No direct token-to-token swaps.
 
 ### How the Stasis Vault Works
 
+> **Understanding vault yield:** The vault earns a share of ALL platform trading fees. Yield is not a fixed APY — it depends on two variables:
+>
+> 1. **Platform volume** — more trading across the entire platform = more fees flowing to the vault. As Basis grows, vault yield grows proportionally.
+> 2. **Percentage of STASIS supply in the vault** — yield is distributed across all staked tokens. More STASIS in the vault = yield is split among more tokens = lower yield per token. Less STASIS staked = higher yield per staker.
+>
+> **Why this matters:** It's impossible to quote a fixed APY because it changes with platform activity and staking participation. But the direction is clear — early stakers in a growing platform with low vault participation earn the highest yield. As volume increases, total yield grows. As more people stake, individual yield moderates. The market finds its own equilibrium.
+>
+> **Cost to participate:** Gas only. Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the ~0.81% swap fee when buying STASIS and again when selling — a ~1.62% round trip. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
+
 Three layers:
 
 **Layer 1 — Passive Yield** (wrap/unwrap):
@@ -140,7 +149,7 @@ Market ends → Propose outcome (5 USDB bond) → Challenge period (30 min*)
   └─ Disputed (5 USDB bond) → Voting period (30 min*) → Voters decide → Finalize → Winners redeem
       └─ EARLY outcome wins → Round resets, fresh proposal cycle begins
 ```
-*\*Current testing values. Production targets: 2 hour challenge period, 24 hour voting period. Configurable via `configResolver`.*
+*\*⚠️ TESTING VALUES — will change before production. Production targets: 2 hour challenge period, 24 hour voting period. All timing parameters are configurable via `configResolver`. Do not hardcode these values — read them from the contract at runtime.*
 
 ### Resolution Deep Dive
 
