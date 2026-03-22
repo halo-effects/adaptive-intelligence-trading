@@ -4306,7 +4306,7 @@ Basis doesn't ask participants to be ethical. It makes unethical behavior **stru
 | Attack Vector | How Basis Prevents It |
 |---|---|
 | **Rug pull** | Stable+ tokens mechanically cannot crash. Elastic supply, no pre-minting. |
-| **Fee exploitation** | All fees are platform-set and uniform. Creators cannot modify. |
+| **Fee exploitation** | Base fees are platform-set and uniform. Creators can activate temporary surge tax within strict contract-enforced caps (max 7 days per 30-day window, rate limits by token type). See [09-fees.md](09-fees.md) for surge tax details. |
 | **Pump and dump** | Floor+ tokens have rising floors - real downside protection. |
 | **Liquidation hunting** | No price liquidation exists. Loans valued at floor price. |
 | **Wash trading** | Points are awarded for genuine activity only. Hedging all outcomes earns no points. |
