@@ -375,11 +375,11 @@ Returns: `string[]` — token addresses
 
 Collateralized loans through the LoanHub contract. Take, extend, repay.
 
-> **ID note:** There are two different loan ID systems:
-> - **`hubId`** — Used by all `client.loans` methods. User-scoped, on LoanHub. **1-indexed** (first loan = 1, second = 2, etc.). Get via `getUserLoanCount(user)` — the count IS the latest hubId since IDs start at 1.
-> - **`loanId`** — Used only by `trading.partialLoanSell()`. This is the MAINTOKEN contract's internal ID, NOT the same number as hubId.
+> **ID note:** Both loan systems use **1-indexed** IDs (Solidity `++count` pre-increment):
+> - **`hubId`** — Used by all `client.loans` methods. User-scoped, on LoanHub. Get via `getUserLoanCount(user)` — the count IS the latest hubId.
+> - **leverage position ID** — Used by `trading.partialLoanSell()` and `trading.getLeveragePosition()`. User-scoped, on MAINTOKEN contract. Get via `getLeverageCount(user)` — the count IS the latest position ID.
 > 
-> Don't mix them up. If you call `extendLoan()`, pass `hubId`. If you call `partialLoanSell()`, pass `loanId`.
+> Both are 1-indexed. First loan/position = 1, second = 2, etc. The count value equals the latest ID.
 
 > **Auto-sync:** All write methods auto-sync loan state to the backend. Fire-and-forget, non-fatal.
 

@@ -816,11 +816,11 @@ Returns: `string[]` â€” token addresses
 
 Collateralized loans through the LoanHub contract. Take, extend, repay.
 
-> **ID note:** There are two different loan ID systems:
-> - **`hubId`** â€” Used by all `client.loans` methods. User-scoped, on LoanHub. **1-indexed** (first loan = 1, second = 2, etc.). Get via `getUserLoanCount(user)` â€” the count IS the latest hubId since IDs start at 1.
-> - **`loanId`** â€” Used only by `trading.partialLoanSell()`. This is the MAINTOKEN contract's internal ID, NOT the same number as hubId.
+> **ID note:** Both loan systems use **1-indexed** IDs (Solidity `++count` pre-increment):
+> - **`hubId`** â€” Used by all `client.loans` methods. User-scoped, on LoanHub. Get via `getUserLoanCount(user)` â€” the count IS the latest hubId.
+> - **leverage position ID** â€” Used by `trading.partialLoanSell()` and `trading.getLeveragePosition()`. User-scoped, on MAINTOKEN contract. Get via `getLeverageCount(user)` â€” the count IS the latest position ID.
 > 
-> Don't mix them up. If you call `extendLoan()`, pass `hubId`. If you call `partialLoanSell()`, pass `loanId`.
+> Both are 1-indexed. First loan/position = 1, second = 2, etc. The count value equals the latest ID.
 
 > **Auto-sync:** All write methods auto-sync loan state to the backend. Fire-and-forget, non-fatal.
 
@@ -4038,15 +4038,14 @@ async function leverageTrading() {
   await new Promise(resolve => setTimeout(resolve, 5000));
 
   // 4. Get the position details
-  // Note: leverage positions are 0-indexed (unlike loans which are 1-indexed via hubId)
+  // Note: leverage positions are 1-indexed (same as hubId â€” both use ++count)
   const walletAddress = client.walletClient.account.address;
   const positionCount = await client.trading.getLeverageCount(walletAddress);
-  const positionId = positionCount - 1; // 0-indexed: first position = 0
+  const positionId = positionCount; // 1-indexed: first position = 1, latest = count
   const position = await client.trading.getLeveragePosition(walletAddress, positionId);
   console.log("Position:", position);
 
   // 5. Partially close (sell 50%)
-  // partialLoanSell uses the same 0-indexed positionId from getLeverageCount
   const closeResult = await client.trading.partialLoanSell(positionId, 50, true, 0);
   console.log("Partially closed:", closeResult.hash);
 }
@@ -4073,13 +4072,12 @@ def leverage_trading():
 
     time.sleep(5)
 
-    # Leverage positions are 0-indexed (unlike loans which are 1-indexed via hubId)
+    # Leverage positions are 1-indexed (same as hubId â€” both use ++count)
     position_count = client.trading.get_leverage_count(client.wallet_address)
-    position_id = position_count - 1  # 0-indexed: first position = 0
+    position_id = position_count  # 1-indexed: first position = 1, latest = count
     position = client.trading.get_leverage_position(client.wallet_address, position_id)
     print("Position:", position)
 
-    # partialLoanSell uses the same 0-indexed positionId
     close_result = client.trading.partial_loan_sell(position_id, 50, True, 0)
     print("Partially closed:", close_result["hash"])
 ```
