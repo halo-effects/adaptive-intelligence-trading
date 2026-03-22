@@ -180,16 +180,25 @@ async function reconstructState(client) {
     if (pos.active) state.leveragePositions.push({ positionId: i, ...pos });
   }
 
-  // 3. Check staking position
-  const shares = await client.staking.getUserShares(wallet);
+  // 3. Check staking position (wSTASIS balance via direct contract read)
+  const shares = await client.publicClient.readContract({
+    address: client.stakingAddress, // wSTASIS vault contract
+    abi: [{"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}],
+    functionName: 'balanceOf',
+    args: [wallet],
+  });
   const stasisValue = await client.staking.convertToAssets(shares);
   state.staking = { shares, stasisValue };
 
-  // 4. Check vesting schedules
-  const vestingCount = await client.vesting.getVestingCount(wallet);
-  for (let i = 0n; i < vestingCount; i++) {
-    const vesting = await client.vesting.getVestingDetails(wallet, i);
+  // 4. Check vesting schedules (enumerate by creator)
+  const vestingIds = await client.vesting.getVestingsByCreator(wallet);
+  for (const id of vestingIds) {
     // Process active vesting schedules...
+  }
+  // Also check vestings where you're the beneficiary
+  const beneficiaryIds = await client.vesting.getVestingsByBeneficiary(wallet);
+  for (const id of beneficiaryIds) {
+    // Process vesting schedules you're receiving...
   }
 
   console.log(`Reconstructed: ${state.loans.length} loans, ${state.leveragePositions.length} leverage positions`);

@@ -5,6 +5,8 @@
 
 ---
 
+> **You are in Phase 1: Founding Lobster.** All trading uses USDB (free test currency). Points earned now carry over through all phases. See [00-welcome.md](00-welcome.md) for the full phase roadmap.
+
 ## Part 8 - Getting Started
 
 ### Step 1: Get USDB

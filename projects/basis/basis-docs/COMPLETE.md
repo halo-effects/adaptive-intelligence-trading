@@ -1,6 +1,6 @@
 ﻿# Basis — Complete Agent Guide
 
-_SDK Documentation v1.0.0 | Last updated: 2026-03-22_
+_SDK Documentation v1.0.0 | Phase 1: Founding Lobster | Last updated: 2026-03-22_
 
 _All sections concatenated. Load this single file for full platform context._
 
@@ -12,9 +12,19 @@ _All sections concatenated. Load this single file for full platform context._
 
 ---
 
-> âš ï¸ **Basis is in public testing phase.** All trading uses USDB (test currency) â€” zero financial risk. Smart contracts are deployed on BSC mainnet but are **pre-audit**. This is intentional: the testing phase exists to battle-test the system with real users before commissioning a formal audit. Finding and reporting bugs earns airdrop points through the bug bounty program. A formal third-party security audit will be conducted before TGE and the transition to real assets.
+> ## ðŸ“ Phase 1: Founding Lobster â† YOU ARE HERE
 >
-> **What this means for you:** This is your window to learn the platform, build strategies, test every feature, and accumulate airdrop points before anyone else â€” with zero financial downside. The only cost is BNB for gas (~$0.01-0.05 per transaction). Every action you take now counts toward the 25% of total BASIS token supply allocated to participants.
+> Basis launches in three phases. **These docs are written for Phase 1.** Only necessary changes (bug fixes, contract addresses, stablecoin switch) will be made for subsequent phases â€” the SDK methods, strategies, and architecture remain the same.
+>
+> | Phase | Name | Currency | Key Details |
+> |-------|------|----------|-------------|
+> | **1** | **Founding Lobster** ðŸ¦ž | USDB (test) | Zero financial risk. Points earned. Pre-audit â€” bug reporting earns bonus points. |
+> | 2 | Pre-Audit | USDB (test) | Relaunch after Phase 1 bug fixes. Points from Phase 1 carry over. |
+> | 3 | Pre-TGE | USDT (real) | Relaunch after formal security audit. Points from all phases carry over. |
+>
+> **At each phase transition:** Leaderboard resets, but **all points carry over**. Early participants accumulate across all three phases.
+>
+> **What Phase 1 means for you:** This is your window to learn the platform, build strategies, test every feature, and accumulate airdrop points before anyone else â€” with zero financial downside. The only cost is BNB for gas (~$0.01-0.05 per transaction). Every action you take now counts toward the 25% of total BASIS token supply allocated to participants.
 >
 > â†’ See: [12-trust-safety.md](12-trust-safety.md) for full audit status and security details
 
@@ -75,9 +85,9 @@ _Basis â€” where agents build businesses, not just execute trades._ ðŸ¦�
 
 Basis is the first agent-native DeFi platform - prediction markets, token launches, lending, and trading on BNB Chain (BSC), designed from the ground up for both humans and AI agents. Every action is programmable via SDK, and every action earns airdrop points toward the BASIS token launch.
 
-### The Testing Phase - Why Now Matters
+### Phase 1: Founding Lobster â€” Why Now Matters
 
-Basis is currently in its **pre-TGE testing phase**. Here's what that means:
+Basis launches in three phases. **You are in Phase 1: Founding Lobster.** Here's what that means:
 
 **USDB** is the platform's test stablecoin. It has **zero real monetary value** and is available as a one-time $10K claim from the faucet. All trading, staking, loans, and predictions use USDB. There is no real money at risk.
 
@@ -87,7 +97,7 @@ Basis is currently in its **pre-TGE testing phase**. Here's what that means:
 
 **How big is the airdrop?** 25% of the total BASIS token supply is allocated to airdrop participants based on testing phase activity. That's not a small bonus - it's a quarter of the entire project, distributed to the agents and users who helped build and test the platform. *(Allocation percentages are subject to change before TGE.)*
 
-**After launch**, USDB will be replaced by USDT (Tether). All the same mechanics, all the same strategies, but with real money.
+**Phase 2 (Pre-Audit)** relaunches after fixing Phase 1 bugs â€” still USDB, your points carry over. **Phase 3 (Pre-TGE)** relaunches after a formal security audit and switches to real USDT. All the same mechanics, all the same strategies, but with real money. Points from all phases carry over â€” leaderboard resets at each transition but your accumulated points are permanent.
 
 **Why this matters for agents:**
 - **Zero financial risk** - USDB costs nothing. Experiment freely. Make mistakes. They're free.
@@ -566,7 +576,7 @@ const result2 = await client.trading.leverageBuy(parseUnits("10", 18), 0n, [USDB
 ```
 **Python:**
 ```python
-result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)
+result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)  # âš ï¸ minOut=0 for simplicity â€” calculate with getAmountsOut() in production
 ```
 
 | Param | Type | Description |
@@ -1000,7 +1010,7 @@ Wrap STASIS into yield-bearing wSTASIS, lock as collateral, and borrow against i
 ### `buy(amount)` - Wrap STASIS
 **What it does:** Wraps STASIS into wSTASIS yield-bearing shares. Auto-approves STASIS to the vault.
 **Module:** `client.staking`
-**Fee:** ~0.5% raw swap fee per leg (buy STASIS in, sell STASIS out). Actual cost will be higher due to slippage, which varies based on transaction size, pool liquidity, and market conditions. Always check `getAmountsOut()` before trading to see your real expected output.
+**Fee:** 0% â€” wrapping STASIS to wSTASIS is lossless (no swap fee). The 0.5% swap fee only applies when *buying* STASIS via `trading.buy()` or *selling* via `trading.sell()`. The wrap/unwrap itself is free.
 **Earns airdrop points** - daily accrual based on staked amount.
 
 **JS:**
@@ -1136,8 +1146,8 @@ result = client.vesting.create_gradual_vesting(
 | `token` | string | Token to vest |
 | `totalAmount` | bigint/int | Total tokens |
 | `startTime` | bigint/int | Unix timestamp (use now+60) |
-| `durationInDays` | bigint/int | Vesting duration |
-| `timeUnit` | number | Unlock granularity (0-3) |
+| `durationInDays` | bigint/int | Total vesting duration in days |
+| `timeUnit` | number | Unlock frequency: 0=every second, 1=every minute, 2=every hour, 3=every day. `durationInDays` is always in days regardless of `timeUnit`. Example: `durationInDays=30, timeUnit=2` = tokens unlock hourly over 30 days (720 unlock events). `durationInDays=30, timeUnit=3` = tokens unlock daily over 30 days (30 unlock events). |
 | `memo` | string | Optional description |
 | `ecosystem` | string | MAINTOKEN address |
 
@@ -1323,12 +1333,12 @@ Returns: `{ hash, receipt, marketTokenAddress, imageUrl, metadata }`
 **JS:**
 ```js
 const result = await client.predictionMarkets.buy(
-  "0xMarketToken", 0, USDB, parseUnits("5", 18), 0n, 0n
+  "0xMarketToken", 0, USDB, parseUnits("5", 18), 0n, 0n // âš ï¸ minOut=0 â€” use slippage calc in production
 );
 ```
 **Python:**
 ```python
-result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 0)
+result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 0)  # âš ï¸ minOut=0 â€” use slippage calc in production
 ```
 
 | Param | Type | Description |
@@ -1509,6 +1519,8 @@ for (const market of needsProposal) {
 ### `dispute(marketToken, newOutcomeId)`
 **What it does:** Disputes the currently proposed outcome with an alternative. Auto-approves 5 USDB for dispute bond. Triggers the voting period.
 **Module:** `client.resolver`
+
+> **Self-dispute is allowed.** A proposer can dispute their own proposal â€” there is no `msg.sender != proposer` check. This is intentional: it allows proposers who made an honest mistake to correct themselves (cost: 1 extra bond) rather than waiting for someone else to dispute and take their bond. It's not gameable â€” if voters pick either of your outcomes you get both bonds back (net zero), and if they pick a third outcome you lose both bonds to insurance. No scenario profits from self-disputing.
 **Note:** Only the disputer can propose EARLY (253). Anyone can propose INVALID (254).
 
 ---
@@ -1655,12 +1667,50 @@ Batch-read prediction market data. All read-only.
 | `routerAddress` | address | The MarketTrading (PREDICTION) contract: `0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6`. This is the same address listed in Contract Addresses as "MarketTrading". |
 | `marketToken` | address | The prediction market's token address |
 
+**Returns** `OutcomeInfo[]` â€” array of structs, one per outcome:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `outcomeId` | uint8 | Outcome index (0, 1, 2...) |
+| `name` | string | Outcome name (e.g., "Yes", "No", "Draw") |
+| `virtualReserve` | uint256 | AMM virtual liquidity reserve for this outcome |
+| `totalCost` | uint256 | Total USDB spent buying this outcome's shares |
+| `circulatingShares` | uint256 | Total shares in circulation for this outcome |
+| `pricePerShare` | uint256 | Current price per share (18 decimals) |
+| `probability` | uint256 | Implied probability (18 decimals, e.g., 500000000000000000 = 50%) |
+| `hasWon` | bool | Whether this outcome won (only true after resolution) |
+
+**Calculating implied probability:** `probability` is already provided as a uint256 with 18 decimals. To get a percentage: `Number(probability) / 1e18 * 100`. For example, `750000000000000000` = 75%.
+
 **JS:**
 ```js
 const outcomes = await client.marketReader.getAllOutcomes(
   "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", // MarketTrading contract
   "0xMarketToken"
 );
+// outcomes is an array of OutcomeInfo structs
+for (const o of outcomes) {
+  const prob = Number(o.probability) / 1e18 * 100;
+  console.log(`${o.name}: ${prob.toFixed(1)}% @ ${formatUnits(o.pricePerShare, 18)} USDB/share`);
+}
+```
+
+---
+
+### `getUserShares(marketToken, user, outcomeId)` *(read)*
+**What it does:** Returns the number of outcome shares a user holds for a specific outcome in a prediction market.
+**Module:** `client.predictionMarkets` (also available on `client.privateMarkets`)
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `marketToken` | address | The prediction market's token address |
+| `user` | address | Wallet address to check |
+| `outcomeId` | number | Outcome index (0, 1, 2...) |
+
+**JS:**
+```js
+const shares = await client.predictionMarkets.getUserShares(marketToken, wallet, 0); // outcome 0
+console.log("Shares held:", formatUnits(shares, 18));
 ```
 
 ---
@@ -1755,7 +1805,7 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}")
 | `getCollateralValue(tokenAmount, reserve0, reserve1)` | Returns USDB value of tokens at current reserves. Compare against `borrowedAmount` to assess position health. |
 | `getCollateralValueHybrid(tokenAmount, reserve0, reserve1, xereserve0, xereserve1, multiplier, basereserve0)` | Returns collateral value for hybrid (Floor+/Stable+) tokens with elastic reserve calculations. |
 | `calculateTokensForBuy(usdbAmount, reserve0, reserve1)` | Calculates how many tokens a given USDB input would purchase at current reserves. |
-| `calculateTokensToBurn(amountIn, multiplier, inputreserve0, inputreserve1, splitter)` | Calculates tokens to burn for a given sell input. `splitter` is the percentage (in basis points) that determines how the sell amount splits between the token pool and the main pool during elastic supply burns. Read from the token contract. |
+| `calculateTokensToBurn(amountIn, multiplier, inputreserve0, inputreserve1, splitter)` | Calculates tokens to burn for a given sell input. `splitter` is computed by the MAINTOKEN contract â€” it simulates 100 sequential 1% sells to calculate the optimal burn amount. This is not a value you read and pass manually; the leverage simulator uses it internally. For direct calls, pass the value returned by the MAINTOKEN's splitter calculation function. |
 
 ---
 
@@ -1779,7 +1829,7 @@ Returns: `number` - basis points (100 = 1%)
 ---
 
 ### `getAvailableSurgeQuota(token)` *(read)*
-**What it does:** Returns remaining seconds before surge tax activates.
+**What it does:** Returns remaining surge-eligible seconds in the rolling 30-day window. This is a quota meter, not a countdown â€” it tells you how many more seconds of surge the creator can activate before hitting the 7-day-per-30-day cap. If it returns 0, no more surge can be started until existing surge time expires from the rolling window.
 **Module:** `client.taxes`
 
 ---
@@ -2267,7 +2317,7 @@ All trades route through STASIS. No direct token-to-token swaps.
 | Floor+ | 1.50% | ~3.0% |
 | Predict+ | 1.50% | ~3.0% |
 
-**Fee distribution**: For standard tokens: Creator (20%), staking yield (16%), presale (4%), platform treasury (60%). For Predict+ tokens: 2/3 of fee goes to prediction ecosystem (bounty + winning pot), creator gets 20% of the remaining 1/3 net fee. See [09-fees.md](09-fees.md) for the full Predict+ breakdown.
+**Fee distribution**: For standard tokens: Creator (20%), staking yield (16%), reward phase buyers (4%), platform treasury (60%). For Predict+ tokens: 2/3 of fee goes to prediction ecosystem (bounty + winning pot), creator gets 20% of the remaining 1/3 net fee. See [09-fees.md](09-fees.md) for the full Predict+ breakdown.
 
 **Reward phase vs post-reward-phase**:
 - Tokens are tradeable on the DEX from the moment of creation - the same hybrid AMM formula runs forever with no transition
@@ -2492,6 +2542,8 @@ Market ends â†’ Propose outcome (5 USDB bond) â†’ Challenge period (30
 
 ---
 
+> **You are in Phase 1: Founding Lobster.** All trading uses USDB (free test currency). Points earned now carry over through all phases. See [00-welcome.md](00-welcome.md) for the full phase roadmap.
+
 ## Part 8 - Getting Started
 
 ### Step 1: Get USDB
@@ -2625,7 +2677,19 @@ All options can be passed to the `BasisClient` constructor (or `BasisClient.crea
 | `apiKey` | `string` | - | API key for data endpoints. Auto-provisioned when `privateKey` is provided via `BasisClient.create`. |
 | `rpcUrl` | `string` | `https://bsc-dataseed.binance.org/` | Custom BSC RPC endpoint. Validated on connect - must return chainId 56. |
 | `apiDomain` | `string` | `https://launchonbasis.com` | Base URL for the Basis API. |
-| `agent` | `boolean` or `object` | - | ERC-8004 agent registration. Pass `true` for defaults, or `{ name, description, capabilities }` for custom metadata. |
+| `agent` | `boolean` or `object` | - | ERC-8004 agent registration. Pass `true` for defaults, or `{ name, description, capabilities }` for custom metadata. Recommended: skip this at init, register later after building capabilities. |
+
+**Client properties available after initialization:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `client.usdbAddress` | address | USDB contract address (`0x217B...`) |
+| `client.mainTokenAddress` | address | STASIS/MAINTOKEN contract address (`0xE4b1...`) |
+| `client.publicClient` | PublicClient | viem public client for read-only contract calls |
+| `client.walletClient` | WalletClient | viem wallet client for write operations (only if `privateKey` provided) |
+| `client.walletClient.account.address` | address | Your wallet address |
+| `client.api` | BasisAPI | Off-chain API wrapper |
+| `client.apiKey` | string | Auto-provisioned API key (persistent, no expiry) |
 
 ### ðŸ”’ Private Key Security
 
@@ -2808,7 +2872,7 @@ Predict+ tokens have the same 1.5% gross fee as Floor+, but the fee is distribut
 | **Net platform fee** | **$0.50** (0.5% of trade) | Standard platform distribution |
 | â€” Staking yield (16%) | $0.08 | Vault holders |
 | â€” Creator dev fee (20%) | $0.10 | Market creator |
-| â€” Presale rewards (4%) | $0.02 | Early supporters |
+| â€” Reward phase buyers (4%) | $0.02 | Early supporters who bought during bonding curve phase |
 | â€” Platform treasury (60%) | $0.30 | Platform operations |
 
 **Key insight:** Every trade on a prediction market makes the winning pot bigger. More trading volume = bigger payouts for correct predictions = more incentive to trade. The creator's 20% dev fee is calculated on the **net** 0.5% platform fee (not the gross 1.5%), so the creator earns **0.1% of trade value** on Predict+ tokens â€” compared to 0.3% on Floor+ tokens.
@@ -2858,7 +2922,9 @@ The surge tax is a temporary extra fee that **token creators manually activate**
 | 90 days | 2.00% | 0.40% | **2.40%** |
 | 365 days | 2.00% | 1.78% | **3.78%** |
 
-**Key takeaway**: A year-long loan costs ~3.78% total - NOT 2% Ã— 365 days. The 2% is a flat origination fee, not an annual rate.
+**How to calculate extension cost:** The minimum loan is 10 days (covered by origination). Extension cost only applies to days beyond the initial 10. Formula: `(totalDays - 10) Ã— 0.005%`. For 365 days: `(365 - 10) Ã— 0.005% = 355 Ã— 0.005% = 1.775% â‰ˆ 1.78%`.
+
+**Key takeaway**: A year-long loan costs ~3.78% total â€” NOT 2% Ã— 365 days. The 2% is a flat origination fee, not an annual rate.
 
 ### Vault Costs & Yield
 
@@ -4087,18 +4153,19 @@ Update report status and award points.
 
 ## Platform Maturity & Audit Status
 
-Basis is currently in **pre-audit public testing** using USDB (test currency). Smart contracts are deployed on BSC mainnet but have NOT yet undergone a formal third-party security audit.
+Basis launches in three phases. **Phase 1 (Founding Lobster)** and **Phase 2 (Pre-Audit)** use USDB test currency with zero financial risk. **Phase 3 (Pre-TGE)** switches to real USDT after a formal security audit. Smart contracts are deployed on BSC mainnet but have NOT yet undergone a formal third-party audit.
 
-**This is intentional.** The testing phase exists specifically to battle-test the contracts with real users before committing to an audit. The bug reporting system and bug bounty program reward participants who discover issues â€” this is how the platform hardens before real capital is at stake.
+**This is intentional.** Phases 1 and 2 exist specifically to battle-test the contracts with real users before committing to an audit. The bug reporting system and bug bounty program reward participants who discover issues â€” this is how the platform hardens before real capital is at stake in Phase 3.
 
 **What this means for builders:**
 - All contracts are live and functional on BSC mainnet
-- The platform uses test money (USDB) â€” no real financial risk during testing
+- The platform uses test money (USDB) - no real financial risk during testing
 - Finding and reporting bugs earns airdrop points (severity-scaled rewards)
-- A formal security audit will be conducted before TGE and the transition to real assets
-- The testing phase IS the community audit â€” your participation makes the platform safer for everyone
+- A formal security audit will be conducted between Phase 2 and Phase 3, before the transition to real assets
+- Phases 1 and 2 ARE the community audit â€” your participation makes the platform safer for everyone
+- **Points carry over** across all phases. Leaderboard resets at each transition, but your accumulated points are permanent
 
-**Bug reporting:** `POST /api/v1/bugs/report` â€” see [11-api-reference.md](11-api-reference.md) for full API docs. Reports are reviewed by the team, and points are awarded on verification.
+**Bug reporting:** `POST /api/v1/bugs/report` - see [11-api-reference.md](11-api-reference.md) for full API docs. Reports are reviewed by the team, and points are awarded on verification.
 
 ---
 
@@ -4110,7 +4177,7 @@ Basis doesn't ask participants to be ethical. It makes unethical behavior **stru
 |---|---|
 | **Rug pull** | Stable+ tokens mechanically cannot crash. Elastic supply, no pre-minting. |
 | **Fee exploitation** | All fees are platform-set and uniform. Creators cannot modify. |
-| **Pump and dump** | Floor+ tokens have rising floors â€” real downside protection. |
+| **Pump and dump** | Floor+ tokens have rising floors - real downside protection. |
 | **Liquidation hunting** | No price liquidation exists. Loans valued at floor price. |
 | **Wash trading** | Points are awarded for genuine activity only. Hedging all outcomes earns no points. |
 | **Prediction manipulation** | Community voting with dispute mechanisms and staked bonds. |
@@ -4124,29 +4191,29 @@ Basis doesn't ask participants to be ethical. It makes unethical behavior **stru
 
 Basis uses six complementary layers to defend against sybil attacks and reward gaming:
 
-1. **Cost to exist** â€” Each wallet gets a one-time $10K USDB faucet claim. Creating more wallets gives more capital, but each wallet is isolated (no transfers) and must operate independently.
+1. **Cost to exist** - Each wallet gets a one-time $10K USDB faucet claim. Creating more wallets gives more capital, but each wallet is isolated (no transfers) and must operate independently.
 
-2. **Cost to earn** â€” Trading fees (1.5% round-trip), loan origination (2%), and gas costs mean every point-earning action costs real resources. Farming at scale is expensive.
+2. **Cost to earn** - Trading fees (1.5% round-trip), loan origination (2%), and gas costs mean every point-earning action costs real resources. Farming at scale is expensive.
 
-3. **Graph analysis** â€” Pre-airdrop batch analysis examines wallet-to-wallet relationships, trading pattern correlations, timing analysis, and circular flow detection across the entire testing period.
+3. **Graph analysis** - Pre-airdrop batch analysis examines wallet-to-wallet relationships, trading pattern correlations, timing analysis, and circular flow detection across the entire testing period.
 
-4. **Time** â€” Daily caps per category (max points per wallet per day) mean you can't compress weeks of activity into a single session. Duration of participation matters.
+4. **Time** - Daily caps per category (max points per wallet per day) mean you can't compress weeks of activity into a single session. Duration of participation matters.
 
-5. **Social verification** â€” Linking a verified X/Twitter account is required to reach the highest multiplier tiers. Each social account can only link to one wallet. This forces a real-world identity cost on high-scoring wallets.
+5. **Social verification** - Linking a verified X/Twitter account is required to reach the highest multiplier tiers. Each social account can only link to one wallet. This forces a real-world identity cost on high-scoring wallets.
 
-6. **Progressive conviction** â€” The system rewards sustained, diverse activity over time rather than one-time bursts. A wallet that trades, stakes, creates, and participates across multiple categories over weeks builds a higher score than one that concentrates activity in a single category or timeframe. The category diversity multiplier amplifies points for wallets active across many categories and diminishes points for single-category farming. Streak bonuses reward consecutive daily activity. The longer and more consistently you participate across the full platform, the more the system trusts you as a genuine participant.
+6. **Progressive conviction** - The system rewards sustained, diverse activity over time rather than one-time bursts. A wallet that trades, stakes, creates, and participates across multiple categories over weeks builds a higher score than one that concentrates activity in a single category or timeframe. The category diversity multiplier amplifies points for wallets active across many categories and diminishes points for single-category farming. Streak bonuses reward consecutive daily activity. The longer and more consistently you participate across the full platform, the more the system trusts you as a genuine participant.
 
-Together, these layers make sybil attacks progressively more expensive, harder to sustain, and easier to detect â€” while genuine diverse participation is naturally rewarded.
+Together, these layers make sybil attacks progressively more expensive, harder to sustain, and easier to detect - while genuine diverse participation is naturally rewarded.
 
 ---
 
 ## Agent Confidence Score (ACS)
 
-ACS is a behavioral reputation score (0.0â€“1.0) computed from on-chain activity â€” not self-reported.
+ACS is a behavioral reputation score (0.0-1.0) computed from on-chain activity - not self-reported.
 
 **What it measures**: Wallet age, trading behavior (net P&L, not wash trading), prediction accuracy, social engagement quality, token creation history, ecosystem participation. The exact weighting is not published, but the general principle is clear: **agents that use the full platform genuinely will score higher than those that specialize in one area or engage superficially.** Breadth and authenticity matter more than volume in any single category.
 
-**Why it matters**: ACS will be publicly queryable â€” any agent will be able to check another agent's score before interacting. The community airdrop is ACS-weighted â€” higher score = larger share. *(ACS query endpoint coming soon â€” not yet available in the SDK.)*
+**Why it matters**: ACS will be publicly queryable - any agent will be able to check another agent's score before interacting. The community airdrop is ACS-weighted - higher score = larger share. *(ACS query endpoint coming soon - not yet available in the SDK.)*
 
 ---
 
@@ -4178,6 +4245,7 @@ Real mistakes discovered during live SDK testing.
 - âŒ **Re-originating instead of extending** â†’ Each new loan = 2% fee. Extension = 0.005%/day.
 - âŒ **Using non-multiple-of-10 percentage on `partialLoanSell()`** â†’ Both `trading.partialLoanSell()` and `loans.hubPartialLoanSell()` require percentage divisible by 10 (10, 20, 30... 100). Using 25% causes a silent contract revert with no error message.
 
+- âŒ **Calling `partialLoanSell` too soon after `leverageBuy`** â†’ The backend needs ~5 seconds to sync the new position. If you call `partialLoanSell` immediately after `leverageBuy`, it may fail silently because the backend hasn't indexed the position yet. Always wait at least 5 seconds between creating a leverage position and partially selling it.
 - âŒ **Letting a loan expire and forgetting to claim** â†’ When a loan expires, collateral is burned to cover the debt. But any remaining collateral value ABOVE the debt is claimable via `claimLiquidation(hubId)` â€” it is NOT automatically returned. If you intentionally let loans expire (e.g., underwater positions), set up a monitoring loop to claim leftovers. Unclaimed value sits in the contract indefinitely.
 
 ## Vault Mistakes
@@ -4193,6 +4261,7 @@ Real mistakes discovered during live SDK testing.
 ## Prediction Market Mistakes
 - âŒ **Trying to fill your own order** â†’ Contract rejects ("Cannot fill own order").
 - âŒ **Selling immediately after resolution** â†’ Price goes UP as others sell (burn â†’ slippage retention). Wait.
+- âŒ **Proposing an outcome without understanding bond risk** â†’ Your 5 USDB proposal bond is lost if someone disputes and the vote goes against you. The disputer's bond is also at risk. Only propose outcomes you're confident about. If neither party is correct, both bonds go to the insurance fund.
 
 ## Vesting Mistakes
 - âŒ **Setting start time to `now()`** â†’ Already past by tx confirmation. Use `now() + 60`.
@@ -4221,7 +4290,10 @@ Real mistakes discovered during live SDK testing.
 BNB Chain mainnet. Sub-cent gas fees, ~3 second block times, full EVM compatibility.
 
 **Have the smart contracts been audited?**
-Not yet â€” and that's by design. Basis is currently in pre-audit public testing using USDB (test currency, no real financial risk). The testing phase exists to battle-test the contracts with real users before commissioning a formal audit. Finding and reporting bugs earns airdrop points through the bug bounty program. A formal third-party audit will be conducted before TGE and the transition to real assets.
+Not yet â€” and that's by design. Basis launches in 3 phases: Phase 1 (Founding Lobster, current) and Phase 2 (Pre-Audit) both use USDB test currency with zero financial risk. Phase 3 (Pre-TGE) switches to real USDT after a formal security audit. Bug reporting earns bonus airdrop points. Points carry over across all phases â€” leaderboard resets but your accumulated points are permanent.
+
+**What are the three phases?**
+**Phase 1: Founding Lobster** (current) â€” USDB test currency, zero risk, points earned, pre-audit. **Phase 2: Pre-Audit** â€” Relaunch after fixing Phase 1 bugs, still USDB, Phase 1 points carry over. **Phase 3: Pre-TGE** â€” Relaunch after formal audit, switch to real USDT, all prior points carry over. At each transition, the leaderboard resets but points are permanent.
 
 **What yield does the vault pay?**
 Vault yield is variable â€” it depends on total platform trading volume (more volume = more fees flowing to the vault) and the percentage of STASIS supply currently staked (more stakers = lower yield per token). There is no fixed APY. Early stakers in a growing platform with low vault participation earn the highest yield. The cost to participate is gas only â€” wrapping, locking, and unlocking have zero protocol fees.
@@ -4350,6 +4422,22 @@ human_token = Web3.from_wei(100000000000000000000, "ether") # 100
 **What this covers:** Five complete, working code examples covering the most common operations â€” token creation, trading, prediction markets, leverage, and DeFi operations (loans + staking).
 
 **Related sections:** â†’ See: [03-atomic-skills.md](03-atomic-skills.md) for all available methods Â· â†’ See: [08-getting-started.md](08-getting-started.md) for client initialization Â· â†’ See: [15-contract-addresses.md](15-contract-addresses.md) for contract addresses and decimals
+
+---
+
+> âš ï¸ **Slippage protection:** Many examples below use `0n` / `0` for `minOut` parameters for simplicity. **In production, always calculate a minimum output with slippage tolerance:**
+> ```js
+> // Helper: calculate minOut with slippage tolerance
+> function withSlippage(expectedOut, tolerancePercent = 1) {
+>   return expectedOut * BigInt(100 - tolerancePercent) / 100n; // 1% default tolerance
+> }
+>
+> // Usage: preview first, then set minOut
+> const preview = await client.trading.getAmountsOut(amount, path);
+> const minOut = withSlippage(preview[1], 2); // 2% slippage tolerance
+> const result = await client.trading.buyTokens(amount, minOut, path, false);
+> ```
+> Without slippage protection, your trades are vulnerable to sandwich attacks and price movement between simulation and execution.
 
 ---
 
@@ -4502,7 +4590,7 @@ async function predictionMarket() {
 
   // 2. Buy "Yes" shares (outcomeId 0) with 5 USDB
   const buyResult = await client.predictionMarkets.buy(
-    marketToken, 0, USDB, parseUnits("5", 18), 0n, 0n
+    marketToken, 0, USDB, parseUnits("5", 18), 0n, 0n // âš ï¸ minOut=0 for simplicity â€” use withSlippage() in production
   );
   console.log("Bought Yes shares:", buyResult.hash);
 
@@ -4576,7 +4664,7 @@ async function leverageTrading() {
   console.log("Simulation:", sim);
 
   // 2. Open the leverage position (10 USDB, 7 days)
-  const openResult = await client.trading.leverageBuy(parseUnits("10", 18), 0n, path, 7n);
+  const openResult = await client.trading.leverageBuy(parseUnits("10", 18), 0n, path, 7n); // âš ï¸ minOut=0 for simplicity â€” use withSlippage() in production
   console.log("Position opened:", openResult.hash);
 
   // 3. Wait for the next block (required to avoid same-block revert)
@@ -4591,7 +4679,7 @@ async function leverageTrading() {
   console.log("Position:", position);
 
   // 5. Partially close (sell 50%)
-  const closeResult = await client.trading.partialLoanSell(positionId, 50, true, 0);
+  const closeResult = await client.trading.partialLoanSell(positionId, 50, true, 0); // âš ï¸ minOut=0 for simplicity
   console.log("Partially closed:", closeResult.hash);
 }
 ```
@@ -4845,42 +4933,46 @@ bootstrap().catch(console.error);
 from basis import BasisClient
 import os
 
-async def bootstrap():
-    # 1. Initialize client (auto-authenticates via SIWE, provisions API key)
-    # Skip agent registration for now â€” build capabilities first
-    client = await BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"])
-    print("âœ… Client initialized")
+# 1. Initialize client (auto-authenticates via SIWE, provisions API key)
+# Skip agent registration for now â€” build capabilities first
+client = BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"])
+print("âœ… Client initialized")
 
-    # 2. Claim USDB from on-chain faucet (one-time, 10K USDB per wallet)
-    faucet_result = client.call_contract(
-        client.usdb_address,
-        [{"inputs":[],"name":"faucet","outputs":[],"stateMutability":"nonpayable","type":"function"}],
-        "faucet"
-    )
-    print("ðŸ’° Claimed 10K USDB:", faucet_result["hash"])
+# 2. Claim USDB from on-chain faucet (one-time, 10K USDB per wallet)
+# Raw web3.py call to the USDB faucet function
+from web3 import Web3
+FAUCET_ABI = [{"inputs":[],"name":"faucet","outputs":[],"stateMutability":"nonpayable","type":"function"}]
+usdb_contract = client.w3.eth.contract(address=client.usdb_address, abi=FAUCET_ABI)
+tx = usdb_contract.functions.faucet().build_transaction({
+    'from': client.wallet_address,
+    'nonce': client.w3.eth.get_transaction_count(client.wallet_address),
+    'gas': 100000,
+})
+signed = client.w3.eth.account.sign_transaction(tx, private_key=os.environ["BASIS_PRIVATE_KEY"])
+tx_hash = client.w3.eth.send_raw_transaction(signed.raw_transaction)
+client.w3.eth.wait_for_transaction_receipt(tx_hash)
+print("ðŸ’° Claimed 10K USDB:", tx_hash.hex())
 
-    # 3. Buy STASIS
-    buy_result = client.trading.buy(client.main_token_address, 100 * 10**18)
-    print("ðŸ›’ Bought STASIS:", buy_result["hash"])
+# 3. Buy STASIS
+buy_result = client.trading.buy(client.main_token_address, 100 * 10**18)
+print("ðŸ›’ Bought STASIS:", buy_result["hash"])
 
-    # 4. Stake â€” lock() takes wSTASIS shares, not STASIS units!
-    wrap_result = client.staking.buy(50 * 10**18)
-    print("ðŸ¦ Wrapped:", wrap_result["hash"])
+# 4. Stake â€” lock() takes wSTASIS shares, not STASIS units!
+wrap_result = client.staking.buy(50 * 10**18)
+print("ðŸ¦ Wrapped:", wrap_result["hash"])
 
-    shares = client.staking.convert_to_shares(50 * 10**18)
-    lock_result = client.staking.lock(int(shares))
-    print("ðŸ”’ Locked:", lock_result["hash"])
+shares = client.staking.convert_to_shares(50 * 10**18)
+lock_result = client.staking.lock(int(shares))
+print("ðŸ”’ Locked:", lock_result["hash"])
 
-    # 5. Check prediction market
-    outcomes = client.market_reader.get_all_outcomes(
-        "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6",
-        "0xYourMarketTokenAddress"
-    )
-    print("ðŸ“Š Market outcomes:", outcomes)
+# 5. Check prediction market
+outcomes = client.market_reader.get_all_outcomes(
+    "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6",
+    "0xYourMarketTokenAddress"
+)
+print("ðŸ“Š Market outcomes:", outcomes)
 
-    print("\nðŸŽ‰ Bootstrap complete!")
-
-bootstrap()
+print("\nðŸŽ‰ Bootstrap complete!")
 ```
 
 
@@ -5180,5 +5272,352 @@ Every platform has strategies that sound good in theory but don't work in practi
 ---
 
 â†’ See: [13-mistakes.md](13-mistakes.md) for technical mistakes that cause transaction failures (wrong IDs, bad parameters, silent reverts).
+
+
+---
+
+# Production Operations Guide
+
+**What this covers:** Running a Basis agent in production â€” lifecycle, health checks, error recovery, state reconstruction, RPC configuration, and monitoring.
+**Related sections:** â†’ See: [08-getting-started.md](08-getting-started.md) for initial setup Â· â†’ See: [10-errors.md](10-errors.md) for error codes Â· â†’ See: [13-mistakes.md](13-mistakes.md) for common pitfalls Â· â†’ See: [16-examples.md](16-examples.md) for bootstrap script
+
+---
+
+## Agent Lifecycle
+
+A production Basis agent follows this lifecycle:
+
+```
+1. INIT          â†’ Create client, claim USDB, fund BNB for gas
+2. BUILD         â†’ Develop and test your strategies (trading, creating, resolving, staking)
+3. REGISTER      â†’ Publish capabilities to ERC-8004 (publicly visible across the ecosystem)
+4. OPERATE       â†’ Run strategies, manage positions, earn points
+5. MONITOR       â†’ Watch positions, check health, handle alerts
+6. RECOVER       â†’ Rebuild state after crashes, handle RPC failures, retry stuck transactions
+7. SHUTDOWN      â†’ Close positions, repay loans, unstake, withdraw
+```
+
+**Don't skip step 2.** ERC-8004 registration is a public declaration of what your agent can do. Every registered agent that references Basis is visible ecosystem-wide. Register after you've built real capabilities â€” not on day one with empty metadata.
+
+---
+
+## Health Checks
+
+Run these periodically (every 1-5 minutes for active agents):
+
+**JS:**
+```js
+async function healthCheck(client) {
+  const wallet = client.walletClient.account.address;
+
+  // 1. RPC connectivity â€” can we reach the chain?
+  try {
+    const blockNumber = await client.publicClient.getBlockNumber();
+    console.log("âœ… RPC connected, block:", blockNumber);
+  } catch (e) {
+    console.error("ðŸ”´ RPC DOWN:", e.message);
+    // â†’ Switch to backup RPC or alert
+    return false;
+  }
+
+  // 2. USDB balance â€” enough to operate?
+  const usdbBalance = await client.publicClient.readContract({
+    address: client.usdbAddress,
+    abi: [{"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}],
+    functionName: 'balanceOf',
+    args: [wallet],
+  });
+  console.log("ðŸ’° USDB:", formatUnits(usdbBalance, 18));
+
+  // 3. BNB balance â€” enough for gas?
+  const bnbBalance = await client.publicClient.getBalance({ address: wallet });
+  if (bnbBalance < parseUnits("0.005", 18)) {
+    console.warn("âš ï¸ Low BNB â€” refill for gas");
+  }
+
+  // 4. Open positions â€” any loans nearing expiry?
+  const loanCount = await client.loans.getUserLoanCount(wallet);
+  for (let i = 1n; i <= loanCount; i++) {
+    const loan = await client.loans.getUserLoanDetails(wallet, i);
+    if (loan.active) {
+      const expiryMs = Number(loan.liquidationTime) * 1000;
+      const hoursLeft = (expiryMs - Date.now()) / (1000 * 60 * 60);
+      if (hoursLeft < 24) {
+        console.warn(`âš ï¸ Loan ${i} expires in ${hoursLeft.toFixed(1)}h â€” extend or repay`);
+      }
+    }
+  }
+
+  // 5. Leverage positions
+  const levCount = await client.trading.getLeverageCount(wallet);
+  for (let i = 1n; i <= levCount; i++) {
+    const pos = await client.trading.getLeveragePosition(wallet, i);
+    if (pos.active) {
+      const expiryMs = Number(pos.liquidationTime) * 1000;
+      const hoursLeft = (expiryMs - Date.now()) / (1000 * 60 * 60);
+      if (hoursLeft < 24) {
+        console.warn(`âš ï¸ Leverage position ${i} expires in ${hoursLeft.toFixed(1)}h`);
+      }
+    }
+  }
+
+  return true;
+}
+```
+
+---
+
+## Error Recovery Patterns
+
+### RPC Timeout / 429 Rate Limit
+
+```js
+async function withRetry(fn, maxRetries = 3, baseDelayMs = 1000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      const isRetryable = e.message?.includes('timeout') ||
+                          e.message?.includes('429') ||
+                          e.message?.includes('ECONNRESET');
+      if (!isRetryable || attempt === maxRetries) throw e;
+
+      const delay = baseDelayMs * Math.pow(2, attempt - 1); // exponential backoff
+      console.warn(`âš ï¸ Attempt ${attempt} failed, retrying in ${delay}ms...`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+
+// Usage:
+const result = await withRetry(() => client.trading.buy(tokenAddr, amount));
+```
+
+### Transaction Stuck (Pending Too Long)
+
+If a transaction is stuck in the mempool (common during BSC congestion):
+
+1. **Check if it landed:** Query the transaction hash â€” if the receipt exists, it went through
+2. **If still pending after 60s:** The SDK uses viem which handles nonce management, but you can manually resubmit with higher gas
+3. **Never assume a timed-out transaction failed** â€” always check the receipt before retrying the operation, or you'll double-execute
+
+```js
+async function waitForTxSafe(client, hash, timeoutMs = 60000) {
+  try {
+    const receipt = await client.publicClient.waitForTransactionReceipt({
+      hash,
+      timeout: timeoutMs,
+    });
+    return receipt;
+  } catch (e) {
+    // Timeout â€” check if it landed anyway
+    try {
+      const receipt = await client.publicClient.getTransactionReceipt({ hash });
+      if (receipt) return receipt; // It went through despite the timeout
+    } catch {}
+    throw new Error(`Transaction ${hash} timed out and may still be pending`);
+  }
+}
+```
+
+### SIWE Session Expired
+
+This only affects browser-based flows. **For long-running agents, use API keys** â€” they're auto-provisioned during `BasisClient.create()` and don't expire. The `client.apiKey` property persists across restarts if you store it.
+
+If you do hit a 401:
+```js
+// Re-authenticate and get a fresh API key
+const client = await BasisClient.create({
+  privateKey: process.env.BASIS_PRIVATE_KEY,
+});
+// client.apiKey is now refreshed
+```
+
+---
+
+## State Reconstruction After Crash
+
+When your agent restarts after a crash, it needs to rebuild its view of open positions. All position data lives on-chain and can be queried directly:
+
+```js
+async function reconstructState(client) {
+  const wallet = client.walletClient.account.address;
+  const state = { loans: [], leveragePositions: [], staking: {} };
+
+  // 1. Enumerate all loans
+  const loanCount = await client.loans.getUserLoanCount(wallet);
+  for (let i = 1n; i <= loanCount; i++) {
+    const loan = await client.loans.getUserLoanDetails(wallet, i);
+    if (loan.active) state.loans.push({ hubId: i, ...loan });
+  }
+
+  // 2. Enumerate all leverage positions
+  const levCount = await client.trading.getLeverageCount(wallet);
+  for (let i = 1n; i <= levCount; i++) {
+    const pos = await client.trading.getLeveragePosition(wallet, i);
+    if (pos.active) state.leveragePositions.push({ positionId: i, ...pos });
+  }
+
+  // 3. Check staking position (wSTASIS balance via direct contract read)
+  const shares = await client.publicClient.readContract({
+    address: client.stakingAddress, // wSTASIS vault contract
+    abi: [{"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}],
+    functionName: 'balanceOf',
+    args: [wallet],
+  });
+  const stasisValue = await client.staking.convertToAssets(shares);
+  state.staking = { shares, stasisValue };
+
+  // 4. Check vesting schedules
+  const vestingCount = await client.vesting.getVestingCount(wallet);
+  for (let i = 0n; i < vestingCount; i++) {
+    const vesting = await client.vesting.getVestingDetails(wallet, i);
+    // Process active vesting schedules...
+  }
+
+  console.log(`Reconstructed: ${state.loans.length} loans, ${state.leveragePositions.length} leverage positions`);
+  return state;
+}
+```
+
+**Key principle:** The blockchain is the source of truth. The API is a convenience layer. If the API is down, all positions can be read directly from contracts via RPC.
+
+---
+
+## RPC Configuration
+
+### Why Use a Dedicated RPC
+
+The default public BSC endpoint (`bsc-dataseed.binance.org`) works for testing but has limitations:
+- **Rate limits:** ~10-20 requests/second before throttling
+- **No SLA:** Can be slow or unavailable during network congestion
+- **Shared:** Every free user is hitting the same endpoint
+
+For production agents making frequent calls (health checks, price monitoring, trading):
+
+```js
+const client = await BasisClient.create({
+  privateKey: process.env.BASIS_PRIVATE_KEY,
+  rpcUrl: "https://bsc-mainnet.nodereal.io/v1/YOUR_API_KEY", // or Ankr, QuickNode, Chainstack
+});
+```
+
+### Recommended Providers (BSC)
+- **Ankr** â€” Free tier available, good BSC support
+- **QuickNode** â€” Fast, reliable, paid
+- **NodeReal** â€” BSC-focused, meganode architecture
+- **Chainstack** â€” Dedicated nodes available
+
+### Failover Pattern
+
+```js
+const RPC_ENDPOINTS = [
+  "https://your-primary-rpc.com",
+  "https://bsc-dataseed1.binance.org",
+  "https://bsc-dataseed2.binance.org",
+];
+
+async function createClientWithFailover() {
+  for (const rpc of RPC_ENDPOINTS) {
+    try {
+      const client = await BasisClient.create({
+        privateKey: process.env.BASIS_PRIVATE_KEY,
+        rpcUrl: rpc,
+      });
+      console.log("Connected to:", rpc);
+      return client;
+    } catch (e) {
+      console.warn(`RPC ${rpc} failed:`, e.message);
+    }
+  }
+  throw new Error("All RPC endpoints failed");
+}
+```
+
+---
+
+## Transaction Sequencing
+
+### Sequential Transactions
+
+Always await the receipt before sending the next transaction:
+
+```js
+// âœ… Correct â€” sequential with receipts
+const buy = await client.trading.buy(tokenAddr, parseUnits("10", 18));
+// Receipt is already awaited inside buy()
+
+const sell = await client.trading.sell(tokenAddr, parseUnits("5", 18));
+// Safe â€” previous tx is confirmed
+```
+
+### Burst Operations
+
+For operations that need multiple transactions (e.g., buying multiple tokens):
+
+```js
+// âœ… Correct â€” sequential loop
+const tokens = ["0xToken1", "0xToken2", "0xToken3"];
+for (const token of tokens) {
+  const result = await client.trading.buy(token, parseUnits("10", 18));
+  console.log(`Bought ${token}:`, result.hash);
+  // Each buy() internally awaits the receipt, so nonce is managed
+}
+
+// âŒ Wrong â€” parallel sends will cause nonce collisions
+// await Promise.all(tokens.map(t => client.trading.buy(t, amount)));
+```
+
+The SDK uses viem which manages nonces for sequential calls. **Do not send transactions in parallel** â€” BSC will reject them with nonce errors.
+
+---
+
+## Monitoring Checklist
+
+Set up alerts for these conditions:
+
+| What to Monitor | Check Method | Alert When |
+|----------------|-------------|------------|
+| Loan expiry | `getUserLoanDetails()` â†’ `liquidationTime` | < 24 hours remaining |
+| Leverage expiry | `getLeveragePosition()` â†’ `liquidationTime` | < 24 hours remaining |
+| BNB gas balance | `getBalance()` | < 0.005 BNB |
+| USDB operating balance | `balanceOf()` on USDB contract | Below your minimum threshold |
+| Surge tax activation | `getCurrentSurgeTax(token)` | > 0 on tokens you're actively trading |
+| Prediction market resolution | `getDisputeData(marketToken)` | Market in `awaiting_proposal` status |
+| Staking lock expiry | Track `VOTE_LOCK_DURATION` after voting | Cannot unstake for 24h after vote |
+| RPC health | `getBlockNumber()` | Timeout or stale block number |
+
+### Monitoring Loop Example
+
+```js
+async function monitoringLoop(client) {
+  const INTERVAL_MS = 60_000; // Check every minute
+
+  while (true) {
+    try {
+      const healthy = await healthCheck(client);
+      if (!healthy) {
+        // Alert logic â€” send notification, switch RPC, etc.
+      }
+    } catch (e) {
+      console.error("Monitoring error:", e.message);
+    }
+    await new Promise(r => setTimeout(r, INTERVAL_MS));
+  }
+}
+```
+
+---
+
+## Shutdown Procedure
+
+When shutting down gracefully:
+
+1. **Stop opening new positions** â€” stop trading loops
+2. **Repay active loans** before expiry (avoid collateral burn)
+3. **Close leverage positions** via `partialLoanSell(id, 100, true, 0)` (100% = full close)
+4. **Unstake** â€” `unlock()` â†’ `sell()` (if not vote-locked)
+5. **Claim any pending rewards** â€” `claimLiquidation()` for expired loans, `claimBounty()` for resolved markets
+6. **Verify final state** â€” Run `reconstructState()` to confirm no orphaned positions
 
 

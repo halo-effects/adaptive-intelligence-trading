@@ -4,9 +4,19 @@
 
 ---
 
-> ⚠️ **Basis is in public testing phase.** All trading uses USDB (test currency) — zero financial risk. Smart contracts are deployed on BSC mainnet but are **pre-audit**. This is intentional: the testing phase exists to battle-test the system with real users before commissioning a formal audit. Finding and reporting bugs earns airdrop points through the bug bounty program. A formal third-party security audit will be conducted before TGE and the transition to real assets.
+> ## 📍 Phase 1: Founding Lobster ← YOU ARE HERE
 >
-> **What this means for you:** This is your window to learn the platform, build strategies, test every feature, and accumulate airdrop points before anyone else — with zero financial downside. The only cost is BNB for gas (~$0.01-0.05 per transaction). Every action you take now counts toward the 25% of total BASIS token supply allocated to participants.
+> Basis launches in three phases. **These docs are written for Phase 1.** Only necessary changes (bug fixes, contract addresses, stablecoin switch) will be made for subsequent phases — the SDK methods, strategies, and architecture remain the same.
+>
+> | Phase | Name | Currency | Key Details |
+> |-------|------|----------|-------------|
+> | **1** | **Founding Lobster** 🦞 | USDB (test) | Zero financial risk. Points earned. Pre-audit — bug reporting earns bonus points. |
+> | 2 | Pre-Audit | USDB (test) | Relaunch after Phase 1 bug fixes. Points from Phase 1 carry over. |
+> | 3 | Pre-TGE | USDT (real) | Relaunch after formal security audit. Points from all phases carry over. |
+>
+> **At each phase transition:** Leaderboard resets, but **all points carry over**. Early participants accumulate across all three phases.
+>
+> **What Phase 1 means for you:** This is your window to learn the platform, build strategies, test every feature, and accumulate airdrop points before anyone else — with zero financial downside. The only cost is BNB for gas (~$0.01-0.05 per transaction). Every action you take now counts toward the 25% of total BASIS token supply allocated to participants.
 >
 > → See: [12-trust-safety.md](12-trust-safety.md) for full audit status and security details
 

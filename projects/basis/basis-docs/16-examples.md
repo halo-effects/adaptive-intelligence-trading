@@ -6,6 +6,22 @@
 
 ---
 
+> ⚠️ **Slippage protection:** Many examples below use `0n` / `0` for `minOut` parameters for simplicity. **In production, always calculate a minimum output with slippage tolerance:**
+> ```js
+> // Helper: calculate minOut with slippage tolerance
+> function withSlippage(expectedOut, tolerancePercent = 1) {
+>   return expectedOut * BigInt(100 - tolerancePercent) / 100n; // 1% default tolerance
+> }
+>
+> // Usage: preview first, then set minOut
+> const preview = await client.trading.getAmountsOut(amount, path);
+> const minOut = withSlippage(preview[1], 2); // 2% slippage tolerance
+> const result = await client.trading.buyTokens(amount, minOut, path, false);
+> ```
+> Without slippage protection, your trades are vulnerable to sandwich attacks and price movement between simulation and execution.
+
+---
+
 ## Example 1: Create a Token with Metadata
 
 Full flow: initialize client, create a token, upload an image, and register metadata.
@@ -155,7 +171,7 @@ async function predictionMarket() {
 
   // 2. Buy "Yes" shares (outcomeId 0) with 5 USDB
   const buyResult = await client.predictionMarkets.buy(
-    marketToken, 0, USDB, parseUnits("5", 18), 0n, 0n
+    marketToken, 0, USDB, parseUnits("5", 18), 0n, 0n // ⚠️ minOut=0 for simplicity — use withSlippage() in production
   );
   console.log("Bought Yes shares:", buyResult.hash);
 
@@ -229,7 +245,7 @@ async function leverageTrading() {
   console.log("Simulation:", sim);
 
   // 2. Open the leverage position (10 USDB, 7 days)
-  const openResult = await client.trading.leverageBuy(parseUnits("10", 18), 0n, path, 7n);
+  const openResult = await client.trading.leverageBuy(parseUnits("10", 18), 0n, path, 7n); // ⚠️ minOut=0 for simplicity — use withSlippage() in production
   console.log("Position opened:", openResult.hash);
 
   // 3. Wait for the next block (required to avoid same-block revert)
@@ -244,7 +260,7 @@ async function leverageTrading() {
   console.log("Position:", position);
 
   // 5. Partially close (sell 50%)
-  const closeResult = await client.trading.partialLoanSell(positionId, 50, true, 0);
+  const closeResult = await client.trading.partialLoanSell(positionId, 50, true, 0); // ⚠️ minOut=0 for simplicity
   console.log("Partially closed:", closeResult.hash);
 }
 ```
@@ -504,13 +520,20 @@ client = BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"])
 print("✅ Client initialized")
 
 # 2. Claim USDB from on-chain faucet (one-time, 10K USDB per wallet)
-# Call the faucet() function directly on the USDB contract
-faucet_result = client.write_contract(
-    client.usdb_address,
-    [{"inputs":[],"name":"faucet","outputs":[],"stateMutability":"nonpayable","type":"function"}],
-    "faucet"
-)
-print("💰 Claimed 10K USDB:", faucet_result["hash"])
+# NOTE: The Python SDK does not yet wrap the faucet — use raw web3.py for this one call.
+# The JS SDK also requires a raw contract call (see JS example above).
+from web3 import Web3
+FAUCET_ABI = [{"inputs":[],"name":"faucet","outputs":[],"stateMutability":"nonpayable","type":"function"}]
+usdb_contract = client.w3.eth.contract(address=client.usdb_address, abi=FAUCET_ABI)
+tx = usdb_contract.functions.faucet().build_transaction({
+    'from': client.wallet_address,
+    'nonce': client.w3.eth.get_transaction_count(client.wallet_address),
+    'gas': 100000,
+})
+signed = client.w3.eth.account.sign_transaction(tx, private_key=os.environ["BASIS_PRIVATE_KEY"])
+tx_hash = client.w3.eth.send_raw_transaction(signed.raw_transaction)
+client.w3.eth.wait_for_transaction_receipt(tx_hash)
+print("💰 Claimed 10K USDB:", tx_hash.hex())
 
 # 3. Buy STASIS
 buy_result = client.trading.buy(client.main_token_address, 100 * 10**18)
@@ -533,3 +556,95 @@ print("📊 Market outcomes:", outcomes)
 
 print("\n🎉 Bootstrap complete!")
 ```
+
+---
+
+## Example 7: Resolver Workflow — Propose, Dispute, Vote, Finalize
+
+Complete end-to-end resolution flow: discover markets → propose outcome → handle disputes → claim bounty.
+
+**JS:**
+```js
+import { BasisClient } from 'basis-sdk';
+import { parseUnits } from 'viem';
+
+async function resolverWorkflow() {
+  const client = await BasisClient.create({
+    privateKey: process.env.BASIS_PRIVATE_KEY,
+  });
+  const wallet = client.walletClient.account.address;
+
+  // 1. Discover markets needing resolution
+  const markets = await client.api.getTokens({ isPrediction: true, limit: 100 });
+  const needsProposal = markets.data.filter(m => m.predictionStatus === "awaiting_proposal");
+  console.log(`Found ${needsProposal.length} markets needing proposals`);
+
+  if (needsProposal.length === 0) return;
+
+  const market = needsProposal[0];
+  const marketToken = market.address;
+
+  // 2. Check the market's outcomes to decide which won
+  const outcomes = await client.marketReader.getAllOutcomes(
+    "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", // MarketTrading contract
+    marketToken
+  );
+  for (const o of outcomes) {
+    const prob = Number(o.probability) / 1e18 * 100;
+    console.log(`  Outcome ${o.outcomeId}: "${o.name}" — ${prob.toFixed(1)}%`);
+  }
+
+  // 3. Propose the winning outcome (costs 5 USDB bond, auto-approved)
+  const winningOutcomeId = 0; // ← Your determination of which outcome won
+  const proposeResult = await client.resolver.propose(marketToken, winningOutcomeId);
+  console.log("✅ Proposed outcome:", winningOutcomeId, "tx:", proposeResult.hash);
+
+  // 4. Wait for the challenge period (PROPOSAL_PERIOD — currently 30 min)
+  //    During this time, anyone can dispute with a different outcome
+  const disputeData = await client.resolver.getDisputeData(marketToken);
+  console.log("Challenge period ends:", new Date(Number(disputeData.proposalEndTime) * 1000));
+
+  // 5a. If NO dispute — finalize after challenge period expires
+  //     (In production, poll or wait for the period to elapse)
+  console.log("Waiting for challenge period...");
+  // await sleep(30 * 60 * 1000); // 30 minutes in production
+
+  try {
+    const finalizeResult = await client.resolver.finalizeUncontested(marketToken);
+    console.log("✅ Finalized uncontested! Bond returned + 100% bounty");
+    console.log("Tx:", finalizeResult.hash);
+  } catch (e) {
+    // If someone disputed, finalizeUncontested will revert
+    console.log("Market was disputed — entering voting flow");
+
+    // 5b. If DISPUTED — vote on the outcome
+    //     Need to stake tokens first (min 5 tokens of any ecosystem token)
+    const stakeResult = await client.resolver.stakeAndVote(
+      marketToken,
+      winningOutcomeId, // Vote for the outcome you believe is correct
+    );
+    console.log("✅ Voted for outcome:", winningOutcomeId);
+    // ⚠️ Your stake is now locked for 24 hours (VOTE_LOCK_DURATION)
+
+    // 5c. After voting period (DISPUTE_PERIOD — currently 30 min),
+    //     finalize if quorum met and 70% supermajority reached
+    // await sleep(30 * 60 * 1000); // Wait for voting period
+
+    const voteResult = await client.resolver.finalizeMarket(marketToken);
+    console.log("✅ Market finalized after vote:", voteResult.hash);
+  }
+
+  // 6. Claim bounty (if you proposed or voted on the winning side)
+  const bountyResult = await client.resolver.claimBounty(marketToken, wallet);
+  console.log("💰 Bounty claimed:", bountyResult.hash);
+}
+
+resolverWorkflow().catch(console.error);
+```
+
+**Key timing notes:**
+- Challenge period (PROPOSAL_PERIOD): 30 min (target: 2h) — window to dispute
+- Voting period (DISPUTE_PERIOD): 30 min (target: 24h) — window to vote after dispute
+- Vote lock: 24 hours — staked tokens locked after voting
+- ⚠️ These are testing values. Read them from the contract at runtime, don't hardcode.
+- Self-dispute is allowed — useful for correcting your own proposal mistakes

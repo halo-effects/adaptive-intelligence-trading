@@ -78,7 +78,9 @@ The surge tax is a temporary extra fee that **token creators manually activate**
 | 90 days | 2.00% | 0.40% | **2.40%** |
 | 365 days | 2.00% | 1.78% | **3.78%** |
 
-**Key takeaway**: A year-long loan costs ~3.78% total - NOT 2% × 365 days. The 2% is a flat origination fee, not an annual rate.
+**How to calculate extension cost:** The minimum loan is 10 days (covered by origination). Extension cost only applies to days beyond the initial 10. Formula: `(totalDays - 10) × 0.005%`. For 365 days: `(365 - 10) × 0.005% = 355 × 0.005% = 1.775% ≈ 1.78%`.
+
+**Key takeaway**: A year-long loan costs ~3.78% total — NOT 2% × 365 days. The 2% is a flat origination fee, not an annual rate.
 
 ### Vault Costs & Yield
 

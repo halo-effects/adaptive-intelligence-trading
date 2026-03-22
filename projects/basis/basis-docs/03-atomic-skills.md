@@ -108,7 +108,7 @@ const result2 = await client.trading.leverageBuy(parseUnits("10", 18), 0n, [USDB
 ```
 **Python:**
 ```python
-result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)
+result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)  # ⚠️ minOut=0 for simplicity — calculate with getAmountsOut() in production
 ```
 
 | Param | Type | Description |
@@ -678,8 +678,8 @@ result = client.vesting.create_gradual_vesting(
 | `token` | string | Token to vest |
 | `totalAmount` | bigint/int | Total tokens |
 | `startTime` | bigint/int | Unix timestamp (use now+60) |
-| `durationInDays` | bigint/int | Vesting duration |
-| `timeUnit` | number | Unlock granularity (0-3) |
+| `durationInDays` | bigint/int | Total vesting duration in days |
+| `timeUnit` | number | Unlock frequency: 0=every second, 1=every minute, 2=every hour, 3=every day. `durationInDays` is always in days regardless of `timeUnit`. Example: `durationInDays=30, timeUnit=2` = tokens unlock hourly over 30 days (720 unlock events). `durationInDays=30, timeUnit=3` = tokens unlock daily over 30 days (30 unlock events). |
 | `memo` | string | Optional description |
 | `ecosystem` | string | MAINTOKEN address |
 
@@ -865,12 +865,12 @@ Returns: `{ hash, receipt, marketTokenAddress, imageUrl, metadata }`
 **JS:**
 ```js
 const result = await client.predictionMarkets.buy(
-  "0xMarketToken", 0, USDB, parseUnits("5", 18), 0n, 0n
+  "0xMarketToken", 0, USDB, parseUnits("5", 18), 0n, 0n // ⚠️ minOut=0 — use slippage calc in production
 );
 ```
 **Python:**
 ```python
-result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 0)
+result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 0)  # ⚠️ minOut=0 — use slippage calc in production
 ```
 
 | Param | Type | Description |
@@ -1051,6 +1051,8 @@ for (const market of needsProposal) {
 ### `dispute(marketToken, newOutcomeId)`
 **What it does:** Disputes the currently proposed outcome with an alternative. Auto-approves 5 USDB for dispute bond. Triggers the voting period.
 **Module:** `client.resolver`
+
+> **Self-dispute is allowed.** A proposer can dispute their own proposal — there is no `msg.sender != proposer` check. This is intentional: it allows proposers who made an honest mistake to correct themselves (cost: 1 extra bond) rather than waiting for someone else to dispute and take their bond. It's not gameable — if voters pick either of your outcomes you get both bonds back (net zero), and if they pick a third outcome you lose both bonds to insurance. No scenario profits from self-disputing.
 **Note:** Only the disputer can propose EARLY (253). Anyone can propose INVALID (254).
 
 ---
@@ -1197,12 +1199,50 @@ Batch-read prediction market data. All read-only.
 | `routerAddress` | address | The MarketTrading (PREDICTION) contract: `0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6`. This is the same address listed in Contract Addresses as "MarketTrading". |
 | `marketToken` | address | The prediction market's token address |
 
+**Returns** `OutcomeInfo[]` — array of structs, one per outcome:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `outcomeId` | uint8 | Outcome index (0, 1, 2...) |
+| `name` | string | Outcome name (e.g., "Yes", "No", "Draw") |
+| `virtualReserve` | uint256 | AMM virtual liquidity reserve for this outcome |
+| `totalCost` | uint256 | Total USDB spent buying this outcome's shares |
+| `circulatingShares` | uint256 | Total shares in circulation for this outcome |
+| `pricePerShare` | uint256 | Current price per share (18 decimals) |
+| `probability` | uint256 | Implied probability (18 decimals, e.g., 500000000000000000 = 50%) |
+| `hasWon` | bool | Whether this outcome won (only true after resolution) |
+
+**Calculating implied probability:** `probability` is already provided as a uint256 with 18 decimals. To get a percentage: `Number(probability) / 1e18 * 100`. For example, `750000000000000000` = 75%.
+
 **JS:**
 ```js
 const outcomes = await client.marketReader.getAllOutcomes(
   "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", // MarketTrading contract
   "0xMarketToken"
 );
+// outcomes is an array of OutcomeInfo structs
+for (const o of outcomes) {
+  const prob = Number(o.probability) / 1e18 * 100;
+  console.log(`${o.name}: ${prob.toFixed(1)}% @ ${formatUnits(o.pricePerShare, 18)} USDB/share`);
+}
+```
+
+---
+
+### `getUserShares(marketToken, user, outcomeId)` *(read)*
+**What it does:** Returns the number of outcome shares a user holds for a specific outcome in a prediction market.
+**Module:** `client.predictionMarkets` (also available on `client.privateMarkets`)
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `marketToken` | address | The prediction market's token address |
+| `user` | address | Wallet address to check |
+| `outcomeId` | number | Outcome index (0, 1, 2...) |
+
+**JS:**
+```js
+const shares = await client.predictionMarkets.getUserShares(marketToken, wallet, 0); // outcome 0
+console.log("Shares held:", formatUnits(shares, 18));
 ```
 
 ---
@@ -1297,7 +1337,7 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}")
 | `getCollateralValue(tokenAmount, reserve0, reserve1)` | Returns USDB value of tokens at current reserves. Compare against `borrowedAmount` to assess position health. |
 | `getCollateralValueHybrid(tokenAmount, reserve0, reserve1, xereserve0, xereserve1, multiplier, basereserve0)` | Returns collateral value for hybrid (Floor+/Stable+) tokens with elastic reserve calculations. |
 | `calculateTokensForBuy(usdbAmount, reserve0, reserve1)` | Calculates how many tokens a given USDB input would purchase at current reserves. |
-| `calculateTokensToBurn(amountIn, multiplier, inputreserve0, inputreserve1, splitter)` | Calculates tokens to burn for a given sell input. `splitter` is the percentage (in basis points) that determines how the sell amount splits between the token pool and the main pool during elastic supply burns. Read from the token contract. |
+| `calculateTokensToBurn(amountIn, multiplier, inputreserve0, inputreserve1, splitter)` | Calculates tokens to burn for a given sell input. `splitter` is computed by the MAINTOKEN contract — it simulates 100 sequential 1% sells to calculate the optimal burn amount. This is not a value you read and pass manually; the leverage simulator uses it internally. For direct calls, pass the value returned by the MAINTOKEN's splitter calculation function. |
 
 ---
 
@@ -1321,7 +1361,7 @@ Returns: `number` - basis points (100 = 1%)
 ---
 
 ### `getAvailableSurgeQuota(token)` *(read)*
-**What it does:** Returns remaining seconds before surge tax activates.
+**What it does:** Returns remaining surge-eligible seconds in the rolling 30-day window. This is a quota meter, not a countdown — it tells you how many more seconds of surge the creator can activate before hitting the 7-day-per-30-day cap. If it returns 0, no more surge can be started until existing surge time expires from the rolling window.
 **Module:** `client.taxes`
 
 ---

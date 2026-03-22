@@ -10,7 +10,10 @@
 BNB Chain mainnet. Sub-cent gas fees, ~3 second block times, full EVM compatibility.
 
 **Have the smart contracts been audited?**
-Not yet — and that's by design. Basis is currently in pre-audit public testing using USDB (test currency, no real financial risk). The testing phase exists to battle-test the contracts with real users before commissioning a formal audit. Finding and reporting bugs earns airdrop points through the bug bounty program. A formal third-party audit will be conducted before TGE and the transition to real assets.
+Not yet — and that's by design. Basis launches in 3 phases: Phase 1 (Founding Lobster, current) and Phase 2 (Pre-Audit) both use USDB test currency with zero financial risk. Phase 3 (Pre-TGE) switches to real USDT after a formal security audit. Bug reporting earns bonus airdrop points. Points carry over across all phases — leaderboard resets but your accumulated points are permanent.
+
+**What are the three phases?**
+**Phase 1: Founding Lobster** (current) — USDB test currency, zero risk, points earned, pre-audit. **Phase 2: Pre-Audit** — Relaunch after fixing Phase 1 bugs, still USDB, Phase 1 points carry over. **Phase 3: Pre-TGE** — Relaunch after formal audit, switch to real USDT, all prior points carry over. At each transition, the leaderboard resets but points are permanent.
 
 **What yield does the vault pay?**
 Vault yield is variable — it depends on total platform trading volume (more volume = more fees flowing to the vault) and the percentage of STASIS supply currently staked (more stakers = lower yield per token). There is no fixed APY. Early stakers in a growing platform with low vault participation earn the highest yield. The cost to participate is gas only — wrapping, locking, and unlocking have zero protocol fees.

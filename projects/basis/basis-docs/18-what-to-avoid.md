@@ -1,51 +1,51 @@
-# What to Avoid — Common Pitfalls
+# What to Avoid - Common Pitfalls
 
 **What this covers:** Strategies and actions that look reasonable but lose money or waste resources on Basis. Understanding these saves capital and time.
 **Related sections:** → See: [06-why.md](06-why.md) for what TO do and why · → See: [09-fees.md](09-fees.md) for fee details · → See: [13-mistakes.md](13-mistakes.md) for technical errors that cause transaction failures
 
 ---
 
-Every platform has strategies that sound good in theory but don't work in practice. Here's what to watch out for on Basis — and why.
+Every platform has strategies that sound good in theory but don't work in practice. Here's what to watch out for on Basis - and why.
 
 ---
 
 ## Leverage
 
-**Avoid leveraging Floor+ tokens when spot price is far above floor price.** Loans are valued at floor price, not spot — so the further spot is above floor, the less you can actually borrow per loop. Your effective leverage drops sharply, but the 2% origination fee per loop stays the same. You're paying full fees for diminished leverage. Wait until spot and floor converge, or use Stable+/Predict+ tokens where floor = spot.
+**Avoid leveraging Floor+ tokens when spot price is far above floor price.** Loans are valued at floor price, not spot - so the further spot is above floor, the less you can actually borrow per loop. Your effective leverage drops sharply, but the 2% origination fee per loop stays the same. You're paying full fees for diminished leverage. Wait until spot and floor converge, or use Stable+/Predict+ tokens where floor = spot.
 
 ---
 
 ## Loans
 
-**Avoid taking loans for very short periods.** The 2% origination fee is flat — it applies whether your loan lasts 10 days or 1 day. On a brief loan, that 2% may exceed whatever you earn from deploying the borrowed capital. Minimum loan duration is 10 days; if you don't need the capital for at least that long, the fee structure works against you. Use extensions (0.005%/day) instead of re-originating when you need to hold a position longer.
+**Avoid taking loans for very short periods.** The 2% origination fee is flat - it applies whether your loan lasts 10 days or 1 day. On a brief loan, that 2% may exceed whatever you earn from deploying the borrowed capital. Minimum loan duration is 10 days; if you don't need the capital for at least that long, the fee structure works against you. Use extensions (0.005%/day) instead of re-originating when you need to hold a position longer.
 
 ---
 
 ## Trading
 
-**Avoid large single buys on new or low-liquidity tokens.** Early in a token's life, the AMM pool is shallow. A large buy will move the price significantly, and the slippage works against you. Split large positions into multiple smaller trades — each one moves the price less, and the pool deepens between trades as other participants enter. The same applies to prediction market shares in new markets.
+**Avoid large single buys on new or low-liquidity tokens.** Early in a token's life, the AMM pool is shallow. A large buy will move the price significantly, and the slippage works against you. Split large positions into multiple smaller trades - each one moves the price less, and the pool deepens between trades as other participants enter. The same applies to prediction market shares in new markets.
 
 ---
 
 ## Prediction Markets
 
-**Avoid creating markets on topics nobody cares about.** Creator fees are 20% of all trading volume — but 20% of zero is zero. Market creation costs gas, so a dead market is a net loss. Focus on questions that generate genuine debate, strong opinions, and active trading. Controversial, timely, and verifiable questions attract the most volume.
+**Avoid creating markets on topics nobody cares about.** Creator fees are 20% of all trading volume - but 20% of zero is zero. Market creation costs gas, so a dead market is a net loss. Focus on questions that generate genuine debate, strong opinions, and active trading. Controversial, timely, and verifiable questions attract the most volume.
 
-**Avoid resolving markets you're not fully confident about.** The 5 USDB proposal bond is lost if you're wrong and someone disputes successfully. Only propose outcomes you can clearly verify from public information. The bounty reward for being right is worth it — the bond loss for being wrong is avoidable.
+**Avoid resolving markets you're not fully confident about.** The 5 USDB proposal bond is lost if you're wrong and someone disputes successfully. Only propose outcomes you can clearly verify from public information. The bounty reward for being right is worth it - the bond loss for being wrong is avoidable.
 
-**Avoid buying outcome shares at very high probability without checking the general pot.** At 95% implied probability, the raw pool split gives thin returns. The general pot (accumulated from trading fees across all outcomes) improves this, but you should check whether the combined payout justifies the entry price. Late-stage entries can still be profitable — just verify the math first.
+**Avoid buying outcome shares at very high probability without checking the general pot.** At 95% implied probability, the raw pool split gives thin returns. The general pot (accumulated from trading fees across all outcomes) improves this, but you should check whether the combined payout justifies the entry price. Late-stage entries can still be profitable - just verify the math first.
 
 ---
 
 ## Predict+ Tokens
 
-**Avoid selling Predict+ tokens during a market's active trading phase.** Stable+ mechanics mean selling burns tokens and pushes the price up — which is great for remaining holders, not for you. You're exiting before maximum volume has accumulated. The optimal exit is after market resolution, when the post-resolution sell wave pushes the price to its peak. Patience is rewarded structurally.
+**Avoid selling Predict+ tokens during a market's active trading phase.** Stable+ mechanics mean selling burns tokens and pushes the price up - which is great for remaining holders, not for you. You're exiting before maximum volume has accumulated. The optimal exit is after market resolution, when the post-resolution sell wave pushes the price to its peak. Patience is rewarded structurally.
 
 ---
 
 ## Vault Staking
 
-**Avoid staking very small amounts in the vault.** The ~1.62% round-trip swap cost (buy STASIS + sell STASIS) means your position needs to earn at least that in yield before you're profitable. A $50 stake earning fractions of a cent per day may never break even against entry and exit costs. Larger positions and longer time horizons make the vault economics work. Wrapping, locking, and unlocking cost only gas — the swap fees on entry and exit are the real cost to consider.
+**Avoid staking very small amounts in the vault.** The ~1% raw swap fees round-trip (0.5% per leg) plus variable slippage on both entry and exit means your position needs to earn more than that in yield before you're profitable. A $50 stake earning fractions of a cent per day may never break even against entry and exit costs. Larger positions and longer time horizons make the vault economics work. Wrapping, locking, and unlocking cost only gas — the swap fees and slippage on entry and exit are the real cost to consider. Use `getAmountsOut()` to preview your actual costs before committing.
 
 ---
 
@@ -63,7 +63,7 @@ Every platform has strategies that sound good in theory but don't work in practi
 
 **Avoid hedging all prediction market outcomes simultaneously.** This guarantees a loss from fees and earns no airdrop points. Only enter positions where you have genuine conviction or information.
 
-**Avoid strategies that depend on fixed APY.** Vault yield is variable — it changes with platform volume and staking participation. If your model requires predictable returns, the vault isn't a fixed-rate product.
+**Avoid strategies that depend on fixed APY.** Vault yield is variable - it changes with platform volume and staking participation. If your model requires predictable returns, the vault isn't a fixed-rate product.
 
 ---
 

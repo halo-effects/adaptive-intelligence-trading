@@ -28,6 +28,24 @@ All trades route through STASIS. No direct token-to-token swaps.
 
 **Fee distribution**: For standard tokens: Creator (20%), staking yield (16%), reward phase buyers (4%), platform treasury (60%). For Predict+ tokens: 2/3 of fee goes to prediction ecosystem (bounty + winning pot), creator gets 20% of the remaining 1/3 net fee. See [09-fees.md](09-fees.md) for the full Predict+ breakdown.
 
+### AMM Pricing Mechanics
+
+Basis uses a **modified constant-product AMM** (similar to Uniswap V2's `x × y = k`), but with a critical modification: the `hybridMultiplier` parameter controls how much of each sell's value is retained in the pool versus returned to the seller.
+
+**How it works:**
+- **Buys** work like a standard AMM — you send USDB, receive tokens, price increases along the curve
+- **Sells** are where Basis diverges: a portion of the sell value stays in the pool (slippage retention), which maintains or increases the reserves
+- The `hybridMultiplier` (1-100) controls the retention rate:
+  - **multiplier=100 (Stable+/Predict+):** 100% retention — ALL sell value stays in the pool. Price never drops. "Up-only."
+  - **multiplier=1 (Floor+):** Minimal retention — most sell value returns to seller, but some stays, creating a rising floor price
+  - **multiplier=45 (mid Floor+):** Moderate retention — balanced between seller return and floor accumulation
+
+**Price impact formula:** Use `getAmountsOut(amount, path)` to preview exact output for any trade size. The contract handles the multiplier-adjusted calculation internally. For position sizing, the `startLP` table in [01-what-is-basis.md](01-what-is-basis.md) shows empirical price impact per LP-equivalent buy at each multiplier level.
+
+**Why this matters for agents:** Standard AMM arbitrage assumptions don't apply. On Stable+ tokens, selling doesn't lower the price — it literally can't. On Floor+ tokens, the floor rises with every sell. Model your strategies accordingly.
+
+---
+
 **Reward phase vs post-reward-phase**:
 - Tokens are tradeable on the DEX from the moment of creation - the same hybrid AMM formula runs forever with no transition
 - The **reward phase** is the initial period where early buyers earn reward shares (claimable via `claimRewards()`) and boosted airdrop points
@@ -74,7 +92,7 @@ All trades route through STASIS. No direct token-to-token swaps.
 >
 > **Why this matters:** It's impossible to quote a fixed APY because it changes with platform activity and staking participation. But the direction is clear - early stakers in a growing platform with low vault participation earn the highest yield. As volume increases, total yield grows. As more people stake, individual yield moderates. The market finds its own equilibrium.
 >
-> **Cost to participate:** Gas only. Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the ~0.81% swap fee when buying STASIS and again when selling - a ~1.62% round trip. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
+> **Cost to participate:** Gas only. Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the 0.5% raw swap fee when buying STASIS and again when selling (~1% raw fees round-trip) plus variable slippage on both legs. Slippage depends on transaction size and pool liquidity — use `getAmountsOut()` to preview actual costs. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
 
 Three layers:
 
