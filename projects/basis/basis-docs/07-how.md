@@ -74,7 +74,7 @@ Higher `startLP` = deeper pool = less price impact per trade. The `startLP` tabl
 | Origination fee | 2% flat | Deducted upfront from what you receive |
 | Daily interest | 0.005%/day | On collateral value, for all loans |
 | Extension fee | 0.005% per day | Paid upfront when extending |
-| Repayment | Full collateral value | Always 100% of original |
+| Repayment | `fullAmount` (loan value + prepaid interest) | Read from `getUserLoanDetails()` |
 
 **LTV depends on token type:**
 - **Stable+ / Predict+**: 100% LTV at spot price (floor = spot for these tokens, so you borrow the full market value)

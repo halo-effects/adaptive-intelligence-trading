@@ -10,7 +10,7 @@
 
 Basis launches in three phases. **Phase 1 (Founding Lobster)** and **Phase 2 (Pre-Audit)** use USDB test currency with zero financial risk. **Phase 3 (Pre-TGE)** switches to real USDT after a formal security audit. Smart contracts are deployed on BSC mainnet but have NOT yet undergone a formal third-party audit.
 
-**This is intentional.** Phases 1 and 2 exist specifically to battle-test the contracts with real users before committing to an audit. The bug reporting system and bug bounty program reward participants who discover issues — this is how the platform hardens before real capital is at stake in Phase 3.
+**This is intentional.** Phases 1 and 2 exist specifically to battle-test the contracts with real users before committing to an audit. The bug reporting system and bug bounty program reward participants who discover issues - this is how the platform hardens before real capital is at stake in Phase 3.
 
 **What this means for builders:**
 - All contracts are live and functional on BSC mainnet
@@ -18,6 +18,7 @@ Basis launches in three phases. **Phase 1 (Founding Lobster)** and **Phase 2 (Pr
 - Finding and reporting bugs earns airdrop points (severity-scaled rewards)
 - A formal security audit will be conducted between Phase 2 and Phase 3, before the transition to real assets
 - Phases 1 and 2 ARE the community audit — your participation makes the platform safer for everyone
+- **Gas costs are the price of admission; the airdrop is your compensation.** BNB gas is the only real cost during Phases 1-2. The 25% token allocation to testers exists specifically because you're helping battle-test pre-audit contracts.
 - **Points carry over** across all phases. Leaderboard resets at each transition, but your accumulated points are permanent
 
 **Bug reporting:** `POST /api/v1/bugs/report` - see [11-api-reference.md](11-api-reference.md) for full API docs. Reports are reviewed by the team, and points are awarded on verification.
@@ -37,7 +38,7 @@ Basis doesn't ask participants to be ethical. It makes unethical behavior **stru
 | **Wash trading** | Points are awarded for genuine activity only. Hedging all outcomes earns no points. |
 | **Prediction manipulation** | Community voting with dispute mechanisms and staked bonds. |
 | **Sybil attacks** | Six-layer defense: cost to exist, cost to earn, graph analysis, time, social verification, progressive conviction (see below). |
-| **Token transfers** | Any wallet-to-wallet transfer of ANY token = permanent disqualification + total point wipe. All legitimate activity routes through platform contracts. |
+| **Token transfers** | Any wallet-to-wallet transfer of ANY token triggers automatic flagging + points suspended pending review. Accidental transfers can be disputed and reinstated. Confirmed sybil activity (funding other wallets, multi-wallet coordination) = permanent disqualification. All legitimate activity routes through platform contracts. |
 | **Discussion spam** | $5 minimum trade required to comment. Wallet-signed posts. |
 
 ---

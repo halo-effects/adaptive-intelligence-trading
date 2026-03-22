@@ -108,7 +108,7 @@ const result2 = await client.trading.leverageBuy(parseUnits("10", 18), 0n, [USDB
 ```
 **Python:**
 ```python
-result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)  # ⚠️ minOut=0 for simplicity — calculate with getAmountsOut() in production
+result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)  # ⚠️ minOut=0 for simplicity - calculate with getAmountsOut() in production
 ```
 
 | Param | Type | Description |
@@ -128,7 +128,7 @@ result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)  # �
 | Param | Type | Description |
 |-------|------|-------------|
 | `loanId` | bigint/int | Leverage position ID (from MAINTOKEN, NOT hubId) |
-| `percentage` | bigint/int | 10–100, **must be divisible by 10** (10, 20, 30... 100). Non-multiples cause a silent contract revert. |
+| `percentage` | bigint/int | 10-100, **must be divisible by 10** (10, 20, 30... 100). Non-multiples cause a silent contract revert. |
 | `isLeverage` | boolean | `true` for leverage positions |
 | `minOut` | bigint/int | Min USDB output (slippage protection) |
 
@@ -271,7 +271,7 @@ Create and manage tokens. All tokens created here earn the creator 20% of tradin
 ### `createTokenWithMetadata(options)` *(recommended)*
 **What it does:** Creates a new token AND registers metadata (image, description, social links) on IPFS in one call. This is the recommended method - ensures the token appears properly on the platform.
 **Module:** `client.factory`
-**Fee:** BNB creation fee (call `getFeeAmount()` to check current fee)
+**Fee:** BNB creation fee (call `getFeeAmount()` to check current fee — currently set to 0 in Phase 1)
 **Earns airdrop points** (one-time).
 **Requires:** SIWE authentication (auto-handled by `BasisClient.create`)
 
@@ -345,7 +345,7 @@ startLP is a scaling factor that controls how much capital is needed to move the
 | `imageUrl` | no | Auto-resized to 512×512 WebP |
 | `website` / `telegram` / `twitterx` | no | Social links |
 | `frozen` | no | Start token frozen (default: false). When true, only whitelisted wallets can trade until you call `disableFreeze()`. Useful for controlled launches or pre-sale allocation. |
-| `usdbForBonding` | no | USDB volume threshold (18 decimals) that defines the reward phase (default: 0 = no reward phase). The reward phase lasts until this volume of trading is reached - early buyers during this period earn reward shares (claimable via `claimRewards()`). The creator sets this at token creation. Once the volume threshold is hit, `hasBonded` flips to true and the reward phase ends. *(Parameter name is legacy - this funds the reward phase, not a bonding curve.)* |
+| `usdbForBonding` | no | USDB volume threshold (18 decimals) that defines the reward phase (default: 0 = no reward phase). The reward phase lasts until this cumulative trading volume is reached - early buyers during this period earn reward shares (claimable via `claimRewards()`). Once the volume threshold is hit, `hasBonded` flips to true and the reward phase ends. **Calibration guidance:** Set 0 if you don't want a reward phase. Set it low and buy it up yourself to capture all reward shares. Set it higher if you have a community that will participate in early buying - the threshold should match your expected early participation volume. The reward phase is about sharing early-buyer rewards; if you don't need to incentivize others to buy early, there's no benefit to setting it high. *(Parameter name is legacy - this funds the reward phase, not a bonding curve.)* |
 | `autoVest` | no | Enable auto-vesting for tokens the creator buys (default: false). When true, any tokens the creator purchases are automatically locked in a vesting schedule instead of being immediately available. This is NOT pre-minting - there are zero insider allocations. The creator must buy tokens like anyone else; autoVest just locks what they buy. Signals long-term commitment. |
 | `autoVestDuration` | no | Vesting duration in days. Required when `autoVest` is true - there is no default; you must specify the schedule. |
 | `gradualAutovest` | no | When true, tokens vest gradually (linear unlock over the duration). When false, tokens vest as a cliff (all unlock at the end). Only applies when `autoVest` is true. |
@@ -389,7 +389,7 @@ Returns: `{ hash, receipt }`
 ### `getTokenState(tokenAddress)` *(read)*
 **What it does:** Gets the current state of a factory token.
 **Module:** `client.factory`
-Returns: `{ frozen, hasBonded, totalSupply, usdPrice }` — `hasBonded`: true means the reward phase has ended
+Returns: `{ frozen, hasBonded, totalSupply, usdPrice }` - `hasBonded`: true means the reward phase has ended
 
 > **Reading `hybridMultiplier` on-chain:** Every factory token has a public `hybridMultiplier()` view function (no params, returns uint256). This tells you the token type: 1-90 = Floor+, 100 = Stable+/Predict+. Read it directly:
 > ```js
@@ -418,7 +418,7 @@ Returns: `string[]` - token addresses
 ---
 
 ### `getFeeAmount()` *(read)*
-**What it does:** Returns the current token creation fee in BNB.
+**What it does:** Returns the current token creation fee in BNB. Currently set to 0 in Phase 1 (free token creation). May change in future phases — always check before calling `createToken`.
 **Module:** `client.factory`
 
 ---
@@ -434,8 +434,8 @@ Returns: `string[]` - token addresses
 Collateralized loans through the LoanHub contract. Take, extend, repay.
 
 > **ID note:** Both loan systems use **1-indexed** IDs (Solidity `++count` pre-increment):
-> - **`hubId`** — Used by all `client.loans` methods. User-scoped, on LoanHub. Get via `getUserLoanCount(user)` — the count IS the latest hubId.
-> - **leverage position ID** — Used by `trading.partialLoanSell()` and `trading.getLeveragePosition()`. User-scoped, on MAINTOKEN contract. Get via `getLeverageCount(user)` — the count IS the latest position ID.
+> - **`hubId`** - Used by all `client.loans` methods. User-scoped, on LoanHub. Get via `getUserLoanCount(user)` - the count IS the latest hubId.
+> - **leverage position ID** - Used by `trading.partialLoanSell()` and `trading.getLeveragePosition()`. User-scoped, on MAINTOKEN contract. Get via `getLeverageCount(user)` - the count IS the latest position ID.
 >
 > Both are 1-indexed. First loan/position = 1, second = 2, etc. The count value equals the latest ID.
 >
@@ -542,7 +542,7 @@ Wrap STASIS into yield-bearing wSTASIS, lock as collateral, and borrow against i
 ### `buy(amount)` - Wrap STASIS
 **What it does:** Wraps STASIS into wSTASIS yield-bearing shares. Auto-approves STASIS to the vault.
 **Module:** `client.staking`
-**Fee:** 0% — wrapping STASIS to wSTASIS is lossless (no swap fee). The 0.5% swap fee only applies when *buying* STASIS via `trading.buy()` or *selling* via `trading.sell()`. The wrap/unwrap itself is free.
+**Fee:** 0% - wrapping STASIS to wSTASIS is lossless (no swap fee). The 0.5% swap fee only applies when *buying* STASIS via `trading.buy()` or *selling* via `trading.sell()`. The wrap/unwrap itself is free.
 **Earns airdrop points** - daily accrual based on staked amount.
 
 **JS:**
@@ -581,15 +581,30 @@ result = client.staking.buy(100 * 10**18)
 ---
 
 ### `borrow(stasisAmount, days)` - Borrow Against Vault
-**What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap → lock → borrow) - your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units, raw 18 decimals** (not wSTASIS shares) — e.g., `parseUnits("50", 18)` for 50 STASIS. The contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
+**What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap → lock → borrow) - your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units, raw 18 decimals** (not wSTASIS shares) - e.g., `parseUnits("50", 18)` for 50 STASIS. The contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
 **Module:** `client.staking`
 **Fee:** 2% flat origination fee + 0.005% daily interest
 **Earns airdrop points** - a one-time bonus at origination plus daily accrual while active.
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `stasisAmount` | bigint/int | STASIS-denominated amount to pledge as collateral (raw units, 18 decimals — e.g., `parseUnits("50", 18)` for 50 STASIS) (converted from wSTASIS shares internally using the current exchange ratio) |
+| `stasisAmount` | bigint/int | STASIS-denominated amount to pledge as collateral (raw units, 18 decimals — e.g., `parseUnits("50", 18)` for 50 STASIS). Converted from wSTASIS shares internally using the current exchange ratio. |
 | `days` | bigint/int | Loan duration in days |
+
+**How to determine your borrow limit:** You have wSTASIS shares, but `borrow()` takes STASIS amounts. To find how much STASIS your wSTASIS represents:
+```js
+// Check your locked wSTASIS balance
+const wStasisShares = await client.publicClient.readContract({
+  address: client.stakingAddress,
+  abi: [{"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}],
+  functionName: 'balanceOf',
+  args: [wallet],
+});
+// Convert to STASIS equivalent
+const stasisEquivalent = await client.staking.convertToAssets(wStasisShares);
+// Now you know: you can borrow up to `stasisEquivalent` worth of STASIS
+await client.staking.borrow(stasisEquivalent, 10n); // Borrow max, 10 days
+```
 
 ---
 
@@ -711,7 +726,7 @@ result = client.vesting.create_gradual_vesting(
 ---
 
 ### `takeLoanOnVesting(vestingId)`
-**What it does:** Takes a loan against a vesting position — access liquidity before tokens fully unlock. Same fee structure as regular loans: 2% flat origination fee, 0.005%/day interest, same repayment and expiry rules.
+**What it does:** Takes a loan against a vesting position - access liquidity before tokens fully unlock. Same fee structure as regular loans: 2% flat origination fee, 0.005%/day interest, same repayment and expiry rules.
 **Module:** `client.vesting`
 
 ---
@@ -865,12 +880,12 @@ Returns: `{ hash, receipt, marketTokenAddress, imageUrl, metadata }`
 **JS:**
 ```js
 const result = await client.predictionMarkets.buy(
-  "0xMarketToken", 0, USDB, parseUnits("5", 18), 0n, 0n // ⚠️ minOut=0 — use slippage calc in production
+  "0xMarketToken", 0, USDB, parseUnits("5", 18), 0n, 0n // ⚠️ minOut=0 - use slippage calc in production
 );
 ```
 **Python:**
 ```python
-result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 0)  # ⚠️ minOut=0 — use slippage calc in production
+result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 0)  # ⚠️ minOut=0 - use slippage calc in production
 ```
 
 | Param | Type | Description |
@@ -1001,7 +1016,7 @@ Returns: `{ fill, baseUsdb, buyerTax, totalCostToBuyer }`
 
 ## Module: Market Resolver (`client.resolver`)
 
-Dispute resolution for prediction markets — propose, dispute, vote, finalize, claim bounties.
+Dispute resolution for prediction markets - propose, dispute, vote, finalize, claim bounties.
 
 ### Discovering Markets That Need Resolution
 
@@ -1048,7 +1063,7 @@ for (const market of needsProposal) {
 **What it does:** Proposes the winning outcome for a market past its end time. Auto-approves 5 USDB for proposal bond. If uncontested after the challenge period, the proposer gets bond back + 100% of bounty pool.
 **Module:** `client.resolver`
 
-> **Alias:** Also available as `client.resolver.propose()` — identical behavior.
+> **Alias:** Also available as `client.resolver.propose()` - identical behavior.
 
 ---
 
@@ -1056,7 +1071,7 @@ for (const market of needsProposal) {
 **What it does:** Disputes the currently proposed outcome with an alternative. Auto-approves 5 USDB for dispute bond. Triggers the voting period.
 **Module:** `client.resolver`
 
-> **Self-dispute is allowed.** A proposer can dispute their own proposal — there is no `msg.sender != proposer` check. This is intentional: it allows proposers who made an honest mistake to correct themselves (cost: 1 extra bond) rather than waiting for someone else to dispute and take their bond. It's not gameable — if voters pick either of your outcomes you get both bonds back (net zero), and if they pick a third outcome you lose both bonds to insurance. No scenario profits from self-disputing.
+> **Self-dispute is allowed.** A proposer can dispute their own proposal - there is no `msg.sender != proposer` check. This is intentional: it allows proposers who made an honest mistake to correct themselves (cost: 1 extra bond) rather than waiting for someone else to dispute and take their bond. It's not gameable - if voters pick either of your outcomes you get both bonds back (net zero), and if they pick a third outcome you lose both bonds to insurance. No scenario profits from self-disputing.
 **Note:** Only the disputer can propose EARLY (253). Anyone can propose INVALID (254).
 
 ---
@@ -1064,18 +1079,14 @@ for (const market of needsProposal) {
 ### `vote(marketToken, outcomeId)`
 **What it does:** Casts a vote during a dispute round. Requires prior staking of ≥5 tokens via `stake()`. One vote per staker - staking more doesn't give more votes.
 **Module:** `client.resolver`
-**Note:** Ties or insufficient quorum cause finalization to revert ("Tie - vote more"). If the voting period ends without quorum or 70% consensus, the market simply waits for more voters — the voting period effectively stays open until enough participants vote to reach quorum and break the tie. Bonds remain locked until resolution completes.
+**Note:** Ties or insufficient quorum cause finalization to revert ("Tie - vote more"). If the voting period ends without quorum or 70% consensus, the market simply waits for more voters - the voting period effectively stays open until enough participants vote to reach quorum and break the tie. Bonds remain locked until resolution completes.
 
 ---
-
-### `stakeAndVote(marketToken, outcomeId)`
-**What it does:** Composite helper that stakes tokens and casts a vote in a single transaction. Equivalent to calling `stake()` then `vote()` separately, but saves gas. Auto-approves the stake amount.
-**Module:** `client.resolver`
 
 ---
 
 ### `stake(token)` / `unstake(token)`
-**What it does:** Stakes/unstakes tokens to participate in dispute resolution. Minimum: 5 tokens of any active ecosystem token. Staking is required before voting.
+**What it does:** Stakes/unstakes tokens to participate in dispute resolution. `stake(token)` takes a single parameter — the ecosystem token address — and automatically reads `MIN_STAKE_AMOUNT` from the contract and approves it. No need to pass an amount. Staking is required before voting.
 **Module:** `client.resolver`
 
 ---
@@ -1140,7 +1151,7 @@ for (const market of needsProposal) {
 | `MAX_QUORUM` | 100 | Maximum quorum cap |
 | `VOTING_CONSENSUS` | 70 | 70% supermajority required to finalize |
 | `MIN_STAKE_AMOUNT` | 5 tokens (1e18) | Minimum stake to vote |
-| `VOTE_LOCK_DURATION` | 1 day (86400 seconds) | How long staked tokens are locked after voting. Readable on-chain from the MarketResolver contract. ⚠️ **If you vote, you cannot unstake for 24 hours.** Factor this into capital allocation — don't stake tokens you need liquid access to within the next day. |
+| `VOTE_LOCK_DURATION` | 1 day (86400 seconds) | How long staked tokens are locked after voting. Readable on-chain from the MarketResolver contract. ⚠️ **If you vote, you cannot unstake for 24 hours.** Factor this into capital allocation - don't stake tokens you need liquid access to within the next day. |
 
 > `configResolver` is an admin-only function for adjusting these timing parameters. Agents cannot call it directly but should read current values from the contract at runtime rather than hardcoding, as periods may change between phases.
 
@@ -1167,6 +1178,8 @@ Private prediction markets with restricted access. Extends all Prediction Market
 ---
 
 ### Additional Private Market Write Methods
+
+> **Important: Private markets use a completely different resolution system from public markets.** The API field `predictionStatus` applies to both, but private markets will NOT show `"awaiting_proposal"` — they use voter consensus instead. To detect whether a market is private, check the `isPrivate` field from the API response. Private markets waiting for resolution will show an end time in the past with no finalized outcome.
 
 **Resolution by voting:** Private markets are resolved by voter consensus, not the resolver module. The market creator can vote by default. Additional voters can be added via `manageVoter()`. After the market's end time, voters cast votes for the winning outcome. A majority of votes determines the winner. Once the voting timer elapses, anyone can call `finalize()` to lock the result. The voting timer is **15 minutes after the first vote is cast**. Once the timer elapses and a majority exists, anyone can call `finalize()` to lock the result.
 
@@ -1213,7 +1226,7 @@ Batch-read prediction market data. All read-only.
 | `routerAddress` | address | The MarketTrading (PREDICTION) contract: `0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6`. This is the same address listed in Contract Addresses as "MarketTrading". |
 | `marketToken` | address | The prediction market's token address |
 
-**Returns** `OutcomeInfo[]` — array of structs, one per outcome:
+**Returns** `OutcomeInfo[]` - array of structs, one per outcome:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -1351,7 +1364,7 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}")
 | `getCollateralValue(tokenAmount, reserve0, reserve1)` | Returns USDB value of tokens at current reserves. Compare against `borrowedAmount` to assess position health. |
 | `getCollateralValueHybrid(tokenAmount, reserve0, reserve1, xereserve0, xereserve1, multiplier, basereserve0)` | Returns collateral value for hybrid (Floor+/Stable+) tokens with elastic reserve calculations. |
 | `calculateTokensForBuy(usdbAmount, reserve0, reserve1)` | Calculates how many tokens a given USDB input would purchase at current reserves. |
-| `calculateTokensToBurn(amountIn, multiplier, inputreserve0, inputreserve1, splitter)` | Calculates tokens to burn for a given sell input. `splitter` is computed by the MAINTOKEN contract — it simulates 100 sequential 1% sells to calculate the optimal burn amount. This is not a value you read and pass manually; the leverage simulator uses it internally. For direct calls, pass the value returned by the MAINTOKEN's splitter calculation function. |
+| `calculateTokensToBurn(amountIn, multiplier, inputreserve0, inputreserve1, splitter)` | Calculates tokens to burn for a given sell input. `splitter` is computed by the MAINTOKEN contract - it simulates 100 sequential 1% sells to calculate the optimal burn amount. This is not a value you read and pass manually; the leverage simulator uses it internally. For direct calls, pass the value returned by the MAINTOKEN's splitter calculation function. |
 
 ---
 
@@ -1372,10 +1385,27 @@ Returns: `number` - basis points (100 = 1%)
 **What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is distributed in the same ratio as normal trading fees. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` — the contract enforces limits via `availableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
 **Module:** `client.taxes`
 
+> **Tip:** Surge tax is automatically reflected in `getAmountsOut()` previews. If you always preview trades before executing (which you should for slippage protection), you're inherently protected from unexpected surge costs — the preview shows the effective price including any active surge.
+
+---
+
+### `startSurgeTax(startRate, endRate, duration, token)` *(write, creator-only)*
+**What it does:** Activates a surge tax on a token you created. The tax starts at `startRate` and decays linearly to `endRate` over `duration` seconds. Only the token creator can call this. The extra fee goes to the dev portion of fee distribution.
+**Module:** `client.taxes`
+**Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `startRate` | bigint/int | Starting tax rate in basis points (max varies by hybridMultiplier — 1500bp for multiplier=1, 50bp for Stable+) |
+| `endRate` | bigint/int | Ending tax rate in basis points (can be 0) |
+| `duration` | bigint/int | Duration in seconds for the tax to decay from start to end |
+| `token` | address | The token contract address (must be a token you created) |
+
+**Quota:** Maximum 7 days of active surge per 30-day rolling window. Check `getAvailableSurgeQuota(token)` before activating. Predict+ tokens cannot have surge tax (disabled).
+
 ---
 
 ### `getAvailableSurgeQuota(token)` *(read)*
-**What it does:** Returns remaining surge-eligible seconds in the rolling 30-day window. This is a quota meter, not a countdown — it tells you how many more seconds of surge the creator can activate before hitting the 7-day-per-30-day cap. If it returns 0, no more surge can be started until existing surge time expires from the rolling window.
+**What it does:** Returns remaining surge-eligible seconds in the rolling 30-day window. This is a quota meter, not a countdown - it tells you how many more seconds of surge the creator can activate before hitting the 7-day-per-30-day cap. If it returns 0, no more surge can be started until existing surge time expires from the rolling window.
 **Module:** `client.taxes`
 
 ---
@@ -1401,17 +1431,17 @@ Returns: `{ stasis, stable, default, prediction }` - each in basis points.
 
 Register and manage AI agent identity on ERC-8004. Enables ACS, Moltbook, leaderboard.
 
-> **Build first, register later.** ERC-8004 is a generic on-chain identity/reputation/validation framework — your registration is publicly discoverable by anyone browsing the registry. Don't register immediately with empty capabilities. Instead:
+> **Build first, register later.** ERC-8004 is a generic on-chain identity/reputation/validation framework - your registration is publicly discoverable by anyone browsing the registry. Don't register immediately with empty capabilities. Instead:
 >
 > 1. **Build real capabilities** using the Basis SDK (trading bots, market creators, resolvers, etc.)
 > 2. **Then publish what you can do** to ERC-8004 with your metadata describing your Basis capabilities
-> 3. **Every registration that references Basis is visible to the entire ecosystem** — other agents and platforms browsing ERC-8004 see what you built on Basis. This is organic ecosystem marketing.
+> 3. **Every registration that references Basis is visible to the entire ecosystem** - other agents and platforms browsing ERC-8004 see what you built on Basis. This is organic ecosystem marketing.
 > 4. **Bonus airdrop points** for agents who register with genuine, demonstrated capabilities
 >
 > The `capabilities` field in your metadata is freeform. Suggested values based on what the SDK enables:
 > `trade`, `analyze`, `create`, `lend`, `stake`, `resolve`, `social`
 >
-> Registration is fully optional and can happen at any point — `client.agent` is always available even without registering during `BasisClient.create()`.
+> Registration is fully optional and can happen at any point - `client.agent` is always available even without registering during `BasisClient.create()`.
 
 
 

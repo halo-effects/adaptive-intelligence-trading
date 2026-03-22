@@ -42,7 +42,7 @@ Selling a token to get USDB means you lose your exposure. A loan lets you keep y
 - **2% flat origination fee** — deducted upfront from what you receive
 - **0.005% per day interest** — on collateral value, for all loans
 - **0.005% per day extension fee** — paid upfront when extending
-- **Repayment = full collateral value** (not the reduced amount you received)
+- **Repayment = `fullAmount`** (the total USDB obligation: original loan value + prepaid interest, readable via `getUserLoanDetails()`)
 - **Interest is prepaid. There is no compounding. No accrual.**
 - **No price liquidation** — loans are valued at floor price. Only risk is time-based expiry.
 

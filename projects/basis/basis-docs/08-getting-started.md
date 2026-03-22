@@ -152,6 +152,16 @@ All options can be passed to the `BasisClient` constructor (or `BasisClient.crea
 | `client.walletClient` | WalletClient | viem wallet client for write operations (only if `privateKey` provided) |
 | `client.walletClient.account.address` | address | Your wallet address |
 | `client.api` | BasisAPI | Off-chain API wrapper |
+| `client.stakingAddress` | address | wSTASIS vault contract address (for direct `balanceOf` calls) |
+
+**Python-specific properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `client.w3` | Web3 | web3.py instance for raw contract calls |
+| `client.wallet_address` | str | Your wallet address |
+| `client.usdb_address` | str | USDB contract address |
+| `client.main_token_address` | str | STASIS/MAINTOKEN contract address |
 | `client.apiKey` | string | Auto-provisioned API key (persistent, no expiry) |
 
 ### 🔒 Private Key Security

@@ -454,7 +454,7 @@ model BugReport {
 | **1 pt per $50 volume** | 50x lower earn rate than 1:1 | Massive volume needed to mine meaningful points |
 | **Category diversity multiplier** | 1x for single-action, up to 32x for diverse | Bot farms doing one thing each are 32Ã- less efficient |
 | **Social verification gate** | Max 8x without linked X account | Hard cap forces social verification to reach top tiers |
-| **ðŸš¨ ANY token transfer = nuclear ban** | Wallet-to-wallet transfer of ANY token (USDB, STASIS, factory tokens, Predict+) wipes ALL points permanently | Prevents sybil funding via any token route. |
+| **🚨 ANY token transfer = flagging + review** | Wallet-to-wallet transfer of ANY token (USDB, STASIS, factory tokens, Predict+) triggers automatic flagging. Accidental transfers disputable; confirmed sybil = permanent ban. | Prevents sybil funding via any token route. |
 | **One-time faucet ($10K)** | Each wallet gets $10K USDB once, no refills | Fixed capital per wallet â€" can't endlessly fund bots |
 | **Minimum trade sizes** | $5 predictions, $10 DEX | Eliminates dust-trade mining |
 | **Daily caps** | 5,000 base pts per category per day | Limits max extractable points per wallet |
@@ -463,7 +463,7 @@ model BugReport {
 
 ### Token Transfer Ban (Nuclear Option)
 
-**Any wallet-to-wallet transfer of ANY token results in ALL accumulated points being wiped to zero for BOTH the sending and receiving wallet.** No warnings, no appeals, no exceptions.
+**Any wallet-to-wallet transfer of ANY token triggers automatic flagging and point suspension for BOTH the sending and receiving wallet.** Accidental transfers (code bugs, wrong address) can be disputed and reinstated if there's no evidence of multi-wallet gaming. Confirmed sybil activity (funding other wallets, splitting activity across addresses) = permanent disqualification.
 
 This applies to ALL ecosystem tokens:
 - USDB

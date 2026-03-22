@@ -35,14 +35,15 @@ Real mistakes discovered during live SDK testing.
 - ❌ **Selling immediately after resolution** → Price goes UP as others sell (burn → slippage retention). Wait.
 - ❌ **Proposing an outcome without understanding bond risk** → Your 5 USDB proposal bond is lost if someone disputes and the vote goes against you. The disputer's bond is also at risk. Only propose outcomes you're confident about. If neither party is correct, both bonds go to the insurance fund.
 
-- 🛑 **Voting while holding an expiring loan** — After voting, your staked tokens are locked for 24 hours (`VOTE_LOCK_DURATION`). If you have a loan expiring within that window, you cannot unstake to repay or extend it. Scenario: You vote on a disputed market on Monday at 3pm. Your loan expires Tuesday at 10am. You cannot unstake until Tuesday at 3pm — by then your collateral has been liquidated. **Before voting, check all loan expiry dates and ensure none fall within the next 24 hours.** Use `client.staking.getLoanDetails()` to verify.
+- 🛑 **Voting while holding an expiring loan** — After voting, your staked tokens are locked for 24 hours (`VOTE_LOCK_DURATION`). If you have a loan expiring within that window, you cannot unstake to repay or extend it. Scenario: You vote on a disputed market on Monday at 3pm. Your loan expires Tuesday at 10am. You cannot unstake until Tuesday at 3pm — by then your collateral has been liquidated. **Before voting, check all loan expiry dates and ensure none fall within the next 24 hours.** Use `client.staking.getUserStakeDetails(wallet)` to check your stake status, and `client.loans.getUserLoanDetails(wallet, hubId)` for hub loan expiry dates.
 
 ## Vesting Mistakes
 - ❌ **Setting start time to `now()`** → Already past by tx confirmation. Use `now() + 60`.
 - ❌ **Cliff under 1 hour** → Contract rejects. Minimum is 1 hour.
 
 ## General Mistakes
-- 🚨 **Transferring ANY token to another wallet** → Permanent disqualification from all rewards. Entire point balance wiped, irreversible. This applies to USDB, STASIS, factory tokens, Predict+ tokens — everything. All legitimate activity routes through platform contracts.
+- 🚨 **Transferring ANY token to another wallet** → Triggers automatic flagging, points suspended pending review.
+- ⚠️ **Receiving unsolicited tokens (griefing)** → Do NOT use them. Don't trade, stake, or interact with griefed tokens. Report the incident via support with your wallet address + tx hash. Your points are safe as long as you didn't initiate the transfer. If you accidentally used griefed tokens before noticing, document what happened and submit through the appeals process. This applies to USDB, STASIS, factory tokens, Predict+ tokens — everything. All legitimate activity routes through platform contracts. **Accidental transfers** (code bugs, wrong address) can be disputed and reinstated if there's no evidence of multi-wallet gaming. **Confirmed sybil activity** (funding other wallets, splitting activity across addresses) = permanent disqualification.
 - ❌ **Assuming loan IDs are 0-indexed** → They're 1-indexed.
 - ❌ **Not waiting between transactions** → BSC needs a few seconds between txs. The SDK uses viem which handles nonce management automatically for sequential calls, but rapid burst sequences (e.g., multiple buys in a loop) should `await` each transaction receipt before sending the next. If you hit nonce errors, add a small delay between transactions.
 - ❌ **Assuming new tokens are immediately in the API** → On-chain is instant, backend has a slight indexing delay.
