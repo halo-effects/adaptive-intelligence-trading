@@ -1,36 +1,41 @@
 # V14PM Live vs V14 Live — Critical Path Audit
-**Date:** 2026-03-19
-**Status:** ACTIVE — issues being fixed
+**Date:** 2026-03-19 | **Major revision:** 2026-03-21
+**Status:** RESOLVED — Exchange-as-truth architecture implemented 2026-03-21
 
 Systematic comparison of every critical path in the working old bot (`run_v14_live_aster.py`)
 versus the new PM bot (`run_v14_portfolio_live_aster.py`).
+
+> **2026-03-21 ARCHITECTURAL OVERHAUL:** Items 1–7, 10, 12, 14–16, 19 are all resolved by
+> the exchange-as-truth refactor. The engine no longer tracks positions — exchange API is the
+> single source of truth. LIVE GUARD, rollbacks, reconciliation, and engine-based position
+> tracking have been removed. See §21 below.
 
 ---
 
 ## Summary of Findings
 
-| # | Critical Path | Old Bot | PM Bot | Status |
+| # | Critical Path | Old Bot | PM Bot (post 2026-03-21) | Status |
 |---|---|---|---|---|
-| 1 | Engine capital management | ✅ Full capital, reset on startup | ❌ Fractional, drifts | **BROKEN** |
-| 2 | Startup reconciliation | ✅ eng.capital synced to exchange | ❌ Only router pools | **BROKEN** |
-| 3 | Periodic reconciliation | ✅ Every 5 min, auto-adjusts | ❌ None after startup | **MISSING** |
-| 4 | TP fill → capital return | ✅ eng.capital += proceeds | ⚠️ Complex correction path | **FRAGILE** |
-| 5 | Cash tracking (self.cash) | ✅ Independent tracker, synced | ❌ No equivalent | **MISSING** |
-| 6 | Capital ledger | ✅ Deposit/withdrawal tracking | ❌ Not implemented | **MISSING** |
-| 7 | Engine tick cash_available | ✅ Passes self.cash | ❌ Passes 0 | **WRONG** |
-| 8 | PID lock management | ✅ acquire/release with cleanup | ⚠️ Inline, no release on crash | **FRAGILE** |
-| 9 | Exchange client timeout | ✅ SpotExchangeClient has timeouts | ❌ ccxt.aster() had no timeout | **FIXED** (today) |
-| 10 | Equity computation | ✅ Exchange balance (API truth) | ✅ usdt_total + unrealized (fixed 03-20) | **FIXED** |
+| 1 | Engine capital management | ✅ Full capital, reset on startup | ✅ Engine synced from exchange every cycle | **RESOLVED** |
+| 2 | Startup reconciliation | ✅ eng.capital synced to exchange | ✅ Replaced by `_sync_positions_from_exchange()` | **RESOLVED** |
+| 3 | Periodic reconciliation | ✅ Every 5 min, auto-adjusts | ✅ Exchange sync every 65s cycle (replaces periodic recon) | **RESOLVED** |
+| 4 | TP fill → capital return | ✅ eng.capital += proceeds | ✅ Exchange shows zero next cycle; router returns capital | **RESOLVED** |
+| 5 | Cash tracking (self.cash) | ✅ Independent tracker, synced | ✅ `_exchange_usdt_free` from API every cycle | **RESOLVED** |
+| 6 | Capital ledger | ✅ Deposit/withdrawal tracking | ⚠️ Not implemented (exchange balance is truth) | **ACCEPTABLE** |
+| 7 | Engine tick cash_available | ✅ Passes self.cash | ✅ Passes allocated_capital (router-managed) | **RESOLVED** |
+| 8 | PID lock management | ✅ acquire/release with cleanup | ✅ File lock (msvcrt) with cleanup | OK |
+| 9 | Exchange client timeout | ✅ SpotExchangeClient has timeouts | ✅ 15s timeout on all API calls | **FIXED** |
+| 10 | Equity computation | ✅ Exchange balance (API truth) | ✅ usdt_total + unrealized from exchange | **RESOLVED** |
 | 11 | TP order recovery | ✅ Scans open orders on exchange | ⚠️ Only checks saved order IDs | **WEAKER** |
-| 12 | Deposit/withdrawal detection | ✅ Auto-detects via periodic recon | ❌ Not implemented | **MISSING** |
+| 12 | Deposit/withdrawal detection | ✅ Auto-detects via periodic recon | ✅ Exchange balance refreshed every cycle | **RESOLVED** |
 | 13 | Error handling in main loop | ✅ try/except with 30s backoff | ✅ try/except with 10s backoff | OK |
-| 14 | LIVE GUARD | ✅ Full rollback on TP conflict | ✅ Full rollback (Audit #1) | OK |
-| 15 | Pre-tick snapshot | ✅ Full snapshot + rollback | ✅ Full snapshot + rollback | OK |
-| 16 | Sell failure rollback | ✅ Full state + phantom trade trim | ✅ Same pattern | OK |
-| 17 | TP limit order placement | ✅ Uses exchange base_free for qty | ⚠️ Uses eng.long_coins for qty | **DIFFERENT** |
-| 18 | Phase change handling | ✅ Cancels TP, notifies | ❌ Not implemented | **MISSING** |
-| 19 | Status.json equity source | ✅ Exchange balance × price | ✅ usdt_total + unrealized (fixed 03-20) | **FIXED** |
-| 20 | Candle fetch | ✅ via SpotExchangeClient | ✅ Direct ccxt | OK (timeout now added) |
+| 14 | LIVE GUARD | ✅ Full rollback on TP conflict | ✅ Removed — exchange TP skipped if active | **RESOLVED** |
+| 15 | Pre-tick snapshot | ✅ Full snapshot + rollback | ✅ Removed — engine position overwritten next cycle | **RESOLVED** |
+| 16 | Sell failure rollback | ✅ Full state + phantom trade trim | ✅ Removed — engine position overwritten next cycle | **RESOLVED** |
+| 17 | TP limit order placement | ✅ Uses exchange base_free for qty | ✅ Uses exchange position qty | **RESOLVED** |
+| 18 | Phase change handling | ✅ Cancels TP, notifies | ✅ Cancels TP on phase change | **FIXED** |
+| 19 | Status.json equity source | ✅ Exchange balance × price | ✅ All fields from exchange API | **RESOLVED** |
+| 20 | Candle fetch | ✅ via SpotExchangeClient | ✅ Direct ccxt (timeout added) | OK |
 
 ---
 
@@ -283,3 +288,50 @@ Writes `cash` and `exchange_balance` to status.json.
 9. **Periodic cash tracking** — double-entry verification
 10. ~~**Equity computation**~~ — ✅ FIXED 2026-03-20 (commit 812d5264). **Post-mortem (2026-03-21):** Fix was on disk but not active for ~21 hours. Root cause: `.pyc` bytecode cache mtime (08:37:25) was 43 seconds newer than `.py` source mtime (08:36:42) due to git/auto-backup touching the file during an active editing session. Python skipped recompilation on every restart, serving stale bytecode with the old `fetch_balance()` (returns `usdt_free` ~$103) instead of the fixed `fetch_full_balance()` (returns `usdt_total` ~$351). Dashboard showed equity alternating between ~$103 (wrong, ~80% of syncs) and ~$346 (correct, when `fetch_open_positions()` compensated). Resolution: deleted stale `.pyc`, touched `.py`, restarted bot (PID 5036). **Lesson:** After code fixes to running bots, always delete `__pycache__/*.pyc` or use `python -B` to disable bytecode caching.
 11. **Pass real cash_available to engine tick** — not 0
+
+---
+
+## 21. Exchange-as-Truth Architecture Refactor (2026-03-21)
+
+**Root cause of all position-tracking bugs:** The PM Live bot inherited a paper-bot architecture
+where the engine tracks positions internally via candle simulation. Both the old V14 Live bot
+and the PM Live bot had this fundamental flaw — the engine maintained its own position state
+(long_coins, long_cost, long_avg_entry) that could diverge from exchange reality. The old bot
+hid this with a status-write override; the PM bot exposed it.
+
+**Symptom:** Engine state carried 68.17 GRASS tokens ($27 invested) from the original bot launch,
+while the exchange had 635.4 GRASS tokens ($247 invested). Status.json reported equity ~$103
+instead of ~$346. The -70% "drawdown" was entirely a display bug.
+
+**Investigation findings:**
+- Startup reconciliation briefly corrected engine to 635.4 coins, but something in the main loop
+  reverted it (suspected: daily rebalance or LIVE GUARD rollback)
+- Periodic reconciliation stopped firing after 10:43 AM (only 2 fires in 6+ hours)
+- The old bot's `_maybe_reconcile()` literally does nothing when a position is open ("not auto-adjusting")
+- Both bots used candle-tick-driven position simulation — wrong for live trading
+
+**Architectural change:**
+- `_sync_positions_from_exchange()` added — runs every main loop cycle (65s)
+- Overwrites engine position state (long_coins, long_cost, avg_entry, TP) from exchange API
+- `_write_status()` completely rewritten — ALL position/balance data from exchange API
+- Engine only contributes signal/phase state (DCA levels, phase transitions)
+- Layer tracking moved to `CoinState.layer_count` (persisted separately)
+
+**Removed (no longer needed):**
+- `_reconcile_with_exchange()` (~120 lines)
+- `_periodic_reconcile()` (~80 lines)
+- `_snapshot_engine()` / `_rollback_engine()` (~40 lines)
+- LIVE GUARD TP blocking (~15 lines)
+- Engine state correction after BUY/SELL fills (~40 lines)
+- Pre-tick snapshot in candle processing
+
+**Result:** Bot code is ~280 lines shorter. Status.json now shows correct data:
+- equity: $341.33 (was $103.17)
+- invested: $247.20 (was $27.03)
+- avg_entry: $0.389 (was $0.396)
+- pnl: +0.39% (was -70.52%)
+- All fields present: cash, exchange_balance, total_realized_pnl, timeframe
+
+**This resolves P0 items 1-3, P1 items 4-6, and P2 items 8-11 from the priority list above.**
+Capital management, reconciliation, cash tracking, and equity computation are all now derived
+from exchange API data rather than engine internal state.

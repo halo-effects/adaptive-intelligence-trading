@@ -35,11 +35,11 @@ Then it rotates to the next best opportunity. Rinse and repeat, 24/7.
 | Feature | What It Does | Why It Matters |
 |---------|-------------|----------------|
 | **1x Leverage** | No borrowing, no liquidation risk | You can't lose more than you put in |
-| **Exchange Is Truth** | All decisions verified against actual exchange data | Engine bugs can't cause phantom trades |
-| **LIVE GUARD** | Exchange handles take-profit, not the bot | Even if the bot crashes, your TP order sits on the exchange |
+| **Exchange Is Truth** | Position state synced from exchange every 65s cycle | Engine can never diverge from reality |
+| **Resting Limit Orders** | Exchange handles take-profit, not the bot | Even if the bot crashes, your TP order sits on the exchange |
 | **Human Approval** | Direction changes require Telegram confirmation | The bot never flips strategy on its own |
 | **PAUSE/RESUME** | Freeze all trading with one command | Instant kill switch, existing TPs stay active |
-| **Startup Reconciliation** | Compares internal state vs exchange balance on every restart | Catches any drift from crashes or manual intervention |
+| **No Engine Position Tracking** | Engine doesn't maintain its own position state | Eliminates entire class of drift/divergence bugs |
 
 ### How Capital Flows
 
@@ -70,19 +70,20 @@ As equity grows, more coins trade simultaneously:
 |-----------|------|---------|
 | **Cycle Scanner** | Ranks coins by DCA efficiency | The talent scout |
 | **Capital Router** | Allocates money across coins | The portfolio manager |
-| **DCA Grid Engine** | Executes buy/sell layers | The trader |
+| **DCA Grid Engine** | Generates buy/sell signals from candle data | The analyst |
+| **Exchange Sync** | Overwrites engine state from exchange every cycle | The auditor |
 | **Regime Monitor** | Watches for market-wide shifts | The risk officer |
-| **LIVE GUARD** | Ensures exchange orders are authoritative | The auditor |
 | **Telegram Interface** | Human oversight and commands | The control panel |
 | **Dashboard** | Real-time visualization on GitHub Pages | The scoreboard |
 
-### Current Status (2026-03-19)
+### Current Status (2026-03-21)
 
-- **Live on Aster Perps** with $350 real USDT
+- **Live on Aster Perps** with ~$340 real USDT
 - Scanner selected GRASS/USDT as first coin (top 30d DCA scorer)
 - 1 coin slot at current equity; scales to 10 as equity grows
-- All safeguards active: LIVE GUARD, reconciliation, resting limit orders
-- Telegram commands operational: PAUSE, RESUME, CLOSE, APPROVE, DENY
+- **Exchange-as-truth architecture** (2026-03-21): positions synced from exchange every cycle
+- Resting limit orders for TP execution, Telegram commands operational
+- Dashboard shows correct exchange-derived equity, invested, and P&L
 
 ---
 
@@ -882,18 +883,37 @@ be identified and removed by comparing `recorded_at` vs `close_time`.
 ### 6.8 Live Trading Safeguards
 
 > **This section is the authoritative reference for all live bot exchange interaction patterns.**
-> All of the following were implemented in response to incidents on 2026-03-17 and 2026-03-18.
-> See §17 for incident records.
+> **Major revision 2026-03-21:** Exchange-as-truth architecture replaces LIVE GUARD, engine
+> rollbacks, and reconciliation. See §6.8.1 for the new architecture.
 
-#### 6.8.1 LIVE GUARD
+#### 6.8.1 Exchange-as-Truth Architecture (2026-03-21)
 
-When `_tp_order_id` is set (exchange limit order active), engine-initiated TP sells are **BLOCKED**
-and all engine state mutations from that tick are **ROLLED BACK** to pre-tick values. The engine
-cannot override an active exchange TP order via its internal TP detection.
+The live PM bot uses the exchange API as the **single source of truth** for all position data.
+Every main loop cycle (65 seconds), `_sync_positions_from_exchange()` overwrites the engine's
+internal position state (long_coins, long_cost, avg_entry, TP level) from the exchange API.
 
-Only non-TP exits (phase close, signal exit) can go through while a limit order is live. These
-are conscious strategic exits, not automated TP fills — they may cancel the TP order as part of
-a phase transition, which is intentional.
+**What the engine does:** Signal generation only — processes candles to decide WHEN to buy/sell
+(DCA levels, TP targets, phase transitions).
+
+**What the engine does NOT do:** Track positions. All position data comes from the exchange.
+The engine's internal position fields are ephemeral — overwritten from exchange every cycle.
+
+**What was removed (no longer needed):**
+- LIVE GUARD (engine TP blocking when exchange order active)
+- Pre-tick snapshots and engine state rollbacks
+- Startup reconciliation (`_reconcile_with_exchange()`)
+- Periodic reconciliation (`_periodic_reconcile()`)
+- Engine state correction after BUY/SELL fills
+
+**Why:** The previous architecture inherited from the paper bot, where the engine simulates
+positions from candle ticks. In live trading, this created two sources of truth that constantly
+diverged. LIVE GUARD, rollbacks, and reconciliation were all patches to manage this divergence.
+The 2026-03-21 refactor eliminates the divergence entirely by making the engine's position state
+ephemeral and exchange-derived.
+
+**Layer tracking:** Since the exchange doesn't know about DCA layers, `CoinState.layer_count`
+is tracked separately — incremented on confirmed BUY fill, reset on confirmed SELL fill.
+Persisted in `state.json`.
 
 #### 6.8.2 Resting Limit Orders as Primary TP Mechanism
 
@@ -904,28 +924,29 @@ a **fallback**, not the primary path.
 Sequence:
 1. BUY fill → cancel any existing TP limit order
 2. Place new limit sell at updated TP price for full position size
-3. Persist `_tp_order_id` in `state.json`
-4. Each poll cycle: check order status; if filled, sync engine state and clear `_tp_order_id`
+3. Persist `tp_order_id` in CoinState
+4. Each poll cycle: check order status; if filled, record trade and clear `tp_order_id`
+5. If engine also detects TP via candle tick while exchange order active → skip (exchange handles it)
 
 #### 6.8.3 Fill Price Handling
 
 Exchange fill prices are always used. **Engine TP prices are never used as fill price substitutes.**
 If the exchange API does not return a fill price, the current ticker price is fetched as fallback.
-Engine prices are never the fallback — this was the root cause of incorrect bookkeeping in the
-2026-03-18 incident.
 
 #### 6.8.4 PnL from Actual Exchange Fills
 
-All PnL and capital accounting uses actual exchange proceeds. Engine TP-price math is not
-used for PnL calculation. This ensures `trades.csv` accurately reflects real performance,
-not the engine's internal TP-price expectations.
+All PnL and capital accounting uses actual exchange proceeds. `trades.csv` reflects real
+exchange fills, not engine simulations.
 
-#### 6.8.5 Engine State Rollback on Blocked TP
+#### 6.8.5 Status.json — Exchange Data Only
 
-When LIVE GUARD blocks an engine TP sell, all engine state mutations from that tick are
-rolled back — position quantities, capital, PnL accumulators, and phase state all revert
-to pre-tick values. The engine returns to its state before the blocked tick, preserving
-consistency until the exchange limit order fills and syncs the engine.
+All fields in `status.json` come from the exchange API:
+- `equity` = `usdt_total + unrealized_pnl`
+- `cash` = `usdt_free`
+- `invested` = `sum(entry_price × qty)` per position
+- `exchange_balance` = `{usdt_free, usdt_total}`
+- Per-coin: `avg_entry`, `position_size`, `unrealized_pnl` from exchange positions
+- Engine contributes only: `phase`, `lifecycle_phase`, signal state
 
 #### 6.8.6 Human-in-the-Loop for Long↔Short Direction Changes
 
@@ -962,11 +983,17 @@ OHLC data sequentially and cannot gap above TP in this way.
 ```
 run_v14_portfolio_live_aster.py
     │
-    ├─ V14LifecycleEngine × N coins   (one instance per active slot)
+    ├─ _sync_positions_from_exchange()  (runs every 65s cycle)
+    │    └─ Overwrites engine position state from exchange API
+    │         └─ Engine position fields are ephemeral, not authoritative
+    │
+    ├─ V14LifecycleEngine × N coins   (signal generation only)
+    │    └─ Processes candles → decides WHEN to buy/sell
+    │         └─ Does NOT track positions (overwritten by exchange sync)
     │
     ├─ CapitalRouter                   (v14_capital_manager.py)
-    │    ├─ active_pool   (75% of equity)
-    │    └─ reserve_pool  (25% of equity)
+    │    ├─ active_pool   (90% of equity)
+    │    └─ reserve_pool  (10% of equity)
     │
     ├─ Portfolio Regime Monitor        (global direction governance)
     │    ├─ ROUTER v2 signals × 50 coins (daily evaluation)
@@ -978,20 +1005,20 @@ run_v14_portfolio_live_aster.py
     │    ├─ PAUSE / RESUME             (trading freeze)
     │    └─ CLOSE <COIN> / CLOSE ALL   (manual position override)
     │
-    ├─ SpotExchangeClient              (Aster Perps via CCXT)
-    │    ├─ LIVE GUARD                 (engine can't override exchange TP)
+    ├─ AsterPerpClient                 (Aster Perps via CCXT)
     │    ├─ Resting limit orders       (exchange handles TP)
-    │    └─ Fill price from exchange   (never engine fallback)
+    │    ├─ Fill price from exchange   (never engine fallback)
+    │    └─ Position + balance queries (source of truth)
     │
     └─ Cycle Scanner JSON              (docs/data/v14/cycle_scanner.json)
          └─ Adjusted Score = DCA Score × Trend Multiplier
 ```
 
-> **Build approach (decided 2026-03-19):** The live PM bot is built from
-> `run_v14_live_aster.py` (proven execution layer) with PM components added.
-> NOT from the paper runner with live execution grafted on. The live Aster bot
-> has every hard-won safeguard (LIVE GUARD, resting limit orders, fill price
-> handling, reconciliation) already battle-tested with real money.
+> **Architecture (revised 2026-03-21):** Exchange-as-truth. Engine is used for signal
+> generation only; all position data comes from the exchange API every cycle. LIVE GUARD,
+> rollbacks, and reconciliation have been removed — they were patches for a paper-bot
+> architecture that shouldn't exist in live trading. Resting limit orders and fill price
+> handling remain as proven exchange-interaction patterns.
 
 ### 7.2 CapitalRouter — Allocation Rules
 
@@ -1633,11 +1660,14 @@ Production exchange is **Aster DEX Perpetuals** at 1x leverage. Decision D1.
 - Enable full portfolio rotation
 - Add regime monitor + wind-down + Telegram governance
 
-**Phase 3 (medium-term):** Exchange-as-truth architecture
-- WebSocket fill listener (replaces 65-second polling)
-- Database as position truth (replaces state.json + trades.csv)
-- Order Manager service (replaces engine-embedded order logic)
-- Dashboard reads from DB instead of synced JSON files
+**Phase 3 (medium-term):** Exchange-as-truth architecture — **PARTIALLY IMPLEMENTED (2026-03-21)**
+- ✅ Exchange API as single source of truth for positions and balances (implemented)
+- ✅ Engine position state overwritten from exchange every cycle (implemented)
+- ✅ Status.json fully derived from exchange data (implemented)
+- ⬜ WebSocket fill listener (replaces 65-second polling) — not yet
+- ⬜ Database as position truth (replaces state.json + trades.csv) — not yet
+- ⬜ Order Manager service (replaces engine-embedded order logic) — not yet
+- ⬜ Dashboard reads from DB instead of synced JSON files — not yet
 
 **Phase 4 (optional):** Cloud migration for reliability
 - Move proven bot to always-on cloud server
@@ -1757,5 +1787,6 @@ _Document generated by Gee Gee — 2026-03-09_
 _Updated: 2026-03-10 (v1.2 — CSV-as-truth, exchange API equity, --fresh loads existing trades)_
 _Updated: 2026-03-18 (v1.3 — LIVE GUARD, resting limit orders, fill price fix, TP catch-up, V14-ETF retirement, production architecture target, incident log §17)_
 _Updated: 2026-03-19 (v1.4 — Production architecture locked: Aster Perps, 50-coin universe, unified profile, global direction, regime monitor §7.5, wind-down §7.6, PAUSE/RESUME §7.7, Telegram commands §7.8, funding rate §7.9, exchange client updates §8, env vars §12, CLI §13, migration strategy §16.4)_
+_Updated: 2026-03-21 (v1.5 — Exchange-as-truth architecture: removed LIVE GUARD, engine rollbacks, reconciliation. Exchange API is single source of truth for positions and balances. §6.8 rewritten, §7.1 architecture updated, §16.4 Phase 3 partially implemented.)_
 _Decisions reference: PRODUCTION_DECISIONS_2026-03-19.md_
-_Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_
+_Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md, V14PM_VS_V14_LIVE_AUDIT.md_

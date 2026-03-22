@@ -905,6 +905,13 @@ class V14PortfolioLiveAster:
                 tp_pct = eng.cfg.DCA_TP_PCT if hasattr(eng, 'cfg') and hasattr(eng.cfg, 'DCA_TP_PCT') else 0.015
                 eng.long_tp = ex_entry * (1 + tp_pct)
                 # Sync layer count from CoinState tracker (not engine internal)
+                # If layer_count is 0 but exchange has a position, derive from engine state
+                if cs.layer_count == 0 and ex_qty > 0:
+                    # Engine's long_layers from state restore is our best estimate
+                    if eng.long_layers > 0:
+                        cs.layer_count = eng.long_layers
+                    else:
+                        cs.layer_count = max(1, eng.long_layers)  # At least 1 if exchange has position
                 eng.long_layers = cs.layer_count
             else:
                 eng.long_coins = 0.0
