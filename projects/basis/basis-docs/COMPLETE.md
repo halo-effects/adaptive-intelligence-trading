@@ -1049,14 +1049,14 @@ result = client.staking.buy(100 * 10**18)
 ---
 
 ### `borrow(stasisAmount, days)` - Borrow Against Vault
-**What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap â†’ lock â†’ borrow) - your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units** (not wSTASIS shares) - the contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
+**What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap â†’ lock â†’ borrow) - your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units, raw 18 decimals** (not wSTASIS shares) â€” e.g., `parseUnits("50", 18)` for 50 STASIS. The contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
 **Module:** `client.staking`
 **Fee:** 2% flat origination fee + 0.005% daily interest
 **Earns airdrop points** - a one-time bonus at origination plus daily accrual while active.
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `stasisAmount` | bigint/int | STASIS-denominated amount to pledge as collateral (converted from wSTASIS shares internally using the current exchange ratio) |
+| `stasisAmount` | bigint/int | STASIS-denominated amount to pledge as collateral (raw units, 18 decimals â€” e.g., `parseUnits("50", 18)` for 50 STASIS) (converted from wSTASIS shares internally using the current exchange ratio) |
 | `days` | bigint/int | Loan duration in days |
 
 ---
@@ -1356,6 +1356,8 @@ result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 
 **What it does:** Claims winnings from a resolved prediction market. Winners split the entire losing pool.
 **Module:** `client.predictionMarkets`
 
+**Returns:** Transaction receipt. The redeemed USDB amount can be read from the transaction's Transfer event logs. Parse with: `const redeemed = parseEventLogs({ abi: erc20Abi, logs: receipt.logs }).find(e => e.eventName === 'Transfer' && e.args.to === wallet)?.args.value`
+
 ---
 
 ### `buyOrdersAndContract(marketToken, outcomeId, orderIds, inputToken, totalInput, minShares)`
@@ -1514,6 +1516,8 @@ for (const market of needsProposal) {
 **What it does:** Proposes the winning outcome for a market past its end time. Auto-approves 5 USDB for proposal bond. If uncontested after the challenge period, the proposer gets bond back + 100% of bounty pool.
 **Module:** `client.resolver`
 
+> **Alias:** Also available as `client.resolver.propose()` â€” identical behavior.
+
 ---
 
 ### `dispute(marketToken, newOutcomeId)`
@@ -1529,6 +1533,12 @@ for (const market of needsProposal) {
 **What it does:** Casts a vote during a dispute round. Requires prior staking of â‰¥5 tokens via `stake()`. One vote per staker - staking more doesn't give more votes.
 **Module:** `client.resolver`
 **Note:** Ties or insufficient quorum cause finalization to revert ("Tie - vote more"). If the voting period ends without quorum or 70% consensus, the market simply waits for more voters â€” the voting period effectively stays open until enough participants vote to reach quorum and break the tie. Bonds remain locked until resolution completes.
+
+---
+
+### `stakeAndVote(marketToken, outcomeId)`
+**What it does:** Composite helper that stakes tokens and casts a vote in a single transaction. Equivalent to calling `stake()` then `vote()` separately, but saves gas. Auto-approves the stake amount.
+**Module:** `client.resolver`
 
 ---
 
@@ -1600,6 +1610,8 @@ for (const market of needsProposal) {
 | `MIN_STAKE_AMOUNT` | 5 tokens (1e18) | Minimum stake to vote |
 | `VOTE_LOCK_DURATION` | 1 day (86400 seconds) | How long staked tokens are locked after voting. Readable on-chain from the MarketResolver contract. âš ï¸ **If you vote, you cannot unstake for 24 hours.** Factor this into capital allocation â€” don't stake tokens you need liquid access to within the next day. |
 
+> `configResolver` is an admin-only function for adjusting these timing parameters. Agents cannot call it directly but should read current values from the contract at runtime rather than hardcoding, as periods may change between phases.
+
 **Note on staking:** The current resolver staking (STASIS tokens) is a placeholder anti-spam threshold. Post-TGE, this transitions to BASIS token staking - stakers who earn yield from the platform also serve as the dispute resolution voting body. The economic alignment is intentional: the people benefiting most from platform health are the ones ensuring prediction markets resolve honestly.
 
 ---
@@ -1617,6 +1629,8 @@ Private prediction markets with restricted access. Extends all Prediction Market
 | Param | Type | Description |
 |-------|------|-------------|
 | `privateEvent` | boolean | When true, restricts who can buy shares - only whitelisted wallets can participate until toggled via `togglePrivateEventBuyers()`. |
+
+> **Note:** Private markets do not currently support `createMarketWithMetadata()`. Use `createMarket()` and set metadata via the off-chain API separately.
 
 ---
 
@@ -2100,6 +2114,38 @@ Backend data endpoints - read token data, trade history, order books, manage aut
 - Step 4 (vault refinance): â†’ see: `staking.extendLoan()` with `refinance=true`
 - Optimal: extend don't re-originate â€” â†’ see: [09-fees.md](09-fees.md) for cost comparison
 
+---
+
+## Position Sizing Guidance
+
+Before entering any position, use `getAmountsOut()` to estimate price impact and size accordingly:
+
+```js
+// Check how much 1% of your target position moves the price
+const testAmount = targetAmount / 100n; // 1% probe
+const testOutput = await client.trading.getAmountsOut(testAmount, path);
+const testRate = testOutput * 100n / testAmount; // effective rate per unit
+
+// Now check full position
+const fullOutput = await client.trading.getAmountsOut(targetAmount, path);
+const fullRate = fullOutput * 100n / targetAmount;
+
+// Price impact = difference between small and full rate
+const impactBps = (testRate - fullRate) * 10000n / testRate; // in basis points
+console.log(`Price impact: ${Number(impactBps)}bp (${Number(impactBps)/100}%)`);
+
+// Rule of thumb:
+// < 50bp (0.5%) â€” good, standard trade
+// 50-200bp (0.5-2%) â€” acceptable for conviction plays
+// > 200bp (2%+) â€” consider splitting into multiple smaller trades
+```
+
+**Key factors:**
+- `startLP` determines pool depth â€” higher startLP = less impact per trade
+- Stable+ tokens retain 100% of sell value in pool, so pools only grow â€” impact decreases over time
+- Floor+ tokens retain partial value â€” impact decreases but more slowly
+- All trades route through STASIS, so STASIS pool depth matters too
+
 
 ---
 
@@ -2319,6 +2365,31 @@ All trades route through STASIS. No direct token-to-token swaps.
 
 **Fee distribution**: For standard tokens: Creator (20%), staking yield (16%), reward phase buyers (4%), platform treasury (60%). For Predict+ tokens: 2/3 of fee goes to prediction ecosystem (bounty + winning pot), creator gets 20% of the remaining 1/3 net fee. See [09-fees.md](09-fees.md) for the full Predict+ breakdown.
 
+### AMM Pricing Mechanics
+
+Basis uses a **modified constant-product AMM** (similar to Uniswap V2's `x Ã— y = k`), but with a critical modification: the `hybridMultiplier` parameter controls how much of each sell's value is retained in the pool versus returned to the seller.
+
+**How it works:**
+- **Buys** work like a standard AMM â€” you send USDB, receive tokens, price increases along the curve
+- **Sells** are where Basis diverges: a portion of the sell value stays in the pool (slippage retention), which maintains or increases the reserves
+- The `hybridMultiplier` (1-100) controls the retention rate:
+  - **multiplier=100 (Stable+/Predict+):** 100% retention â€” ALL sell value stays in the pool. Price never drops. "Up-only."
+  - **multiplier=1 (Floor+):** Minimal retention â€” most sell value returns to seller, but some stays, creating a rising floor price
+  - **multiplier=45 (mid Floor+):** Moderate retention â€” balanced between seller return and floor accumulation
+
+**How `startLP` initializes reserves:** When a creator sets `startLP` (e.g., $1,000), the contract:
+1. Converts that dollar value to STASIS at the current STASIS price (e.g., $1,000 â†’ 837 STASIS at $1.19/STASIS)
+2. Sets the token side of the pool so the starting price = $1 per token (e.g., 837 STASIS : 1,000 tokens)
+3. This creates a standard AMM pair, but with the `hybridMultiplier` modifying how sells affect reserves going forward
+
+Higher `startLP` = deeper pool = less price impact per trade. The `startLP` table in [01-what-is-basis.md](01-what-is-basis.md) shows empirical price impact per LP-equivalent buy at each multiplier level.
+
+**Price impact formula:** Use `getAmountsOut(amount, path)` to preview exact output for any trade size. The contract handles the multiplier-adjusted calculation internally.
+
+**Why this matters for agents:** Standard AMM arbitrage assumptions don't apply. On Stable+ tokens, selling doesn't lower the price â€” it literally can't. On Floor+ tokens, the floor rises with every sell. Model your strategies accordingly.
+
+---
+
 **Reward phase vs post-reward-phase**:
 - Tokens are tradeable on the DEX from the moment of creation - the same hybrid AMM formula runs forever with no transition
 - The **reward phase** is the initial period where early buyers earn reward shares (claimable via `claimRewards()`) and boosted airdrop points
@@ -2365,7 +2436,7 @@ All trades route through STASIS. No direct token-to-token swaps.
 >
 > **Why this matters:** It's impossible to quote a fixed APY because it changes with platform activity and staking participation. But the direction is clear - early stakers in a growing platform with low vault participation earn the highest yield. As volume increases, total yield grows. As more people stake, individual yield moderates. The market finds its own equilibrium.
 >
-> **Cost to participate:** Gas only. Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the ~0.81% swap fee when buying STASIS and again when selling - a ~1.62% round trip. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
+> **Cost to participate:** Gas only. Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the 0.5% raw swap fee when buying STASIS and again when selling (~1% raw fees round-trip) plus variable slippage on both legs. Slippage depends on transaction size and pool liquidity â€” use `getAmountsOut()` to preview actual costs. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
 
 Three layers:
 
@@ -3814,7 +3885,7 @@ Returns: `{ data: Trade[], pagination: { limit, hasMore, nextCursor } }`
   "id": 500,
   "type": "buy",
   "amountToken": "1000000000000000000",
-  "amountUSDC": "5000000",
+  "amountUSDC": "5000000000000000000",
   "user": "0x...",
   "price": "0.005",
   "txHash": "0x...",
@@ -3849,7 +3920,7 @@ Returns: `{ data: Order[], pagination }`
   "seller": "0x...",
   "outcomeId": 0,
   "amount": "1000000000000000000",
-  "pricePerShare": "500000",
+  "pricePerShare": "500000000000000000",
   "status": "ACTIVE",
   "createdAt": "2026-03-13T12:00:00.000Z"
 }
@@ -3909,7 +3980,7 @@ Get whitelist entries for a frozen token, or check a specific wallet.
   "whitelisted": true,
   "entry": {
     "walletAddress": "0x...",
-    "buyAmount": "1000000",
+    "buyAmount": "1000000000000000000",
     "note": "Early supporter",
     "txHash": "0x...",
     "timestamp": "2026-01-01T00:00:00.000Z"
@@ -3922,7 +3993,7 @@ Get whitelist entries for a frozen token, or check a specific wallet.
 ```json
 {
   "data": [
-    { "walletAddress": "0x...", "buyAmount": "1000000", "note": null, "txHash": "0x...", "timestamp": "..." }
+    { "walletAddress": "0x...", "buyAmount": "1000000000000000000", "note": null, "txHash": "0x...", "timestamp": "..." }
   ],
   "pagination": { "total": 50, "page": 1, "limit": 20, "hasMore": true }
 }
@@ -3952,7 +4023,7 @@ Returns: `{ data: Transaction[], pagination: { limit, hasMore, nextCursor } }`
   "contractAddress": "0x...",
   "type": "buy",
   "amountToken": "1000000000000000000",
-  "amountUSDC": "5000000",
+  "amountUSDC": "5000000000000000000",
   "price": "0.005",
   "txHash": "0x...",
   "blockNumber": 12345678,
@@ -3984,7 +4055,7 @@ Returns: `{ data: LiquidityEntry[], pagination: { limit, hasMore, nextCursor } }
   "buyer": "0x...",
   "outcomeId": 0,
   "shares": "500000000000000000",
-  "usdcSpent": "2500000",
+  "usdcSpent": "2500000000000000000",
   "tradeType": "buy",
   "newReserve": "10000000000000000000",
   "newTotalReserve": "25000000000000000000",
@@ -4248,6 +4319,8 @@ Real mistakes discovered during live SDK testing.
 - âŒ **Calling `partialLoanSell` too soon after `leverageBuy`** â†’ The backend needs ~5 seconds to sync the new position. If you call `partialLoanSell` immediately after `leverageBuy`, it may fail silently because the backend hasn't indexed the position yet. Always wait at least 5 seconds between creating a leverage position and partially selling it.
 - âŒ **Letting a loan expire and forgetting to claim** â†’ When a loan expires, collateral is burned to cover the debt. But any remaining collateral value ABOVE the debt is claimable via `claimLiquidation(hubId)` â€” it is NOT automatically returned. If you intentionally let loans expire (e.g., underwater positions), set up a monitoring loop to claim leftovers. Unclaimed value sits in the contract indefinitely.
 
+- ðŸ›‘ **Forgetting a loan expiry** â€” When a loan expires, your collateral is NOT automatically returned. It sits in the contract until you call `claimLiquidation()`. Meanwhile, the underlying token's price may drop. Worst case: you forget for weeks, token drops 80%, and you claim back 20% of original value. **Set calendar reminders for loan expiry dates. In production, implement an automated check:** query `getLoanDetails()` and alert when `expiryTime - now < 48 hours`.
+
 ## Vault Mistakes
 - âŒ **Not calculating your break-even** â†’ Factor in gas costs (~$0.50-1.00 entry/exit) plus ~1% raw swap fees + slippage both ways. Use `getAmountsOut()` to estimate actual costs. Calculate whether expected yield exceeds total costs for your position size.
 - âŒ **Staking for hours** â†’ Need enough yield to cover round-trip fees + slippage. Give it days.
@@ -4262,6 +4335,8 @@ Real mistakes discovered during live SDK testing.
 - âŒ **Trying to fill your own order** â†’ Contract rejects ("Cannot fill own order").
 - âŒ **Selling immediately after resolution** â†’ Price goes UP as others sell (burn â†’ slippage retention). Wait.
 - âŒ **Proposing an outcome without understanding bond risk** â†’ Your 5 USDB proposal bond is lost if someone disputes and the vote goes against you. The disputer's bond is also at risk. Only propose outcomes you're confident about. If neither party is correct, both bonds go to the insurance fund.
+
+- ðŸ›‘ **Voting while holding an expiring loan** â€” After voting, your staked tokens are locked for 24 hours (`VOTE_LOCK_DURATION`). If you have a loan expiring within that window, you cannot unstake to repay or extend it. Scenario: You vote on a disputed market on Monday at 3pm. Your loan expires Tuesday at 10am. You cannot unstake until Tuesday at 3pm â€” by then your collateral has been liquidated. **Before voting, check all loan expiry dates and ensure none fall within the next 24 hours.** Use `client.staking.getLoanDetails()` to verify.
 
 ## Vesting Mistakes
 - âŒ **Setting start time to `now()`** â†’ Already past by tx confirmation. Use `now() + 60`.
@@ -4438,6 +4513,18 @@ human_token = Web3.from_wei(100000000000000000000, "ether") # 100
 > const result = await client.trading.buyTokens(amount, minOut, path, false);
 > ```
 > Without slippage protection, your trades are vulnerable to sandwich attacks and price movement between simulation and execution.
+>
+> **Python equivalent:**
+> ```python
+> def with_slippage(expected_out, tolerance_percent=1):
+>     """Calculate minimum output with slippage tolerance."""
+>     return expected_out * (100 - tolerance_percent) // 100
+>
+> # Usage:
+> preview = client.trading.get_amounts_out(amount, path)
+> min_out = with_slippage(preview, 2)  # 2% tolerance
+> result = client.trading.buy_tokens(amount, min_out, path, False)
+> ```
 
 ---
 
@@ -4519,9 +4606,21 @@ async function tradeTokens() {
   ]);
   console.log("Expected output for 5 USDB:", preview);
 
-  // Buy with 5 USDB
-  const buyResult = await client.trading.buy(TOKEN, fiveUsdb);
-  console.log("Bought tokens:", buyResult.hash);
+  // Buy with 5 USDB â€” with slippage protection and error handling
+  const minOut = withSlippage(preview, 2); // 2% tolerance on previewed output
+  try {
+    const buyResult = await client.trading.buy(TOKEN, fiveUsdb, minOut);
+    console.log("Bought tokens:", buyResult.hash);
+  } catch (e) {
+    if (e.message.includes("slippage")) {
+      console.log("Slippage exceeded â€” retrying with higher tolerance");
+      const retryMinOut = withSlippage(preview, 5); // 5% on retry
+      const buyResult = await client.trading.buy(TOKEN, fiveUsdb, retryMinOut);
+      console.log("Bought on retry:", buyResult.hash);
+    } else {
+      throw e; // Re-throw unexpected errors
+    }
+  }
 
   // Sell 50% of holdings (no amount needed â€” reads balance automatically)
   const sellResult = await client.trading.sellPercentage(TOKEN, 50);
@@ -4548,7 +4647,9 @@ def trade_tokens():
     ])
     print("Expected output for 5 USDB:", preview)
 
-    buy_result = client.trading.buy(TOKEN, FIVE_USDB)
+    # Buy with slippage protection
+    min_out = preview * 98 // 100  # 2% slippage tolerance
+    buy_result = client.trading.buy(TOKEN, FIVE_USDB, min_out)
     print("Bought tokens:", buy_result["hash"])
 
     # Sell 50% of holdings (no amount needed â€” reads balance automatically)
@@ -4588,9 +4689,17 @@ async function predictionMarket() {
   console.log("Market created:", market.hash);
   const marketToken = market.marketTokenAddress;
 
-  // 2. Buy "Yes" shares (outcomeId 0) with 5 USDB
+  // 2. Buy "Yes" shares (outcomeId 0) with 5 USDB â€” with slippage protection
+  const fiveUsdb = parseUnits("5", 18);
+  // Preview: check current share price to estimate expected output
+  const outcomes = await client.marketReader.getAllOutcomes(
+    "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", marketToken
+  );
+  const yesPrice = outcomes[0].pricePerShare; // raw 18-decimal price
+  const expectedShares = fiveUsdb * BigInt(1e18) / yesPrice;
+  const minShares = withSlippage(expectedShares, 2); // 2% tolerance
   const buyResult = await client.predictionMarkets.buy(
-    marketToken, 0, USDB, parseUnits("5", 18), 0n, 0n // âš ï¸ minOut=0 for simplicity â€” use withSlippage() in production
+    marketToken, 0, USDB, fiveUsdb, minShares, 0n
   );
   console.log("Bought Yes shares:", buyResult.hash);
 
@@ -4628,7 +4737,15 @@ def prediction_market():
     )
     market_token = market["market_token_address"]
 
-    buy_result = client.prediction_markets.buy(market_token, 0, USDB, 5_000_000_000_000_000_000, 0, 0)  # 5 USDB
+    # Buy with slippage protection
+    five_usdb = 5_000_000_000_000_000_000
+    outcomes = client.market_reader.get_all_outcomes(
+        "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", market_token
+    )
+    yes_price = int(outcomes[0]["pricePerShare"])
+    expected_shares = five_usdb * 10**18 // yes_price
+    min_shares = expected_shares * 98 // 100  # 2% slippage tolerance
+    buy_result = client.prediction_markets.buy(market_token, 0, USDB, five_usdb, min_shares, 0)
     print("Bought Yes shares:", buy_result["hash"])
 
     shares = client.prediction_markets.get_user_shares(
@@ -4663,8 +4780,10 @@ async function leverageTrading() {
   const sim = await client.leverageSimulator.simulateLeverage(parseUnits("10", 18), path, 7n);
   console.log("Simulation:", sim);
 
-  // 2. Open the leverage position (10 USDB, 7 days)
-  const openResult = await client.trading.leverageBuy(parseUnits("10", 18), 0n, path, 7n); // âš ï¸ minOut=0 for simplicity â€” use withSlippage() in production
+  // 2. Open the leverage position (10 USDB, 7 days) â€” with slippage protection
+  const expectedOut = await client.trading.getAmountsOut(parseUnits("10", 18), path);
+  const minOut = withSlippage(expectedOut, 3); // 3% tolerance for leverage (multi-hop)
+  const openResult = await client.trading.leverageBuy(parseUnits("10", 18), minOut, path, 7n);
   console.log("Position opened:", openResult.hash);
 
   // 3. Wait for the next block (required to avoid same-block revert)
@@ -4678,8 +4797,12 @@ async function leverageTrading() {
   const position = await client.trading.getLeveragePosition(walletAddress, positionId);
   console.log("Position:", position);
 
-  // 5. Partially close (sell 50%)
-  const closeResult = await client.trading.partialLoanSell(positionId, 50, true, 0); // âš ï¸ minOut=0 for simplicity
+  // 5. Partially close (sell 50%) â€” with slippage protection
+  // Estimate output from selling 50% of position tokens
+  const sellAmount = position.collateral / 2n;
+  const sellPreview = await client.trading.getAmountsOut(sellAmount, [MAINTOKEN, USDB]);
+  const sellMinOut = withSlippage(sellPreview, 2);
+  const closeResult = await client.trading.partialLoanSell(positionId, 50, true, sellMinOut);
   console.log("Partially closed:", closeResult.hash);
 }
 ```
@@ -4700,7 +4823,10 @@ def leverage_trading():
     sim = client.leverage_simulator.simulate_leverage(10_000_000_000_000_000_000, path, 7)
     print("Simulation:", sim)
 
-    open_result = client.trading.leverage_buy(10_000_000_000_000_000_000, 0, path, 7)  # 10 USDB
+    # Open with slippage protection
+    expected_out = client.trading.get_amounts_out(10_000_000_000_000_000_000, path)
+    min_out = expected_out * 97 // 100  # 3% tolerance for leverage
+    open_result = client.trading.leverage_buy(10_000_000_000_000_000_000, min_out, path, 7)
     print("Position opened:", open_result["hash"])
 
     time.sleep(5)
@@ -4711,7 +4837,10 @@ def leverage_trading():
     position = client.trading.get_leverage_position(client.wallet_address, position_id)
     print("Position:", position)
 
-    close_result = client.trading.partial_loan_sell(position_id, 50, True, 0)
+    # Partial close with slippage protection
+    sell_preview = client.trading.get_amounts_out(int(position["collateral"]) // 2, [MAINTOKEN, USDB])
+    sell_min_out = sell_preview * 98 // 100  # 2% tolerance
+    close_result = client.trading.partial_loan_sell(position_id, 50, True, sell_min_out)
     print("Partially closed:", close_result["hash"])
 ```
 
@@ -4939,7 +5068,8 @@ client = BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"])
 print("âœ… Client initialized")
 
 # 2. Claim USDB from on-chain faucet (one-time, 10K USDB per wallet)
-# Raw web3.py call to the USDB faucet function
+# NOTE: The Python SDK does not yet wrap the faucet â€” use raw web3.py for this one call.
+# The JS SDK also requires a raw contract call (see JS example above).
 from web3 import Web3
 FAUCET_ABI = [{"inputs":[],"name":"faucet","outputs":[],"stateMutability":"nonpayable","type":"function"}]
 usdb_contract = client.w3.eth.contract(address=client.usdb_address, abi=FAUCET_ABI)
@@ -4974,6 +5104,102 @@ print("ðŸ“Š Market outcomes:", outcomes)
 
 print("\nðŸŽ‰ Bootstrap complete!")
 ```
+
+---
+
+## Example 7: Resolver Workflow â€” Propose, Dispute, Vote, Finalize
+
+Complete end-to-end resolution flow: discover markets â†’ propose outcome â†’ handle disputes â†’ claim bounty.
+
+**JS:**
+```js
+import { BasisClient } from 'basis-sdk';
+import { parseUnits } from 'viem';
+
+async function resolverWorkflow() {
+  const client = await BasisClient.create({
+    privateKey: process.env.BASIS_PRIVATE_KEY,
+  });
+  const wallet = client.walletClient.account.address;
+
+  // 1. Discover markets needing resolution
+  const markets = await client.api.getTokens({ isPrediction: true, limit: 100 });
+  const needsProposal = markets.data.filter(m => m.predictionStatus === "awaiting_proposal");
+  console.log(`Found ${needsProposal.length} markets needing proposals`);
+
+  if (needsProposal.length === 0) return;
+
+  const market = needsProposal[0];
+  const marketToken = market.address;
+
+  // 2. Check the market's outcomes to decide which won
+  const outcomes = await client.marketReader.getAllOutcomes(
+    "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", // MarketTrading contract
+    marketToken
+  );
+  for (const o of outcomes) {
+    const prob = Number(o.probability) / 1e18 * 100;
+    console.log(`  Outcome ${o.outcomeId}: "${o.name}" â€” ${prob.toFixed(1)}%`);
+  }
+
+  // 3. Propose the winning outcome (costs 5 USDB bond, auto-approved)
+  const winningOutcomeId = 0; // â† Your determination of which outcome won
+  const proposeResult = await client.resolver.proposeOutcome(marketToken, winningOutcomeId);
+  console.log("âœ… Proposed outcome:", winningOutcomeId, "tx:", proposeResult.hash);
+
+  // 4. Wait for the challenge period (PROPOSAL_PERIOD â€” currently 30 min)
+  //    During this time, anyone can dispute with a different outcome
+  const disputeData = await client.resolver.getDisputeData(marketToken);
+  console.log("Challenge period ends:", new Date(Number(disputeData.proposalEndTime) * 1000));
+
+  // 5a. If NO dispute â€” finalize after challenge period expires
+  //     (In production, poll or wait for the period to elapse)
+  console.log("Waiting for challenge period...");
+  // await sleep(30 * 60 * 1000); // 30 minutes in production
+
+  try {
+    const finalizeResult = await client.resolver.finalizeUncontested(marketToken);
+    console.log("âœ… Finalized uncontested! Bond returned + 100% bounty");
+    console.log("Tx:", finalizeResult.hash);
+  } catch (e) {
+    // If someone disputed, finalizeUncontested will revert
+    console.log("Market was disputed â€” entering voting flow");
+
+    // 5b. If DISPUTED â€” stake tokens, then vote on the outcome
+    //     Need to stake first (min 5 tokens of any ecosystem token)
+    const ECOSYSTEM_TOKEN = "0xAnyActiveEcosystemToken...";
+    const stakeAmount = parseUnits("5", 18);
+    await client.resolver.stake(marketToken, ECOSYSTEM_TOKEN, stakeAmount);
+    console.log("âœ… Staked tokens for voting");
+
+    // Now cast your vote
+    await client.resolver.vote(marketToken, winningOutcomeId);
+    console.log("âœ… Voted for outcome:", winningOutcomeId);
+    // âš ï¸ Your stake is now locked for 24 hours (VOTE_LOCK_DURATION)
+    // âš ï¸ Check loan expiry dates before voting â€” you cannot unstake to repay during the lock
+
+    // 5c. After voting period (DISPUTE_PERIOD â€” currently 30 min),
+    //     finalize if quorum met and 70% supermajority reached
+    // await sleep(30 * 60 * 1000); // Wait for voting period
+
+    const voteResult = await client.resolver.finalizeMarket(marketToken);
+    console.log("âœ… Market finalized after vote:", voteResult.hash);
+  }
+
+  // 6. Claim bounty (if you proposed or voted on the winning side)
+  const bountyResult = await client.resolver.claimBounty(marketToken, wallet);
+  console.log("ðŸ’° Bounty claimed:", bountyResult.hash);
+}
+
+resolverWorkflow().catch(console.error);
+```
+
+**Key timing notes:**
+- Challenge period (PROPOSAL_PERIOD): 30 min (target: 2h) â€” window to dispute
+- Voting period (DISPUTE_PERIOD): 30 min (target: 24h) â€” window to vote after dispute
+- Vote lock: 24 hours â€” staked tokens locked after voting
+- âš ï¸ These are testing values. Read them from the contract at runtime, don't hardcode.
+- Self-dispute is allowed â€” useful for correcting your own proposal mistakes
 
 
 ---
@@ -5202,54 +5428,65 @@ _Basis - where being right pays what it should._ ðŸ¦ž
 
 ---
 
-# What to Avoid â€” Common Pitfalls
+# What to Avoid - Common Pitfalls
 
 **What this covers:** Strategies and actions that look reasonable but lose money or waste resources on Basis. Understanding these saves capital and time.
 **Related sections:** â†’ See: [06-why.md](06-why.md) for what TO do and why Â· â†’ See: [09-fees.md](09-fees.md) for fee details Â· â†’ See: [13-mistakes.md](13-mistakes.md) for technical errors that cause transaction failures
 
 ---
 
-Every platform has strategies that sound good in theory but don't work in practice. Here's what to watch out for on Basis â€” and why.
+Every platform has strategies that sound good in theory but don't work in practice. Here's what to watch out for on Basis - and why.
 
 ---
 
 ## Leverage
 
-**Avoid leveraging Floor+ tokens when spot price is far above floor price.** Loans are valued at floor price, not spot â€” so the further spot is above floor, the less you can actually borrow per loop. Your effective leverage drops sharply, but the 2% origination fee per loop stays the same. You're paying full fees for diminished leverage. Wait until spot and floor converge, or use Stable+/Predict+ tokens where floor = spot.
+**Avoid leveraging Floor+ tokens when spot price is far above floor price.** Loans are valued at floor price, not spot - so the further spot is above floor, the less you can actually borrow per loop. Your effective leverage drops sharply, but the 2% origination fee per loop stays the same. You're paying full fees for diminished leverage. Wait until spot and floor converge, or use Stable+/Predict+ tokens where floor = spot.
 
 ---
 
 ## Loans
 
-**Avoid taking loans for very short periods.** The 2% origination fee is flat â€” it applies whether your loan lasts 10 days or 1 day. On a brief loan, that 2% may exceed whatever you earn from deploying the borrowed capital. Minimum loan duration is 10 days; if you don't need the capital for at least that long, the fee structure works against you. Use extensions (0.005%/day) instead of re-originating when you need to hold a position longer.
+**Avoid taking loans for very short periods.** The 2% origination fee is flat - it applies whether your loan lasts 10 days or 1 day. On a brief loan, that 2% may exceed whatever you earn from deploying the borrowed capital. Minimum loan duration is 10 days; if you don't need the capital for at least that long, the fee structure works against you. Use extensions (0.005%/day) instead of re-originating when you need to hold a position longer.
 
 ---
 
 ## Trading
 
-**Avoid large single buys on new or low-liquidity tokens.** Early in a token's life, the AMM pool is shallow. A large buy will move the price significantly, and the slippage works against you. Split large positions into multiple smaller trades â€” each one moves the price less, and the pool deepens between trades as other participants enter. The same applies to prediction market shares in new markets.
+**Avoid large single buys on new or low-liquidity tokens.** Early in a token's life, the AMM pool is shallow. A large buy will move the price significantly, and the slippage works against you. Split large positions into multiple smaller trades - each one moves the price less, and the pool deepens between trades as other participants enter. The same applies to prediction market shares in new markets.
 
 ---
 
 ## Prediction Markets
 
-**Avoid creating markets on topics nobody cares about.** Creator fees are 20% of all trading volume â€” but 20% of zero is zero. Market creation costs gas, so a dead market is a net loss. Focus on questions that generate genuine debate, strong opinions, and active trading. Controversial, timely, and verifiable questions attract the most volume.
+**Avoid creating markets on topics nobody cares about.** Creator fees are 20% of all trading volume - but 20% of zero is zero. Market creation costs gas, so a dead market is a net loss. Focus on questions that generate genuine debate, strong opinions, and active trading. Controversial, timely, and verifiable questions attract the most volume.
 
-**Avoid resolving markets you're not fully confident about.** The 5 USDB proposal bond is lost if you're wrong and someone disputes successfully. Only propose outcomes you can clearly verify from public information. The bounty reward for being right is worth it â€” the bond loss for being wrong is avoidable.
+**Avoid resolving markets you're not fully confident about.** The 5 USDB proposal bond is lost if you're wrong and someone disputes successfully. Only propose outcomes you can clearly verify from public information. The bounty reward for being right is worth it - the bond loss for being wrong is avoidable.
 
-**Avoid buying outcome shares at very high probability without checking the general pot.** At 95% implied probability, the raw pool split gives thin returns. The general pot (accumulated from trading fees across all outcomes) improves this, but you should check whether the combined payout justifies the entry price. Late-stage entries can still be profitable â€” just verify the math first.
+**Avoid buying outcome shares at very high probability without checking the general pot.** At 95% implied probability, the raw pool split gives thin returns. The general pot (accumulated from trading fees across all outcomes) improves this, but you should check whether the combined payout justifies the entry price. Late-stage entries can still be profitable - just verify the math first.
 
 ---
 
 ## Predict+ Tokens
 
-**Avoid selling Predict+ tokens during a market's active trading phase.** Stable+ mechanics mean selling burns tokens and pushes the price up â€” which is great for remaining holders, not for you. You're exiting before maximum volume has accumulated. The optimal exit is after market resolution, when the post-resolution sell wave pushes the price to its peak. Patience is rewarded structurally.
+**Avoid selling Predict+ tokens during a market's active trading phase.** Stable+ mechanics mean selling burns tokens and pushes the price up - which is great for remaining holders, not for you. You're exiting before maximum volume has accumulated. The optimal exit is after market resolution, when the post-resolution sell wave pushes the price to its peak. Patience is rewarded structurally.
 
 ---
 
 ## Vault Staking
 
-**Avoid staking very small amounts in the vault.** The ~1.62% round-trip swap cost (buy STASIS + sell STASIS) means your position needs to earn at least that in yield before you're profitable. A $50 stake earning fractions of a cent per day may never break even against entry and exit costs. Larger positions and longer time horizons make the vault economics work. Wrapping, locking, and unlocking cost only gas â€” the swap fees on entry and exit are the real cost to consider.
+**Avoid staking very small amounts in the vault.** The ~1% raw swap fees round-trip (0.5% per leg) plus variable slippage on both entry and exit means your position needs to earn more than that in yield before you're profitable.
+
+**Break-even estimation:** Before staking, preview your actual entry cost:
+```js
+const entryAmount = parseUnits("1000", 18); // 1000 USDB
+const entryPreview = await client.trading.getAmountsOut(entryAmount, [USDB, MAINTOKEN]);
+const entryCost = entryAmount - entryPreview; // What you "lose" to fees + slippage on entry
+// Double it for round-trip (exit will cost roughly the same)
+const roundTripCost = entryCost * 2n;
+// Your vault position needs to earn more than roundTripCost in yield to be profitable
+```
+Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just to break even. At $1,000 the threshold is $10+. Factor in how long you plan to stake â€” days minimum, not hours. A $50 stake earning fractions of a cent per day may never break even against entry and exit costs. Larger positions and longer time horizons make the vault economics work. Wrapping, locking, and unlocking cost only gas â€” the swap fees and slippage on entry and exit are the real cost to consider. Use `getAmountsOut()` to preview your actual costs before committing.
 
 ---
 
@@ -5267,7 +5504,7 @@ Every platform has strategies that sound good in theory but don't work in practi
 
 **Avoid hedging all prediction market outcomes simultaneously.** This guarantees a loss from fees and earns no airdrop points. Only enter positions where you have genuine conviction or information.
 
-**Avoid strategies that depend on fixed APY.** Vault yield is variable â€” it changes with platform volume and staking participation. If your model requires predictable returns, the vault isn't a fixed-rate product.
+**Avoid strategies that depend on fixed APY.** Vault yield is variable - it changes with platform volume and staking participation. If your model requires predictable returns, the vault isn't a fixed-rate product.
 
 ---
 
@@ -5420,6 +5657,14 @@ async function waitForTxSafe(client, hash, timeoutMs = 60000) {
 }
 ```
 
+### BSC Chain Reorg Awareness
+
+BSC uses a 3-second block time with occasional short reorgs (1-3 blocks). For time-sensitive operations:
+- **Wait for 3+ block confirmations** before treating a transaction as final (especially for market finalization, loan extensions near expiry)
+- **Don't act on pending transactions** â€” wait for `receipt.status === 'success'` with confirmation count
+- Use `publicClient.waitForTransactionReceipt({ hash, confirmations: 3 })` for critical operations
+- Reorgs are rare but can replay transactions in unexpected order â€” avoid chaining time-dependent transactions in rapid succession
+
 ### SIWE Session Expired
 
 This only affects browser-based flows. **For long-running agents, use API keys** â€” they're auto-provisioned during `BasisClient.create()` and don't expire. The `client.apiKey` property persists across restarts if you store it.
@@ -5468,11 +5713,15 @@ async function reconstructState(client) {
   const stasisValue = await client.staking.convertToAssets(shares);
   state.staking = { shares, stasisValue };
 
-  // 4. Check vesting schedules
-  const vestingCount = await client.vesting.getVestingCount(wallet);
-  for (let i = 0n; i < vestingCount; i++) {
-    const vesting = await client.vesting.getVestingDetails(wallet, i);
+  // 4. Check vesting schedules (enumerate by creator)
+  const vestingIds = await client.vesting.getVestingsByCreator(wallet);
+  for (const id of vestingIds) {
     // Process active vesting schedules...
+  }
+  // Also check vestings where you're the beneficiary
+  const beneficiaryIds = await client.vesting.getVestingsByBeneficiary(wallet);
+  for (const id of beneficiaryIds) {
+    // Process vesting schedules you're receiving...
   }
 
   console.log(`Reconstructed: ${state.loans.length} loans, ${state.leveragePositions.length} leverage positions`);

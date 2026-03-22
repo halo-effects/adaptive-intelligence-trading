@@ -19,6 +19,18 @@
 > const result = await client.trading.buyTokens(amount, minOut, path, false);
 > ```
 > Without slippage protection, your trades are vulnerable to sandwich attacks and price movement between simulation and execution.
+>
+> **Python equivalent:**
+> ```python
+> def with_slippage(expected_out, tolerance_percent=1):
+>     """Calculate minimum output with slippage tolerance."""
+>     return expected_out * (100 - tolerance_percent) // 100
+>
+> # Usage:
+> preview = client.trading.get_amounts_out(amount, path)
+> min_out = with_slippage(preview, 2)  # 2% tolerance
+> result = client.trading.buy_tokens(amount, min_out, path, False)
+> ```
 
 ---
 
@@ -100,9 +112,21 @@ async function tradeTokens() {
   ]);
   console.log("Expected output for 5 USDB:", preview);
 
-  // Buy with 5 USDB
-  const buyResult = await client.trading.buy(TOKEN, fiveUsdb);
-  console.log("Bought tokens:", buyResult.hash);
+  // Buy with 5 USDB — with slippage protection and error handling
+  const minOut = withSlippage(preview, 2); // 2% tolerance on previewed output
+  try {
+    const buyResult = await client.trading.buy(TOKEN, fiveUsdb, minOut);
+    console.log("Bought tokens:", buyResult.hash);
+  } catch (e) {
+    if (e.message.includes("slippage")) {
+      console.log("Slippage exceeded — retrying with higher tolerance");
+      const retryMinOut = withSlippage(preview, 5); // 5% on retry
+      const buyResult = await client.trading.buy(TOKEN, fiveUsdb, retryMinOut);
+      console.log("Bought on retry:", buyResult.hash);
+    } else {
+      throw e; // Re-throw unexpected errors
+    }
+  }
 
   // Sell 50% of holdings (no amount needed — reads balance automatically)
   const sellResult = await client.trading.sellPercentage(TOKEN, 50);
@@ -129,7 +153,9 @@ def trade_tokens():
     ])
     print("Expected output for 5 USDB:", preview)
 
-    buy_result = client.trading.buy(TOKEN, FIVE_USDB)
+    # Buy with slippage protection
+    min_out = preview * 98 // 100  # 2% slippage tolerance
+    buy_result = client.trading.buy(TOKEN, FIVE_USDB, min_out)
     print("Bought tokens:", buy_result["hash"])
 
     # Sell 50% of holdings (no amount needed — reads balance automatically)
@@ -169,9 +195,17 @@ async function predictionMarket() {
   console.log("Market created:", market.hash);
   const marketToken = market.marketTokenAddress;
 
-  // 2. Buy "Yes" shares (outcomeId 0) with 5 USDB
+  // 2. Buy "Yes" shares (outcomeId 0) with 5 USDB — with slippage protection
+  const fiveUsdb = parseUnits("5", 18);
+  // Preview: check current share price to estimate expected output
+  const outcomes = await client.marketReader.getAllOutcomes(
+    "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", marketToken
+  );
+  const yesPrice = outcomes[0].pricePerShare; // raw 18-decimal price
+  const expectedShares = fiveUsdb * BigInt(1e18) / yesPrice;
+  const minShares = withSlippage(expectedShares, 2); // 2% tolerance
   const buyResult = await client.predictionMarkets.buy(
-    marketToken, 0, USDB, parseUnits("5", 18), 0n, 0n // ⚠️ minOut=0 for simplicity — use withSlippage() in production
+    marketToken, 0, USDB, fiveUsdb, minShares, 0n
   );
   console.log("Bought Yes shares:", buyResult.hash);
 
@@ -209,7 +243,15 @@ def prediction_market():
     )
     market_token = market["market_token_address"]
 
-    buy_result = client.prediction_markets.buy(market_token, 0, USDB, 5_000_000_000_000_000_000, 0, 0)  # 5 USDB
+    # Buy with slippage protection
+    five_usdb = 5_000_000_000_000_000_000
+    outcomes = client.market_reader.get_all_outcomes(
+        "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", market_token
+    )
+    yes_price = int(outcomes[0]["pricePerShare"])
+    expected_shares = five_usdb * 10**18 // yes_price
+    min_shares = expected_shares * 98 // 100  # 2% slippage tolerance
+    buy_result = client.prediction_markets.buy(market_token, 0, USDB, five_usdb, min_shares, 0)
     print("Bought Yes shares:", buy_result["hash"])
 
     shares = client.prediction_markets.get_user_shares(
@@ -244,8 +286,10 @@ async function leverageTrading() {
   const sim = await client.leverageSimulator.simulateLeverage(parseUnits("10", 18), path, 7n);
   console.log("Simulation:", sim);
 
-  // 2. Open the leverage position (10 USDB, 7 days)
-  const openResult = await client.trading.leverageBuy(parseUnits("10", 18), 0n, path, 7n); // ⚠️ minOut=0 for simplicity — use withSlippage() in production
+  // 2. Open the leverage position (10 USDB, 7 days) — with slippage protection
+  const expectedOut = await client.trading.getAmountsOut(parseUnits("10", 18), path);
+  const minOut = withSlippage(expectedOut, 3); // 3% tolerance for leverage (multi-hop)
+  const openResult = await client.trading.leverageBuy(parseUnits("10", 18), minOut, path, 7n);
   console.log("Position opened:", openResult.hash);
 
   // 3. Wait for the next block (required to avoid same-block revert)
@@ -259,8 +303,12 @@ async function leverageTrading() {
   const position = await client.trading.getLeveragePosition(walletAddress, positionId);
   console.log("Position:", position);
 
-  // 5. Partially close (sell 50%)
-  const closeResult = await client.trading.partialLoanSell(positionId, 50, true, 0); // ⚠️ minOut=0 for simplicity
+  // 5. Partially close (sell 50%) — with slippage protection
+  // Estimate output from selling 50% of position tokens
+  const sellAmount = position.collateral / 2n;
+  const sellPreview = await client.trading.getAmountsOut(sellAmount, [MAINTOKEN, USDB]);
+  const sellMinOut = withSlippage(sellPreview, 2);
+  const closeResult = await client.trading.partialLoanSell(positionId, 50, true, sellMinOut);
   console.log("Partially closed:", closeResult.hash);
 }
 ```
@@ -281,7 +329,10 @@ def leverage_trading():
     sim = client.leverage_simulator.simulate_leverage(10_000_000_000_000_000_000, path, 7)
     print("Simulation:", sim)
 
-    open_result = client.trading.leverage_buy(10_000_000_000_000_000_000, 0, path, 7)  # 10 USDB
+    # Open with slippage protection
+    expected_out = client.trading.get_amounts_out(10_000_000_000_000_000_000, path)
+    min_out = expected_out * 97 // 100  # 3% tolerance for leverage
+    open_result = client.trading.leverage_buy(10_000_000_000_000_000_000, min_out, path, 7)
     print("Position opened:", open_result["hash"])
 
     time.sleep(5)
@@ -292,7 +343,10 @@ def leverage_trading():
     position = client.trading.get_leverage_position(client.wallet_address, position_id)
     print("Position:", position)
 
-    close_result = client.trading.partial_loan_sell(position_id, 50, True, 0)
+    # Partial close with slippage protection
+    sell_preview = client.trading.get_amounts_out(int(position["collateral"]) // 2, [MAINTOKEN, USDB])
+    sell_min_out = sell_preview * 98 // 100  # 2% tolerance
+    close_result = client.trading.partial_loan_sell(position_id, 50, True, sell_min_out)
     print("Partially closed:", close_result["hash"])
 ```
 
@@ -596,7 +650,7 @@ async function resolverWorkflow() {
 
   // 3. Propose the winning outcome (costs 5 USDB bond, auto-approved)
   const winningOutcomeId = 0; // ← Your determination of which outcome won
-  const proposeResult = await client.resolver.propose(marketToken, winningOutcomeId);
+  const proposeResult = await client.resolver.proposeOutcome(marketToken, winningOutcomeId);
   console.log("✅ Proposed outcome:", winningOutcomeId, "tx:", proposeResult.hash);
 
   // 4. Wait for the challenge period (PROPOSAL_PERIOD — currently 30 min)
@@ -617,14 +671,18 @@ async function resolverWorkflow() {
     // If someone disputed, finalizeUncontested will revert
     console.log("Market was disputed — entering voting flow");
 
-    // 5b. If DISPUTED — vote on the outcome
-    //     Need to stake tokens first (min 5 tokens of any ecosystem token)
-    const stakeResult = await client.resolver.stakeAndVote(
-      marketToken,
-      winningOutcomeId, // Vote for the outcome you believe is correct
-    );
+    // 5b. If DISPUTED — stake tokens, then vote on the outcome
+    //     Need to stake first (min 5 tokens of any ecosystem token)
+    const ECOSYSTEM_TOKEN = "0xAnyActiveEcosystemToken...";
+    const stakeAmount = parseUnits("5", 18);
+    await client.resolver.stake(marketToken, ECOSYSTEM_TOKEN, stakeAmount);
+    console.log("✅ Staked tokens for voting");
+
+    // Now cast your vote
+    await client.resolver.vote(marketToken, winningOutcomeId);
     console.log("✅ Voted for outcome:", winningOutcomeId);
     // ⚠️ Your stake is now locked for 24 hours (VOTE_LOCK_DURATION)
+    // ⚠️ Check loan expiry dates before voting — you cannot unstake to repay during the lock
 
     // 5c. After voting period (DISPUTE_PERIOD — currently 30 min),
     //     finalize if quorum met and 70% supermajority reached

@@ -142,6 +142,14 @@ async function waitForTxSafe(client, hash, timeoutMs = 60000) {
 }
 ```
 
+### BSC Chain Reorg Awareness
+
+BSC uses a 3-second block time with occasional short reorgs (1-3 blocks). For time-sensitive operations:
+- **Wait for 3+ block confirmations** before treating a transaction as final (especially for market finalization, loan extensions near expiry)
+- **Don't act on pending transactions** — wait for `receipt.status === 'success'` with confirmation count
+- Use `publicClient.waitForTransactionReceipt({ hash, confirmations: 3 })` for critical operations
+- Reorgs are rare but can replay transactions in unexpected order — avoid chaining time-dependent transactions in rapid succession
+
 ### SIWE Session Expired
 
 This only affects browser-based flows. **For long-running agents, use API keys** — they're auto-provisioned during `BasisClient.create()` and don't expire. The `client.apiKey` property persists across restarts if you store it.

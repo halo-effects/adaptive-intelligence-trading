@@ -747,7 +747,7 @@ Returns: `{ data: Trade[], pagination: { limit, hasMore, nextCursor } }`
   "id": 500,
   "type": "buy",
   "amountToken": "1000000000000000000",
-  "amountUSDC": "5000000",
+  "amountUSDC": "5000000000000000000",
   "user": "0x...",
   "price": "0.005",
   "txHash": "0x...",
@@ -782,7 +782,7 @@ Returns: `{ data: Order[], pagination }`
   "seller": "0x...",
   "outcomeId": 0,
   "amount": "1000000000000000000",
-  "pricePerShare": "500000",
+  "pricePerShare": "500000000000000000",
   "status": "ACTIVE",
   "createdAt": "2026-03-13T12:00:00.000Z"
 }
@@ -842,7 +842,7 @@ Get whitelist entries for a frozen token, or check a specific wallet.
   "whitelisted": true,
   "entry": {
     "walletAddress": "0x...",
-    "buyAmount": "1000000",
+    "buyAmount": "1000000000000000000",
     "note": "Early supporter",
     "txHash": "0x...",
     "timestamp": "2026-01-01T00:00:00.000Z"
@@ -855,7 +855,7 @@ Get whitelist entries for a frozen token, or check a specific wallet.
 ```json
 {
   "data": [
-    { "walletAddress": "0x...", "buyAmount": "1000000", "note": null, "txHash": "0x...", "timestamp": "..." }
+    { "walletAddress": "0x...", "buyAmount": "1000000000000000000", "note": null, "txHash": "0x...", "timestamp": "..." }
   ],
   "pagination": { "total": 50, "page": 1, "limit": 20, "hasMore": true }
 }
@@ -885,7 +885,7 @@ Returns: `{ data: Transaction[], pagination: { limit, hasMore, nextCursor } }`
   "contractAddress": "0x...",
   "type": "buy",
   "amountToken": "1000000000000000000",
-  "amountUSDC": "5000000",
+  "amountUSDC": "5000000000000000000",
   "price": "0.005",
   "txHash": "0x...",
   "blockNumber": 12345678,
@@ -917,7 +917,7 @@ Returns: `{ data: LiquidityEntry[], pagination: { limit, hasMore, nextCursor } }
   "buyer": "0x...",
   "outcomeId": 0,
   "shares": "500000000000000000",
-  "usdcSpent": "2500000",
+  "usdcSpent": "2500000000000000000",
   "tradeType": "buy",
   "newReserve": "10000000000000000000",
   "newTotalReserve": "25000000000000000000",

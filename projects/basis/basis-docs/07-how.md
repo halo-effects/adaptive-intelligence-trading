@@ -40,7 +40,14 @@ Basis uses a **modified constant-product AMM** (similar to Uniswap V2's `x × y 
   - **multiplier=1 (Floor+):** Minimal retention — most sell value returns to seller, but some stays, creating a rising floor price
   - **multiplier=45 (mid Floor+):** Moderate retention — balanced between seller return and floor accumulation
 
-**Price impact formula:** Use `getAmountsOut(amount, path)` to preview exact output for any trade size. The contract handles the multiplier-adjusted calculation internally. For position sizing, the `startLP` table in [01-what-is-basis.md](01-what-is-basis.md) shows empirical price impact per LP-equivalent buy at each multiplier level.
+**How `startLP` initializes reserves:** When a creator sets `startLP` (e.g., $1,000), the contract:
+1. Converts that dollar value to STASIS at the current STASIS price (e.g., $1,000 → 837 STASIS at $1.19/STASIS)
+2. Sets the token side of the pool so the starting price = $1 per token (e.g., 837 STASIS : 1,000 tokens)
+3. This creates a standard AMM pair, but with the `hybridMultiplier` modifying how sells affect reserves going forward
+
+Higher `startLP` = deeper pool = less price impact per trade. The `startLP` table in [01-what-is-basis.md](01-what-is-basis.md) shows empirical price impact per LP-equivalent buy at each multiplier level.
+
+**Price impact formula:** Use `getAmountsOut(amount, path)` to preview exact output for any trade size. The contract handles the multiplier-adjusted calculation internally.
 
 **Why this matters for agents:** Standard AMM arbitrage assumptions don't apply. On Stable+ tokens, selling doesn't lower the price — it literally can't. On Floor+ tokens, the floor rises with every sell. Model your strategies accordingly.
 

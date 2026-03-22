@@ -45,7 +45,18 @@ Every platform has strategies that sound good in theory but don't work in practi
 
 ## Vault Staking
 
-**Avoid staking very small amounts in the vault.** The ~1% raw swap fees round-trip (0.5% per leg) plus variable slippage on both entry and exit means your position needs to earn more than that in yield before you're profitable. A $50 stake earning fractions of a cent per day may never break even against entry and exit costs. Larger positions and longer time horizons make the vault economics work. Wrapping, locking, and unlocking cost only gas — the swap fees and slippage on entry and exit are the real cost to consider. Use `getAmountsOut()` to preview your actual costs before committing.
+**Avoid staking very small amounts in the vault.** The ~1% raw swap fees round-trip (0.5% per leg) plus variable slippage on both entry and exit means your position needs to earn more than that in yield before you're profitable.
+
+**Break-even estimation:** Before staking, preview your actual entry cost:
+```js
+const entryAmount = parseUnits("1000", 18); // 1000 USDB
+const entryPreview = await client.trading.getAmountsOut(entryAmount, [USDB, MAINTOKEN]);
+const entryCost = entryAmount - entryPreview; // What you "lose" to fees + slippage on entry
+// Double it for round-trip (exit will cost roughly the same)
+const roundTripCost = entryCost * 2n;
+// Your vault position needs to earn more than roundTripCost in yield to be profitable
+```
+Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just to break even. At $1,000 the threshold is $10+. Factor in how long you plan to stake — days minimum, not hours. A $50 stake earning fractions of a cent per day may never break even against entry and exit costs. Larger positions and longer time horizons make the vault economics work. Wrapping, locking, and unlocking cost only gas — the swap fees and slippage on entry and exit are the real cost to consider. Use `getAmountsOut()` to preview your actual costs before committing.
 
 ---
 

@@ -581,14 +581,14 @@ result = client.staking.buy(100 * 10**18)
 ---
 
 ### `borrow(stasisAmount, days)` - Borrow Against Vault
-**What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap → lock → borrow) - your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units** (not wSTASIS shares) - the contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
+**What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap → lock → borrow) - your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units, raw 18 decimals** (not wSTASIS shares) — e.g., `parseUnits("50", 18)` for 50 STASIS. The contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
 **Module:** `client.staking`
 **Fee:** 2% flat origination fee + 0.005% daily interest
 **Earns airdrop points** - a one-time bonus at origination plus daily accrual while active.
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `stasisAmount` | bigint/int | STASIS-denominated amount to pledge as collateral (converted from wSTASIS shares internally using the current exchange ratio) |
+| `stasisAmount` | bigint/int | STASIS-denominated amount to pledge as collateral (raw units, 18 decimals — e.g., `parseUnits("50", 18)` for 50 STASIS) (converted from wSTASIS shares internally using the current exchange ratio) |
 | `days` | bigint/int | Loan duration in days |
 
 ---
@@ -888,6 +888,8 @@ result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 
 **What it does:** Claims winnings from a resolved prediction market. Winners split the entire losing pool.
 **Module:** `client.predictionMarkets`
 
+**Returns:** Transaction receipt. The redeemed USDB amount can be read from the transaction's Transfer event logs. Parse with: `const redeemed = parseEventLogs({ abi: erc20Abi, logs: receipt.logs }).find(e => e.eventName === 'Transfer' && e.args.to === wallet)?.args.value`
+
 ---
 
 ### `buyOrdersAndContract(marketToken, outcomeId, orderIds, inputToken, totalInput, minShares)`
@@ -1046,6 +1048,8 @@ for (const market of needsProposal) {
 **What it does:** Proposes the winning outcome for a market past its end time. Auto-approves 5 USDB for proposal bond. If uncontested after the challenge period, the proposer gets bond back + 100% of bounty pool.
 **Module:** `client.resolver`
 
+> **Alias:** Also available as `client.resolver.propose()` — identical behavior.
+
 ---
 
 ### `dispute(marketToken, newOutcomeId)`
@@ -1061,6 +1065,12 @@ for (const market of needsProposal) {
 **What it does:** Casts a vote during a dispute round. Requires prior staking of ≥5 tokens via `stake()`. One vote per staker - staking more doesn't give more votes.
 **Module:** `client.resolver`
 **Note:** Ties or insufficient quorum cause finalization to revert ("Tie - vote more"). If the voting period ends without quorum or 70% consensus, the market simply waits for more voters — the voting period effectively stays open until enough participants vote to reach quorum and break the tie. Bonds remain locked until resolution completes.
+
+---
+
+### `stakeAndVote(marketToken, outcomeId)`
+**What it does:** Composite helper that stakes tokens and casts a vote in a single transaction. Equivalent to calling `stake()` then `vote()` separately, but saves gas. Auto-approves the stake amount.
+**Module:** `client.resolver`
 
 ---
 
@@ -1132,6 +1142,8 @@ for (const market of needsProposal) {
 | `MIN_STAKE_AMOUNT` | 5 tokens (1e18) | Minimum stake to vote |
 | `VOTE_LOCK_DURATION` | 1 day (86400 seconds) | How long staked tokens are locked after voting. Readable on-chain from the MarketResolver contract. ⚠️ **If you vote, you cannot unstake for 24 hours.** Factor this into capital allocation — don't stake tokens you need liquid access to within the next day. |
 
+> `configResolver` is an admin-only function for adjusting these timing parameters. Agents cannot call it directly but should read current values from the contract at runtime rather than hardcoding, as periods may change between phases.
+
 **Note on staking:** The current resolver staking (STASIS tokens) is a placeholder anti-spam threshold. Post-TGE, this transitions to BASIS token staking - stakers who earn yield from the platform also serve as the dispute resolution voting body. The economic alignment is intentional: the people benefiting most from platform health are the ones ensuring prediction markets resolve honestly.
 
 ---
@@ -1149,6 +1161,8 @@ Private prediction markets with restricted access. Extends all Prediction Market
 | Param | Type | Description |
 |-------|------|-------------|
 | `privateEvent` | boolean | When true, restricts who can buy shares - only whitelisted wallets can participate until toggled via `togglePrivateEventBuyers()`. |
+
+> **Note:** Private markets do not currently support `createMarketWithMetadata()`. Use `createMarket()` and set metadata via the off-chain API separately.
 
 ---
 

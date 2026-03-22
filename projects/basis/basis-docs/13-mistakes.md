@@ -18,6 +18,8 @@ Real mistakes discovered during live SDK testing.
 - ❌ **Calling `partialLoanSell` too soon after `leverageBuy`** → The backend needs ~5 seconds to sync the new position. If you call `partialLoanSell` immediately after `leverageBuy`, it may fail silently because the backend hasn't indexed the position yet. Always wait at least 5 seconds between creating a leverage position and partially selling it.
 - ❌ **Letting a loan expire and forgetting to claim** → When a loan expires, collateral is burned to cover the debt. But any remaining collateral value ABOVE the debt is claimable via `claimLiquidation(hubId)` — it is NOT automatically returned. If you intentionally let loans expire (e.g., underwater positions), set up a monitoring loop to claim leftovers. Unclaimed value sits in the contract indefinitely.
 
+- 🛑 **Forgetting a loan expiry** — When a loan expires, your collateral is NOT automatically returned. It sits in the contract until you call `claimLiquidation()`. Meanwhile, the underlying token's price may drop. Worst case: you forget for weeks, token drops 80%, and you claim back 20% of original value. **Set calendar reminders for loan expiry dates. In production, implement an automated check:** query `getLoanDetails()` and alert when `expiryTime - now < 48 hours`.
+
 ## Vault Mistakes
 - ❌ **Not calculating your break-even** → Factor in gas costs (~$0.50-1.00 entry/exit) plus ~1% raw swap fees + slippage both ways. Use `getAmountsOut()` to estimate actual costs. Calculate whether expected yield exceeds total costs for your position size.
 - ❌ **Staking for hours** → Need enough yield to cover round-trip fees + slippage. Give it days.
@@ -32,6 +34,8 @@ Real mistakes discovered during live SDK testing.
 - ❌ **Trying to fill your own order** → Contract rejects ("Cannot fill own order").
 - ❌ **Selling immediately after resolution** → Price goes UP as others sell (burn → slippage retention). Wait.
 - ❌ **Proposing an outcome without understanding bond risk** → Your 5 USDB proposal bond is lost if someone disputes and the vote goes against you. The disputer's bond is also at risk. Only propose outcomes you're confident about. If neither party is correct, both bonds go to the insurance fund.
+
+- 🛑 **Voting while holding an expiring loan** — After voting, your staked tokens are locked for 24 hours (`VOTE_LOCK_DURATION`). If you have a loan expiring within that window, you cannot unstake to repay or extend it. Scenario: You vote on a disputed market on Monday at 3pm. Your loan expires Tuesday at 10am. You cannot unstake until Tuesday at 3pm — by then your collateral has been liquidated. **Before voting, check all loan expiry dates and ensure none fall within the next 24 hours.** Use `client.staking.getLoanDetails()` to verify.
 
 ## Vesting Mistakes
 - ❌ **Setting start time to `now()`** → Already past by tx confirmation. Use `now() + 60`.
