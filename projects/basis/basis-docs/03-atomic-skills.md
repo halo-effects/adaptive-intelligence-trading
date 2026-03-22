@@ -136,7 +136,7 @@ result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)  # �
 
 **JS:**
 ```js
-const result = await client.trading.partialLoanSell(positionId, 50, true, 0);
+const result = await client.trading.partialLoanSell(positionId, 50n, true, 0n);
 ```
 **Python:**
 ```python
@@ -165,13 +165,6 @@ const result = await client.trading.buyTokens(parseUnits("10", 18), amounts[1], 
 ```
 
 **When to use this instead of `buy()`:** When you need to control the exact swap path, set a custom `minOut` for slippage, or wrap to wSTASIS in the same transaction.
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `amount` | bigint/int | Input amount |
-| `minOut` | bigint/int | Min output |
-| `path` | string[] | Explicit swap path |
-| `wrapTokens` | boolean | Wrap output |
 
 ---
 
@@ -215,13 +208,17 @@ const result = await client.trading.convertToNative(marketTokenAddress, inputTok
 **What it does:** Previews the output amount for a swap without executing it. Use before any trade to check slippage.
 **Module:** `client.trading`
 
+**Returns:** An **array** of amounts at each hop in the path. For a 2-hop path `[A, B]`, returns `[inputAmount, outputAmount]`. For a 3-hop path `[A, B, C]`, returns `[inputAmount, intermediateAmount, outputAmount]`. **Always use the last element** for the final output:
+
 **JS:**
 ```js
-const output = await client.trading.getAmountsOut(parseUnits("5", 18), [USDB, MAINTOKEN]);
+const amounts = await client.trading.getAmountsOut(parseUnits("5", 18), [USDB, MAINTOKEN]);
+const outputAmount = amounts[amounts.length - 1]; // always use last element
 ```
 **Python:**
 ```python
-output = client.trading.get_amounts_out(5 * 10**18, [USDB, MAINTOKEN])
+amounts = client.trading.get_amounts_out(5 * 10**18, [USDB, MAINTOKEN])
+output_amount = amounts[-1]  # always use last element
 ```
 
 ---
@@ -646,8 +643,34 @@ await client.staking.borrow(stasisEquivalent, 10n); // Borrow max, 10 days
 
 ---
 
+### `getUserStakeDetails(user)` *(read)*
+**What it does:** Returns a user's complete staking breakdown — liquid shares, locked shares, totals, and asset value. Use this to check stake status before voting (24h lock applies) or to display a user's full position.
+**Module:** `client.staking`
+
+**Returns:** `[liquidShares, lockedShares, totalShares, totalAssetValue]` (all `bigint`/`int`)
+
+| Field | Description |
+|-------|-------------|
+| `liquidShares` | wSTASIS shares that can be unlocked/transferred |
+| `lockedShares` | wSTASIS shares locked in vault (earning yield, but immobile) |
+| `totalShares` | `liquidShares + lockedShares` |
+| `totalAssetValue` | Total STASIS equivalent of all shares (use for display/collateral checks) |
+
+**JS:**
+```js
+const [liquid, locked, total, assetValue] = await client.staking.getUserStakeDetails(wallet);
+console.log(`Liquid: ${liquid}, Locked: ${locked}, Total value: ${assetValue} STASIS`);
+```
+**Python:**
+```python
+liquid, locked, total, asset_value = client.staking.get_user_stake_details(wallet)
+print(f"Liquid: {liquid}, Locked: {locked}, Total value: {asset_value} STASIS")
+```
+
+---
+
 ### `getAvailableStasis(user)` *(read)*
-**What it does:** Returns STASIS available as collateral for a user.
+**What it does:** Returns STASIS available as collateral for a user (total asset value minus amount pledged to active loans).
 **Module:** `client.staking`
 
 ---
@@ -927,7 +950,7 @@ result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 
 
 ### `getUserShares(marketToken, user, outcomeId)` *(read)*
 **What it does:** Returns the number of shares a user holds for a specific outcome.
-**Module:** `client.predictionMarkets`
+**Module:** `client.predictionMarkets` (also available on `client.privateMarkets`)
 
 ---
 
@@ -1256,24 +1279,6 @@ for (const o of outcomes) {
 
 ---
 
-### `getUserShares(marketToken, user, outcomeId)` *(read)*
-**What it does:** Returns the number of outcome shares a user holds for a specific outcome in a prediction market.
-**Module:** `client.predictionMarkets` (also available on `client.privateMarkets`)
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `marketToken` | address | The prediction market's token address |
-| `user` | address | Wallet address to check |
-| `outcomeId` | number | Outcome index (0, 1, 2...) |
-
-**JS:**
-```js
-const shares = await client.predictionMarkets.getUserShares(marketToken, wallet, 0); // outcome 0
-console.log("Shares held:", formatUnits(shares, 18));
-```
-
----
-
 ### `estimateSharesOut(routerAddress, marketToken, outcomeId, usdbAmount, orderIds, user)` *(read)*
 **What it does:** Previews shares you would receive for a USDB input (AMM + order book combined).
 
@@ -1310,12 +1315,12 @@ Preview leveraged positions before committing. All read-only.
 
 **JS:**
 ```js
-const sim = await client.leverageSimulator.simulateLeverage(parseUnits("10", 18), [USDB, MAINTOKEN], 7n);
+const sim = await client.leverageSimulator.simulateLeverage(parseUnits("10", 18), [USDB, MAINTOKEN], 10n);
 console.log("Total collateral:", sim.totalCollateral, "Fees:", sim.totalFees, "Borrowed:", sim.totalBorrowed);
 ```
 **Python:**
 ```python
-sim = client.leverage_simulator.simulate_leverage(10 * 10**18, [USDB, MAINTOKEN], 7)
+sim = client.leverage_simulator.simulate_leverage(10 * 10**18, [USDB, MAINTOKEN], 10)
 print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}, Borrowed: {sim.totalBorrowed}")
 ```
 
@@ -1338,7 +1343,7 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}, Borrowed
 const sim = await client.leverageSimulator.simulateLeverageFactory(
   parseUnits("10", 18),
   [USDB, MAINTOKEN, "0xFactoryTokenAddress..."],
-  7n
+  10n
 );
 console.log("Total collateral:", sim.totalCollateral, "Fees:", sim.totalFees);
 ```
@@ -1347,7 +1352,7 @@ console.log("Total collateral:", sim.totalCollateral, "Fees:", sim.totalFees);
 sim = client.leverage_simulator.simulate_leverage_factory(
     10 * 10**18,
     [USDB, MAINTOKEN, "0xFactoryTokenAddress..."],
-    7
+    10
 )
 print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}")
 ```
@@ -1382,7 +1387,7 @@ Returns: `number` - basis points (100 = 1%)
 ---
 
 ### `getCurrentSurgeTax(token)` *(read)*
-**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is distributed in the same ratio as normal trading fees. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` — the contract enforces limits via `availableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
+**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is distributed in the same ratio as normal trading fees. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` — the contract enforces limits via `getAvailableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
 **Module:** `client.taxes`
 
 > **Tip:** Surge tax is automatically reflected in `getAmountsOut()` previews. If you always preview trades before executing (which you should for slippage protection), you're inherently protected from unexpected surge costs — the preview shows the effective price including any active surge.

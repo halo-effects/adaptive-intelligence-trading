@@ -616,7 +616,7 @@ result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)  # �
 
 **JS:**
 ```js
-const result = await client.trading.partialLoanSell(positionId, 50, true, 0);
+const result = await client.trading.partialLoanSell(positionId, 50n, true, 0n);
 ```
 **Python:**
 ```python
@@ -645,13 +645,6 @@ const result = await client.trading.buyTokens(parseUnits("10", 18), amounts[1], 
 ```
 
 **When to use this instead of `buy()`:** When you need to control the exact swap path, set a custom `minOut` for slippage, or wrap to wSTASIS in the same transaction.
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `amount` | bigint/int | Input amount |
-| `minOut` | bigint/int | Min output |
-| `path` | string[] | Explicit swap path |
-| `wrapTokens` | boolean | Wrap output |
 
 ---
 
@@ -695,13 +688,17 @@ const result = await client.trading.convertToNative(marketTokenAddress, inputTok
 **What it does:** Previews the output amount for a swap without executing it. Use before any trade to check slippage.
 **Module:** `client.trading`
 
+**Returns:** An **array** of amounts at each hop in the path. For a 2-hop path `[A, B]`, returns `[inputAmount, outputAmount]`. For a 3-hop path `[A, B, C]`, returns `[inputAmount, intermediateAmount, outputAmount]`. **Always use the last element** for the final output:
+
 **JS:**
 ```js
-const output = await client.trading.getAmountsOut(parseUnits("5", 18), [USDB, MAINTOKEN]);
+const amounts = await client.trading.getAmountsOut(parseUnits("5", 18), [USDB, MAINTOKEN]);
+const outputAmount = amounts[amounts.length - 1]; // always use last element
 ```
 **Python:**
 ```python
-output = client.trading.get_amounts_out(5 * 10**18, [USDB, MAINTOKEN])
+amounts = client.trading.get_amounts_out(5 * 10**18, [USDB, MAINTOKEN])
+output_amount = amounts[-1]  # always use last element
 ```
 
 ---
@@ -1126,8 +1123,34 @@ await client.staking.borrow(stasisEquivalent, 10n); // Borrow max, 10 days
 
 ---
 
+### `getUserStakeDetails(user)` *(read)*
+**What it does:** Returns a user's complete staking breakdown â€” liquid shares, locked shares, totals, and asset value. Use this to check stake status before voting (24h lock applies) or to display a user's full position.
+**Module:** `client.staking`
+
+**Returns:** `[liquidShares, lockedShares, totalShares, totalAssetValue]` (all `bigint`/`int`)
+
+| Field | Description |
+|-------|-------------|
+| `liquidShares` | wSTASIS shares that can be unlocked/transferred |
+| `lockedShares` | wSTASIS shares locked in vault (earning yield, but immobile) |
+| `totalShares` | `liquidShares + lockedShares` |
+| `totalAssetValue` | Total STASIS equivalent of all shares (use for display/collateral checks) |
+
+**JS:**
+```js
+const [liquid, locked, total, assetValue] = await client.staking.getUserStakeDetails(wallet);
+console.log(`Liquid: ${liquid}, Locked: ${locked}, Total value: ${assetValue} STASIS`);
+```
+**Python:**
+```python
+liquid, locked, total, asset_value = client.staking.get_user_stake_details(wallet)
+print(f"Liquid: {liquid}, Locked: {locked}, Total value: {asset_value} STASIS")
+```
+
+---
+
 ### `getAvailableStasis(user)` *(read)*
-**What it does:** Returns STASIS available as collateral for a user.
+**What it does:** Returns STASIS available as collateral for a user (total asset value minus amount pledged to active loans).
 **Module:** `client.staking`
 
 ---
@@ -1407,7 +1430,7 @@ result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 
 
 ### `getUserShares(marketToken, user, outcomeId)` *(read)*
 **What it does:** Returns the number of shares a user holds for a specific outcome.
-**Module:** `client.predictionMarkets`
+**Module:** `client.predictionMarkets` (also available on `client.privateMarkets`)
 
 ---
 
@@ -1736,24 +1759,6 @@ for (const o of outcomes) {
 
 ---
 
-### `getUserShares(marketToken, user, outcomeId)` *(read)*
-**What it does:** Returns the number of outcome shares a user holds for a specific outcome in a prediction market.
-**Module:** `client.predictionMarkets` (also available on `client.privateMarkets`)
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `marketToken` | address | The prediction market's token address |
-| `user` | address | Wallet address to check |
-| `outcomeId` | number | Outcome index (0, 1, 2...) |
-
-**JS:**
-```js
-const shares = await client.predictionMarkets.getUserShares(marketToken, wallet, 0); // outcome 0
-console.log("Shares held:", formatUnits(shares, 18));
-```
-
----
-
 ### `estimateSharesOut(routerAddress, marketToken, outcomeId, usdbAmount, orderIds, user)` *(read)*
 **What it does:** Previews shares you would receive for a USDB input (AMM + order book combined).
 
@@ -1790,12 +1795,12 @@ Preview leveraged positions before committing. All read-only.
 
 **JS:**
 ```js
-const sim = await client.leverageSimulator.simulateLeverage(parseUnits("10", 18), [USDB, MAINTOKEN], 7n);
+const sim = await client.leverageSimulator.simulateLeverage(parseUnits("10", 18), [USDB, MAINTOKEN], 10n);
 console.log("Total collateral:", sim.totalCollateral, "Fees:", sim.totalFees, "Borrowed:", sim.totalBorrowed);
 ```
 **Python:**
 ```python
-sim = client.leverage_simulator.simulate_leverage(10 * 10**18, [USDB, MAINTOKEN], 7)
+sim = client.leverage_simulator.simulate_leverage(10 * 10**18, [USDB, MAINTOKEN], 10)
 print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}, Borrowed: {sim.totalBorrowed}")
 ```
 
@@ -1818,7 +1823,7 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}, Borrowed
 const sim = await client.leverageSimulator.simulateLeverageFactory(
   parseUnits("10", 18),
   [USDB, MAINTOKEN, "0xFactoryTokenAddress..."],
-  7n
+  10n
 );
 console.log("Total collateral:", sim.totalCollateral, "Fees:", sim.totalFees);
 ```
@@ -1827,7 +1832,7 @@ console.log("Total collateral:", sim.totalCollateral, "Fees:", sim.totalFees);
 sim = client.leverage_simulator.simulate_leverage_factory(
     10 * 10**18,
     [USDB, MAINTOKEN, "0xFactoryTokenAddress..."],
-    7
+    10
 )
 print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}")
 ```
@@ -1862,7 +1867,7 @@ Returns: `number` - basis points (100 = 1%)
 ---
 
 ### `getCurrentSurgeTax(token)` *(read)*
-**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is distributed in the same ratio as normal trading fees. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` â€” the contract enforces limits via `availableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
+**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is distributed in the same ratio as normal trading fees. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` â€” the contract enforces limits via `getAvailableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
 **Module:** `client.taxes`
 
 > **Tip:** Surge tax is automatically reflected in `getAmountsOut()` previews. If you always preview trades before executing (which you should for slippage protection), you're inherently protected from unexpected surge costs â€” the preview shows the effective price including any active surge.
@@ -2166,11 +2171,11 @@ Before entering any position, use `getAmountsOut()` to estimate price impact and
 // Check how much 1% of your target position moves the price
 const testAmount = targetAmount / 100n; // 1% probe
 const testOutput = await client.trading.getAmountsOut(testAmount, path);
-const testRate = testOutput * 100n / testAmount; // effective rate per unit
+const testRate = testOutput[testOutput.length - 1] * 100n / testAmount; // effective rate per unit
 
 // Now check full position
 const fullOutput = await client.trading.getAmountsOut(targetAmount, path);
-const fullRate = fullOutput * 100n / targetAmount;
+const fullRate = fullOutput[fullOutput.length - 1] * 100n / targetAmount;
 
 // Price impact = difference between small and full rate
 const impactBps = (testRate - fullRate) * 10000n / testRate; // in basis points
@@ -2399,11 +2404,11 @@ All trades route through STASIS. No direct token-to-token swaps.
 
 **Tax structure**:
 
-| Token Type | Tax Rate | Round-Trip |
-|-----------|----------|-----------|
-| Stable+ (incl. STASIS) | 0.50% | ~1.0% |
-| Floor+ | 1.50% | ~3.0% |
-| Predict+ | 1.50% | ~3.0% |
+| Token Type | Raw Fee Per Swap | Raw Round-Trip | + Slippage |
+|-----------|----------|-----------|-----------|
+| Stable+ (incl. STASIS) | 0.50% | ~1.0% | Varies by pool depth |
+| Floor+ | 1.50% | ~3.0% | Varies by pool depth |
+| Predict+ | 1.50% | ~3.0% | Varies by pool depth |
 
 **Fee distribution**: For standard tokens: Creator (20%), staking yield (16%), reward phase buyers (4%), platform treasury (60%). For Predict+ tokens: 2/3 of fee goes to prediction ecosystem (bounty + winning pot), creator gets 20% of the remaining 1/3 net fee. See [09-fees.md](09-fees.md) for the full Predict+ breakdown.
 
@@ -2802,9 +2807,10 @@ All options can be passed to the `BasisClient` constructor (or `BasisClient.crea
 | `client.walletClient` | WalletClient | viem wallet client for write operations (only if `privateKey` provided) |
 | `client.walletClient.account.address` | address | Your wallet address |
 | `client.api` | BasisAPI | Off-chain API wrapper |
+| `client.apiKey` | string | Auto-provisioned API key (persistent, no expiry) |
 | `client.stakingAddress` | address | wSTASIS vault contract address (for direct `balanceOf` calls) |
 
-**Python-specific properties:**
+**Python-specific properties** (snake_case per Python convention):
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -2812,6 +2818,7 @@ All options can be passed to the `BasisClient` constructor (or `BasisClient.crea
 | `client.wallet_address` | str | Your wallet address |
 | `client.usdb_address` | str | USDB contract address |
 | `client.main_token_address` | str | STASIS/MAINTOKEN contract address |
+| `client.api_key` | str | Auto-provisioned API key (persistent, no expiry) |
 | `client.apiKey` | string | Auto-provisioned API key (persistent, no expiry) |
 
 ### ðŸ”’ Private Key Security
@@ -2991,7 +2998,7 @@ Predict+ tokens have the same 1.5% gross fee as Floor+, but the fee is distribut
 |-----------------|--------|-------------|
 | **Prediction ecosystem portion** | **$1.00** (1% of trade) | Fed back into the market |
 | - Resolver bounty pool | $0.05 (5% of ecosystem portion) | Rewards for resolvers who finalize the market |
-| - Winning outcome pot | $0.95 (95% of ecosystem portion) | Distributed to holders of the winning outcome |
+| - General pot | $0.95 (95% of ecosystem portion) | Accumulated from all outcome trading; distributed to winning outcome holders at resolution |
 | **Net platform fee** | **$0.50** (0.5% of trade) | Standard platform distribution |
 | - Staking yield (16%) | $0.08 | Vault holders |
 | - Creator dev fee (20%) | $0.10 | Market creator |
@@ -3022,7 +3029,7 @@ The surge tax is a temporary extra fee that **token creators manually activate**
 - Surge duration: â‰¥ 1 hour (linear decay to zero)
 - Quota: maximum 7 days of surge per rolling 30-day window
 
-**How it works:** The creator activates a surge with chosen start/end rates and duration (min 1 hour). The extra fee goes primarily to the creator (all surge basis points are added to the dev portion of fee distribution). The more stable the token (higher hybridMultiplier), the lower the maximum allowed surge - because stable tokens already absorb sell pressure structurally. Check `availableSurgeQuota(token)` before starting a surge to see remaining quota.
+**How it works:** The creator activates a surge with chosen start/end rates and duration (min 1 hour). The extra fee goes primarily to the creator (all surge basis points are added to the dev portion of fee distribution). The more stable the token (higher hybridMultiplier), the lower the maximum allowed surge - because stable tokens already absorb sell pressure structurally. Check `getAvailableSurgeQuota(token)` before starting a surge to see remaining quota.
 
 ---
 
@@ -4289,7 +4296,7 @@ Basis launches in three phases. **Phase 1 (Founding Lobster)** and **Phase 2 (Pr
 - **Gas costs are the price of admission; the airdrop is your compensation.** BNB gas is the only real cost during Phases 1-2. The 25% token allocation to testers exists specifically because you're helping battle-test pre-audit contracts.
 - **Points carry over** across all phases. Leaderboard resets at each transition, but your accumulated points are permanent
 
-**Bug reporting:** `POST /api/v1/bugs/report` - see [11-api-reference.md](11-api-reference.md) for full API docs. Reports are reviewed by the team, and points are awarded on verification.
+**Bug reporting:** `POST /api/v1/bugs/reports` - see [11-api-reference.md](11-api-reference.md) for full API docs. Reports are reviewed by the team, and points are awarded on verification.
 
 ---
 
@@ -4317,7 +4324,7 @@ Basis uses six complementary layers to defend against sybil attacks and reward g
 
 1. **Cost to exist** - Each wallet gets a one-time $10K USDB faucet claim. Creating more wallets gives more capital, but each wallet is isolated (no transfers) and must operate independently.
 
-2. **Cost to earn** - Trading fees (1.5% round-trip), loan origination (2%), and gas costs mean every point-earning action costs real resources. Farming at scale is expensive.
+2. **Cost to earn** - Trading fees (~1% round-trip for Stable+, ~3% for Floor+/Predict+ â€” raw fees before slippage), loan origination (2%), and gas costs mean every point-earning action costs real resources. Farming at scale is expensive.
 
 3. **Graph analysis** - Pre-airdrop batch analysis examines wallet-to-wallet relationships, trading pattern correlations, timing analysis, and circular flow detection across the entire testing period.
 
@@ -4380,7 +4387,7 @@ Real mistakes discovered during live SDK testing.
 - âŒ **Passing STASIS amounts to `lock()` instead of wSTASIS shares** â†’ `lock()` takes wSTASIS shares, not STASIS units. As vault yield accrues, the exchange ratio diverges from 1:1. Always use `convertToShares(stasisAmount)` first, then pass the result to `lock()`.
 
 ## Trading Mistakes
-- âŒ **Ignoring the 3% round-trip for Floor+/Predict+** â†’ Your trade needs 3%+ to break even.
+- âŒ **Ignoring the ~3% raw round-trip for Floor+/Predict+** â†’ Your trade needs 3%+ price movement to break even on fees alone â€” slippage is additional. Use `getAmountsOut()` to preview actual costs.
 - âŒ **Not checking `getAmountsOut()` before trading** â†’ Slippage on low-liquidity tokens.
 - âŒ **Not checking for active surge tax** â†’ A token creator can activate surge tax at any time (up to 15% on low-multiplier Floor+ tokens). Always check `taxes.getCurrentSurgeTax(tokenAddress)` before trading to avoid unexpected fees. Your cost model can break overnight if a surge is activated after you've entered a position.
 
@@ -4389,7 +4396,7 @@ Real mistakes discovered during live SDK testing.
 - âŒ **Selling immediately after resolution** â†’ Price goes UP as others sell (burn â†’ slippage retention). Wait.
 - âŒ **Proposing an outcome without understanding bond risk** â†’ Your 5 USDB proposal bond is lost if someone disputes and the vote goes against you. The disputer's bond is also at risk. Only propose outcomes you're confident about. If neither party is correct, both bonds go to the insurance fund.
 
-- ðŸ›‘ **Voting while holding an expiring loan** â€” After voting, your staked tokens are locked for 24 hours (`VOTE_LOCK_DURATION`). If you have a loan expiring within that window, you cannot unstake to repay or extend it. Scenario: You vote on a disputed market on Monday at 3pm. Your loan expires Tuesday at 10am. You cannot unstake until Tuesday at 3pm â€” by then your collateral has been liquidated. **Before voting, check all loan expiry dates and ensure none fall within the next 24 hours.** Use `client.staking.getUserStakeDetails(wallet)` to check your stake status, and `client.loans.getUserLoanDetails(wallet, hubId)` for hub loan expiry dates.
+- ðŸ›‘ **Voting while holding an expiring loan** â€” After voting, your staked tokens are locked for 24 hours (`VOTE_LOCK_DURATION`). If you have a loan expiring within that window, you cannot unstake to repay or extend it. Scenario: You vote on a disputed market on Monday at 3pm. Your loan expires Tuesday at 10am. You cannot unstake until Tuesday at 3pm â€” by then your collateral has been liquidated. **Before voting, check all loan expiry dates and ensure none fall within the next 24 hours.** Use `client.staking.getUserStakeDetails(wallet)` to check your stake status (returns liquid/locked shares and total value), and `client.loans.getUserLoanDetails(wallet, hubId)` for hub loan expiry dates.
 
 ## Vesting Mistakes
 - âŒ **Setting start time to `now()`** â†’ Already past by tx confirmation. Use `now() + 60`.
@@ -4577,7 +4584,7 @@ human_token = Web3.from_wei(100000000000000000000, "ether") # 100
 >
 > // Usage: preview first, then set minOut
 > const preview = await client.trading.getAmountsOut(amount, path);
-> const minOut = withSlippage(preview[1], 2); // 2% slippage tolerance
+> const minOut = withSlippage(preview[preview.length - 1], 2); // 2% slippage tolerance (last element = output amount)
 > const result = await client.trading.buyTokens(amount, minOut, path, false);
 > ```
 > Without slippage protection, your trades are vulnerable to sandwich attacks and price movement between simulation and execution.
@@ -4590,7 +4597,7 @@ human_token = Web3.from_wei(100000000000000000000, "ether") # 100
 >
 > # Usage:
 > preview = client.trading.get_amounts_out(amount, path)
-> min_out = with_slippage(preview, 2)  # 2% tolerance
+> min_out = with_slippage(preview[-1], 2)  # 2% tolerance (last element = output amount)
 > result = client.trading.buy_tokens(amount, min_out, path, False)
 > ```
 
@@ -4675,14 +4682,14 @@ async function tradeTokens() {
   console.log("Expected output for 5 USDB:", preview);
 
   // Buy with 5 USDB â€” with slippage protection and error handling
-  const minOut = withSlippage(preview, 2); // 2% tolerance on previewed output
+  const minOut = withSlippage(preview[preview.length - 1], 2); // 2% tolerance on final output amount
   try {
     const buyResult = await client.trading.buy(TOKEN, fiveUsdb, minOut);
     console.log("Bought tokens:", buyResult.hash);
   } catch (e) {
     if (e.message.includes("slippage")) {
       console.log("Slippage exceeded â€” retrying with higher tolerance");
-      const retryMinOut = withSlippage(preview, 5); // 5% on retry
+      const retryMinOut = withSlippage(preview[preview.length - 1], 5); // 5% on retry
       const buyResult = await client.trading.buy(TOKEN, fiveUsdb, retryMinOut);
       console.log("Bought on retry:", buyResult.hash);
     } else {
@@ -4716,7 +4723,7 @@ def trade_tokens():
     print("Expected output for 5 USDB:", preview)
 
     # Buy with slippage protection
-    min_out = preview * 98 // 100  # 2% slippage tolerance
+    min_out = preview[-1] * 98 // 100  # 2% slippage tolerance (last element = output amount)
     buy_result = client.trading.buy(TOKEN, FIVE_USDB, min_out)
     print("Bought tokens:", buy_result["hash"])
 
@@ -4767,7 +4774,7 @@ async function predictionMarket() {
   const expectedShares = fiveUsdb * BigInt(1e18) / yesPrice;
   const minShares = withSlippage(expectedShares, 2); // 2% tolerance
   const buyResult = await client.predictionMarkets.buy(
-    marketToken, 0, USDB, fiveUsdb, minShares, 0n
+    marketToken, 0, USDB, fiveUsdb, 0n, minShares
   );
   console.log("Bought Yes shares:", buyResult.hash);
 
@@ -4850,11 +4857,11 @@ async function leverageTrading() {
 
   // 2. Open the leverage position (10 USDB, 10 days minimum) â€” with slippage protection
   const expectedOut = await client.trading.getAmountsOut(parseUnits("10", 18), path);
-  const minOut = withSlippage(expectedOut, 3); // 3% tolerance for leverage (multi-hop)
+  const minOut = withSlippage(expectedOut[expectedOut.length - 1], 3); // 3% tolerance for leverage (multi-hop)
   const openResult = await client.trading.leverageBuy(parseUnits("10", 18), minOut, path, 10n);
   console.log("Position opened:", openResult.hash);
 
-  // 3. Wait for the next block (required to avoid same-block revert)
+  // 3. Wait for backend to sync the new position (~5s)
   await new Promise(resolve => setTimeout(resolve, 5000));
 
   // 4. Get the position details
@@ -4867,9 +4874,9 @@ async function leverageTrading() {
 
   // 5. Partially close (sell 50%) â€” with slippage protection
   // Estimate output from selling 50% of position tokens
-  const sellAmount = position.collateral / 2n;
+  const sellAmount = position.collateralAmount / 2n;
   const sellPreview = await client.trading.getAmountsOut(sellAmount, [MAINTOKEN, USDB]);
-  const sellMinOut = withSlippage(sellPreview, 2);
+  const sellMinOut = withSlippage(sellPreview[sellPreview.length - 1], 2);
   const closeResult = await client.trading.partialLoanSell(positionId, 50n, true, sellMinOut);
   console.log("Partially closed:", closeResult.hash);
 }
@@ -4893,11 +4900,11 @@ def leverage_trading():
 
     # Open with slippage protection (10 days minimum)
     expected_out = client.trading.get_amounts_out(10_000_000_000_000_000_000, path)
-    min_out = expected_out * 97 // 100  # 3% tolerance for leverage
+    min_out = expected_out[-1] * 97 // 100  # 3% tolerance for leverage
     open_result = client.trading.leverage_buy(10_000_000_000_000_000_000, min_out, path, 10)
     print("Position opened:", open_result["hash"])
 
-    time.sleep(5)
+    time.sleep(5)  # Wait for backend to sync the new position
 
     # Leverage positions are 1-indexed (same as hubId â€” both use ++count)
     position_count = client.trading.get_leverage_count(client.wallet_address)
@@ -4906,8 +4913,8 @@ def leverage_trading():
     print("Position:", position)
 
     # Partial close with slippage protection
-    sell_preview = client.trading.get_amounts_out(int(position["collateral"]) // 2, [MAINTOKEN, USDB])
-    sell_min_out = sell_preview * 98 // 100  # 2% tolerance
+    sell_preview = client.trading.get_amounts_out(int(position["collateralAmount"]) // 2, [MAINTOKEN, USDB])
+    sell_min_out = sell_preview[-1] * 98 // 100  # 2% tolerance
     close_result = client.trading.partial_loan_sell(position_id, 50, True, sell_min_out)
     print("Partially closed:", close_result["hash"])
 ```
@@ -5550,7 +5557,7 @@ Every platform has strategies that sound good in theory but don't work in practi
 ```js
 const entryAmount = parseUnits("1000", 18); // 1000 USDB
 const entryPreview = await client.trading.getAmountsOut(entryAmount, [USDB, MAINTOKEN]);
-const entryCost = entryAmount - entryPreview; // What you "lose" to fees + slippage on entry
+const entryCost = entryAmount - entryPreview[entryPreview.length - 1]; // What you "lose" to fees + slippage on entry
 // Double it for round-trip (exit will cost roughly the same)
 const roundTripCost = entryCost * 2n;
 // Your vault position needs to earn more than roundTripCost in yield to be profitable
@@ -5567,7 +5574,7 @@ Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just t
 
 ## General Anti-Patterns
 
-**Avoid high-frequency trading / scalping strategies.** The 1.5% round-trip trading fee means you need >1.5% price movement just to break even. HFT strategies designed for 0.1% fee environments will bleed out on Basis.
+**Avoid high-frequency trading / scalping strategies.** Round-trip raw trading fees are ~1% for Stable+ and ~3% for Floor+/Predict+ tokens â€” and that's before slippage, which varies by pool depth and trade size. Your actual break-even is higher than the raw fees alone. Use `getAmountsOut()` to preview real costs. HFT strategies designed for 0.1% fee environments will bleed out on Basis.
 
 **Avoid passive USDB holding without deploying capital.** USDB sitting idle in your wallet earns nothing. Every other participant who is trading, staking, creating, or betting is earning airdrop points while your capital does nothing.
 
@@ -5584,7 +5591,7 @@ Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just t
 
 # Production Operations Guide
 
-**What this covers:** Running a Basis agent in production â€” lifecycle, health checks, error recovery, state reconstruction, RPC configuration, and monitoring.
+**What this covers:** Running a Basis agent in production - lifecycle, health checks, error recovery, state reconstruction, RPC configuration, and monitoring.
 **Related sections:** â†’ See: [08-getting-started.md](08-getting-started.md) for initial setup Â· â†’ See: [10-errors.md](10-errors.md) for error codes Â· â†’ See: [13-mistakes.md](13-mistakes.md) for common pitfalls Â· â†’ See: [16-examples.md](16-examples.md) for bootstrap script
 
 ---
@@ -5603,7 +5610,7 @@ A production Basis agent follows this lifecycle:
 7. SHUTDOWN      â†’ Close positions, repay loans, unstake, withdraw
 ```
 
-**Don't skip step 2.** ERC-8004 registration is a public declaration of what your agent can do. Every registered agent that references Basis is visible ecosystem-wide. Register after you've built real capabilities â€” not on day one with empty metadata.
+**Don't skip step 2.** ERC-8004 registration is a public declaration of what your agent can do. Every registered agent that references Basis is visible ecosystem-wide. Register after you've built real capabilities - not on day one with empty metadata.
 
 ---
 
@@ -5616,7 +5623,7 @@ Run these periodically (every 1-5 minutes for active agents):
 async function healthCheck(client) {
   const wallet = client.walletClient.account.address;
 
-  // 1. RPC connectivity â€” can we reach the chain?
+  // 1. RPC connectivity - can we reach the chain?
   try {
     const blockNumber = await client.publicClient.getBlockNumber();
     console.log("âœ… RPC connected, block:", blockNumber);
@@ -5626,7 +5633,7 @@ async function healthCheck(client) {
     return false;
   }
 
-  // 2. USDB balance â€” enough to operate?
+  // 2. USDB balance - enough to operate?
   const usdbBalance = await client.publicClient.readContract({
     address: client.usdbAddress,
     abi: [{"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}],
@@ -5635,13 +5642,13 @@ async function healthCheck(client) {
   });
   console.log("ðŸ’° USDB:", formatUnits(usdbBalance, 18));
 
-  // 3. BNB balance â€” enough for gas?
+  // 3. BNB balance - enough for gas?
   const bnbBalance = await client.publicClient.getBalance({ address: wallet });
   if (bnbBalance < parseUnits("0.005", 18)) {
-    console.warn("âš ï¸ Low BNB â€” refill for gas");
+    console.warn("âš ï¸ Low BNB - refill for gas");
   }
 
-  // 4. Open positions â€” any loans nearing expiry?
+  // 4. Open positions - any loans nearing expiry?
   const loanCount = await client.loans.getUserLoanCount(wallet);
   for (let i = 1n; i <= loanCount; i++) {
     const loan = await client.loans.getUserLoanDetails(wallet, i);
@@ -5649,7 +5656,7 @@ async function healthCheck(client) {
       const expiryMs = Number(loan.liquidationTime) * 1000;
       const hoursLeft = (expiryMs - Date.now()) / (1000 * 60 * 60);
       if (hoursLeft < 24) {
-        console.warn(`âš ï¸ Loan ${i} expires in ${hoursLeft.toFixed(1)}h â€” extend or repay`);
+        console.warn(`âš ï¸ Loan ${i} expires in ${hoursLeft.toFixed(1)}h - extend or repay`);
       }
     }
   }
@@ -5703,9 +5710,9 @@ const result = await withRetry(() => client.trading.buy(tokenAddr, amount));
 
 If a transaction is stuck in the mempool (common during BSC congestion):
 
-1. **Check if it landed:** Query the transaction hash â€” if the receipt exists, it went through
+1. **Check if it landed:** Query the transaction hash - if the receipt exists, it went through
 2. **If still pending after 60s:** The SDK uses viem which handles nonce management, but you can manually resubmit with higher gas
-3. **Never assume a timed-out transaction failed** â€” always check the receipt before retrying the operation, or you'll double-execute
+3. **Never assume a timed-out transaction failed** - always check the receipt before retrying the operation, or you'll double-execute
 
 ```js
 async function waitForTxSafe(client, hash, timeoutMs = 60000) {
@@ -5716,7 +5723,7 @@ async function waitForTxSafe(client, hash, timeoutMs = 60000) {
     });
     return receipt;
   } catch (e) {
-    // Timeout â€” check if it landed anyway
+    // Timeout - check if it landed anyway
     try {
       const receipt = await client.publicClient.getTransactionReceipt({ hash });
       if (receipt) return receipt; // It went through despite the timeout
@@ -5730,13 +5737,13 @@ async function waitForTxSafe(client, hash, timeoutMs = 60000) {
 
 BSC uses a 3-second block time with occasional short reorgs (1-3 blocks). For time-sensitive operations:
 - **Wait for 3+ block confirmations** before treating a transaction as final (especially for market finalization, loan extensions near expiry)
-- **Don't act on pending transactions** â€” wait for `receipt.status === 'success'` with confirmation count
+- **Don't act on pending transactions** - wait for `receipt.status === 'success'` with confirmation count
 - Use `publicClient.waitForTransactionReceipt({ hash, confirmations: 3 })` for critical operations
-- Reorgs are rare but can replay transactions in unexpected order â€” avoid chaining time-dependent transactions in rapid succession
+- Reorgs are rare but can replay transactions in unexpected order - avoid chaining time-dependent transactions in rapid succession
 
 ### SIWE Session Expired
 
-This only affects browser-based flows. **For long-running agents, use API keys** â€” they're auto-provisioned during `BasisClient.create()` and don't expire. The `client.apiKey` property persists across restarts if you store it.
+This only affects browser-based flows. **For long-running agents, use API keys** - they're auto-provisioned during `BasisClient.create()` and don't expire. The `client.apiKey` property persists across restarts if you store it.
 
 If you do hit a 401:
 ```js
@@ -5821,10 +5828,10 @@ const client = await BasisClient.create({
 ```
 
 ### Recommended Providers (BSC)
-- **Ankr** â€” Free tier available, good BSC support
-- **QuickNode** â€” Fast, reliable, paid
-- **NodeReal** â€” BSC-focused, meganode architecture
-- **Chainstack** â€” Dedicated nodes available
+- **Ankr** - Free tier available, good BSC support
+- **QuickNode** - Fast, reliable, paid
+- **NodeReal** - BSC-focused, meganode architecture
+- **Chainstack** - Dedicated nodes available
 
 ### Failover Pattern
 
@@ -5861,12 +5868,12 @@ async function createClientWithFailover() {
 Always await the receipt before sending the next transaction:
 
 ```js
-// âœ… Correct â€” sequential with receipts
+// âœ… Correct - sequential with receipts
 const buy = await client.trading.buy(tokenAddr, parseUnits("10", 18));
 // Receipt is already awaited inside buy()
 
 const sell = await client.trading.sell(tokenAddr, parseUnits("5", 18));
-// Safe â€” previous tx is confirmed
+// Safe - previous tx is confirmed
 ```
 
 ### Burst Operations
@@ -5874,7 +5881,7 @@ const sell = await client.trading.sell(tokenAddr, parseUnits("5", 18));
 For operations that need multiple transactions (e.g., buying multiple tokens):
 
 ```js
-// âœ… Correct â€” sequential loop
+// âœ… Correct - sequential loop
 const tokens = ["0xToken1", "0xToken2", "0xToken3"];
 for (const token of tokens) {
   const result = await client.trading.buy(token, parseUnits("10", 18));
@@ -5882,11 +5889,11 @@ for (const token of tokens) {
   // Each buy() internally awaits the receipt, so nonce is managed
 }
 
-// âŒ Wrong â€” parallel sends will cause nonce collisions
+// âŒ Wrong - parallel sends will cause nonce collisions
 // await Promise.all(tokens.map(t => client.trading.buy(t, amount)));
 ```
 
-The SDK uses viem which manages nonces for sequential calls. **Do not send transactions in parallel** â€” BSC will reject them with nonce errors.
+The SDK uses viem which manages nonces for sequential calls. **Do not send transactions in parallel** - BSC will reject them with nonce errors.
 
 ---
 
@@ -5915,7 +5922,7 @@ async function monitoringLoop(client) {
     try {
       const healthy = await healthCheck(client);
       if (!healthy) {
-        // Alert logic â€” send notification, switch RPC, etc.
+        // Alert logic - send notification, switch RPC, etc.
       }
     } catch (e) {
       console.error("Monitoring error:", e.message);
@@ -5931,11 +5938,11 @@ async function monitoringLoop(client) {
 
 When shutting down gracefully:
 
-1. **Stop opening new positions** â€” stop trading loops
+1. **Stop opening new positions** - stop trading loops
 2. **Repay active loans** before expiry (avoid collateral burn)
 3. **Close leverage positions** via `partialLoanSell(id, 100, true, 0)` (100% = full close)
-4. **Unstake** â€” `unlock()` â†’ `sell()` (if not vote-locked)
-5. **Claim any pending rewards** â€” `claimLiquidation()` for expired loans, `claimBounty()` for resolved markets
-6. **Verify final state** â€” Run `reconstructState()` to confirm no orphaned positions
+4. **Unstake** - `unlock()` â†’ `sell()` (if not vote-locked)
+5. **Claim any pending rewards** â€” `claimLiquidation(hubId)` for each expired loan, `claimBounty(marketToken)` for resolved markets
+6. **Verify final state** - Run `reconstructState()` to confirm no orphaned positions
 
 

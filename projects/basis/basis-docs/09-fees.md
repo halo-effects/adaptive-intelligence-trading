@@ -24,7 +24,7 @@ Predict+ tokens have the same 1.5% gross fee as Floor+, but the fee is distribut
 |-----------------|--------|-------------|
 | **Prediction ecosystem portion** | **$1.00** (1% of trade) | Fed back into the market |
 | - Resolver bounty pool | $0.05 (5% of ecosystem portion) | Rewards for resolvers who finalize the market |
-| - Winning outcome pot | $0.95 (95% of ecosystem portion) | Distributed to holders of the winning outcome |
+| - General pot | $0.95 (95% of ecosystem portion) | Accumulated from all outcome trading; distributed to winning outcome holders at resolution |
 | **Net platform fee** | **$0.50** (0.5% of trade) | Standard platform distribution |
 | - Staking yield (16%) | $0.08 | Vault holders |
 | - Creator dev fee (20%) | $0.10 | Market creator |
@@ -55,7 +55,7 @@ The surge tax is a temporary extra fee that **token creators manually activate**
 - Surge duration: ≥ 1 hour (linear decay to zero)
 - Quota: maximum 7 days of surge per rolling 30-day window
 
-**How it works:** The creator activates a surge with chosen start/end rates and duration (min 1 hour). The extra fee goes primarily to the creator (all surge basis points are added to the dev portion of fee distribution). The more stable the token (higher hybridMultiplier), the lower the maximum allowed surge - because stable tokens already absorb sell pressure structurally. Check `availableSurgeQuota(token)` before starting a surge to see remaining quota.
+**How it works:** The creator activates a surge with chosen start/end rates and duration (min 1 hour). The extra fee goes primarily to the creator (all surge basis points are added to the dev portion of fee distribution). The more stable the token (higher hybridMultiplier), the lower the maximum allowed surge - because stable tokens already absorb sell pressure structurally. Check `getAvailableSurgeQuota(token)` before starting a surge to see remaining quota.
 
 ---
 

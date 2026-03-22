@@ -1,6 +1,6 @@
 # Production Operations Guide
 
-**What this covers:** Running a Basis agent in production — lifecycle, health checks, error recovery, state reconstruction, RPC configuration, and monitoring.
+**What this covers:** Running a Basis agent in production - lifecycle, health checks, error recovery, state reconstruction, RPC configuration, and monitoring.
 **Related sections:** → See: [08-getting-started.md](08-getting-started.md) for initial setup · → See: [10-errors.md](10-errors.md) for error codes · → See: [13-mistakes.md](13-mistakes.md) for common pitfalls · → See: [16-examples.md](16-examples.md) for bootstrap script
 
 ---
@@ -19,7 +19,7 @@ A production Basis agent follows this lifecycle:
 7. SHUTDOWN      → Close positions, repay loans, unstake, withdraw
 ```
 
-**Don't skip step 2.** ERC-8004 registration is a public declaration of what your agent can do. Every registered agent that references Basis is visible ecosystem-wide. Register after you've built real capabilities — not on day one with empty metadata.
+**Don't skip step 2.** ERC-8004 registration is a public declaration of what your agent can do. Every registered agent that references Basis is visible ecosystem-wide. Register after you've built real capabilities - not on day one with empty metadata.
 
 ---
 
@@ -32,7 +32,7 @@ Run these periodically (every 1-5 minutes for active agents):
 async function healthCheck(client) {
   const wallet = client.walletClient.account.address;
 
-  // 1. RPC connectivity — can we reach the chain?
+  // 1. RPC connectivity - can we reach the chain?
   try {
     const blockNumber = await client.publicClient.getBlockNumber();
     console.log("✅ RPC connected, block:", blockNumber);
@@ -42,7 +42,7 @@ async function healthCheck(client) {
     return false;
   }
 
-  // 2. USDB balance — enough to operate?
+  // 2. USDB balance - enough to operate?
   const usdbBalance = await client.publicClient.readContract({
     address: client.usdbAddress,
     abi: [{"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}],
@@ -51,13 +51,13 @@ async function healthCheck(client) {
   });
   console.log("💰 USDB:", formatUnits(usdbBalance, 18));
 
-  // 3. BNB balance — enough for gas?
+  // 3. BNB balance - enough for gas?
   const bnbBalance = await client.publicClient.getBalance({ address: wallet });
   if (bnbBalance < parseUnits("0.005", 18)) {
-    console.warn("⚠️ Low BNB — refill for gas");
+    console.warn("⚠️ Low BNB - refill for gas");
   }
 
-  // 4. Open positions — any loans nearing expiry?
+  // 4. Open positions - any loans nearing expiry?
   const loanCount = await client.loans.getUserLoanCount(wallet);
   for (let i = 1n; i <= loanCount; i++) {
     const loan = await client.loans.getUserLoanDetails(wallet, i);
@@ -65,7 +65,7 @@ async function healthCheck(client) {
       const expiryMs = Number(loan.liquidationTime) * 1000;
       const hoursLeft = (expiryMs - Date.now()) / (1000 * 60 * 60);
       if (hoursLeft < 24) {
-        console.warn(`⚠️ Loan ${i} expires in ${hoursLeft.toFixed(1)}h — extend or repay`);
+        console.warn(`⚠️ Loan ${i} expires in ${hoursLeft.toFixed(1)}h - extend or repay`);
       }
     }
   }
@@ -119,9 +119,9 @@ const result = await withRetry(() => client.trading.buy(tokenAddr, amount));
 
 If a transaction is stuck in the mempool (common during BSC congestion):
 
-1. **Check if it landed:** Query the transaction hash — if the receipt exists, it went through
+1. **Check if it landed:** Query the transaction hash - if the receipt exists, it went through
 2. **If still pending after 60s:** The SDK uses viem which handles nonce management, but you can manually resubmit with higher gas
-3. **Never assume a timed-out transaction failed** — always check the receipt before retrying the operation, or you'll double-execute
+3. **Never assume a timed-out transaction failed** - always check the receipt before retrying the operation, or you'll double-execute
 
 ```js
 async function waitForTxSafe(client, hash, timeoutMs = 60000) {
@@ -132,7 +132,7 @@ async function waitForTxSafe(client, hash, timeoutMs = 60000) {
     });
     return receipt;
   } catch (e) {
-    // Timeout — check if it landed anyway
+    // Timeout - check if it landed anyway
     try {
       const receipt = await client.publicClient.getTransactionReceipt({ hash });
       if (receipt) return receipt; // It went through despite the timeout
@@ -146,13 +146,13 @@ async function waitForTxSafe(client, hash, timeoutMs = 60000) {
 
 BSC uses a 3-second block time with occasional short reorgs (1-3 blocks). For time-sensitive operations:
 - **Wait for 3+ block confirmations** before treating a transaction as final (especially for market finalization, loan extensions near expiry)
-- **Don't act on pending transactions** — wait for `receipt.status === 'success'` with confirmation count
+- **Don't act on pending transactions** - wait for `receipt.status === 'success'` with confirmation count
 - Use `publicClient.waitForTransactionReceipt({ hash, confirmations: 3 })` for critical operations
-- Reorgs are rare but can replay transactions in unexpected order — avoid chaining time-dependent transactions in rapid succession
+- Reorgs are rare but can replay transactions in unexpected order - avoid chaining time-dependent transactions in rapid succession
 
 ### SIWE Session Expired
 
-This only affects browser-based flows. **For long-running agents, use API keys** — they're auto-provisioned during `BasisClient.create()` and don't expire. The `client.apiKey` property persists across restarts if you store it.
+This only affects browser-based flows. **For long-running agents, use API keys** - they're auto-provisioned during `BasisClient.create()` and don't expire. The `client.apiKey` property persists across restarts if you store it.
 
 If you do hit a 401:
 ```js
@@ -237,10 +237,10 @@ const client = await BasisClient.create({
 ```
 
 ### Recommended Providers (BSC)
-- **Ankr** — Free tier available, good BSC support
-- **QuickNode** — Fast, reliable, paid
-- **NodeReal** — BSC-focused, meganode architecture
-- **Chainstack** — Dedicated nodes available
+- **Ankr** - Free tier available, good BSC support
+- **QuickNode** - Fast, reliable, paid
+- **NodeReal** - BSC-focused, meganode architecture
+- **Chainstack** - Dedicated nodes available
 
 ### Failover Pattern
 
@@ -277,12 +277,12 @@ async function createClientWithFailover() {
 Always await the receipt before sending the next transaction:
 
 ```js
-// ✅ Correct — sequential with receipts
+// ✅ Correct - sequential with receipts
 const buy = await client.trading.buy(tokenAddr, parseUnits("10", 18));
 // Receipt is already awaited inside buy()
 
 const sell = await client.trading.sell(tokenAddr, parseUnits("5", 18));
-// Safe — previous tx is confirmed
+// Safe - previous tx is confirmed
 ```
 
 ### Burst Operations
@@ -290,7 +290,7 @@ const sell = await client.trading.sell(tokenAddr, parseUnits("5", 18));
 For operations that need multiple transactions (e.g., buying multiple tokens):
 
 ```js
-// ✅ Correct — sequential loop
+// ✅ Correct - sequential loop
 const tokens = ["0xToken1", "0xToken2", "0xToken3"];
 for (const token of tokens) {
   const result = await client.trading.buy(token, parseUnits("10", 18));
@@ -298,11 +298,11 @@ for (const token of tokens) {
   // Each buy() internally awaits the receipt, so nonce is managed
 }
 
-// ❌ Wrong — parallel sends will cause nonce collisions
+// ❌ Wrong - parallel sends will cause nonce collisions
 // await Promise.all(tokens.map(t => client.trading.buy(t, amount)));
 ```
 
-The SDK uses viem which manages nonces for sequential calls. **Do not send transactions in parallel** — BSC will reject them with nonce errors.
+The SDK uses viem which manages nonces for sequential calls. **Do not send transactions in parallel** - BSC will reject them with nonce errors.
 
 ---
 
@@ -331,7 +331,7 @@ async function monitoringLoop(client) {
     try {
       const healthy = await healthCheck(client);
       if (!healthy) {
-        // Alert logic — send notification, switch RPC, etc.
+        // Alert logic - send notification, switch RPC, etc.
       }
     } catch (e) {
       console.error("Monitoring error:", e.message);
@@ -347,9 +347,9 @@ async function monitoringLoop(client) {
 
 When shutting down gracefully:
 
-1. **Stop opening new positions** — stop trading loops
+1. **Stop opening new positions** - stop trading loops
 2. **Repay active loans** before expiry (avoid collateral burn)
 3. **Close leverage positions** via `partialLoanSell(id, 100, true, 0)` (100% = full close)
-4. **Unstake** — `unlock()` → `sell()` (if not vote-locked)
-5. **Claim any pending rewards** — `claimLiquidation()` for expired loans, `claimBounty()` for resolved markets
-6. **Verify final state** — Run `reconstructState()` to confirm no orphaned positions
+4. **Unstake** - `unlock()` → `sell()` (if not vote-locked)
+5. **Claim any pending rewards** — `claimLiquidation(hubId)` for each expired loan, `claimBounty(marketToken)` for resolved markets
+6. **Verify final state** - Run `reconstructState()` to confirm no orphaned positions

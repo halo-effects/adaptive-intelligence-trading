@@ -51,7 +51,7 @@ Every platform has strategies that sound good in theory but don't work in practi
 ```js
 const entryAmount = parseUnits("1000", 18); // 1000 USDB
 const entryPreview = await client.trading.getAmountsOut(entryAmount, [USDB, MAINTOKEN]);
-const entryCost = entryAmount - entryPreview; // What you "lose" to fees + slippage on entry
+const entryCost = entryAmount - entryPreview[entryPreview.length - 1]; // What you "lose" to fees + slippage on entry
 // Double it for round-trip (exit will cost roughly the same)
 const roundTripCost = entryCost * 2n;
 // Your vault position needs to earn more than roundTripCost in yield to be profitable
@@ -68,7 +68,7 @@ Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just t
 
 ## General Anti-Patterns
 
-**Avoid high-frequency trading / scalping strategies.** The 1.5% round-trip trading fee means you need >1.5% price movement just to break even. HFT strategies designed for 0.1% fee environments will bleed out on Basis.
+**Avoid high-frequency trading / scalping strategies.** Round-trip raw trading fees are ~1% for Stable+ and ~3% for Floor+/Predict+ tokens — and that's before slippage, which varies by pool depth and trade size. Your actual break-even is higher than the raw fees alone. Use `getAmountsOut()` to preview real costs. HFT strategies designed for 0.1% fee environments will bleed out on Basis.
 
 **Avoid passive USDB holding without deploying capital.** USDB sitting idle in your wallet earns nothing. Every other participant who is trading, staking, creating, or betting is earning airdrop points while your capital does nothing.
 

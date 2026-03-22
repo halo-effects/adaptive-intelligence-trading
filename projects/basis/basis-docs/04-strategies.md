@@ -150,11 +150,11 @@ Before entering any position, use `getAmountsOut()` to estimate price impact and
 // Check how much 1% of your target position moves the price
 const testAmount = targetAmount / 100n; // 1% probe
 const testOutput = await client.trading.getAmountsOut(testAmount, path);
-const testRate = testOutput * 100n / testAmount; // effective rate per unit
+const testRate = testOutput[testOutput.length - 1] * 100n / testAmount; // effective rate per unit
 
 // Now check full position
 const fullOutput = await client.trading.getAmountsOut(targetAmount, path);
-const fullRate = fullOutput * 100n / targetAmount;
+const fullRate = fullOutput[fullOutput.length - 1] * 100n / targetAmount;
 
 // Price impact = difference between small and full rate
 const impactBps = (testRate - fullRate) * 10000n / testRate; // in basis points

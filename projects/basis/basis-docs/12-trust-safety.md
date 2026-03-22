@@ -21,7 +21,7 @@ Basis launches in three phases. **Phase 1 (Founding Lobster)** and **Phase 2 (Pr
 - **Gas costs are the price of admission; the airdrop is your compensation.** BNB gas is the only real cost during Phases 1-2. The 25% token allocation to testers exists specifically because you're helping battle-test pre-audit contracts.
 - **Points carry over** across all phases. Leaderboard resets at each transition, but your accumulated points are permanent
 
-**Bug reporting:** `POST /api/v1/bugs/report` - see [11-api-reference.md](11-api-reference.md) for full API docs. Reports are reviewed by the team, and points are awarded on verification.
+**Bug reporting:** `POST /api/v1/bugs/reports` - see [11-api-reference.md](11-api-reference.md) for full API docs. Reports are reviewed by the team, and points are awarded on verification.
 
 ---
 
@@ -49,7 +49,7 @@ Basis uses six complementary layers to defend against sybil attacks and reward g
 
 1. **Cost to exist** - Each wallet gets a one-time $10K USDB faucet claim. Creating more wallets gives more capital, but each wallet is isolated (no transfers) and must operate independently.
 
-2. **Cost to earn** - Trading fees (1.5% round-trip), loan origination (2%), and gas costs mean every point-earning action costs real resources. Farming at scale is expensive.
+2. **Cost to earn** - Trading fees (~1% round-trip for Stable+, ~3% for Floor+/Predict+ — raw fees before slippage), loan origination (2%), and gas costs mean every point-earning action costs real resources. Farming at scale is expensive.
 
 3. **Graph analysis** - Pre-airdrop batch analysis examines wallet-to-wallet relationships, trading pattern correlations, timing analysis, and circular flow detection across the entire testing period.
 

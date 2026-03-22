@@ -26,7 +26,7 @@ Real mistakes discovered during live SDK testing.
 - ❌ **Passing STASIS amounts to `lock()` instead of wSTASIS shares** → `lock()` takes wSTASIS shares, not STASIS units. As vault yield accrues, the exchange ratio diverges from 1:1. Always use `convertToShares(stasisAmount)` first, then pass the result to `lock()`.
 
 ## Trading Mistakes
-- ❌ **Ignoring the 3% round-trip for Floor+/Predict+** → Your trade needs 3%+ to break even.
+- ❌ **Ignoring the ~3% raw round-trip for Floor+/Predict+** → Your trade needs 3%+ price movement to break even on fees alone — slippage is additional. Use `getAmountsOut()` to preview actual costs.
 - ❌ **Not checking `getAmountsOut()` before trading** → Slippage on low-liquidity tokens.
 - ❌ **Not checking for active surge tax** → A token creator can activate surge tax at any time (up to 15% on low-multiplier Floor+ tokens). Always check `taxes.getCurrentSurgeTax(tokenAddress)` before trading to avoid unexpected fees. Your cost model can break overnight if a surge is activated after you've entered a position.
 
@@ -35,7 +35,7 @@ Real mistakes discovered during live SDK testing.
 - ❌ **Selling immediately after resolution** → Price goes UP as others sell (burn → slippage retention). Wait.
 - ❌ **Proposing an outcome without understanding bond risk** → Your 5 USDB proposal bond is lost if someone disputes and the vote goes against you. The disputer's bond is also at risk. Only propose outcomes you're confident about. If neither party is correct, both bonds go to the insurance fund.
 
-- 🛑 **Voting while holding an expiring loan** — After voting, your staked tokens are locked for 24 hours (`VOTE_LOCK_DURATION`). If you have a loan expiring within that window, you cannot unstake to repay or extend it. Scenario: You vote on a disputed market on Monday at 3pm. Your loan expires Tuesday at 10am. You cannot unstake until Tuesday at 3pm — by then your collateral has been liquidated. **Before voting, check all loan expiry dates and ensure none fall within the next 24 hours.** Use `client.staking.getUserStakeDetails(wallet)` to check your stake status, and `client.loans.getUserLoanDetails(wallet, hubId)` for hub loan expiry dates.
+- 🛑 **Voting while holding an expiring loan** — After voting, your staked tokens are locked for 24 hours (`VOTE_LOCK_DURATION`). If you have a loan expiring within that window, you cannot unstake to repay or extend it. Scenario: You vote on a disputed market on Monday at 3pm. Your loan expires Tuesday at 10am. You cannot unstake until Tuesday at 3pm — by then your collateral has been liquidated. **Before voting, check all loan expiry dates and ensure none fall within the next 24 hours.** Use `client.staking.getUserStakeDetails(wallet)` to check your stake status (returns liquid/locked shares and total value), and `client.loans.getUserLoanDetails(wallet, hubId)` for hub loan expiry dates.
 
 ## Vesting Mistakes
 - ❌ **Setting start time to `now()`** → Already past by tx confirmation. Use `now() + 60`.

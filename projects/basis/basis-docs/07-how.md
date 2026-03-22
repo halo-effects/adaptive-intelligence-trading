@@ -20,11 +20,11 @@ All trades route through STASIS. No direct token-to-token swaps.
 
 **Tax structure**:
 
-| Token Type | Tax Rate | Round-Trip |
-|-----------|----------|-----------|
-| Stable+ (incl. STASIS) | 0.50% | ~1.0% |
-| Floor+ | 1.50% | ~3.0% |
-| Predict+ | 1.50% | ~3.0% |
+| Token Type | Raw Fee Per Swap | Raw Round-Trip | + Slippage |
+|-----------|----------|-----------|-----------|
+| Stable+ (incl. STASIS) | 0.50% | ~1.0% | Varies by pool depth |
+| Floor+ | 1.50% | ~3.0% | Varies by pool depth |
+| Predict+ | 1.50% | ~3.0% | Varies by pool depth |
 
 **Fee distribution**: For standard tokens: Creator (20%), staking yield (16%), reward phase buyers (4%), platform treasury (60%). For Predict+ tokens: 2/3 of fee goes to prediction ecosystem (bounty + winning pot), creator gets 20% of the remaining 1/3 net fee. See [09-fees.md](09-fees.md) for the full Predict+ breakdown.
 

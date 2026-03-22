@@ -15,7 +15,7 @@
 >
 > // Usage: preview first, then set minOut
 > const preview = await client.trading.getAmountsOut(amount, path);
-> const minOut = withSlippage(preview[1], 2); // 2% slippage tolerance
+> const minOut = withSlippage(preview[preview.length - 1], 2); // 2% slippage tolerance (last element = output amount)
 > const result = await client.trading.buyTokens(amount, minOut, path, false);
 > ```
 > Without slippage protection, your trades are vulnerable to sandwich attacks and price movement between simulation and execution.
@@ -28,7 +28,7 @@
 >
 > # Usage:
 > preview = client.trading.get_amounts_out(amount, path)
-> min_out = with_slippage(preview, 2)  # 2% tolerance
+> min_out = with_slippage(preview[-1], 2)  # 2% tolerance (last element = output amount)
 > result = client.trading.buy_tokens(amount, min_out, path, False)
 > ```
 
@@ -113,14 +113,14 @@ async function tradeTokens() {
   console.log("Expected output for 5 USDB:", preview);
 
   // Buy with 5 USDB — with slippage protection and error handling
-  const minOut = withSlippage(preview, 2); // 2% tolerance on previewed output
+  const minOut = withSlippage(preview[preview.length - 1], 2); // 2% tolerance on final output amount
   try {
     const buyResult = await client.trading.buy(TOKEN, fiveUsdb, minOut);
     console.log("Bought tokens:", buyResult.hash);
   } catch (e) {
     if (e.message.includes("slippage")) {
       console.log("Slippage exceeded — retrying with higher tolerance");
-      const retryMinOut = withSlippage(preview, 5); // 5% on retry
+      const retryMinOut = withSlippage(preview[preview.length - 1], 5); // 5% on retry
       const buyResult = await client.trading.buy(TOKEN, fiveUsdb, retryMinOut);
       console.log("Bought on retry:", buyResult.hash);
     } else {
@@ -154,7 +154,7 @@ def trade_tokens():
     print("Expected output for 5 USDB:", preview)
 
     # Buy with slippage protection
-    min_out = preview * 98 // 100  # 2% slippage tolerance
+    min_out = preview[-1] * 98 // 100  # 2% slippage tolerance (last element = output amount)
     buy_result = client.trading.buy(TOKEN, FIVE_USDB, min_out)
     print("Bought tokens:", buy_result["hash"])
 
@@ -205,7 +205,7 @@ async function predictionMarket() {
   const expectedShares = fiveUsdb * BigInt(1e18) / yesPrice;
   const minShares = withSlippage(expectedShares, 2); // 2% tolerance
   const buyResult = await client.predictionMarkets.buy(
-    marketToken, 0, USDB, fiveUsdb, minShares, 0n
+    marketToken, 0, USDB, fiveUsdb, 0n, minShares
   );
   console.log("Bought Yes shares:", buyResult.hash);
 
@@ -288,11 +288,11 @@ async function leverageTrading() {
 
   // 2. Open the leverage position (10 USDB, 10 days minimum) — with slippage protection
   const expectedOut = await client.trading.getAmountsOut(parseUnits("10", 18), path);
-  const minOut = withSlippage(expectedOut, 3); // 3% tolerance for leverage (multi-hop)
+  const minOut = withSlippage(expectedOut[expectedOut.length - 1], 3); // 3% tolerance for leverage (multi-hop)
   const openResult = await client.trading.leverageBuy(parseUnits("10", 18), minOut, path, 10n);
   console.log("Position opened:", openResult.hash);
 
-  // 3. Wait for the next block (required to avoid same-block revert)
+  // 3. Wait for backend to sync the new position (~5s)
   await new Promise(resolve => setTimeout(resolve, 5000));
 
   // 4. Get the position details
@@ -305,9 +305,9 @@ async function leverageTrading() {
 
   // 5. Partially close (sell 50%) — with slippage protection
   // Estimate output from selling 50% of position tokens
-  const sellAmount = position.collateral / 2n;
+  const sellAmount = position.collateralAmount / 2n;
   const sellPreview = await client.trading.getAmountsOut(sellAmount, [MAINTOKEN, USDB]);
-  const sellMinOut = withSlippage(sellPreview, 2);
+  const sellMinOut = withSlippage(sellPreview[sellPreview.length - 1], 2);
   const closeResult = await client.trading.partialLoanSell(positionId, 50n, true, sellMinOut);
   console.log("Partially closed:", closeResult.hash);
 }
@@ -331,11 +331,11 @@ def leverage_trading():
 
     # Open with slippage protection (10 days minimum)
     expected_out = client.trading.get_amounts_out(10_000_000_000_000_000_000, path)
-    min_out = expected_out * 97 // 100  # 3% tolerance for leverage
+    min_out = expected_out[-1] * 97 // 100  # 3% tolerance for leverage
     open_result = client.trading.leverage_buy(10_000_000_000_000_000_000, min_out, path, 10)
     print("Position opened:", open_result["hash"])
 
-    time.sleep(5)
+    time.sleep(5)  # Wait for backend to sync the new position
 
     # Leverage positions are 1-indexed (same as hubId — both use ++count)
     position_count = client.trading.get_leverage_count(client.wallet_address)
@@ -344,8 +344,8 @@ def leverage_trading():
     print("Position:", position)
 
     # Partial close with slippage protection
-    sell_preview = client.trading.get_amounts_out(int(position["collateral"]) // 2, [MAINTOKEN, USDB])
-    sell_min_out = sell_preview * 98 // 100  # 2% tolerance
+    sell_preview = client.trading.get_amounts_out(int(position["collateralAmount"]) // 2, [MAINTOKEN, USDB])
+    sell_min_out = sell_preview[-1] * 98 // 100  # 2% tolerance
     close_result = client.trading.partial_loan_sell(position_id, 50, True, sell_min_out)
     print("Partially closed:", close_result["hash"])
 ```
