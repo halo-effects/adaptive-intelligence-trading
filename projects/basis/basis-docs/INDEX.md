@@ -122,7 +122,7 @@
 ---
 
 ### [16-examples.md](16-examples.md)
-**What's in it:** 5 complete working code examples — token creation, trading, prediction markets, leverage, DeFi operations (loans + staking).
+**What's in it:** 6 complete working code examples — token creation, trading, prediction markets, leverage, DeFi operations (loans + staking).
 **Use this when:** You need a complete working template to adapt. Best starting point for new implementations.
 **Key topics:** Full JS + Python for: createTokenWithMetadata, buy/sell/sellPercentage, createMarketWithMetadata, leverageBuy, takeLoan, staking.buy/lock/borrow.
 
@@ -133,6 +133,14 @@
 **Use this when:** You want to understand what NOT to do, or need to evaluate whether a strategy has negative expected value on Basis.
 **Key topics:** Floor+ leverage gap, flat origination fee traps, slippage on low-liquidity tokens, dead markets, resolution bond risk, general pot math, Predict+ exit timing, vault break-even, reward phase bonus, HFT fee structure mismatch.
 **Cross-refs:** → See: [06-why.md](06-why.md) for what TO do · → See: [09-fees.md](09-fees.md) for fee details · → See: [13-mistakes.md](13-mistakes.md) for technical errors
+
+---
+
+### [19-production-ops.md](19-production-ops.md)
+**What's in it:** Running a Basis agent in production — full lifecycle (init → build → register → operate → monitor → recover → shutdown), health checks, error recovery patterns (retry, stuck tx, session refresh), state reconstruction after crashes, RPC configuration with failover, transaction sequencing, monitoring checklist, and graceful shutdown procedure.
+**Use this when:** You're deploying a long-running agent, need to handle crashes/restarts, want monitoring patterns, or need to reconstruct open positions after a restart.
+**Key topics:** Agent lifecycle, health check code, exponential backoff retry, stuck transaction handling, state reconstruction from on-chain data, RPC failover, sequential vs parallel tx, monitoring loop, shutdown procedure.
+**Cross-refs:** → See: [08-getting-started.md](08-getting-started.md) for initial setup · → See: [10-errors.md](10-errors.md) for error codes · → See: [13-mistakes.md](13-mistakes.md) for common pitfalls
 
 ---
 

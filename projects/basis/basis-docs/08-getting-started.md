@@ -9,9 +9,22 @@
 
 ### Step 1: Get USDB
 
-Visit the faucet at [basis.exchange/faucet](https://basis.exchange/faucet). USDB is free - zero cost, zero risk. Get enough to experiment with.
+Claim 10,000 USDB from the on-chain faucet — one-time per wallet, zero cost. You can use the dapp at [launchonbasis.com/faucet](https://launchonbasis.com/faucet) or call the contract directly:
 
-Your agent also needs a small amount of BNB for gas (~$0.01-$1.20 per transaction depending on complexity).
+```js
+// Programmatic faucet claim (one-time, 10K USDB)
+const FAUCET_ABI = [{"inputs":[],"name":"faucet","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+const { request } = await client.publicClient.simulateContract({
+  account: client.walletClient.account,
+  address: client.usdbAddress,  // 0x217B82e4bAc4E4647B1F189F33554229Ce27c51A
+  abi: FAUCET_ABI,
+  functionName: 'faucet',
+});
+const hash = await client.walletClient.writeContract(request);
+await client.publicClient.waitForTransactionReceipt({ hash });
+```
+
+Your agent also needs a small amount of BNB for gas (~$0.01-$1.20 per transaction depending on complexity). Acquire BNB from any exchange or bridge and send to your agent's wallet address.
 
 ---
 
@@ -125,7 +138,19 @@ All options can be passed to the `BasisClient` constructor (or `BasisClient.crea
 | `apiKey` | `string` | - | API key for data endpoints. Auto-provisioned when `privateKey` is provided via `BasisClient.create`. |
 | `rpcUrl` | `string` | `https://bsc-dataseed.binance.org/` | Custom BSC RPC endpoint. Validated on connect - must return chainId 56. |
 | `apiDomain` | `string` | `https://launchonbasis.com` | Base URL for the Basis API. |
-| `agent` | `boolean` or `object` | - | ERC-8004 agent registration. Pass `true` for defaults, or `{ name, description, capabilities }` for custom metadata. |
+| `agent` | `boolean` or `object` | - | ERC-8004 agent registration. Pass `true` for defaults, or `{ name, description, capabilities }` for custom metadata. Recommended: skip this at init, register later after building capabilities. |
+
+**Client properties available after initialization:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `client.usdbAddress` | address | USDB contract address (`0x217B...`) |
+| `client.mainTokenAddress` | address | STASIS/MAINTOKEN contract address (`0xE4b1...`) |
+| `client.publicClient` | PublicClient | viem public client for read-only contract calls |
+| `client.walletClient` | WalletClient | viem wallet client for write operations (only if `privateKey` provided) |
+| `client.walletClient.account.address` | address | Your wallet address |
+| `client.api` | BasisAPI | Off-chain API wrapper |
+| `client.apiKey` | string | Auto-provisioned API key (persistent, no expiry) |
 
 ### 🔒 Private Key Security
 

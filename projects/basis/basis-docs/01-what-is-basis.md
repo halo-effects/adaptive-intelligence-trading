@@ -96,7 +96,7 @@ The collateral always covers the debt. Worst case - no price increase - your ent
 
 ### The Core Tokens
 
-**USDB** - The test stablecoin (testing phase). Free from faucet. Will be replaced by a real stablecoin (USDC/USDT) at launch.
+**USDB** — The test stablecoin (testing phase). Free from faucet. Will be replaced by USDT (Tether) at launch.
 
 **STASIS** - The ecosystem token. Every trade routes through STASIS. Platform fees flow to the STASIS vault, increasing its value. Holding STASIS = holding a share of platform activity. STASIS is a Stable+ token - its price can only go up from slippage retention.
 

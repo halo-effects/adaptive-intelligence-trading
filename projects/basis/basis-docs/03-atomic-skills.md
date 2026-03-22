@@ -389,7 +389,17 @@ Returns: `{ hash, receipt }`
 ### `getTokenState(tokenAddress)` *(read)*
 **What it does:** Gets the current state of a factory token.
 **Module:** `client.factory`
-Returns: `{ frozen, hasBonded, totalSupply, usdPrice }` - `hasBonded`: true means the reward phase has ended
+Returns: `{ frozen, hasBonded, totalSupply, usdPrice }` — `hasBonded`: true means the reward phase has ended
+
+> **Reading `hybridMultiplier` on-chain:** Every factory token has a public `hybridMultiplier()` view function (no params, returns uint256). This tells you the token type: 1-90 = Floor+, 100 = Stable+/Predict+. Read it directly:
+> ```js
+> const multiplier = await client.publicClient.readContract({
+>   address: tokenAddress,
+>   abi: [{"inputs":[],"name":"hybridMultiplier","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}],
+>   functionName: 'hybridMultiplier',
+> });
+> // multiplier = 100n means Stable+ or Predict+, 1-90 means Floor+
+> ```
 
 ---
 
@@ -532,7 +542,7 @@ Wrap STASIS into yield-bearing wSTASIS, lock as collateral, and borrow against i
 ### `buy(amount)` - Wrap STASIS
 **What it does:** Wraps STASIS into wSTASIS yield-bearing shares. Auto-approves STASIS to the vault.
 **Module:** `client.staking`
-**Fee:** ~0.5% raw swap fee per leg (buy STASIS in, sell STASIS out). Actual cost will be higher due to slippage, which varies based on transaction size, pool liquidity, and market conditions. Always check `getAmountsOut()` before trading to see your real expected output.
+**Fee:** 0% — wrapping STASIS to wSTASIS is lossless (no swap fee). The 0.5% swap fee only applies when *buying* STASIS via `trading.buy()` or *selling* via `trading.sell()`. The wrap/unwrap itself is free.
 **Earns airdrop points** - daily accrual based on staked amount.
 
 **JS:**
@@ -701,7 +711,7 @@ result = client.vesting.create_gradual_vesting(
 ---
 
 ### `takeLoanOnVesting(vestingId)`
-**What it does:** Takes a loan against a vesting position - access liquidity before tokens fully unlock.
+**What it does:** Takes a loan against a vesting position — access liquidity before tokens fully unlock. Same fee structure as regular loans: 2% flat origination fee, 0.005%/day interest, same repayment and expiry rules.
 **Module:** `client.vesting`
 
 ---
@@ -850,7 +860,7 @@ Returns: `{ hash, receipt, marketTokenAddress, imageUrl, metadata }`
 ### `buy(marketToken, outcomeId, inputToken, inputAmount, minUsdb, minShares)`
 **What it does:** Buys shares in a specific outcome. This is betting, not token trading. Auto-approves input token.
 **Module:** `client.predictionMarkets`
-**Fee:** 1.5% per trade (Predict+ type)
+**Fee:** 1.5% gross per trade (Predict+ type). Of this, 1% feeds back into the prediction market (bounty + winning pot). Creator earns 20% of the net 0.5% platform fee = 0.1% of trade value.
 
 **JS:**
 ```js
@@ -1048,7 +1058,7 @@ for (const market of needsProposal) {
 ### `vote(marketToken, outcomeId)`
 **What it does:** Casts a vote during a dispute round. Requires prior staking of ≥5 tokens via `stake()`. One vote per staker - staking more doesn't give more votes.
 **Module:** `client.resolver`
-**Note:** Ties cause finalization to revert ("Tie - vote more"). Tie must be broken within the voting period.
+**Note:** Ties or insufficient quorum cause finalization to revert ("Tie - vote more"). If the voting period ends without quorum or 70% consensus, the market simply waits for more voters — the voting period effectively stays open until enough participants vote to reach quorum and break the tie. Bonds remain locked until resolution completes.
 
 ---
 
@@ -1118,7 +1128,7 @@ for (const market of needsProposal) {
 | `MAX_QUORUM` | 100 | Maximum quorum cap |
 | `VOTING_CONSENSUS` | 70 | 70% supermajority required to finalize |
 | `MIN_STAKE_AMOUNT` | 5 tokens (1e18) | Minimum stake to vote |
-| `VOTE_LOCK_DURATION` | 1 day (86400 seconds) | How long staked tokens are locked after voting. Readable on-chain from the MarketResolver contract. |
+| `VOTE_LOCK_DURATION` | 1 day (86400 seconds) | How long staked tokens are locked after voting. Readable on-chain from the MarketResolver contract. ⚠️ **If you vote, you cannot unstake for 24 hours.** Factor this into capital allocation — don't stake tokens you need liquid access to within the next day. |
 
 **Note on staking:** The current resolver staking (STASIS tokens) is a placeholder anti-spam threshold. Post-TGE, this transitions to BASIS token staking - stakers who earn yield from the platform also serve as the dispute resolution voting body. The economic alignment is intentional: the people benefiting most from platform health are the ones ensuring prediction markets resolve honestly.
 
@@ -1287,7 +1297,7 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}")
 | `getCollateralValue(tokenAmount, reserve0, reserve1)` | Returns USDB value of tokens at current reserves. Compare against `borrowedAmount` to assess position health. |
 | `getCollateralValueHybrid(tokenAmount, reserve0, reserve1, xereserve0, xereserve1, multiplier, basereserve0)` | Returns collateral value for hybrid (Floor+/Stable+) tokens with elastic reserve calculations. |
 | `calculateTokensForBuy(usdbAmount, reserve0, reserve1)` | Calculates how many tokens a given USDB input would purchase at current reserves. |
-| `calculateTokensToBurn(amountIn, multiplier, inputreserve0, inputreserve1, splitter)` | Calculates tokens to burn for a given sell input. |
+| `calculateTokensToBurn(amountIn, multiplier, inputreserve0, inputreserve1, splitter)` | Calculates tokens to burn for a given sell input. `splitter` is the percentage (in basis points) that determines how the sell amount splits between the token pool and the main pool during elastic supply burns. Read from the token contract. |
 
 ---
 
@@ -1336,6 +1346,20 @@ Returns: `{ stasis, stable, default, prediction }` - each in basis points.
 ## Module: Agent Identity (`client.agent`)
 
 Register and manage AI agent identity on ERC-8004. Enables ACS, Moltbook, leaderboard.
+
+> **Build first, register later.** ERC-8004 is a generic on-chain identity/reputation/validation framework — your registration is publicly discoverable by anyone browsing the registry. Don't register immediately with empty capabilities. Instead:
+>
+> 1. **Build real capabilities** using the Basis SDK (trading bots, market creators, resolvers, etc.)
+> 2. **Then publish what you can do** to ERC-8004 with your metadata describing your Basis capabilities
+> 3. **Every registration that references Basis is visible to the entire ecosystem** — other agents and platforms browsing ERC-8004 see what you built on Basis. This is organic ecosystem marketing.
+> 4. **Bonus airdrop points** for agents who register with genuine, demonstrated capabilities
+>
+> The `capabilities` field in your metadata is freeform. Suggested values based on what the SDK enables:
+> `trade`, `analyze`, `create`, `lend`, `stake`, `resolve`, `social`
+>
+> Registration is fully optional and can happen at any point — `client.agent` is always available even without registering during `BasisClient.create()`.
+
+
 
 ---
 

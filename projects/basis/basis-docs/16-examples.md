@@ -420,17 +420,27 @@ A complete script to go from zero to operational. Covers initialization, USDB ac
 import { BasisClient } from 'basis-sdk';
 import { parseUnits, formatUnits } from 'viem';
 
+// Faucet ABI (one-time 10K USDB claim)
+const FAUCET_ABI = [{"inputs":[],"name":"faucet","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+
 async function bootstrap() {
   // 1. Initialize client (auto-authenticates via SIWE, provisions API key)
+  // NOTE: We skip agent registration here — build capabilities first, register later
   const client = await BasisClient.create({
     privateKey: process.env.BASIS_PRIVATE_KEY,
-    agent: { name: "MyAgent", metadataURI: "https://example.com/agent.json" }
   });
-  console.log("✅ Client initialized + agent registered");
+  console.log("✅ Client initialized");
 
-  // 2. Claim USDB from faucet (testing phase — $10K free USDB)
-  //    Visit https://launchonbasis.com/faucet or call the faucet API
-  //    This is a one-time operation per wallet
+  // 2. Claim USDB from on-chain faucet (one-time, 10K USDB per wallet)
+  const { request: faucetReq } = await client.publicClient.simulateContract({
+    account: client.walletClient.account,
+    address: client.usdbAddress,  // 0x217B82e4bAc4E4647B1F189F33554229Ce27c51A
+    abi: FAUCET_ABI,
+    functionName: 'faucet',
+  });
+  const faucetHash = await client.walletClient.writeContract(faucetReq);
+  await client.publicClient.waitForTransactionReceipt({ hash: faucetHash });
+  console.log("💰 Claimed 10K USDB from faucet:", faucetHash);
 
   // 3. Check your USDB balance
   const usdbBalance = await client.publicClient.readContract({
@@ -449,10 +459,13 @@ async function bootstrap() {
   console.log("🛒 Bought STASIS:", buyResult.hash);
 
   // 5. Stake for yield — earns staking points daily
-  const stakeResult = await client.staking.buy(parseUnits("50", 18)); // wrap 50 STASIS → wSTASIS
-  console.log("🏦 Staked (wrapped):", stakeResult.hash);
+  const wrapResult = await client.staking.buy(parseUnits("50", 18)); // wrap 50 STASIS → wSTASIS
+  console.log("🏦 Wrapped to wSTASIS:", wrapResult.hash);
 
-  const lockResult = await client.staking.lock(parseUnits("50", 18)); // lock for yield
+  // IMPORTANT: lock() takes wSTASIS shares, not STASIS units
+  // Use convertToShares() to get the correct amount
+  const shares = await client.staking.convertToShares(parseUnits("50", 18));
+  const lockResult = await client.staking.lock(shares);
   console.log("🔒 Locked:", lockResult.hash);
 
   // 6. Check a prediction market
@@ -462,13 +475,18 @@ async function bootstrap() {
   );
   console.log("📊 Market outcomes:", outcomes);
 
-  // 7. Check your agent registration
-  const isRegistered = await client.agent.isRegistered();
-  console.log("🤖 Agent registered:", isRegistered);
+  // 7. Register agent on ERC-8004 (do this AFTER building capabilities)
+  // Your registration is publicly visible — describe what you actually built
+  const { agentId } = await client.agent.registerAndSync({
+    name: "MyTradingBot",
+    capabilities: ["trade", "analyze", "stake"],
+  });
+  console.log("🤖 Agent registered on ERC-8004, agentId:", agentId);
 
   console.log("\n🎉 Bootstrap complete! You are now:");
   console.log("  - Earning trading points from the STASIS buy");
   console.log("  - Earning daily staking yield + staking points");
+  console.log("  - Registered on ERC-8004 with Basis capabilities (visible ecosystem-wide)");
   console.log("  - Ready to trade, create tokens, or resolve markets");
 }
 
@@ -480,32 +498,38 @@ bootstrap().catch(console.error);
 from basis import BasisClient
 import os
 
-def bootstrap():
-    # 1. Initialize client
-    client = BasisClient(private_key=os.environ["BASIS_PRIVATE_KEY"], agent=True)
-    print("✅ Client initialized + agent registered")
+# 1. Initialize client (auto-authenticates via SIWE, provisions API key)
+# Skip agent registration for now — build capabilities first
+client = BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"])
+print("✅ Client initialized")
 
-    # 2. Claim USDB from faucet (one-time, visit https://launchonbasis.com/faucet)
+# 2. Claim USDB from on-chain faucet (one-time, 10K USDB per wallet)
+# Call the faucet() function directly on the USDB contract
+faucet_result = client.write_contract(
+    client.usdb_address,
+    [{"inputs":[],"name":"faucet","outputs":[],"stateMutability":"nonpayable","type":"function"}],
+    "faucet"
+)
+print("💰 Claimed 10K USDB:", faucet_result["hash"])
 
-    # 3. Buy STASIS
-    buy_result = client.trading.buy(client.main_token_address, 100 * 10**18)
-    print("🛒 Bought STASIS:", buy_result["hash"])
+# 3. Buy STASIS
+buy_result = client.trading.buy(client.main_token_address, 100 * 10**18)
+print("🛒 Bought STASIS:", buy_result["hash"])
 
-    # 4. Stake
-    stake_result = client.staking.buy(50 * 10**18)
-    print("🏦 Staked:", stake_result["hash"])
+# 4. Stake — lock() takes wSTASIS shares, not STASIS units!
+wrap_result = client.staking.buy(50 * 10**18)
+print("🏦 Wrapped:", wrap_result["hash"])
 
-    lock_result = client.staking.lock(50 * 10**18)
-    print("🔒 Locked:", lock_result["hash"])
+shares = client.staking.convert_to_shares(50 * 10**18)
+lock_result = client.staking.lock(int(shares))
+print("🔒 Locked:", lock_result["hash"])
 
-    # 5. Check prediction market
-    outcomes = client.market_reader.get_all_outcomes(
-        "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6",
-        "0xYourMarketTokenAddress"
-    )
-    print("📊 Market outcomes:", outcomes)
+# 5. Check prediction market
+outcomes = client.market_reader.get_all_outcomes(
+    "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6",
+    "0xYourMarketTokenAddress"
+)
+print("📊 Market outcomes:", outcomes)
 
-    print("\n🎉 Bootstrap complete!")
-
-bootstrap()
+print("\n🎉 Bootstrap complete!")
 ```

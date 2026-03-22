@@ -12,13 +12,34 @@
 | Action | Fee | Notes |
 |--------|-----|-------|
 | Buy/sell Stable+ (incl. STASIS) | 0.50% per swap | Creator gets 0.1% (20%) |
-| Buy/sell Floor+ | 1.50% per swap | Creator gets 0.3% (20%) |
-| Buy/sell Predict+ | 1.50% per swap | Creator gets 0.3% (20%) |
+| Buy/sell Floor+ | 1.50% per swap | Creator gets 0.3% (20% of gross fee) |
+| Buy/sell Predict+ | 1.50% per swap | **See Predict+ breakdown below** — creator gets 0.1% (20% of net fee) |
 | Surge tax (if active) | Variable - see below | Anti-dump mechanism on large sells |
+
+### Predict+ Fee Breakdown
+
+Predict+ tokens have the same 1.5% gross fee as Floor+, but the fee is distributed differently. **2/3 of the fee goes back into the prediction market ecosystem:**
+
+| On a $100 trade | Amount | Destination |
+|-----------------|--------|-------------|
+| **Prediction ecosystem portion** | **$1.00** (1% of trade) | Fed back into the market |
+| — Resolver bounty pool | $0.05 (5% of ecosystem portion) | Rewards for resolvers who finalize the market |
+| — Winning outcome pot | $0.95 (95% of ecosystem portion) | Distributed to holders of the winning outcome |
+| **Net platform fee** | **$0.50** (0.5% of trade) | Standard platform distribution |
+| — Staking yield (16%) | $0.08 | Vault holders |
+| — Creator dev fee (20%) | $0.10 | Market creator |
+| — Reward phase buyers (4%) | $0.02 | Early supporters who bought during bonding curve phase |
+| — Platform treasury (60%) | $0.30 | Platform operations |
+
+**Key insight:** Every trade on a prediction market makes the winning pot bigger. More trading volume = bigger payouts for correct predictions = more incentive to trade. The creator's 20% dev fee is calculated on the **net** 0.5% platform fee (not the gross 1.5%), so the creator earns **0.1% of trade value** on Predict+ tokens — compared to 0.3% on Floor+ tokens.
+
+**No surge tax on Predict+ tokens.** The surge mechanism is disabled for prediction markets entirely.
+
+---
 
 ### Surge Tax Details
 
-The surge tax is an anti-dump mechanism that adds a temporary fee on sells when large or rapid selling occurs. The fee decays linearly over time back to zero.
+The surge tax is a temporary extra fee that **token creators manually activate** via `startSurgeTax(startRate, endRate, duration, token)`. It decays linearly from startRate to endRate over the configured duration. Only the token's DEV (creator) can start or end a surge. It applies to all trades (buys and sells) while active.
 
 **Maximum surge tax by token type** (additive on base trading fee):
 
@@ -27,13 +48,14 @@ The surge tax is an anti-dump mechanism that adds a temporary fee on sells when 
 | 1 (most volatile Floor+) | 15% (1500 BP) | 16.5% |
 | 45 (mid Floor+) | 8% (800 BP) | 9.5% |
 | 90 (high stability Floor+) | 1% (100 BP) | 2.5% |
-| 100 (Stable+ / Predict+) | 0.5% (50 BP) | 1.0% |
+| 100 (Stable+) | 0.5% (50 BP) | 1.0% |
+| Predict+ | N/A — surge disabled | 1.5% (base only) |
 
 **Timing constraints:**
 - Surge duration: ≥ 1 hour (linear decay to zero)
 - Quota: maximum 7 days of surge per rolling 30-day window
 
-**When it triggers:** Large sells relative to pool depth. The more stable the token (higher hybridMultiplier), the lower the maximum surge - because stable tokens already absorb sell pressure structurally.
+**How it works:** The creator activates a surge with chosen start/end rates and duration (min 1 hour). The extra fee goes primarily to the creator (all surge basis points are added to the dev portion of fee distribution). The more stable the token (higher hybridMultiplier), the lower the maximum allowed surge — because stable tokens already absorb sell pressure structurally. Check `availableSurgeQuota(token)` before starting a surge to see remaining quota.
 
 ---
 

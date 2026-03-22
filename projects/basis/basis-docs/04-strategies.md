@@ -16,7 +16,7 @@
 **Archetype**: Trader + Market Maker
 
 ```
-1. Create prediction market on trending topic → earn 20% creator fees
+1. Create prediction market on trending topic → earn 20% of net fees (0.1% of trade volume)
 2. Buy Predict+ tokens with leverage → amplified exposure
 3. Hold during market activity → token price rises from slippage retention
 4. (Optional) Bet on outcome with separate USDB
@@ -40,7 +40,7 @@
 **Archetype**: Market Maker + Capital Manager
 
 ```
-1. Create prediction market → earn 20% fees
+1. Create prediction market → earn 20% of net fees (0.1% of volume)
 2. Buy Predict+ tokens (no leverage) → tokens free to use as collateral
 3. Take loan against Predict+ tokens → receive USDB
 4. Bet on your conviction outcome using borrowed USDB
