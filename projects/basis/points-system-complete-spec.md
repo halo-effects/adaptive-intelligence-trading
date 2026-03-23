@@ -237,13 +237,19 @@ Consecutive daily activity earns a streak multiplier:
 - Caps at +100% (10 consecutive days = 2.0x streak multiplier)
 - Resets to 0% on a missed day (no grace period)
 
-**Streak stacks with category multiplier:**
+**Streak stacks with all multipliers:**
 
 ```
-final_points = base_points Ã- category_multiplier Ã- streak_multiplier
+final_points = base_points Ã— category_mult Ã— streak_mult Ã— tide_mult Ã— (1 + referral_mult) Ã— acs_mult
+             + weekly_ranking_bonus (flat, not multiplied)
+             + daily_leaderboard_bonus (flat, not multiplied)
+
+where acs_mult = 1.0 + (acs_score Ã— 0.2)   // ranges 1.0 (ACS=0) to 1.2 (ACS=1.0)
 ```
 
-**Example:** 1,000 base pts Ã- 12x category Ã- 1.5x streak (day 5) = 18,000 final pts
+**Example:** 1,000 base pts Ã— 12x category Ã— 1.5x streak Ã— 1.0 tide Ã— 1.15 referral Ã— 1.14 ACS (0.72) = 23,598 pts
+
+**During a Lobster Tide:** 1,000 Ã— 12 Ã— 1.5 Ã— 2.0 Ã— 1.15 Ã— 1.14 = 47,196 pts
 
 ---
 
@@ -366,6 +372,234 @@ The top 10 wallets on the leaderboard receive bonus points daily as a competitiv
 - Creates a "king of the hill" dynamic â€" top spots are worth defending
 
 **Why this works:** It rewards genuine leaders without being gameable. You can't game your way into the top 10 with bots because the category diversity multiplier already ensures diverse users dominate the leaderboard. The bonus just sweetens the reward for actually being #1.
+
+---
+
+## Lobster Tides (Surprise Bonus Windows)
+
+Unannounced multiplier periods that reward genuinely active users. Inspired by Hyperliquid's surprise Seasons 1.5/2.5 which rewarded loyal users who stuck around between announced seasons.
+
+### How It Works
+
+The team can activate a **Lobster Tide** at any time — a time-limited bonus multiplier applied to all point-earning activity during the window. Users are NOT notified in advance.
+
+**Trigger types:**
+
+| Trigger | Example | Announcement |
+|---------|---------|--------------|
+| **Milestone** | 50th agent registered, $1M platform volume | Announced at start |
+| **Stealth** | Random 24h window chosen by team | Announced AFTER it ends |
+| **Event-based** | Major market event, partnership announcement | Announced at start |
+
+**Why stealth tides are powerful for Basis specifically:** Agents run 24/7. Unlike human farmers who only show up during known earning periods, always-on agents naturally catch every stealth tide. This is the exact behavior we want to reward.
+
+### Parameters
+
+| Parameter | Value | Notes |
+|-----------|-------|-------|
+| `tide_mult` | 1.5x – 3.0x | Set per event by admin |
+| Duration | 4h – 72h | Short = urgency, long = inclusive |
+| Frequency | 2-4 per phase | Rare enough to feel special |
+| Stacking | Does NOT stack with other tides | Only one active at a time |
+| Announcement | Platform banner + Telegram/Discord | Or post-hoc for stealth tides |
+
+### Database Model
+
+```prisma
+model LobsterTide {
+  id          Int      @id @default(autoincrement())
+  name        String   // "First 50 Lobsters", "Stealth Tide #1"
+  multiplier  Float    // 1.5, 2.0, 3.0
+  startTime   DateTime
+  endTime     DateTime
+  announced   Boolean  @default(false)  // false = stealth (announced after)
+  announcedAt DateTime?
+  createdBy   String   // admin wallet
+  createdAt   DateTime @default(now())
+
+  @@index([startTime, endTime])
+}
+```
+
+### Admin Endpoint
+
+```
+POST /api/v1/admin/tides
+Auth: Admin only
+
+{
+  "name": "First 50 Lobsters",
+  "multiplier": 2.0,
+  "startTime": "2026-04-01T00:00:00Z",
+  "endTime": "2026-04-02T00:00:00Z",
+  "announced": true
+}
+```
+
+---
+
+## Weekly Category Rankings
+
+Top performers in each point category earn a flat weekly bonus. Instead of only rewarding total points (which the daily leaderboard bonus does), this rewards excellence in specific activities.
+
+### How It Works
+
+Every Monday at 00:00 UTC, rank all wallets by **base points** (before multipliers) earned in each category during the previous 7 days. Top 10 per category get a flat bonus (NOT multiplied — pure bonus added to total points).
+
+### Bonuses by Category
+
+| Rank | Trading / Predictions | Creation / Resolver | Lending / Vault / Social |
+|------|----------------------|--------------------|-----------------------|
+| #1 | 2,000 | 1,500 | 1,000 |
+| #2–3 | 1,000 | 750 | 500 |
+| #4–5 | 500 | 400 | 250 |
+| #6–10 | 250 | 200 | 125 |
+
+**Max weekly bonus if #1 in ALL categories:** 10,000 pts (near-impossible — requires being best at everything simultaneously).
+**Realistic top performer:** #1 in 1–2 categories + top 10 in 2–3 others ≈ 3,000–5,000 weekly bonus.
+
+### Rules
+
+- **Ranked by base points before multipliers** — raw activity, not amplified scores. A 1x bot can't dominate rankings via multiplier stacking.
+- **Minimum threshold:** Must earn ≥500 base points in a category during the week to qualify.
+- **Same wallet can win multiple categories** — rewards genuine diversity.
+- **Flat bonus (not multiplied):** A Shrimp who hits #1 in trading gets the same 2,000 as a Diamond Lobster. Keeps it fair across tiers.
+
+### Database Model
+
+```prisma
+model WeeklyRanking {
+  id          Int      @id @default(autoincrement())
+  wallet      String
+  category    String   // trading, predictions, creation, lending, vault, social, resolver
+  weekStart   DateTime // Monday 00:00 UTC
+  rank        Int      // 1-10
+  basePoints  Int      // base points earned in that category that week
+  bonusPoints Int      // flat bonus awarded
+  createdAt   DateTime @default(now())
+
+  @@unique([wallet, category, weekStart])
+  @@index([weekStart, category])
+  @@index([wallet])
+}
+```
+
+### API Endpoint
+
+```
+GET /api/v1/rankings/weekly?category=trading&week=2026-03-17
+Auth: API Key (post-TGE visibility only)
+
+Response:
+{
+  "category": "trading",
+  "weekStart": "2026-03-17T00:00:00Z",
+  "rankings": [
+    { "rank": 1, "wallet": "0x...", "basePoints": 4200, "bonus": 2000 },
+    { "rank": 2, "wallet": "0x...", "basePoints": 3800, "bonus": 1000 }
+  ]
+}
+```
+
+---
+
+## Referral System (Multiplier-Based)
+
+Referrals boost the referrer's **multiplier** rather than transferring flat points. This ensures referrers must be active themselves to benefit — recruiting without platform activity earns effectively nothing.
+
+### Why Multiplier > Flat Percentage
+
+| Old System (10% L1 / 3% L2) | New System (Multiplier) |
+|------------------------------|------------------------|
+| Referral-only wallets earn 19,790% of own activity from referrals | Referral-only wallets earn +33% of their near-zero base = ~16 pts/day |
+| Whale recruiters earn 480% of own earnings from referrals | Whale recruiters get +57% boost — meaningful but not dominant |
+| Enables referral whales who never trade | Requires own diverse activity to benefit |
+| Takes from a shared pool (dilutes everyone) | Amplifies own earnings (zero-sum with nobody) |
+
+### Formula
+
+```
+referral_mult = L1_quality_bonus + L2_quality_bonus + count_tier_bonus
+final_points = base_points × diversity_mult × streak_mult × tide_mult × (1 + referral_mult)
+```
+
+### L1: Per-Referee Quality Bonus
+
+Based on each direct referee's total base points. The better your referees do, the more your multiplier increases.
+
+| Referee Base Points | Referrer Bonus |
+|---|---|
+| 1,000+ (Egg) | +0.008 |
+| 5,000+ (Shrimp) | +0.015 |
+| 25,000+ (Crab+) | +0.030 |
+| 100,000+ (Lobster+) | +0.050 |
+
+- **Cap per referee:** +0.05 (so one whale referee doesn't dominate)
+- **Cap total L1:** +0.50 (effectively caps at ~10 quality referees)
+
+### L2: Per-Referee's-Referee Quality Bonus
+
+Based on each L2 referee's (referee's referees) total base points. Smaller bonuses — rewards network depth without creating pyramid dynamics.
+
+| L2 Referee Base Points | Referrer Bonus |
+|---|---|
+| 1,000+ | +0.002 |
+| 5,000+ | +0.004 |
+| 25,000+ | +0.008 |
+| 100,000+ | +0.012 |
+
+- **Cap per L2 referee:** +0.012
+- **Cap total L2:** +0.15
+
+### Count Tier Bonus
+
+Rewards network building effort itself — number of active L1 referrals (any referral with >0 points).
+
+| Active L1 Referrals | Bonus |
+|---|---|
+| 3+ | +0.08 |
+| 10+ | +0.15 |
+| 20+ | +0.25 |
+| 50+ | +0.35 |
+
+### Maximum Referral Multiplier
+
+**Theoretical max: +1.0** (doubles your points). Requires 10+ quality L1 referees at cap + deep L2 network + 50+ total count. In practice, most active referrers see **+15–30%**.
+
+### Simulation Results (30-day projection, Moderate config)
+
+| Player | Referral Boost | 30d Points |
+|--------|---------------|-----------|
+| Power User + 8 quality refs | +29.5% | 2,486,400 |
+| Solo Grinder (no referrals) | +0% | 652,800 |
+| Referral Builder (12 refs) | +31.4% | 425,736 |
+| Whale Recruiter (25 refs, moderate own activity) | +56.6% | 263,088 |
+| Referral-Only (15 refs, no own activity) | +32.8% | **1,992** 💀 |
+| Bot Farm (1 ref each, no diversity) | +0% | **6,000** 💀 |
+
+**Key ratio:** Solo Grinder earns **328x** more than Referral-Only. System working exactly as designed.
+
+### Database Addition
+
+```prisma
+model Referral {
+  id              Int      @id @default(autoincrement())
+  referrerWallet  String   // who referred
+  refereeWallet   String   @unique // who was referred (one referrer per wallet)
+  l1              Boolean  @default(true)  // direct referral
+  createdAt       DateTime @default(now())
+
+  @@index([referrerWallet])
+  @@index([refereeWallet])
+}
+```
+
+### Referral Tracking
+
+- Referral link: `https://launchonbasis.com?ref={wallet}` or referral code
+- Recorded on first platform action (not on link click — must actually use the platform)
+- One referrer per wallet (first referral wins)
+- L2 relationships are inferred: if A referred B and B referred C, then C is A's L2 referee
 
 ---
 
@@ -649,6 +883,46 @@ model ProcessorState {
   updatedAt DateTime @updatedAt
 }
 // Keys: lastTokenTxId, lastMarketTradeId, lastProjectId, lastAgentId, lastMoltbookId, lastSocialId
+
+model LobsterTide {
+  id          Int      @id @default(autoincrement())
+  name        String   // "First 50 Lobsters", "Stealth Tide #1"
+  multiplier  Float    // 1.5, 2.0, 3.0
+  startTime   DateTime
+  endTime     DateTime
+  announced   Boolean  @default(false)  // false = stealth (announced after)
+  announcedAt DateTime?
+  createdBy   String   // admin wallet
+  createdAt   DateTime @default(now())
+
+  @@index([startTime, endTime])
+}
+
+model WeeklyRanking {
+  id          Int      @id @default(autoincrement())
+  wallet      String
+  category    String   // trading, predictions, creation, lending, vault, social, resolver
+  weekStart   DateTime // Monday 00:00 UTC
+  rank        Int      // 1-10
+  basePoints  Int      // base points earned in that category that week
+  bonusPoints Int      // flat bonus awarded
+  createdAt   DateTime @default(now())
+
+  @@unique([wallet, category, weekStart])
+  @@index([weekStart, category])
+  @@index([wallet])
+}
+
+model Referral {
+  id              Int      @id @default(autoincrement())
+  referrerWallet  String   // who referred
+  refereeWallet   String   @unique // who was referred (one referrer per wallet)
+  l1              Boolean  @default(true)  // direct referral
+  createdAt       DateTime @default(now())
+
+  @@index([referrerWallet])
+  @@index([refereeWallet])
+}
 ```
 
 ---
@@ -899,6 +1173,138 @@ async function getStreakMultiplier(wallet: string): Promise<{ multiplier: number
     days: streakDays
   };
 }
+
+// Check for active Lobster Tide
+async function getActiveTideMult(): Promise<number> {
+  const now = new Date();
+  const tide = await prisma.lobsterTide.findFirst({
+    where: { startTime: { lte: now }, endTime: { gte: now } }
+  });
+  return tide ? tide.multiplier : 1.0;
+}
+
+// Calculate referral multiplier for a wallet
+async function getReferralMultiplier(wallet: string): Promise<number> {
+  // L1 quality bonus: sum of per-referee bonuses (capped)
+  const l1Referees = await prisma.referral.findMany({
+    where: { referrerWallet: wallet, l1: true }
+  });
+  
+  const L1_TIERS = [[100000, 0.05], [25000, 0.03], [5000, 0.015], [1000, 0.008]];
+  const L1_CAP_PER = 0.05;
+  const L1_CAP_TOTAL = 0.50;
+  
+  let l1Total = 0;
+  let activeL1Count = 0;
+  for (const ref of l1Referees) {
+    const refPoints = await prisma.walletPoints.findUnique({ where: { wallet: ref.refereeWallet } });
+    const pts = refPoints?.totalPoints || 0;
+    if (pts > 0) activeL1Count++;
+    let bonus = 0;
+    for (const [threshold, mult] of L1_TIERS) {
+      if (pts >= threshold) { bonus = mult; break; }
+    }
+    l1Total += Math.min(bonus, L1_CAP_PER);
+  }
+  l1Total = Math.min(l1Total, L1_CAP_TOTAL);
+
+  // L2 quality bonus: referees of referees
+  const L2_TIERS = [[100000, 0.012], [25000, 0.008], [5000, 0.004], [1000, 0.002]];
+  const L2_CAP_PER = 0.012;
+  const L2_CAP_TOTAL = 0.15;
+  
+  let l2Total = 0;
+  for (const ref of l1Referees) {
+    const l2Referees = await prisma.referral.findMany({
+      where: { referrerWallet: ref.refereeWallet, l1: true }
+    });
+    for (const l2ref of l2Referees) {
+      const l2Points = await prisma.walletPoints.findUnique({ where: { wallet: l2ref.refereeWallet } });
+      const pts = l2Points?.totalPoints || 0;
+      let bonus = 0;
+      for (const [threshold, mult] of L2_TIERS) {
+        if (pts >= threshold) { bonus = mult; break; }
+      }
+      l2Total += Math.min(bonus, L2_CAP_PER);
+    }
+  }
+  l2Total = Math.min(l2Total, L2_CAP_TOTAL);
+
+  // Count tier bonus
+  const COUNT_TIERS = [[50, 0.35], [20, 0.25], [10, 0.15], [3, 0.08]];
+  let countBonus = 0;
+  for (const [threshold, mult] of COUNT_TIERS) {
+    if (activeL1Count >= threshold) { countBonus = mult; break; }
+  }
+
+  return l1Total + l2Total + countBonus;
+}
+```
+
+### Step 4.5: Weekly rankings processor (Monday 00:00 UTC cron)
+
+```typescript
+async function processWeeklyRankings() {
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const prevWeekStart = subDays(weekStart, 7);
+
+  const categories = ['trading', 'predictions', 'creation', 'lending', 'vault', 'social', 'resolver'];
+  
+  const bonusTable: Record<string, number[]> = {
+    trading:     [2000, 1000, 1000, 500, 500, 250, 250, 250, 250, 250],
+    predictions: [2000, 1000, 1000, 500, 500, 250, 250, 250, 250, 250],
+    creation:    [1500, 750, 750, 400, 400, 200, 200, 200, 200, 200],
+    lending:     [1000, 500, 500, 250, 250, 125, 125, 125, 125, 125],
+    vault:       [1000, 500, 500, 250, 250, 125, 125, 125, 125, 125],
+    social:      [1000, 500, 500, 250, 250, 125, 125, 125, 125, 125],
+    resolver:    [1500, 750, 750, 400, 400, 200, 200, 200, 200, 200],
+  };
+
+  for (const category of categories) {
+    const topWallets = await prisma.pointEvent.groupBy({
+      by: ['wallet'],
+      where: {
+        category,
+        createdAt: { gte: prevWeekStart, lt: weekStart },
+      },
+      _sum: { basePoints: true },
+      orderBy: { _sum: { basePoints: 'desc' } },
+      take: 10,
+    });
+
+    for (let i = 0; i < topWallets.length; i++) {
+      const { wallet, _sum } = topWallets[i];
+      if ((_sum.basePoints || 0) < 500) continue; // minimum threshold
+
+      const bonus = bonusTable[category][i];
+      
+      await prisma.weeklyRanking.create({
+        data: {
+          wallet, category, weekStart: prevWeekStart,
+          rank: i + 1,
+          basePoints: _sum.basePoints || 0,
+          bonusPoints: bonus,
+        }
+      });
+
+      await prisma.pointEvent.create({
+        data: {
+          wallet, category: 'ranking',
+          action: `weekly_rank_${category}`,
+          basePoints: bonus,
+          categoryMult: 1.0, streakMult: 1.0,
+          finalPoints: bonus, // flat, NOT multiplied
+          sourceTable: 'WeeklyRanking',
+        }
+      });
+
+      await prisma.walletPoints.update({
+        where: { wallet },
+        data: { totalPoints: { increment: bonus } },
+      });
+    }
+  }
+}
 ```
 
 ### Step 5: Write points
@@ -925,9 +1331,12 @@ async function processEvent(event: ProcessableEvent) {
 
   // Compute multipliers
   const cp = await getCategoryPoints(wallet);
-  const categoryMult = cpToMultiplier(cp);
+  const hasSocial = await hasSocialVerification(wallet);
+  const categoryMult = cpToMultiplier(cp, hasSocial);
   const { multiplier: streakMult, days: streakDays } = await getStreakMultiplier(wallet);
-  const finalPoints = Math.floor(basePoints * categoryMult * streakMult);
+  const tideMult = await getActiveTideMult();  // 1.0 if no active tide
+  const referralMult = await getReferralMultiplier(wallet);  // 0.0 if no referrals
+  const finalPoints = Math.floor(basePoints * categoryMult * streakMult * tideMult * (1 + referralMult));
 
   // Write the point event
   await prisma.pointEvent.create({
@@ -1180,7 +1589,7 @@ const POINTS_VISIBLE = process.env.POINTS_VISIBLE === 'true'; // default: false
 ## Implementation Checklist
 
 ### Phase 1 â€" Core Points Engine
-- [ ] Add Prisma models: PointEvent, WalletPoints, DailyActivity, ProcessorState
+- [ ] Add Prisma models: PointEvent, WalletPoints, DailyActivity, ProcessorState, LobsterTide, Referral
 - [ ] `prisma migrate dev`
 - [ ] Points processor job (runs every 60s):
   - [ ] Process new `TokenTransaction` buys â†' trading points
@@ -1194,20 +1603,27 @@ const POINTS_VISIBLE = process.env.POINTS_VISIBLE === 'true'; // default: false
   - [ ] Apply daily caps (5,000 base per category per day)
   - [ ] Compute category diversity multiplier (rolling 7-day CP)
   - [ ] Compute streak multiplier (+10%/day, max 2x)
+  - [ ] Check active Lobster Tide â†' apply tide_mult (1.0 if none)
+  - [ ] Compute referral multiplier (L1 quality + L2 quality + count tier)
   - [ ] Write PointEvent + update WalletPoints + update DailyActivity
   - [ ] Track last processed ID per source table in ProcessorState
 - [ ] `GET /api/v1/leaderboard` â€" USDB balances only (no points references) until TGE
 - [ ] `GET /api/v1/points/{wallet}` â€" returns 404 pre-TGE, full data post-TGE
 - [ ] `POINTS_VISIBLE` env flag â€" when true, expose full point data in both endpoints
+- [ ] `POST /api/v1/admin/tides` â€" admin endpoint to create Lobster Tides
+- [ ] Referral tracking: record referral on first platform action via `?ref=` link
 
 ### ~~Phase 1.5~~ â€" Moved to Phase 4 (Pre-Airdrop)
 _Token transfer scanning is now a one-time pre-airdrop batch job, not a real-time monitor. See Phase 4._
 
-### Phase 2 â€" Daily Accrual
+### Phase 2 â€" Daily Accrual + Weekly Rankings
 - [ ] Vault daily accrual cron (snapshot balances, award 2 pts/$1/day)
 - [ ] Active loan daily accrual (1 pt/day per active loan)
 - [ ] Active vesting daily accrual (1 pt/day per active vesting schedule)
 - [ ] Add lending + vault + vesting to category diversity scoring
+- [ ] Add Prisma model: WeeklyRanking
+- [ ] Weekly ranking cron job (Monday 00:00 UTC) â€" top 10 per category earn flat bonus
+- [ ] `GET /api/v1/rankings/weekly` endpoint (post-TGE visibility)
 
 ### Phase 3 â€" Social Points
 - [ ] Add Prisma models: MoltbookActivity, SocialActivity

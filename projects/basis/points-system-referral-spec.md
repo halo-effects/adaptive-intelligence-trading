@@ -1,7 +1,9 @@
-# Basis Points System — Referral Addendum
+# Basis Points System — Referral Addendum (SUPERSEDED)
 
 _Diamond + GeeGee | 2026-03-22_
-_Addendum to `points-system-complete-spec.md`. Covers the 2-level referral system for viral agent recruitment._
+_⚠️ **SUPERSEDED** — The flat 10%/3% referral system in this document has been replaced by a multiplier-based referral system. See the "Referral System (Multiplier-Based)" section in `points-system-complete-spec.md` for the current design (2026-03-23)._
+
+_Original addendum preserved below for reference._
 
 ---
 
