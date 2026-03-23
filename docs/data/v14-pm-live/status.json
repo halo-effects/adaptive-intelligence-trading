@@ -7,14 +7,14 @@
   "leverage": 1.0,
   "bot_state": "RUNNING",
   "capital": 340.0,
-  "equity": 341.43,
-  "cash": 84.48,
+  "equity": 339.8,
+  "cash": 84.59,
   "invested": 267.86,
   "exchange_balance": {
-    "usdt_free": 84.48,
+    "usdt_free": 84.59,
     "usdt_total": 352.56
   },
-  "pnl_pct": 0.42,
+  "pnl_pct": -0.06,
   "total_pnl": 24.4036,
   "total_realized_pnl": 24.4036,
   "deals_completed": 13,
@@ -25,8 +25,8 @@
       "side": "long",
       "layers": 4,
       "avg_entry": 0.38741173,
-      "current_price": 0.3711,
-      "unrealized_pnl": -11.1264,
+      "current_price": 0.3689,
+      "unrealized_pnl": -12.7546,
       "invested": 267.86,
       "realized_pnl": 0.6543,
       "lifecycle_phase": "LONG_DCA",
@@ -36,7 +36,7 @@
       "distance_to_liq_pct": null,
       "total_fees": 0.19,
       "position_size": 691.4,
-      "cumulative_funding": 1.544806,
+      "cumulative_funding": 1.586441,
       "tp_order_id": "222739008",
       "layer_count": 4
     }
@@ -61,9 +61,9 @@
     "active_cash": 236.27,
     "reserve_cash": 87.5
   },
-  "uptime_hours": 27.51,
+  "uptime_hours": 27.69,
   "timeframe": "1h",
-  "last_update": "2026-03-23T07:02:34.831670+00:00",
+  "last_update": "2026-03-23T07:13:28.332737+00:00",
   "total_fees": 0.0,
   "_code_version": "exchange-truth-v2"
 }
