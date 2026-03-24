@@ -7,14 +7,14 @@
   "leverage": 1.0,
   "bot_state": "RUNNING",
   "capital": 340.0,
-  "equity": 315.91,
-  "cash": 84.56,
+  "equity": 317.02,
+  "cash": 84.33,
   "invested": 267.86,
   "exchange_balance": {
-    "usdt_free": 84.56,
-    "usdt_total": 352.48
+    "usdt_free": 84.33,
+    "usdt_total": 352.47
   },
-  "pnl_pct": -7.09,
+  "pnl_pct": -6.76,
   "total_pnl": 24.4036,
   "total_realized_pnl": 24.4036,
   "deals_completed": 13,
@@ -25,8 +25,8 @@
       "side": "long",
       "layers": 4,
       "avg_entry": 0.38741173,
-      "current_price": 0.3376,
-      "unrealized_pnl": -36.5632,
+      "current_price": 0.3358,
+      "unrealized_pnl": -35.4559,
       "invested": 267.86,
       "realized_pnl": 0.6543,
       "lifecycle_phase": "LONG_DCA",
@@ -44,7 +44,8 @@
   "symbols": [
     "GRASS/USDT"
   ],
-  "tier_coin_cap": 1,
+  "tier_coin_cap": 3,
+  "pool_split": "90/10",
   "approved_symbols": [
     "GRASS/USDT"
   ],
@@ -61,9 +62,9 @@
     "active_cash": 236.27,
     "reserve_cash": 87.5
   },
-  "uptime_hours": 57.53,
+  "uptime_hours": 0.4,
   "timeframe": "1h",
-  "last_update": "2026-03-24T13:03:59.698843+00:00",
+  "last_update": "2026-03-24T14:03:37.812620+00:00",
   "total_fees": 0.0,
   "_code_version": "exchange-truth-v2"
 }

@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 logger = logging.getLogger("V14CapitalManager")
 logger.setLevel(logging.INFO)
@@ -19,56 +19,174 @@ if not logger.handlers:
 # Format: (min_equity_inclusive, max_coins)
 # Evaluated top-down; first match wins.
 EQUITY_TIER_CAPS = [
-    (100_000, 10),  # $100K+ -> up to 10 coins
-    ( 50_000,  5),  # $50K-$100K -> up to 5 coins
-    ( 30_000,  4),  # $30K-$50K -> up to 4 coins
-    ( 20_000,  3),  # $20K-$30K -> up to 3 coins
-    ( 10_000,  2),  # $10K-$20K -> up to 2 coins
-    (    100,  1),  # $100-$10K -> 1 coin
+    (100_000, 10),  # $100K+     -> 10 coins (full diversification)
+    ( 20_000,  5),  # $20K-$100K ->  5 coins (proven on paper)
+    ( 10_000,  5),  # $10K-$20K  ->  5 coins (intermediate split)
+    (  5_000,  5),  # $5K-$10K   ->  5 coins (aggressive turnover)
+    (  3_000,  4),  # $3K-$5K    ->  4 coins (demo phase: turnover + depth)
+    (    100,  3),  # $100-$3K   ->  3 coins (max turnover at small capital)
 ]
+
+# ---------------------------------------------------------------------------
+# Equity-tiered pool splits (active / reserve)
+# ---------------------------------------------------------------------------
+# Format: (min_equity_inclusive, active_pct, reserve_pct)
+# Evaluated top-down; first match wins.
+EQUITY_TIER_SPLITS = [
+    (20_000, 0.75, 0.25),  # $20K+     -> 75/25 (proven, deep safety buffer)
+    (10_000, 0.80, 0.20),  # $10K-$20K -> 80/20 (intermediate — avoids cliff)
+    (   100, 0.90, 0.10),  # <$10K     -> 90/10 (max grid depth, bounded risk)
+]
+
+# ---------------------------------------------------------------------------
+# Hysteresis — prevents tier flapping from normal PnL fluctuation.
+# Upgrade: at the threshold (immediate, no buffer).
+# Downgrade: only when equity drops TIER_HYSTERESIS_PCT below the threshold.
+# ---------------------------------------------------------------------------
+TIER_HYSTERESIS_PCT = 0.05  # 5%
 
 
 class CapitalRouter:
     """
     Capital Router for V14 Engine.
-    Manages the distribution of capital between active trading (90%) 
-    and reserve holdings (10%), dynamic allocation based on DCA Score,
-    and dynamic per-coin caps.
+    Manages the distribution of capital between active and reserve pools,
+    dynamic allocation based on DCA Score, and dynamic per-coin caps.
 
-    Tier-aware: max coins allowed scales with current portfolio equity.
+    Tier-aware: max coins and pool split scale with current portfolio equity.
+    Hysteresis: upgrades are immediate at threshold; downgrades require equity
+    to drop 5% below the current tier's threshold (prevents flapping).
     On a tier drop the cap is enforced on new T1 entries only — existing
     positions are allowed to exit gracefully (handled by the runner).
     """
-    def __init__(self, initial_capital: float):
+    def __init__(self, initial_capital: float,
+                 cap_tier_index: int = -1,
+                 split_tier_index: int = -1):
         self.total_equity = initial_capital
-        
-        # 90/10 Pool Split (active trading / emergency reserve)
-        self.active_pool_total = self.total_equity * 0.75
-        self.reserve_pool_total = self.total_equity * 0.25
-        
+
+        # Tier state — track indices for hysteresis
+        # Pass saved indices on restart; -1 = first call (no prior tier)
+        self._cap_tier_index: int = self._apply_hysteresis(
+            self.total_equity, cap_tier_index if cap_tier_index >= 0 else None,
+            EQUITY_TIER_CAPS, lambda r: r[0])
+        self._split_tier_index: int = self._apply_hysteresis(
+            self.total_equity, split_tier_index if split_tier_index >= 0 else None,
+            EQUITY_TIER_SPLITS, lambda r: r[0])
+
+        # Tier-aware coin cap (-1 = below all thresholds)
+        self.tier_coin_cap: int = (
+            EQUITY_TIER_CAPS[self._cap_tier_index][1]
+            if self._cap_tier_index >= 0 else 0
+        )
+
+        # Tier-aware pool split (-1 fallback to 90/10)
+        if self._split_tier_index >= 0:
+            _, active_pct, reserve_pct = EQUITY_TIER_SPLITS[self._split_tier_index]
+        else:
+            active_pct, reserve_pct = 0.90, 0.10
+        self.active_pool_total = self.total_equity * active_pct
+        self.reserve_pool_total = self.total_equity * reserve_pct
+
         # Track available cash
         self.active_pool_cash = self.active_pool_total
         self.reserve_pool_cash = self.reserve_pool_total
-        
+
         # Track locked allocations
         self.active_allocations: Dict[str, float] = {}
         self.reserve_allocations: Dict[str, float] = {}
 
-        # Tier state (updated on each rebalance)
-        self.tier_coin_cap: int = self.get_tier_coin_cap(self.total_equity)
-
         logger.info(f"Initialized CapitalRouter with ${self.total_equity:.2f} total equity.")
-        logger.info(f"Active Pool (75%): ${self.active_pool_total:.2f}")
-        logger.info(f"Reserve Pool (25%): ${self.reserve_pool_total:.2f}")
-        logger.info(f"Tier coin cap: {self.tier_coin_cap} coins")
+        logger.info(f"Pool split: {active_pct*100:.0f}/{reserve_pct*100:.0f} "
+                     f"(Active: ${self.active_pool_total:.2f} / Reserve: ${self.reserve_pool_total:.2f})")
+        logger.info(f"Tier coin cap: {self.tier_coin_cap} coins "
+                     f"(hysteresis active, {TIER_HYSTERESIS_PCT*100:.0f}% downgrade buffer)")
+
+    # ------------------------------------------------------------------
+    # Tier lookups
+    # ------------------------------------------------------------------
 
     @staticmethod
     def get_tier_coin_cap(equity: float) -> int:
-        """Return the max allowed simultaneous coin positions for the given equity level."""
+        """Return the max allowed simultaneous coin positions for the given equity level.
+        NOTE: Raw lookup without hysteresis. Use _apply_hysteresis() for tier transitions.
+        """
         for threshold, cap in EQUITY_TIER_CAPS:
             if equity >= threshold:
                 return cap
         return 0  # Below $100 — no new positions
+
+    @staticmethod
+    def get_tier_split(equity: float) -> Tuple[float, float]:
+        """Return (active_pct, reserve_pct) for the given equity level.
+        NOTE: Raw lookup without hysteresis. Use _apply_hysteresis() for tier transitions.
+        """
+        for threshold, active, reserve in EQUITY_TIER_SPLITS:
+            if equity >= threshold:
+                return (active, reserve)
+        return (0.90, 0.10)  # Default for tiny accounts
+
+    @staticmethod
+    def _apply_hysteresis(equity: float, current_tier_index: Optional[int],
+                          tier_table: list, key_fn) -> int:
+        """
+        Determine the effective tier index with hysteresis.
+
+        - Upgrade (moving to a higher tier): triggers at the threshold — no buffer.
+        - Downgrade (moving to a lower tier): only triggers when equity drops
+          TIER_HYSTERESIS_PCT (5%) below the current tier's threshold.
+
+        Parameters:
+            equity:             Current portfolio equity.
+            current_tier_index: Index into tier_table of the tier we're currently on.
+                                None on first call (no prior tier).
+            tier_table:         The tier lookup table (EQUITY_TIER_CAPS or EQUITY_TIER_SPLITS).
+            key_fn:             Callable that extracts the threshold from a tier entry.
+
+        Returns:
+            New tier index into tier_table.
+        """
+        # Raw lookup — what tier would equity land on without hysteresis?
+        # If equity is below all thresholds, return -1 (below minimum)
+        raw_index = -1
+        for i, row in enumerate(tier_table):
+            if equity >= key_fn(row):
+                raw_index = i
+                break
+
+        # First call or no prior tier — no hysteresis, use raw
+        if current_tier_index is None:
+            return raw_index
+
+        # Below-minimum: raw_index == -1 means equity is below all thresholds
+        if raw_index < 0:
+            # Downgrade to below-minimum: apply hysteresis on lowest tier
+            if current_tier_index >= 0:
+                current_threshold = key_fn(tier_table[current_tier_index])
+                downgrade_trigger = current_threshold * (1.0 - TIER_HYSTERESIS_PCT)
+                if equity < downgrade_trigger:
+                    return -1  # Confirmed: below minimum
+                return current_tier_index  # Hold (within buffer)
+            return -1  # Already below minimum
+
+        # Upgrade from below-minimum to a valid tier: immediate
+        if current_tier_index < 0:
+            return raw_index
+
+        # Upgrade (raw is a higher tier = lower index): apply immediately
+        if raw_index < current_tier_index:
+            return raw_index
+
+        # Same tier: no change
+        if raw_index == current_tier_index:
+            return current_tier_index
+
+        # Downgrade (raw is a lower tier = higher index): apply hysteresis
+        # Stay at current tier unless equity dropped 5% below current tier's threshold
+        current_threshold = key_fn(tier_table[current_tier_index])
+        downgrade_trigger = current_threshold * (1.0 - TIER_HYSTERESIS_PCT)
+        if equity < downgrade_trigger:
+            return raw_index  # Confirmed downgrade
+        else:
+            return current_tier_index  # Hold current tier (within buffer)
 
     def load_scanner_json(self, filepath: str) -> List[Dict[str, Any]]:
         """
@@ -135,17 +253,22 @@ class CapitalRouter:
         """
         logger.info("Starting daily rebalance...")
 
-        # Update equity snapshot and derive tier cap
+        # Update equity snapshot and derive tier cap + split (with hysteresis)
         if current_equity is not None and current_equity > 0:
             prev_equity = self.total_equity
             self.total_equity = current_equity
-            self.active_pool_total = self.total_equity * 0.75
-            self.reserve_pool_total = self.total_equity * 0.25
             if abs(current_equity - prev_equity) > 1.0:
                 logger.info(f"Equity updated: ${prev_equity:.2f} → ${current_equity:.2f}")
 
+        # Coin cap — hysteresis-aware
+        prev_cap_index = self._cap_tier_index
+        self._cap_tier_index = self._apply_hysteresis(
+            self.total_equity, self._cap_tier_index, EQUITY_TIER_CAPS, lambda r: r[0])
         prev_cap = self.tier_coin_cap
-        self.tier_coin_cap = self.get_tier_coin_cap(self.total_equity)
+        self.tier_coin_cap = (
+            EQUITY_TIER_CAPS[self._cap_tier_index][1]
+            if self._cap_tier_index >= 0 else 0
+        )
         if self.tier_coin_cap != prev_cap:
             direction = "▼ DOWN" if self.tier_coin_cap < prev_cap else "▲ UP"
             logger.warning(
@@ -153,7 +276,24 @@ class CapitalRouter:
                 f"(equity=${self.total_equity:.2f})"
             )
 
-        logger.info(f"Equity tier: ${self.total_equity:.2f} → max {self.tier_coin_cap} coins")
+        # Pool split — hysteresis-aware
+        prev_split_index = self._split_tier_index
+        self._split_tier_index = self._apply_hysteresis(
+            self.total_equity, self._split_tier_index, EQUITY_TIER_SPLITS, lambda r: r[0])
+        if self._split_tier_index >= 0:
+            _, active_pct, reserve_pct = EQUITY_TIER_SPLITS[self._split_tier_index]
+        else:
+            active_pct, reserve_pct = 0.90, 0.10
+        self.active_pool_total = self.total_equity * active_pct
+        self.reserve_pool_total = self.total_equity * reserve_pct
+        if self._split_tier_index != prev_split_index:
+            logger.warning(
+                f"Pool split changed: → {active_pct*100:.0f}/{reserve_pct*100:.0f} "
+                f"(equity=${self.total_equity:.2f})"
+            )
+
+        logger.info(f"Equity tier: ${self.total_equity:.2f} → max {self.tier_coin_cap} coins | "
+                     f"split {active_pct*100:.0f}/{reserve_pct*100:.0f}")
 
         # 1. Filter: hurdle rate >= 5.0, apply trend multiplier
         qualifying_coins = []

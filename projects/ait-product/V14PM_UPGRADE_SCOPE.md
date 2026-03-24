@@ -430,7 +430,7 @@ _Note: `_reconcile_with_exchange()` and `_periodic_reconcile()` were removed in 
   - On deposit detection:
     - Record to capital ledger
     - Update `self.capital` (the bot's tracking variable)
-    - Update `self.router.total_equity` and recalculate pool splits (75/25)
+    - Update `self.router.total_equity` and recalculate pool splits (via `get_tier_split()`)
     - Trigger immediate rebalance so new capital is allocated
     - Telegram alert: "📥 Deposit detected: $X. Capital: $old → $new. Rebalancing."
   - On withdrawal detection:

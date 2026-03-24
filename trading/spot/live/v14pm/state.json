@@ -1,5 +1,5 @@
 {
-  "saved_at": "2026-03-24T13:03:59.715853+00:00",
+  "saved_at": "2026-03-24T14:03:37.836023+00:00",
   "bot_state": "RUNNING",
   "capital": 340.0,
   "coins": {
@@ -8,7 +8,7 @@
       "allocated_capital": 237.25903745997226,
       "tp_order_id": "222739008",
       "tp_limit_price": 0.3939,
-      "last_candle_ts": 1774353600000,
+      "last_candle_ts": 1774357200000,
       "cumulative_funding": 1.525039690000001,
       "last_funding_check_ms": 1774336089136,
       "layer_count": 4,
@@ -18,7 +18,7 @@
         "profile": "high",
         "leverage": 1.0,
         "phase": "LONG_DCA",
-        "capital": 15.207604208433203,
+        "capital": 237.25903745997226,
         "phase_start_date": "2026-03-19 15:00:00",
         "long_coins": 691.4,
         "long_avg_entry": 0.3874117298236,
@@ -53,9 +53,9 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-03-24",
         "_live_mode": true,
-        "_last_candle_ts": 1774353600000,
+        "_last_candle_ts": 1774357200000,
         "start_time": 1773936951.952672,
-        "current_price": 0.3376
+        "current_price": 0.3377
       }
     }
   },
@@ -65,7 +65,9 @@
     "active_allocations": {
       "GRASS/USDT": 27.025427516542383
     },
-    "reserve_allocations": {}
+    "reserve_allocations": {},
+    "cap_tier_index": 5,
+    "split_tier_index": 2
   },
   "regime": {
     "signal_count": 0,

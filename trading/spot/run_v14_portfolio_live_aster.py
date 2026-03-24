@@ -60,7 +60,7 @@ _WORKSPACE = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_WORKSPACE))
 
 from trading.spot.v14_lifecycle_engine import V14LifecycleEngine
-from trading.spot.v14_capital_manager import CapitalRouter
+from trading.spot.v14_capital_manager import CapitalRouter, EQUITY_TIER_CAPS, EQUITY_TIER_SPLITS
 from trading.spot.exchange_client import SpotExchangeClient
 
 # ── Logging ─────────────────────────────────────────────────────────────────
@@ -729,6 +729,8 @@ class V14PortfolioLiveAster:
                 "reserve_pool_cash": self.router.reserve_pool_cash,
                 "active_allocations": self.router.active_allocations,
                 "reserve_allocations": self.router.reserve_allocations,
+                "cap_tier_index": self.router._cap_tier_index,
+                "split_tier_index": self.router._split_tier_index,
             },
             "regime": {
                 "signal_count": self._regime_signal_count,
@@ -857,6 +859,15 @@ class V14PortfolioLiveAster:
             self.router.reserve_pool_cash    = router_state.get("reserve_pool_cash", self.router.reserve_pool_cash)
             self.router.active_allocations   = router_state.get("active_allocations", {})
             self.router.reserve_allocations  = router_state.get("reserve_allocations", {})
+            # Restore hysteresis tier indices (survives restart without re-evaluation)
+            if "cap_tier_index" in router_state:
+                self.router._cap_tier_index = router_state["cap_tier_index"]
+                self.router.tier_coin_cap = (
+                    EQUITY_TIER_CAPS[self.router._cap_tier_index][1]
+                    if self.router._cap_tier_index >= 0 else 0
+                )
+            if "split_tier_index" in router_state:
+                self.router._split_tier_index = router_state["split_tier_index"]
 
         # Restore regime state
         regime = state.get("regime", {})
@@ -2042,6 +2053,11 @@ class V14PortfolioLiveAster:
             "coins": coins,
             "symbols": list(self.coins.keys()),
             "tier_coin_cap": self.router.tier_coin_cap,
+            "pool_split": (
+                f"{EQUITY_TIER_SPLITS[self.router._split_tier_index][1]*100:.0f}/"
+                f"{EQUITY_TIER_SPLITS[self.router._split_tier_index][2]*100:.0f}"
+                if self.router._split_tier_index >= 0 else "90/10"
+            ),
             "approved_symbols": sorted(self.router.active_allocations.keys()),
             "regime": (self._regime_alert_state
                        if self._regime_alert_state and self._regime_alert_state != "NONE"

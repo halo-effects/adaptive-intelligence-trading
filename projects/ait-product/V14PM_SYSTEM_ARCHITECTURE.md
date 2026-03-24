@@ -46,23 +46,29 @@ Then it rotates to the next best opportunity. Rinse and repeat, 24/7.
 ```
 $350 USDT (Aster Perps account)
   │
-  ├── 75% Active Pool ($262.50)
-  │     └── Deployed to top-ranked coin
+  ├── 90% Active Pool ($315)        ← Adaptive: 90/10 below $10K
+  │     └── Deployed to top-ranked coins (up to 3 slots at current equity)
   │           └── DCA grid: layers at 1.5% spacing
   │                 └── TP hit → profit returned → rotate to next coin
   │
-  └── 25% Reserve Pool ($87.50)
-        └── Held back for deep DCA layers and new opportunities
+  └── 10% Reserve Pool ($35)        ← Scales to 25% at $20K+
+        └── Held back for deep DCA layers (6+) and new opportunities
 ```
 
-As equity grows, more coins trade simultaneously:
+As equity grows, more coins trade and the pool split adjusts:
 
-| Your Equity | Coins Trading | Effect |
-|-------------|--------------|--------|
-| $350 (now) | 1 | Focused, simple |
-| $10,000 | 2 | Diversified |
-| $50,000 | 5 | Portfolio mode |
-| $100,000+ | 10 | Full rotation |
+| Your Equity | Coins Trading | Pool Split | Effect |
+|-------------|--------------|------------|--------|
+| $350 (now) | 3 | 90/10 | Max turnover, thin reserve OK |
+| $3,000 | 4 | 90/10 | Demo phase: turnover + depth |
+| $5,000 | 5 | 90/10 | Aggressive turnover |
+| $10,000 | 5 | 80/20 | Intermediate (avoids cliff) |
+| $20,000+ | 5 | 75/25 | Proven paper profile |
+| $100,000+ | 10 | 75/25 | Full rotation |
+
+Tier transitions use **5% hysteresis**: upgrades are immediate at threshold;
+downgrades only trigger when equity drops 5% below the current tier's threshold
+(prevents flapping from normal PnL fluctuation).
 
 ### The Components
 
@@ -80,7 +86,9 @@ As equity grows, more coins trade simultaneously:
 
 - **Live on Aster Perps** with ~$340 real USDT
 - Scanner selected GRASS/USDT as first coin (top 30d DCA scorer)
-- 1 coin slot at current equity; scales to 10 as equity grows
+- 3 coin slots at current equity (Upgrade 0: adaptive tiers, 2026-03-24); scales to 10
+- **Adaptive pool split** (2026-03-24): 90/10 at current equity, scales to 75/25 at $20K+
+- **5% hysteresis** on tier transitions prevents flapping at boundaries
 - **Exchange-as-truth architecture** (2026-03-21): positions synced from exchange every cycle
 - Resting limit orders for TP execution, Telegram commands operational
 - Dashboard shows correct exchange-derived equity, invested, and P&L
@@ -166,7 +174,7 @@ and per-function traces, see `V14PM_CODE_AUDIT_2026-03-21.md`.
 | `AsterPerpClient` | `run_v14_portfolio_live_aster.py` | Aster DEX Perpetuals exchange client; wraps `ccxt.aster` with perp-specific helpers |
 | `CoinState` | `run_v14_portfolio_live_aster.py` | Tracks live state for a single coin slot (TP order ID, layer count, funding, candle timestamp) |
 | `V14PortfolioLiveAster` | `run_v14_portfolio_live_aster.py` | Main bot class; orchestrates all trading logic, Telegram commands, and state persistence |
-| `CapitalRouter` | `v14_capital_manager.py` | Manages capital distribution across active coins (75/25 active/reserve pools, equity-tiered coin cap) |
+| `CapitalRouter` | `v14_capital_manager.py` | Manages capital distribution across active coins (adaptive pool split + equity-tiered coin cap with 5% hysteresis) |
 | `V14LifecycleEngine` | `v14_lifecycle_engine.py` | Per-coin live wrapper around `V14DCAEngine`; manages signal pack, daily ticks, state persistence |
 | `V14DCAEngine` | `engine/v14_dca_engine.py` | DCA phase machine + grid; generates `BUY`/`SELL` actions from candle data |
 | `V13SignalPack` | `engine/v13_signals.py` | StochRSI, ADX, HH/HL structure detectors; shared signal library for V13 and V14 engines |
@@ -1001,7 +1009,9 @@ exchange API, not the engine's internal state.
 | `_last_exchange_positions` | `client.fetch_open_positions()` | Every cycle (exchange sync) | Status (per-coin position data) |
 | `router.active_pool_cash` | CapitalRouter: +/− on request/return | On every BUY (−) and SELL/TP (+ proceeds) | Capital availability |
 | `router.active_allocations` | CapitalRouter: +amount on request; 0 on return | On every BUY and SELL/TP | Accounting |
-| `router.tier_coin_cap` | `EQUITY_TIER_CAPS` lookup on equity | On rebalance | Max simultaneous coins |
+| `router.tier_coin_cap` | `EQUITY_TIER_CAPS` via `_apply_hysteresis()` | On rebalance | Max simultaneous coins |
+| `router._cap_tier_index` | `_apply_hysteresis()` on `EQUITY_TIER_CAPS` | On rebalance | Hysteresis state for coin cap (persisted in state.json) |
+| `router._split_tier_index` | `_apply_hysteresis()` on `EQUITY_TIER_SPLITS` | On rebalance | Hysteresis state for pool split (persisted in state.json) |
 | `tracker._open_deals` | `on_buy()` (create/extend); `on_sell()` (pop) | On every BUY and SELL | PnL calculation, layer count for pool routing |
 | `tracker.trades` | `on_sell()` (append) | On every SELL/TP fill | CSV, win_rate, total_pnl |
 | `_cfgi_market` | CFGI API | Hourly | Status, regime eval message |
@@ -1079,20 +1089,34 @@ run_v14_portfolio_live_aster.py
 
 ### 7.2 CapitalRouter — Allocation Rules
 
-**Pool split:**
-- **Active Pool (75%):** Deployed capital for DCA positions
-- **Reserve Pool (25%):** Held back for new opportunities and drawdown buffer
+> **Updated 2026-03-24 (Upgrade 0):** Adaptive pool split + revised tier table + 5% hysteresis.
+
+**Adaptive pool split (equity-tiered):**
+
+| Portfolio Equity | Active % | Reserve % | Rationale |
+|-----------------|----------|-----------|-----------|
+| $20,000+ | 75% | 25% | Proven on paper; deep safety buffer |
+| $10,000 – $20,000 | 80% | 20% | Intermediate — avoids active-capital cliff |
+| $100 – $10,000 | 90% | 10% | Max grid depth; bounded total exposure |
 
 **Equity-tiered coin cap:**
 
 | Portfolio Equity | Max Simultaneous Coins |
 |-----------------|------------------------|
 | $100,000+ | 10 |
-| $50,000 – $100,000 | 5 |
-| $30,000 – $50,000 | 4 |
-| $20,000 – $30,000 | 3 |
-| $10,000 – $20,000 | 2 |
-| $100 – $10,000 | 1 |
+| $20,000 – $100,000 | 5 |
+| $10,000 – $20,000 | 5 |
+| $5,000 – $10,000 | 5 |
+| $3,000 – $5,000 | 4 |
+| $100 – $3,000 | 3 |
+
+**Hysteresis (5% band):**
+Both coin cap and pool split use asymmetric hysteresis to prevent tier flapping:
+- **Upgrade:** Immediate at threshold (e.g., equity hits $3,000 → 4 coins)
+- **Downgrade:** Only when equity drops 5% below the current tier's threshold
+  (e.g., must drop to $2,850 to go from 4 → 3 coins)
+- Tier indices (`_cap_tier_index`, `_split_tier_index`) are persisted in `state.json`
+  so hysteresis survives bot restarts.
 
 **Entry qualification:**
 - DCA Score ≥ 5.0 (hurdle rate)
@@ -1111,7 +1135,7 @@ When a position closes (TP hit):
 
 At midnight UTC, the PM runner:
 1. Updates total equity from exchange balances
-2. Recalculates tier cap (may change if equity grew/shrunk)
+2. Recalculates tier cap and pool split via hysteresis (may change if equity grew/shrunk)
 3. Loads latest `cycle_scanner.json`
 4. Computes trend multipliers from score history
 5. Identifies coins that no longer qualify (score dropped below hurdle)
@@ -1258,12 +1282,12 @@ Aster perps settle funding every 8 hours. The bot tracks:
 At 1x leverage with DCA hold times of hours to days, funding is typically negligible
 (fractions of a basis point per 8-hour period) relative to the 1.5% TP target.
 
-### 7.10 Current Bot Status (2026-03-19)
+### 7.10 Current Bot Status (2026-03-24)
 
-- **V14PM Live (Aster Perps):** ✅ **LIVE as of 2026-03-19.** $350 real USDT on Aster Perps.
-  Coin cap = 1 (equity tier: $100–$10K). Scanner selected GRASS/USDT as first coin.
-  All safeguards active: LIVE GUARD, resting limit orders, reconciliation, Telegram commands.
-  Previous ASTER/USDT spot position closed and funds transferred to Perps account.
+- **V14PM Live (Aster Perps):** ✅ **LIVE as of 2026-03-19.** ~$318 real USDT on Aster Perps.
+  **Upgrade 0 deployed 2026-03-24:** Adaptive tiers (3 coin slots at current equity, 90/10 split)
+  with 5% hysteresis. Scanner selected GRASS/USDT as active coin.
+  Exchange-as-truth architecture (2026-03-21). Resting limit orders, Telegram commands operational.
 - **V14 Live (Aster Spot, legacy):** ❌ **RETIRED 2026-03-19** — replaced by V14PM Live.
   Position closed, funds transferred to Perps. Scheduled task `V14LiveAster` still exists
   but should not be started (will conflict with PM bot).
@@ -1640,8 +1664,9 @@ matplotlib, scipy, scikit-learn, plotly  # Backtest analysis only
 |----------|-----------|
 | DCA-only entry/exit | Eliminates timing risk; consistent cycle completion regardless of market direction |
 | 1.5% TP across all profiles | Balances cycle frequency vs. fee impact; proven through extensive backtesting |
-| 75/25 active/reserve split | Reserve ensures capital always available for high-score opportunities |
-| Equity-tiered coin cap | Prevents over-diversification at small capital; scales naturally |
+| Adaptive pool split (90/10 → 80/20 → 75/25) | Small accounts need max grid depth; reserve scales up as equity grows and exposure warrants it (Upgrade 0, 2026-03-24) |
+| Equity-tiered coin cap (3 → 4 → 5 → 10) | More coins earlier for turnover; scales with capital. 3 coins at $3K captures 51% of paper trades (Upgrade 0, 2026-03-24) |
+| 5% hysteresis on tier transitions | Prevents flapping at boundaries from normal PnL fluctuation; upgrades immediate, downgrades buffered (Upgrade 0, 2026-03-24) |
 | Score hurdle ≥ 5.0 | Filters out coins with poor cycle efficiency; avoids capital traps |
 | Trend multiplier [0.3, 1.5] | Momentum bias without abandoning mean-reversion; bounded to prevent extremes |
 | SQLite for candles.db | Zero-dependency, portable, sufficient for 1.5M rows at current scale |
@@ -1904,7 +1929,7 @@ Full per-function traces and detailed flow analysis: `V14PM_CODE_AUDIT_2026-03-2
 | Gap | Description | Severity | Status |
 |-----|-------------|----------|--------|
 | GAP-01 | `_handle_tp_fill`: broken orphaned order cleanup — `self.client.client` and `._to_ccxt_symbol()` don't exist; orphaned sell orders never cleaned up | P1 | ✅ FIXED |
-| GAP-02 | `CapitalRouter.rebalance_daily` silently changes pool split from 90/10 → 75/25 without adjusting cash amounts; docstring contradicted code | P1 | ✅ FIXED |
+| GAP-02 | `CapitalRouter.rebalance_daily` silently changes pool split from 90/10 → 75/25 without adjusting cash amounts; docstring contradicted code | P1 | ✅ FIXED → superseded by Upgrade 0 (adaptive split) |
 | GAP-03 | `_last_rebalance_date` and `_regime_last_eval_date` not persisted in `state.json` — both reset to `None` on restart, triggering immediate rebalance | P2 | ✅ FIXED |
 | GAP-04 | `_reentry_cooldown_until` declared in `__init__` but never read or updated (dead code) | P2 | ✅ FIXED |
 | GAP-05 | `_force_close_coin` uses stale `eng.long_coins` instead of fetching current exchange position qty | P1 | ✅ FIXED |
@@ -1926,11 +1951,12 @@ method (the correct method is `._aster_symbol()`). Always raised `AttributeError
 swallowed by a bare `except`. Orphaned sell orders were never cleaned up after TP fills.
 **Fix:** Changed to `self.client.fetch_open_orders(sym)`.
 
-**GAP-02 — FIXED (2026-03-21):** `CapitalRouter.__init__` set 90/10 pool split; `rebalance_daily()`
-silently changed to 75/25 without adjusting `active_pool_cash` / `reserve_pool_cash`. Only the
-`total` reference values changed, not the actual cash. Docstring said "90/10 Pool Split".
-**Fix:** Both constructor and `rebalance_daily()` now consistently use 75/25. Reserve pool
-is the correct home for DCA layers 6+ (deep drawdown buffer).
+**GAP-02 — FIXED (2026-03-21), then SUPERSEDED (2026-03-24, Upgrade 0):** Originally
+`CapitalRouter.__init__` set 90/10 pool split; `rebalance_daily()` silently changed to 75/25.
+**2026-03-21 fix:** Both paths set to 75/25 consistently.
+**2026-03-24 (Upgrade 0):** Pool split is now adaptive and equity-tiered (90/10 → 80/20 → 75/25)
+via `EQUITY_TIER_SPLITS` lookup table. Both `__init__()` and `rebalance_daily()` use
+`_apply_hysteresis()` to determine the split, so the inconsistency can no longer recur.
 
 **GAP-03 — FIXED (2026-03-21):** `_last_rebalance_date` was not saved in `state.json` — always
 reset to `None` on restart, triggering an immediate rebalance on every restart regardless of
