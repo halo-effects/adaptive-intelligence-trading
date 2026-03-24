@@ -77,7 +77,7 @@ self.active_pool_total = self.total_equity * 0.75
 self.reserve_pool_total = self.total_equity * 0.25
 ```
 
-**Problems at $3K:**
+**Problems at $3K with current config:**
 - 1 coin = zero rotation, stuck in single trades for days
 - 75/25 split wastes capital in reserve that smaller accounts need for active grid depth
 
@@ -88,16 +88,15 @@ self.reserve_pool_total = self.total_equity * 0.25
 ```python
 EQUITY_TIER_CAPS = [
     (100_000, 10),  # $100K+     -> 10 coins (full diversification)
-    ( 50_000,  5),  # $50K-$100K ->  5 coins (proven on paper)
-    ( 10_000,  5),  # $10K-$50K  ->  5 coins (same proven setup)
-    (  5_000,  4),  # $5K-$10K   ->  4 coins (growing toward paper profile)
-    (  3_000,  3),  # $3K-$5K    ->  3 coins (demo phase: turnover + depth)
-    (  1_000,  3),  # $1K-$3K    ->  3 coins (max turnover, thin reserve OK)
-    (    100,  1),  # $100-$1K   ->  1 coin  (too small to split)
+    ( 20_000,  5),  # $20K-$100K ->  5 coins (proven on paper)
+    ( 10_000,  5),  # $10K-$20K  ->  5 coins (intermediate split)
+    (  5_000,  5),  # $5K-$10K   ->  5 coins (aggressive turnover)
+    (  3_000,  4),  # $3K-$5K    ->  4 coins (demo phase: turnover + depth)
+    (    100,  3),  # $100-$3K   ->  3 coins (max turnover at small capital)
 ]
 ```
 
-**Rationale for 3 coins at $1K-$5K:**
+**Rationale for aggressive coin counts at small capital:**
 - Paper data shows top 3 coins produce 51% of all trades (7 deals/day)
 - 3 coins provides rotation even when 1-2 are stuck in deeper DCA
 - At $3K, per-coin capital is $750-$850 — enough for 10-11 layers (covers 100% of historical outcomes)
@@ -111,44 +110,45 @@ Replace the fixed 75/25 with a tier-aware split:
 # Equity-tiered pool splits
 # Format: (min_equity_inclusive, active_pct, reserve_pct)
 EQUITY_TIER_SPLITS = [
-    (50_000, 0.75, 0.25),  # $50K+    -> 75/25 (proven, deep safety buffer)
-    (10_000, 0.75, 0.25),  # $10K-$50K -> 75/25 (same as paper)
-    ( 5_000, 0.80, 0.20),  # $5K-$10K  -> 80/20 (slightly more active)
-    ( 3_000, 0.85, 0.15),  # $3K-$5K   -> 85/15 (demo phase, depth > safety)
-    ( 1_000, 0.90, 0.10),  # $1K-$3K   -> 90/10 (max grid depth, bounded risk)
-    (   100, 0.90, 0.10),  # $100-$1K  -> 90/10 (single coin needs max depth)
+    (20_000, 0.75, 0.25),  # $20K+    -> 75/25 (proven, deep safety buffer)
+    (10_000, 0.80, 0.20),  # $10K-$20K -> 80/20 (intermediate — avoids cliff)
+    (   100, 0.90, 0.10),  # <$10K    -> 90/10 (max grid depth, bounded risk)
 ]
 ```
 
-**Why adaptive splits work:**
+**Why this works — simplified to 3 split tiers:**
 
 | Capital | Coins | Split | Per-Coin | Viable Layers | Smallest Layer | Reserve |
 |---------|-------|-------|----------|---------------|---------------|---------|
 | $1,000 | 3 | 90/10 | $300 | 9/12 | $5.19 | $100 |
-| $2,500 | 3 | 85/15 | $708 | 11/12 | $6.01 | $375 |
-| $3,000 | 3 | 85/15 | $850 | 11/12 | $7.21 | $450 |
-| $5,000 | 4 | 80/20 | $1,000 | 12/12 | $5.93 | $1,000 |
-| $10,000 | 5 | 75/25 | $1,500 | 12/12 | $8.90 | $2,500 |
+| $3,000 | 4 | 90/10 | $675 | 11/12 | $5.72 | $300 |
+| $5,000 | 5 | 90/10 | $900 | 12/12 | $5.34 | $500 |
+| $10,000 | 5 | 80/20 | $1,600 | 12/12 | $9.49 | $2,000 |
+| $20,000 | 5 | 75/25 | $3,000 | 12/12 | $17.80 | $5,000 |
 | $50,000 | 5 | 75/25 | $7,500 | 12/12 | $44.49 | $12,500 |
+| $100,000 | 10 | 75/25 | $7,500 | 12/12 | $44.49 | $25,000 |
 
 **Reserve rationale at small accounts:**
 - Reserve serves layers 6+ (code: `pool = "reserve" if layer >= 6 else "active"`)
-- At 3 coins, simultaneous deep DCA across all 3 is rare (paper data: only 3 trades ever went to 5-6 layers)
-- $450 reserve at $3K is enough for 1-2 coins hitting layer 6-7
-- The risk of thin reserve is bounded: $3K total exposure, outside capital demo phase
+- 90/10 below $10K is safe — bounded total exposure, demo phase capital
+- 80/20 at $10K–$20K provides a smooth transition (avoids a $1,500 active-capital cliff at $10K)
+- 75/25 kicks in at $20K where the reserve buffer genuinely matters
+- Paper data: only 3 trades ever went to 5-6 layers across 220 trades
 
 #### 0C. Code Changes — `v14_capital_manager.py`
 
 ```python
 # New: Equity-tiered pool splits
 EQUITY_TIER_SPLITS = [
-    (50_000, 0.75, 0.25),
-    (10_000, 0.75, 0.25),
-    ( 5_000, 0.80, 0.20),
-    ( 3_000, 0.85, 0.15),
-    ( 1_000, 0.90, 0.10),
-    (   100, 0.90, 0.10),
+    (20_000, 0.75, 0.25),  # $20K+    -> 75/25 (proven, deep safety buffer)
+    (10_000, 0.80, 0.20),  # $10K-$20K -> 80/20 (intermediate — avoids cliff)
+    (   100, 0.90, 0.10),  # <$10K    -> 90/10 (max grid depth, bounded risk)
 ]
+
+# Hysteresis band — prevents tier flapping from normal PnL fluctuation.
+# Upgrade: at the threshold (no buffer).
+# Downgrade: only when equity drops TIER_HYSTERESIS_PCT below the threshold.
+TIER_HYSTERESIS_PCT = 0.05  # 5%
 
 @staticmethod
 def get_tier_split(equity: float) -> tuple:
@@ -157,6 +157,55 @@ def get_tier_split(equity: float) -> tuple:
         if equity >= threshold:
             return (active, reserve)
     return (0.90, 0.10)  # Default for tiny accounts
+
+@staticmethod
+def _apply_hysteresis(equity: float, current_tier_index: int,
+                      tier_table: list, key_fn) -> int:
+    """
+    Determine the effective tier index with hysteresis.
+
+    - Upgrade (moving to a higher tier): triggers at the threshold — no buffer.
+    - Downgrade (moving to a lower tier): only triggers when equity drops
+      TIER_HYSTERESIS_PCT (5%) below the current tier's threshold.
+
+    Parameters:
+        equity:             Current portfolio equity.
+        current_tier_index: Index into tier_table of the tier we're currently on.
+                            -1 or None on first call (no prior tier).
+        tier_table:         The tier lookup table (EQUITY_TIER_CAPS or EQUITY_TIER_SPLITS).
+        key_fn:             Callable that extracts the threshold from a tier entry.
+                            e.g., lambda row: row[0]
+
+    Returns:
+        New tier index into tier_table.
+    """
+    # Raw lookup — what tier would equity land on without hysteresis?
+    raw_index = len(tier_table) - 1  # default: lowest tier
+    for i, row in enumerate(tier_table):
+        if equity >= key_fn(row):
+            raw_index = i
+            break
+
+    # First call or no prior tier — no hysteresis, use raw
+    if current_tier_index is None or current_tier_index < 0:
+        return raw_index
+
+    # Upgrade (raw is a higher tier = lower index): apply immediately
+    if raw_index < current_tier_index:
+        return raw_index
+
+    # Same tier: no change
+    if raw_index == current_tier_index:
+        return current_tier_index
+
+    # Downgrade (raw is a lower tier = higher index): apply hysteresis
+    # Stay at current tier unless equity dropped 5% below current tier's threshold
+    current_threshold = key_fn(tier_table[current_tier_index])
+    downgrade_trigger = current_threshold * (1.0 - TIER_HYSTERESIS_PCT)
+    if equity < downgrade_trigger:
+        return raw_index  # Confirmed downgrade
+    else:
+        return current_tier_index  # Hold current tier (within buffer)
 ```
 
 Update `__init__()`:
@@ -164,24 +213,80 @@ Update `__init__()`:
 def __init__(self, initial_capital: float):
     self.total_equity = initial_capital
     
+    # Tier state — track indices for hysteresis
+    self._cap_tier_index: int = self._apply_hysteresis(
+        self.total_equity, -1, EQUITY_TIER_CAPS, lambda r: r[0])
+    self._split_tier_index: int = self._apply_hysteresis(
+        self.total_equity, -1, EQUITY_TIER_SPLITS, lambda r: r[0])
+    
+    # Tier-aware coin cap
+    self.tier_coin_cap = EQUITY_TIER_CAPS[self._cap_tier_index][1]
+    
     # Tier-aware pool split
-    active_pct, reserve_pct = self.get_tier_split(self.total_equity)
+    _, active_pct, reserve_pct = EQUITY_TIER_SPLITS[self._split_tier_index]
     self.active_pool_total = self.total_equity * active_pct
     self.reserve_pool_total = self.total_equity * reserve_pct
     
     # ... rest unchanged
     logger.info(f"Pool split: {active_pct*100:.0f}/{reserve_pct*100:.0f} "
                 f"(Active: ${self.active_pool_total:.2f} / Reserve: ${self.reserve_pool_total:.2f})")
+    logger.info(f"Tier coin cap: {self.tier_coin_cap} coins "
+                f"(hysteresis active, 5% downgrade buffer)")
 ```
 
 Update `rebalance()` (the equity-refresh section):
 ```python
-# Update equity and derive tier cap + split
+# Update equity and derive tier cap + split (with hysteresis)
 self.total_equity = current_equity if current_equity else self.total_equity
-active_pct, reserve_pct = self.get_tier_split(self.total_equity)
+
+# Coin cap — hysteresis-aware
+prev_cap_index = self._cap_tier_index
+self._cap_tier_index = self._apply_hysteresis(
+    self.total_equity, self._cap_tier_index, EQUITY_TIER_CAPS, lambda r: r[0])
+prev_cap = self.tier_coin_cap
+self.tier_coin_cap = EQUITY_TIER_CAPS[self._cap_tier_index][1]
+if self.tier_coin_cap != prev_cap:
+    direction = "▼ DOWN" if self.tier_coin_cap < prev_cap else "▲ UP"
+    logger.warning(f"Tier coin cap changed {direction}: {prev_cap} → {self.tier_coin_cap} "
+                   f"(equity=${self.total_equity:.2f})")
+
+# Pool split — hysteresis-aware
+prev_split_index = self._split_tier_index
+self._split_tier_index = self._apply_hysteresis(
+    self.total_equity, self._split_tier_index, EQUITY_TIER_SPLITS, lambda r: r[0])
+_, active_pct, reserve_pct = EQUITY_TIER_SPLITS[self._split_tier_index]
 self.active_pool_total = self.total_equity * active_pct
 self.reserve_pool_total = self.total_equity * reserve_pct
+
+if self._split_tier_index != prev_split_index:
+    logger.warning(f"Pool split changed: → {active_pct*100:.0f}/{reserve_pct*100:.0f} "
+                   f"(equity=${self.total_equity:.2f})")
 ```
+
+**Hysteresis behavior summary:**
+
+**Coin cap tiers:**
+
+| Threshold | Coins | Upgrade at | Downgrade at (5% below) |
+|-----------|-------|-----------|------------------------|
+| $100K | 10 | $100,000 | $95,000 |
+| $20K | 5 | $20,000 | $19,000 |
+| $10K | 5 | $10,000 | $9,500 |
+| $5K | 5 | $5,000 | $4,750 |
+| $3K | 4 | $3,000 | $2,850 |
+| $100 | 3 | $100 | $95 |
+
+**Pool split tiers:**
+
+| Threshold | Split | Upgrade at | Downgrade at (5% below) |
+|-----------|-------|-----------|------------------------|
+| $20K | 75/25 | $20,000 | $19,000 |
+| $10K | 80/20 | $10,000 | $9,500 |
+| $100 | 90/10 | $100 | $95 |
+
+Example: equity at $3,000 → 4 coins / 90-10 split. Equity dips to $2,860 — **stays at 4 coins** (within 5% buffer, trigger is $2,850). Dips to $2,849 — downgrades to 3 coins. Must reach $3,000 again to re-upgrade. Split stays 90/10 throughout (split only changes at $10K/$20K).
+
+**State persistence:** `_cap_tier_index` and `_split_tier_index` must be saved in `state.json` so hysteresis survives restarts. On load, if indices are present, pass them as `current_tier_index`; otherwise use `-1` (first-call behavior).
 
 #### 0D. Code Changes — `run_v14_portfolio_live_aster.py`
 
@@ -194,75 +299,96 @@ The only change: update `status.json` to include the active split ratio:
 
 #### 0E. Integration with Upgrade 1 (Dynamic Capital)
 
-When Upgrade 1's `resize()` is implemented, it must also re-derive the pool split:
+When Upgrade 1's `resize()` is implemented, it must also re-derive tiers with hysteresis:
 ```python
 def resize(self, new_equity: float):
+    """Dynamically resize pools after deposit/withdrawal."""
     self.total_equity = new_equity
-    active_pct, reserve_pct = self.get_tier_split(new_equity)
+    # Hysteresis-aware tier updates
+    self._cap_tier_index = self._apply_hysteresis(
+        new_equity, self._cap_tier_index, EQUITY_TIER_CAPS, lambda r: r[0])
+    self.tier_coin_cap = EQUITY_TIER_CAPS[self._cap_tier_index][1]
+    self._split_tier_index = self._apply_hysteresis(
+        new_equity, self._split_tier_index, EQUITY_TIER_SPLITS, lambda r: r[0])
+    _, active_pct, reserve_pct = EQUITY_TIER_SPLITS[self._split_tier_index]
     self.active_pool_total = new_equity * active_pct
     self.reserve_pool_total = new_equity * reserve_pct
-    # ... recalculate cash, tier cap, etc.
+    # Recalculate cash = pool total - allocated
+    allocated_active = sum(self.active_allocations.values())
+    self.active_pool_cash = self.active_pool_total - allocated_active
+    self.reserve_pool_cash = self.reserve_pool_total
+    logger.info(f"Resized: ${new_equity:.2f} | {active_pct*100:.0f}/{reserve_pct*100:.0f} split | "
+                f"max {self.tier_coin_cap} coins")
 ```
 
-This means a deposit that crosses a tier boundary (e.g., $2.5K → $3.5K) automatically shifts from 90/10 to 85/15 **and** keeps 3 coins. The $5K boundary adds a 4th coin slot.
+This means a deposit that crosses a tier boundary (e.g., $2.5K → $3.5K) automatically adds a 4th coin slot (3→4 coins, split stays 90/10). At $5K a 5th coin opens. The split only changes at $10K (80/20) and $20K (75/25). Hysteresis applies: a small withdrawal that dips just below $3K won't immediately downgrade — equity must fall 5% below the threshold ($2,850) to trigger.
 
 #### 0F. Dashboard Impact
 
-- Show current tier info: `"3 coins | 85/15 split | $3K tier"`
+- Show current tier info: `"4 coins | 90/10 split | $3K tier"`
 - Pool allocation donut should reflect actual split (not hardcoded 75/25)
 - Minor: update any hardcoded "75% / 25%" labels
 
-### Layer Sizing Proof — $3K / 3 Coins / 85-15
+### Layer Sizing Proof — $3K / 4 Coins / 90-10
 
 ```
-Per-coin capital: $850 (from $2,550 active pool)
-Reserve: $450
+Per-coin capital: $675 (from $2,700 active pool / 4 coins)
+Reserve: $300
 
-Layer  1: $255 (BO: 40% of $850)        ← covers 63.2% of trades
-Layer  2: $178                            ← covers 85.5%
-Layer  3: $125                            ← covers 94.5%
-Layer  4:  $87                            ← covers 99.1%
-Layer  5:  $61
-Layer  6:  $43  ← switches to reserve pool
-Layer  7:  $30
-Layer  8:  $21
+Layer  1: $270 (BO: 40% of $675)        ← covers 63.2% of trades
+Layer  2: $189                            ← covers 85.5%
+Layer  3: $132                            ← covers 94.5%
+Layer  4:  $93                            ← covers 99.1%
+Layer  5:  $65
+Layer  6:  $45  ← switches to reserve pool
+Layer  7:  $32
+Layer  8:  $22
 Layer  9:  $15
-Layer 10:  $10
-Layer 11:   $7  ← smallest viable ($7.21 > $5 min)
+Layer 10:  $11
+Layer 11:   $7  ← smallest viable ($5.72 > $5 min)
            ----
-Total:    $832 deployed of $850 allocated
+Total:    $881 (capped to $675 allocated from active pool + reserve for layers 6+)
 ```
 
-**11 layers viable.** Covers 100% of all historical completed trades (max was 6 layers). Leaves ~$18 per-coin headroom + $450 reserve pool.
+**11 layers viable.** Covers 100% of all historical completed trades (max was 6 layers). $300 reserve covers deep layers across 1-2 simultaneous coins.
 
 ### Files Modified
-- `v14_capital_manager.py` — new `EQUITY_TIER_SPLITS`, `get_tier_split()`, updated `__init__()` and `rebalance()`
+- `v14_capital_manager.py` — new `EQUITY_TIER_SPLITS`, `TIER_HYSTERESIS_PCT`, `get_tier_split()`, `_apply_hysteresis()`, updated `__init__()` and `rebalance()`
 - `v14_capital_manager.py` — updated `EQUITY_TIER_CAPS` table
-- `run_v14_portfolio_live_aster.py` — add `pool_split` to status.json output
+- `run_v14_portfolio_live_aster.py` — add `pool_split` to status.json output; persist `_cap_tier_index` / `_split_tier_index` in state.json
 - `d-984ae0d4ab9dc1a5.html` — update pool split display (minor)
 
 ### Complexity: Low
-- Two new lookup tables and a static method
+- Two new lookup tables, two static methods, one constant
 - Pool split calculation already exists, just parameterized instead of hardcoded
-- No new data flows, no new state, no external dependencies
+- Hysteresis adds two integer indices to state — no new data flows or external dependencies
 - Fully backward compatible (paper bot at $50K+ hits the same 75/25 / 5-coin tier)
 
 ### Test Plan: Upgrade 0 (Adaptive Tiers & Pool Split)
 
 | # | Test | Steps | Expected Result |
 |---|------|-------|-----------------|
-| T0.1 | Tier lookup at $340 | Start bot with `--capital 340` | Tier: 1 coin, 90/10 split. Logs: "Pool split: 90/10" |
+| T0.1 | Tier lookup at $340 | Start bot with `--capital 340` | Tier: 3 coins, 90/10 split. Active: $306, Reserve: $34 |
 | T0.2 | Tier lookup at $1,000 | Start bot with `--capital 1000` | Tier: 3 coins, 90/10 split. Active: $900, Reserve: $100 |
-| T0.3 | Tier lookup at $3,000 | Start bot with `--capital 3000` | Tier: 3 coins, 85/15 split. Active: $2,550, Reserve: $450 |
-| T0.4 | Tier lookup at $5,000 | Start bot with `--capital 5000` | Tier: 4 coins, 80/20 split. Active: $4,000, Reserve: $1,000 |
-| T0.5 | Tier lookup at $10,000 | Start bot with `--capital 10000` | Tier: 5 coins, 75/25 split. Active: $7,500, Reserve: $2,500 |
-| T0.6 | Tier lookup at $50,000 | Start bot with `--capital 50000` | Tier: 5 coins, 75/25 split (paper bot reference) |
-| T0.7 | Layer viability at $3K/3 coins | Check that smallest layer > $5 | All 11 viable layers above $5 min order |
-| T0.8 | Layer viability at $1K/3 coins | Check layer sizing | 9 viable layers, smallest ~$5.19 |
-| T0.9 | Rebalance at tier boundary | Equity grows from $4.9K to $5.1K | Tier changes: 3→4 coins, 85/15→80/20 split. Logged. |
-| T0.10 | Paper bot unchanged | Run paper bot at $50K | Same behavior: 5 coins, 75/25, 12 layers |
-| T0.11 | Status.json accuracy | Start at $3K, check status.json | `tier_coin_cap: 3`, `pool_split: "85/15"` |
-| T0.12 | Reserve pool routing | At $3K, coin hits layer 6+ | Layer 6+ capital drawn from reserve ($450 pool) |
+| T0.3 | Tier lookup at $3,000 | Start bot with `--capital 3000` | Tier: 4 coins, 90/10 split. Active: $2,700, Reserve: $300 |
+| T0.4 | Tier lookup at $5,000 | Start bot with `--capital 5000` | Tier: 5 coins, 90/10 split. Active: $4,500, Reserve: $500 |
+| T0.5 | Tier lookup at $10,000 | Start bot with `--capital 10000` | Tier: 5 coins, 80/20 split. Active: $8,000, Reserve: $2,000 |
+| T0.6 | Tier lookup at $20,000 | Start bot with `--capital 20000` | Tier: 5 coins, 75/25 split. Active: $15,000, Reserve: $5,000 |
+| T0.7 | Tier lookup at $50,000 | Start bot with `--capital 50000` | Tier: 5 coins, 75/25 split (paper bot reference) |
+| T0.8 | Tier lookup at $100,000 | Start bot with `--capital 100000` | Tier: 10 coins, 75/25 split |
+| T0.9 | Layer viability at $3K/4 coins | Check that smallest layer > $5 | 11 viable layers, smallest ~$5.72 (above $5 min) |
+| T0.10 | Layer viability at $1K/3 coins | Check layer sizing | 9 viable layers, smallest ~$5.19 |
+| T0.11 | Upgrade at coin cap boundary | Equity grows from $2.9K to $3.0K | Coin cap upgrades immediately: 3→4 coins. Split stays 90/10. Logged. |
+| T0.12 | Upgrade at split boundary | Equity grows from $9.9K to $10.0K | Split upgrades: 90/10→80/20. Coins stay 5. Logged. |
+| T0.13 | Paper bot unchanged | Run paper bot at $50K | Same behavior: 5 coins, 75/25, 12 layers |
+| T0.14 | Status.json accuracy | Start at $3K, check status.json | `tier_coin_cap: 4`, `pool_split: "90/10"` |
+| T0.15 | Reserve pool routing | At $3K, coin hits layer 6+ | Layer 6+ capital drawn from reserve ($300 pool) |
+| T0.16 | Hysteresis — no downgrade in buffer | Start at $3K (4 coins). Equity dips to $2,860. | **Stays at 4 coins / 90/10.** Within 5% buffer ($2,850 trigger). No tier change logged. |
+| T0.17 | Hysteresis — downgrade below buffer | Start at $3K (4 coins). Equity drops to $2,849. | Downgrades to 3 coins. Split stays 90/10 (both tiers same split). Logged. |
+| T0.18 | Hysteresis — re-upgrade after downgrade | After T0.17 (now 3 coins at $2,849). Equity rises to $3,000. | Upgrades back to 4 coins immediately. No buffer on upgrade. |
+| T0.19 | Hysteresis — split downgrade buffer | Start at $10K (80/20). Equity dips to $9,600. | **Stays at 80/20.** Trigger is $9,500 (5% below $10K). |
+| T0.20 | Hysteresis — split confirmed downgrade | Start at $10K (80/20). Equity drops to $9,499. | Downgrades to 90/10. Coin cap also drops: 5→5 (same at both tiers). |
+| T0.21 | Hysteresis — state persistence | Start at $3K (4 coins). Equity dips to $2,860 (in buffer). Restart bot. | Tier indices restored from state.json. Still 4 coins after restart — no fresh re-evaluation. |
 
 ---
 
@@ -320,20 +446,24 @@ _Note: `_reconcile_with_exchange()` and `_periodic_reconcile()` were removed in 
 - `CAPITAL` — Show current capital breakdown (ledger balance, exchange balance, invested, free)
 
 #### 1D. Router Integration
-The `CapitalRouter` needs a `resize(new_equity)` method. **Depends on Upgrade 0** — must use `get_tier_split()` for adaptive pool ratios:
+The `CapitalRouter` needs a `resize(new_equity)` method. **Depends on Upgrade 0** — must use `get_tier_split()` and `_apply_hysteresis()` for adaptive pool ratios with downgrade buffering:
 ```python
 def resize(self, new_equity: float):
-    """Dynamically resize pools after deposit/withdrawal."""
+    """Dynamically resize pools after deposit/withdrawal. Hysteresis-aware."""
     self.total_equity = new_equity
-    # Upgrade 0: tier-aware split (not hardcoded 75/25)
-    active_pct, reserve_pct = self.get_tier_split(new_equity)
+    # Hysteresis-aware tier updates (same as rebalance)
+    self._cap_tier_index = self._apply_hysteresis(
+        new_equity, self._cap_tier_index, EQUITY_TIER_CAPS, lambda r: r[0])
+    self.tier_coin_cap = EQUITY_TIER_CAPS[self._cap_tier_index][1]
+    self._split_tier_index = self._apply_hysteresis(
+        new_equity, self._split_tier_index, EQUITY_TIER_SPLITS, lambda r: r[0])
+    _, active_pct, reserve_pct = EQUITY_TIER_SPLITS[self._split_tier_index]
     self.active_pool_total = new_equity * active_pct
     self.reserve_pool_total = new_equity * reserve_pct
     # Recalculate cash = pool total - allocated
     allocated_active = sum(self.active_allocations.values())
     self.active_pool_cash = self.active_pool_total - allocated_active
     self.reserve_pool_cash = self.reserve_pool_total
-    self.tier_coin_cap = self.get_tier_coin_cap(new_equity)
     logger.info(f"Resized: ${new_equity:.2f} | {active_pct*100:.0f}/{reserve_pct*100:.0f} split | "
                 f"max {self.tier_coin_cap} coins")
 ```
@@ -644,7 +774,7 @@ if cs.paused or cs.regime_flagged:
 
 **Recommended sequence:**
 
-1. **Upgrade 0 (Adaptive Tiers & Pool Split)** — **PREREQUISITE for capital deposit.** Lowest complexity (two lookup tables + parameterized split). Must land before $1K deposit so the bot runs 3 coins from the start.
+1. **Upgrade 0 (Adaptive Tiers & Pool Split)** — **PREREQUISITE for capital deposit.** Lowest complexity (two lookup tables + hysteresis + parameterized split). Must land before $1K deposit so the bot runs 3 coins from the start.
 2. **Upgrade 1 (Dynamic Capital)** — Needed immediately after Upgrade 0 so deposits are auto-detected and capital is adjusted without restart. The `resize()` method must call `get_tier_split()` to recalculate pools on deposit.
 3. **Upgrade 2 (Per-Coin Pause)** — Useful once 3+ coins are trading. Establishes per-coin gating pattern for Upgrade 3.
 4. **Upgrade 3 (Per-Coin Regime Flagging)** — Highest complexity, builds on the per-coin pause pattern.
@@ -658,18 +788,18 @@ if cs.paused or cs.regime_flagged:
 **Critical path for capital deployment:**
 ```
 Upgrade 0 (tiers) → Upgrade 1 (deposits) → Deposit $1K → Bot runs 3 coins / 90-10
-                                           → Deposit $1.5K → Bot auto-adjusts to 3 coins / 85-15
-                                           → Grow to $5K+ → Auto-adjusts to 4 coins / 80-20
-                                           → Grow to $10K+ → Auto-adjusts to 5 coins / 75-25 (paper parity)
+                                           → Deposit $2K → 3 coins / 90-10 (more depth per coin)
+                                           → Grow to $3K+ → Auto-adjusts to 4 coins / 90-10
+                                           → Grow to $5K+ → Auto-adjusts to 5 coins / 90-10
+                                           → Grow to $10K+ → 5 coins / 80-20 (intermediate)
+                                           → Grow to $20K+ → 5 coins / 75-25 (paper parity)
 ```
 
 ---
 
 ## Open Questions
 
-0. **Tier boundary hysteresis:** When equity fluctuates around a boundary (e.g., $2,950 ↔ $3,050), the tier could flip back and forth between 90/10 and 85/15. Should we add a hysteresis band (e.g., must be 5% above threshold to upgrade, 5% below to downgrade)?
-
-   > **Recommendation:** Yes, add a 5% hysteresis. Upgrade tier at threshold; downgrade only when equity drops 5% below threshold. This prevents split-flapping from normal PnL fluctuation. The coin cap already has graceful handling (existing positions allowed to exit on tier drop) — the same logic applies to the pool split.
+0. ~~**Tier boundary hysteresis:**~~ **RESOLVED — implemented in Upgrade 0C.** 5% asymmetric hysteresis band. Upgrade at threshold (immediate). Downgrade only when equity drops 5% below the current tier's threshold. Applies to both coin cap and pool split via `_apply_hysteresis()`. Tier indices persisted in state.json for restart survival. See sections 0C (code spec), test cases T0.13–T0.18.
 
 1. **Deposit threshold:** What amount should trigger auto-detection? The old bot used 10% drift. For PM bot with $340 capital, 10% = $34. Should we use a fixed dollar floor (e.g., $5) instead?
 
