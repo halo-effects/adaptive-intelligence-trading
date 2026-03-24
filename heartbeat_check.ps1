@@ -1,8 +1,10 @@
 $checks = @(
-    'trading/spot/live/v14/status.json',
+    'trading/spot/live/v14pm/status.json',
     'trading/spot/paper/v14/status.json',
     'trading/spot/paper/v14_portfolio/status.json'
 )
+# NOTE: V14 Live Legacy (trading/spot/live/v14/) was RETIRED 2026-03-19.
+# V14PM Live (trading/spot/live/v14pm/) replaced it.
 
 $now = [datetime]::UtcNow
 $alerts = @()
