@@ -963,8 +963,10 @@ function renderCompounding(){
   } else if(S.uptime_hours>24){ days=S.uptime_hours/24; }
   var dailyRate=rpnl/days;
   var monthlyProj=dailyRate*30;
-  var dailyPct=cap>0?(dailyRate/cap):0;
-  var annualProj=dailyPct>0&&dailyPct<0.1?cap*(Math.pow(1+dailyPct,365)-1):dailyRate*365;
+  // True compound daily rate: r = (equity/capital)^(1/days) - 1
+  var compoundDailyPct=(cap>0&&eq>0&&days>0)?Math.pow(eq/cap,1/days)-1:0;
+  var simpleDailyPct=cap>0?(dailyRate/cap):0;
+  var annualProj=compoundDailyPct>0&&compoundDailyPct<0.1?cap*(Math.pow(1+compoundDailyPct,365)):simpleDailyPct>0?cap*(Math.pow(1+simpleDailyPct,365)):dailyRate*365;
 
   $('compCards').innerHTML=
     '<div class="comp-card"><div class="cc-lbl">Starting Capital</div><div class="cc-val">'+fUsd(cap)+'</div></div>'+
@@ -981,7 +983,7 @@ function renderCompounding(){
   $('compTarget').textContent='Next: '+fUsd(target);
 
   $('projCards').innerHTML=
-    '<div class="proj-card"><div class="pj-lbl">Daily Rate</div><div class="pj-val">'+fUsd(dailyRate)+'</div><div class="pj-sub">'+fmt(cap>0?(dailyRate/cap*100):0,3)+'% / day</div></div>'+
+    '<div class="proj-card"><div class="pj-lbl">Daily Rate</div><div class="pj-val">'+fUsd(dailyRate)+'</div><div class="pj-sub">'+fmt(compoundDailyPct*100,3)+'% / day (CAGR)</div></div>'+
     '<div class="proj-card"><div class="pj-lbl">Monthly Projection</div><div class="pj-val">'+fUsd(monthlyProj)+'</div><div class="pj-sub">Based on '+fmt(days,0)+' days data</div></div>'+
     '<div class="proj-card"><div class="pj-lbl">Annual Projection</div><div class="pj-val">'+fUsd(annualProj)+'</div><div class="pj-sub">Compound estimate</div></div>';
 }
