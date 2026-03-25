@@ -1,5 +1,5 @@
 {
-  "saved_at": "2026-03-25T09:04:17.814132+00:00",
+  "saved_at": "2026-03-25T10:04:22.078244+00:00",
   "bot_state": "RUNNING",
   "capital": 352.44839006,
   "coins": {
@@ -8,7 +8,7 @@
       "allocated_capital": 120.07677819887317,
       "tp_order_id": "222739008",
       "tp_limit_price": 0.3939,
-      "last_candle_ts": 1774425600000,
+      "last_candle_ts": 1774429200000,
       "cumulative_funding": 1.4541743800000009,
       "last_funding_check_ms": 1774422637443,
       "layer_count": 4,
@@ -58,17 +58,17 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-03-25",
         "_live_mode": true,
-        "_last_candle_ts": 1774425600000,
+        "_last_candle_ts": 1774429200000,
         "start_time": 1773936951.952672,
-        "current_price": 0.3449
+        "current_price": 0.3439
       }
     },
     "TAO/USDT": {
       "symbol": "TAO/USDT",
       "allocated_capital": 108.35902418952637,
-      "tp_order_id": "195708906",
-      "tp_limit_price": 351.8599,
-      "last_candle_ts": 1774425600000,
+      "tp_order_id": "195773985",
+      "tp_limit_price": 356.69129999999996,
+      "last_candle_ts": 1774429200000,
       "cumulative_funding": 0.0,
       "last_funding_check_ms": 1774425716147,
       "layer_count": 1,
@@ -85,15 +85,15 @@
         "phase": "LONG_DCA",
         "capital": 108.35902418952637,
         "phase_start_date": "2026-03-22 23:00:00",
-        "long_coins": 0.112,
-        "long_avg_entry": 346.66,
+        "long_coins": 0.11,
+        "long_avg_entry": 351.42,
         "long_layers": 1,
-        "long_last_buy": "2026-03-25 08:00:00",
-        "long_tp": 351.8599,
-        "long_cost": 38.82592,
-        "long_trades": -44,
-        "long_wins": 4,
-        "long_pnl": 2.9267193622635106,
+        "long_last_buy": "2026-03-25 09:00:00",
+        "long_tp": 356.69129999999996,
+        "long_cost": 38.656200000000005,
+        "long_trades": -43,
+        "long_wins": 5,
+        "long_pnl": 3.3066193622635107,
         "short_coins": 0.0,
         "short_avg_entry": 0.0,
         "short_layers": 0,
@@ -112,15 +112,15 @@
         "top_detected": false,
         "conviction_fired": false,
         "markup_cycles_completed": 0,
-        "total_fees": 0.6136871881321239,
+        "total_fees": 0.6214890378737697,
         "adx_below_20_streak": 0,
         "router_from_top": false,
         "router_from_markdown": false,
         "_last_daily_date": "2026-03-25",
         "_live_mode": true,
-        "_last_candle_ts": 1774425600000,
+        "_last_candle_ts": 1774429200000,
         "start_time": 1774396830.124578,
-        "current_price": 346.49
+        "current_price": 351.89
       }
     },
     "HYPE/USDT": {
@@ -128,7 +128,7 @@
       "allocated_capital": 63.05842879256719,
       "tp_order_id": "1796228800",
       "tp_limit_price": 40.91871,
-      "last_candle_ts": 1774425600000,
+      "last_candle_ts": 1774429200000,
       "cumulative_funding": -0.00237606,
       "last_funding_check_ms": 1774425716147,
       "layer_count": 1,
@@ -178,14 +178,14 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-03-25",
         "_live_mode": true,
-        "_last_candle_ts": 1774425600000,
+        "_last_candle_ts": 1774429200000,
         "start_time": 1774396830.771485,
-        "current_price": 40.6
+        "current_price": 40.61
       }
     }
   },
   "router": {
-    "active_pool_cash": 240.8977343392154,
+    "active_pool_cash": 241.2968056309859,
     "reserve_pool_cash": 35.244839006,
     "active_allocations": {
       "GRASS/USDT": 27.025427516542383,
@@ -219,11 +219,11 @@
       "invested": 23.86236700572798
     },
     "TAO/USDT:long": {
-      "deal_id": 16,
+      "deal_id": 17,
       "symbol": "TAO/USDT",
-      "open_time": "2026-03-25T09:01:00.496019+00:00",
+      "open_time": "2026-03-25T10:01:03.156032+00:00",
       "layers": 1,
-      "invested": 39.02838799732991
+      "invested": 38.957146213436054
     }
   },
   "last_rebalance_date": "2026-03-25"
