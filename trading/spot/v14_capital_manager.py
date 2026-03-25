@@ -1,5 +1,7 @@
 import json
 import logging
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
 logger = logging.getLogger("V14CapitalManager")
@@ -430,3 +432,124 @@ class CapitalRouter:
             self.reserve_allocations[coin] = 0.0
             
         logger.info(f"Deal close for {coin}: Returned ${amount:.2f} to Active Pool. Active Cash: ${self.active_pool_cash:.2f}")
+
+    def resize(self, new_equity: float):
+        """Dynamically resize pools after deposit/withdrawal. Hysteresis-aware."""
+        old_equity = self.total_equity
+        self.total_equity = new_equity
+
+        # Coin cap — hysteresis-aware
+        prev_cap = self.tier_coin_cap
+        self._cap_tier_index = self._apply_hysteresis(
+            new_equity, self._cap_tier_index, EQUITY_TIER_CAPS, lambda r: r[0])
+        self.tier_coin_cap = (
+            EQUITY_TIER_CAPS[self._cap_tier_index][1]
+            if self._cap_tier_index >= 0 else 0
+        )
+        if self.tier_coin_cap != prev_cap:
+            direction = "DOWN" if self.tier_coin_cap < prev_cap else "UP"
+            logger.warning(
+                f"Tier coin cap changed {direction}: {prev_cap} -> {self.tier_coin_cap} "
+                f"(equity=${new_equity:.2f})"
+            )
+
+        # Pool split — hysteresis-aware
+        prev_split_index = self._split_tier_index
+        self._split_tier_index = self._apply_hysteresis(
+            new_equity, self._split_tier_index, EQUITY_TIER_SPLITS, lambda r: r[0])
+        if self._split_tier_index >= 0:
+            _, active_pct, reserve_pct = EQUITY_TIER_SPLITS[self._split_tier_index]
+        else:
+            active_pct, reserve_pct = 0.90, 0.10
+        self.active_pool_total = new_equity * active_pct
+        self.reserve_pool_total = new_equity * reserve_pct
+
+        if self._split_tier_index != prev_split_index:
+            logger.warning(
+                f"Pool split changed: -> {active_pct*100:.0f}/{reserve_pct*100:.0f} "
+                f"(equity=${new_equity:.2f})"
+            )
+
+        # Recalculate cash = pool total - allocated
+        allocated_active = sum(self.active_allocations.values())
+        self.active_pool_cash = self.active_pool_total - allocated_active
+        self.reserve_pool_cash = self.reserve_pool_total
+
+        logger.info(
+            f"Resized: ${old_equity:.2f} -> ${new_equity:.2f} | "
+            f"{active_pct*100:.0f}/{reserve_pct*100:.0f} split | "
+            f"max {self.tier_coin_cap} coins | "
+            f"active_cash=${self.active_pool_cash:.2f} reserve_cash=${self.reserve_pool_cash:.2f}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Capital Ledger — tracks deposits, withdrawals, and seed capital
+# ---------------------------------------------------------------------------
+
+def load_capital_ledger(ledger_path: Path) -> Optional[dict]:
+    """Load capital ledger from JSON file. Returns None if file doesn't exist."""
+    if not ledger_path.exists():
+        return None
+    try:
+        with open(ledger_path) as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load capital ledger: {e}")
+        return None
+
+
+def save_capital_ledger(ledger_path: Path, ledger: dict):
+    """Atomically save capital ledger to JSON (write .tmp then rename)."""
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = ledger_path.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(ledger, f, indent=2)
+    tmp.replace(ledger_path)
+
+
+def record_ledger_transaction(
+    ledger_path: Path,
+    tx_type: str,
+    amount: float,
+    note: str = "",
+) -> dict:
+    """Record a deposit/withdrawal/seed in the capital ledger.
+
+    tx_type: 'seed' | 'deposit' | 'withdrawal'
+    Returns the updated ledger dict.
+    """
+    ledger = load_capital_ledger(ledger_path) or {
+        "seed_capital": amount if tx_type == "seed" else 0.0,
+        "current_capital": 0.0,
+        "transactions": [],
+    }
+    ts = datetime.now(timezone.utc).isoformat()
+    ledger["transactions"].append({
+        "timestamp": ts,
+        "type": tx_type,
+        "amount": amount,
+        "note": note,
+    })
+    if tx_type in ("deposit", "seed"):
+        ledger["current_capital"] = ledger.get("current_capital", 0.0) + amount
+    elif tx_type == "withdrawal":
+        ledger["current_capital"] = ledger.get("current_capital", 0.0) - amount
+    save_capital_ledger(ledger_path, ledger)
+    return ledger
+
+
+def get_ledger_summary(ledger_path: Path) -> Optional[dict]:
+    """Return a summary dict of the capital ledger, or None if no ledger."""
+    ledger = load_capital_ledger(ledger_path)
+    if ledger is None:
+        return None
+    txns = ledger.get("transactions", [])
+    return {
+        "seed_capital": ledger.get("seed_capital", 0.0),
+        "current_capital": ledger.get("current_capital", 0.0),
+        "total_deposits": sum(t["amount"] for t in txns if t["type"] == "deposit"),
+        "total_withdrawals": sum(t["amount"] for t in txns if t["type"] == "withdrawal"),
+        "transaction_count": len(txns),
+        "last_transaction": txns[-1] if txns else None,
+    }

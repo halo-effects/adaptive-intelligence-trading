@@ -60,7 +60,11 @@ _WORKSPACE = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_WORKSPACE))
 
 from trading.spot.v14_lifecycle_engine import V14LifecycleEngine
-from trading.spot.v14_capital_manager import CapitalRouter, EQUITY_TIER_CAPS, EQUITY_TIER_SPLITS
+from trading.spot.v14_capital_manager import (
+    CapitalRouter, EQUITY_TIER_CAPS, EQUITY_TIER_SPLITS,
+    load_capital_ledger, save_capital_ledger, record_ledger_transaction,
+    get_ledger_summary,
+)
 from trading.spot.exchange_client import SpotExchangeClient
 
 # ── Logging ─────────────────────────────────────────────────────────────────
@@ -96,6 +100,11 @@ STATUS_WRITE_INTERVAL = 60     # seconds between status.json writes
 REGIME_EVAL_HOUR   = 0         # UTC hour for daily regime evaluation (midnight)
 # REENTRY_COOLDOWN removed — old bot never had it, it masked bugs
 TG_PREFIX          = "[V14-PM]"
+
+# Capital change detection thresholds (Upgrade 1)
+CAPITAL_DRIFT_MIN_USD = 5.0    # Minimum absolute change to trigger detection
+CAPITAL_DRIFT_MIN_PCT = 0.02   # Minimum percentage change (2%)
+LEDGER_PATH = OUTPUT_DIR / "capital_ledger.json"
 
 # ── Unified production profile ────────────────────────────────────────────────
 PRODUCTION_PROFILE = "high"
@@ -597,6 +606,7 @@ class CoinState:
         self.last_funding_check_ms: int = 0
         self._last_buy_time: float = 0.0  # Dedup guard: timestamp of last executed buy
         self.layer_count: int = 0         # Layers in current position (synced from exchange)
+        self.paused: bool = False         # Per-coin pause (Upgrade 2): blocks new orders, TPs active
 
     def to_dict(self) -> dict:
         return {
@@ -608,6 +618,7 @@ class CoinState:
             "cumulative_funding": self.cumulative_funding,
             "last_funding_check_ms": self.last_funding_check_ms,
             "layer_count": self.layer_count,
+            "paused": self.paused,
         }
 
 
@@ -695,6 +706,12 @@ class V14PortfolioLiveAster:
         self._exchange_usdt_total: float = 0.0
         self._last_exchange_positions: dict = {}
 
+        # Capital tracking (Upgrade 1)
+        # self.capital is the bot's tracked capital (seed + deposits - withdrawals).
+        # Distinct from equity (which includes unrealized PnL).
+        self._tracked_capital: float = capital  # Updated by ledger transactions
+        self._init_capital_ledger(capital)
+
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         logger.info(
             f"V14PM Live Aster | capital=${capital:.2f} | "
@@ -737,6 +754,7 @@ class V14PortfolioLiveAster:
                 "signal_type": self._regime_signal_type,
                 "alert_state": self._regime_alert_state,
             },
+            "tracked_capital": self._tracked_capital,
             "tg_update_offset": self._tg_update_offset,
             "open_deals": self.tracker._open_deals,
             "last_rebalance_date": str(self._last_rebalance_date) if self._last_rebalance_date else None,
@@ -779,6 +797,7 @@ class V14PortfolioLiveAster:
             cs.cumulative_funding = cs_data.get("cumulative_funding", 0.0)
             cs.last_funding_check_ms = cs_data.get("last_funding_check_ms", 0)
             cs.layer_count = cs_data.get("layer_count", 0)
+            cs.paused = cs_data.get("paused", False)
 
             engine_state = cs_data.get("engine_state", {})
             if engine_state:
@@ -875,6 +894,12 @@ class V14PortfolioLiveAster:
         self._regime_signal_type  = regime.get("signal_type")
         self._regime_alert_state  = regime.get("alert_state", "NONE")
 
+        # Restore tracked capital (Upgrade 1)
+        if "tracked_capital" in state:
+            self._tracked_capital = state["tracked_capital"]
+            self.capital = self._tracked_capital
+            logger.info(f"Restored tracked capital: ${self._tracked_capital:.2f}")
+
         # Restore Telegram offset
         self._tg_update_offset = state.get("tg_update_offset", 0)
 
@@ -961,6 +986,117 @@ class V14PortfolioLiveAster:
             f"total=${self._exchange_usdt_total:.2f} "
             f"positions={list(positions.keys())}"
         )
+
+    # ── Capital Ledger & Deposit/Withdrawal Detection (Upgrade 1) ────────────
+
+    def _init_capital_ledger(self, seed_capital: float):
+        """Initialize capital ledger with seed entry if it doesn't exist."""
+        ledger = load_capital_ledger(LEDGER_PATH)
+        if ledger is None:
+            record_ledger_transaction(
+                LEDGER_PATH, "seed", seed_capital,
+                note=f"Initial seed capital at bot startup"
+            )
+            logger.info(f"Capital ledger initialized with seed=${seed_capital:.2f}")
+        else:
+            # Ledger exists — use its tracked capital instead of CLI --capital
+            self._tracked_capital = ledger.get("current_capital", seed_capital)
+            if abs(self._tracked_capital - seed_capital) > 1.0:
+                logger.info(
+                    f"Capital from ledger: ${self._tracked_capital:.2f} "
+                    f"(CLI --capital was ${seed_capital:.2f}, using ledger)"
+                )
+
+    def _detect_capital_change(self):
+        """Detect deposits/withdrawals by comparing exchange balance to tracked capital.
+
+        Runs every sync cycle. Uses threshold: max($5, 2% of tracked capital).
+        When detected:
+          - Records to capital ledger
+          - Calls router.resize() to adjust pools and tier
+          - Sends Telegram alert
+        """
+        if self._exchange_usdt_total <= 0:
+            return  # No exchange data yet
+
+        # Compute drift: exchange total vs tracked capital
+        # Exchange total includes unrealized PnL, so subtract it for capital comparison
+        total_invested = sum(
+            cs.allocated_capital for cs in self.coins.values()
+            if cs.engine and cs.engine._engine and cs.engine._engine.long_coins > 0
+        )
+        total_unrealized = 0.0
+        for sym, cs in self.coins.items():
+            if not cs.engine or not cs.engine._engine:
+                continue
+            eng = cs.engine._engine
+            if eng.long_coins > 0 and sym in self._last_exchange_positions:
+                pos = self._last_exchange_positions.get(sym.split("/")[0], {})
+                mark = pos.get("mark_price") or pos.get("entry_price") or 0
+                if mark and eng.long_avg_entry:
+                    total_unrealized += (mark - eng.long_avg_entry) * eng.long_coins
+
+        # Capital approximation: exchange total minus unrealized PnL
+        exchange_capital = self._exchange_usdt_total - total_unrealized
+        drift = exchange_capital - self._tracked_capital
+
+        # Threshold: max($5, 2% of tracked capital)
+        threshold = max(CAPITAL_DRIFT_MIN_USD,
+                        self._tracked_capital * CAPITAL_DRIFT_MIN_PCT)
+
+        if abs(drift) < threshold:
+            return  # Within normal range
+
+        # Determine type
+        tx_type = "deposit" if drift > 0 else "withdrawal"
+        tx_amount = abs(drift)
+        drift_pct = abs(drift) / max(self._tracked_capital, 1) * 100
+
+        # Safety: reject withdrawals that would drop capital below total invested
+        if tx_type == "withdrawal" and (self._tracked_capital - tx_amount) < total_invested:
+            logger.warning(
+                f"Withdrawal detected (${tx_amount:.2f}) but would drop capital below "
+                f"invested (${total_invested:.2f}). Alerting but not auto-adjusting."
+            )
+            send_telegram(
+                f"⚠️ {TG_PREFIX} <b>Balance drift: -{drift_pct:.1f}%</b>\n"
+                f"Exchange capital: ${exchange_capital:.2f}\n"
+                f"Tracked capital: ${self._tracked_capital:.2f}\n"
+                f"Cannot auto-adjust: invested=${total_invested:.2f}\n"
+                f"Use CLOSE positions first, or WITHDRAW {tx_amount:.0f} to force."
+            )
+            return
+
+        # Record to ledger
+        note = f"Auto-detected via exchange sync ({drift_pct:.1f}% drift)"
+        record_ledger_transaction(LEDGER_PATH, tx_type, tx_amount, note=note)
+
+        # Update tracked capital
+        old_capital = self._tracked_capital
+        if tx_type == "deposit":
+            self._tracked_capital += tx_amount
+        else:
+            self._tracked_capital -= tx_amount
+
+        # Resize router (adjusts pools, tier cap, split — all hysteresis-aware)
+        self.router.resize(self._tracked_capital)
+        self.capital = self._tracked_capital
+
+        emoji = "\U0001f4e5" if tx_type == "deposit" else "\U0001f4e4"  # 📥 / 📤
+        send_telegram(
+            f"{emoji} {TG_PREFIX} <b>{tx_type.capitalize()} detected: ${tx_amount:.2f}</b>\n"
+            f"Drift: {drift_pct:.1f}%\n"
+            f"Capital: ${old_capital:.2f} -> ${self._tracked_capital:.2f}\n"
+            f"Tier: {self.router.tier_coin_cap} coins | "
+            f"Split: {EQUITY_TIER_SPLITS[self.router._split_tier_index][1]*100:.0f}/"
+            f"{EQUITY_TIER_SPLITS[self.router._split_tier_index][2]*100:.0f}\n"
+            f"Recorded in capital ledger."
+        )
+        logger.info(
+            f"{tx_type.capitalize()} detected: ${tx_amount:.2f} "
+            f"(capital ${old_capital:.2f} -> ${self._tracked_capital:.2f})"
+        )
+        self._save_state()
 
     # ── Funding rate tracking ─────────────────────────────────────────────────
 
@@ -1319,6 +1455,13 @@ class V14PortfolioLiveAster:
                     cs.engine.reject_action(action)
                 return
 
+            # Per-coin pause (Upgrade 2): block buys for individually paused coins
+            if cs.paused:
+                logger.info(f"BUY blocked for {sym} — coin is paused")
+                if cs.engine:
+                    cs.engine.reject_action(action)
+                return
+
             # Order dedup guard: block duplicate buys within 30 seconds
             ORDER_DEDUP_WINDOW = 30
             if time.time() - cs._last_buy_time < ORDER_DEDUP_WINDOW:
@@ -1524,6 +1667,16 @@ class V14PortfolioLiveAster:
         try:
             scanner_data = self.router.load_scanner_json(str(SCANNER_PATH))
             current_equity = self._compute_equity()
+
+            # Upgrade 2: exclude paused coins from rebalance candidates
+            paused_coins = {sym.split("/")[0] for sym, cs in self.coins.items() if cs.paused}
+            if paused_coins:
+                scanner_data = [
+                    entry for entry in scanner_data
+                    if entry.get("coin", entry.get("symbol", "").split("/")[0]) not in paused_coins
+                ]
+                logger.info(f"Rebalance excluding paused coins: {paused_coins}")
+
             allocations = self.router.rebalance_daily(scanner_data, current_equity=current_equity)
 
             for sym, alloc in allocations.items():
@@ -1793,7 +1946,7 @@ class V14PortfolioLiveAster:
                 return
             self.bot_state = BotState.PAUSED
             send_telegram(
-                f"⏸️ {TG_PREFIX} <b>Trading Paused</b>\n"
+                f"⏸️ {TG_PREFIX} <b>Trading Paused (Global)</b>\n"
                 f"Grids frozen. No new entries or DCA layers.\n"
                 f"Existing TP orders remain active on exchange.\n"
                 f"Reply RESUME to restart trading.\n"
@@ -1802,16 +1955,75 @@ class V14PortfolioLiveAster:
             logger.info("PAUSE: trading frozen by operator")
             self._save_state()
 
+        elif text.startswith("PAUSE ") and text != "PAUSE TRADING":
+            # Per-coin pause (Upgrade 2)
+            coin_name = text.split(None, 1)[1].upper().strip()
+            target = None
+            for sym in self.coins:
+                if sym.split("/")[0].upper() == coin_name:
+                    target = sym
+                    break
+            if not target:
+                send_telegram(
+                    f"❓ {TG_PREFIX} Symbol '{coin_name}' not found.\n"
+                    f"Active: {', '.join(s.split('/')[0] for s in self.coins)}"
+                )
+                return
+            cs = self.coins[target]
+            if cs.paused:
+                send_telegram(f"ℹ️ {TG_PREFIX} {coin_name} is already paused.")
+                return
+            cs.paused = True
+            send_telegram(
+                f"⏸️ {TG_PREFIX} <b>{coin_name} Paused</b>\n"
+                f"No new orders for {coin_name}.\n"
+                f"Existing TP orders remain active.\n"
+                f"Reply RESUME {coin_name} to unpause."
+            )
+            logger.info(f"PAUSE {coin_name}: per-coin pause activated")
+            self._save_state()
+
         elif text == "RESUME" or text == "RESUME TRADING":
+            # Global resume — does NOT clear per-coin pauses
             if self.bot_state != BotState.PAUSED:
                 send_telegram(f"ℹ️ {TG_PREFIX} Not currently paused.")
                 return
             self.bot_state = BotState.RUNNING
+            paused_coins = [s.split("/")[0] for s, cs in self.coins.items() if cs.paused]
+            note = ""
+            if paused_coins:
+                note = f"\nNote: {', '.join(paused_coins)} still individually paused."
             send_telegram(
-                f"▶️ {TG_PREFIX} <b>Trading Resumed</b>\n"
-                f"Grids active. Normal operations resumed."
+                f"▶️ {TG_PREFIX} <b>Trading Resumed (Global)</b>\n"
+                f"Grids active. Normal operations resumed.{note}"
             )
-            logger.info("RESUME: trading resumed")
+            logger.info("RESUME: trading resumed (per-coin pauses preserved)")
+            self._save_state()
+
+        elif text.startswith("RESUME ") and text != "RESUME TRADING":
+            # Per-coin resume (Upgrade 2)
+            coin_name = text.split(None, 1)[1].upper().strip()
+            target = None
+            for sym in self.coins:
+                if sym.split("/")[0].upper() == coin_name:
+                    target = sym
+                    break
+            if not target:
+                send_telegram(
+                    f"❓ {TG_PREFIX} Symbol '{coin_name}' not found.\n"
+                    f"Active: {', '.join(s.split('/')[0] for s in self.coins)}"
+                )
+                return
+            cs = self.coins[target]
+            if not cs.paused:
+                send_telegram(f"ℹ️ {TG_PREFIX} {coin_name} is not paused.")
+                return
+            cs.paused = False
+            send_telegram(
+                f"▶️ {TG_PREFIX} <b>{coin_name} Resumed</b>\n"
+                f"Trading active for {coin_name}."
+            )
+            logger.info(f"RESUME {coin_name}: per-coin pause cleared")
             self._save_state()
 
         elif text.startswith("CLOSE "):
@@ -1836,6 +2048,113 @@ class V14PortfolioLiveAster:
                         f"❓ {TG_PREFIX} Symbol '{coin_name}' not found in active positions.\n"
                         f"Active: {', '.join(s.split('/')[0] for s in self.coins)}"
                     )
+
+        elif text.startswith("DEPOSIT ") or text.startswith("DEPOSIT\n"):
+            parts = text.split(None, 1)
+            if len(parts) < 2:
+                send_telegram(f"ℹ️ {TG_PREFIX} Usage: DEPOSIT <amount>")
+                return
+            try:
+                amount = float(parts[1].strip())
+            except ValueError:
+                send_telegram(f"❌ {TG_PREFIX} Invalid amount: '{parts[1].strip()}'")
+                return
+            if amount <= 0:
+                send_telegram(f"❌ {TG_PREFIX} Amount must be positive.")
+                return
+            old_capital = self._tracked_capital
+            record_ledger_transaction(
+                LEDGER_PATH, "deposit", amount,
+                note="Manual deposit via Telegram command"
+            )
+            self._tracked_capital += amount
+            self.capital = self._tracked_capital
+            self.router.resize(self._tracked_capital)
+            send_telegram(
+                f"\U0001f4e5 {TG_PREFIX} <b>Manual Deposit: ${amount:.2f}</b>\n"
+                f"Capital: ${old_capital:.2f} -> ${self._tracked_capital:.2f}\n"
+                f"Tier: {self.router.tier_coin_cap} coins | "
+                f"Split: {EQUITY_TIER_SPLITS[self.router._split_tier_index][1]*100:.0f}/"
+                f"{EQUITY_TIER_SPLITS[self.router._split_tier_index][2]*100:.0f}\n"
+                f"Recorded in capital ledger."
+            )
+            logger.info(f"Manual deposit: ${amount:.2f} via Telegram")
+            self._save_state()
+
+        elif text.startswith("WITHDRAW ") or text.startswith("WITHDRAW\n"):
+            parts = text.split(None, 1)
+            if len(parts) < 2:
+                send_telegram(f"ℹ️ {TG_PREFIX} Usage: WITHDRAW <amount>")
+                return
+            try:
+                amount = float(parts[1].strip())
+            except ValueError:
+                send_telegram(f"❌ {TG_PREFIX} Invalid amount: '{parts[1].strip()}'")
+                return
+            if amount <= 0:
+                send_telegram(f"❌ {TG_PREFIX} Amount must be positive.")
+                return
+            # Safety check: can't withdraw below invested
+            total_invested = sum(
+                cs.allocated_capital for cs in self.coins.values()
+                if cs.engine and cs.engine._engine and cs.engine._engine.long_coins > 0
+            )
+            if (self._tracked_capital - amount) < total_invested:
+                send_telegram(
+                    f"❌ {TG_PREFIX} Cannot withdraw ${amount:.2f}\n"
+                    f"Tracked capital: ${self._tracked_capital:.2f}\n"
+                    f"Currently invested: ${total_invested:.2f}\n"
+                    f"Max withdrawable: ${self._tracked_capital - total_invested:.2f}\n"
+                    f"Close positions first."
+                )
+                return
+            old_capital = self._tracked_capital
+            record_ledger_transaction(
+                LEDGER_PATH, "withdrawal", amount,
+                note="Manual withdrawal via Telegram command"
+            )
+            self._tracked_capital -= amount
+            self.capital = self._tracked_capital
+            self.router.resize(self._tracked_capital)
+            send_telegram(
+                f"\U0001f4e4 {TG_PREFIX} <b>Manual Withdrawal: ${amount:.2f}</b>\n"
+                f"Capital: ${old_capital:.2f} -> ${self._tracked_capital:.2f}\n"
+                f"Tier: {self.router.tier_coin_cap} coins | "
+                f"Split: {EQUITY_TIER_SPLITS[self.router._split_tier_index][1]*100:.0f}/"
+                f"{EQUITY_TIER_SPLITS[self.router._split_tier_index][2]*100:.0f}\n"
+                f"Recorded in capital ledger."
+            )
+            logger.info(f"Manual withdrawal: ${amount:.2f} via Telegram")
+            self._save_state()
+
+        elif text == "CAPITAL":
+            summary = get_ledger_summary(LEDGER_PATH)
+            if summary is None:
+                send_telegram(
+                    f"\U0001f4b0 {TG_PREFIX} <b>Capital Status</b>\n"
+                    f"Tracked capital: ${self._tracked_capital:.2f}\n"
+                    f"Exchange balance: ${self._exchange_usdt_total:.2f}\n"
+                    f"No ledger found."
+                )
+            else:
+                last_tx = summary["last_transaction"]
+                last_str = (
+                    f"\nLast: {last_tx['type']} ${last_tx['amount']:.2f} "
+                    f"({last_tx.get('timestamp', 'unknown')[:10]})"
+                    if last_tx else ""
+                )
+                send_telegram(
+                    f"\U0001f4b0 {TG_PREFIX} <b>Capital Status</b>\n"
+                    f"Seed: ${summary['seed_capital']:.2f}\n"
+                    f"Deposits: ${summary['total_deposits']:.2f}\n"
+                    f"Withdrawals: ${summary['total_withdrawals']:.2f}\n"
+                    f"Tracked capital: ${summary['current_capital']:.2f}\n"
+                    f"Exchange balance: ${self._exchange_usdt_total:.2f}\n"
+                    f"Tier: {self.router.tier_coin_cap} coins | "
+                    f"Split: {EQUITY_TIER_SPLITS[self.router._split_tier_index][1]*100:.0f}/"
+                    f"{EQUITY_TIER_SPLITS[self.router._split_tier_index][2]*100:.0f}"
+                    f"{last_str}"
+                )
 
         else:
             # Unknown command — silently ignore
@@ -2018,6 +2337,7 @@ class V14PortfolioLiveAster:
                 coin_data["cumulative_funding"] = round(cs.cumulative_funding, 6)
                 coin_data["tp_order_id"]  = cs.tp_order_id
                 coin_data["layer_count"]  = cs.layer_count
+                coin_data["paused"]       = cs.paused
                 if cs.tp_limit_price:
                     coin_data["next_tp_price"] = cs.tp_limit_price
                 if sym in self._cfgi_coins:
@@ -2035,6 +2355,7 @@ class V14PortfolioLiveAster:
             "leverage": self.leverage,
             "bot_state": self.bot_state,
             "capital": self.capital,
+            "tracked_capital": round(self._tracked_capital, 2),
             "equity": equity,
             "cash": round(usdt_free, 2),
             "invested": invested,
@@ -2224,10 +2545,16 @@ class V14PortfolioLiveAster:
 
             # Announce startup
             mode_str = "PAUSED" if self.bot_state == BotState.PAUSED else "RUNNING"
+            split_str = (
+                f"{EQUITY_TIER_SPLITS[self.router._split_tier_index][1]*100:.0f}/"
+                f"{EQUITY_TIER_SPLITS[self.router._split_tier_index][2]*100:.0f}"
+                if self.router._split_tier_index >= 0 else "90/10"
+            )
             send_telegram(
                 f"🚀 {TG_PREFIX} <b>Live Bot Started</b>\n"
-                f"Capital: ${self.capital:.2f} | Profile: {self.profile} | "
+                f"Capital: ${self._tracked_capital:.2f} | Profile: {self.profile} | "
                 f"1x leverage | Aster Perps\n"
+                f"Tier: {self.router.tier_coin_cap} coins | Split: {split_str}\n"
                 f"Active coins: {len(self.coins)}\n"
                 f"State: {mode_str}"
             )
@@ -2258,6 +2585,9 @@ class V14PortfolioLiveAster:
 
                     # Sync positions from exchange (exchange-as-truth, every cycle)
                     self._sync_positions_from_exchange()
+
+                    # Detect deposits/withdrawals (Upgrade 1)
+                    self._detect_capital_change()
 
                     # Process each active coin (Audit #5: 50 candles, process all missed)
                     for sym, cs in list(self.coins.items()):
@@ -2391,7 +2721,43 @@ def main():
         "--fresh", action="store_true",
         help="Start fresh — ignore saved state (use for first launch)"
     )
+    parser.add_argument(
+        "--deposit", type=float, default=None, metavar="AMOUNT",
+        help="Record a manual deposit and adjust capital (then start bot)"
+    )
+    parser.add_argument(
+        "--withdraw", type=float, default=None, metavar="AMOUNT",
+        help="Record a manual withdrawal and adjust capital (then start bot)"
+    )
+    parser.add_argument(
+        "--ledger", action="store_true",
+        help="Print capital ledger summary and exit"
+    )
     args = parser.parse_args()
+
+    # --ledger: print summary and exit
+    if args.ledger:
+        summary = get_ledger_summary(LEDGER_PATH)
+        if summary is None:
+            print(f"No capital ledger found at {LEDGER_PATH}")
+        else:
+            print("=" * 50)
+            print("  Capital Ledger Summary")
+            print("=" * 50)
+            print(f"  Seed capital:      ${summary['seed_capital']:.2f}")
+            print(f"  Total deposits:    ${summary['total_deposits']:.2f}")
+            print(f"  Total withdrawals: ${summary['total_withdrawals']:.2f}")
+            print(f"  Current capital:   ${summary['current_capital']:.2f}")
+            print(f"  Transactions:      {summary['transaction_count']}")
+            ledger = load_capital_ledger(LEDGER_PATH)
+            if ledger:
+                print("-" * 50)
+                for t in ledger.get("transactions", []):
+                    note = f"  [{t.get('note', '')}]" if t.get("note") else ""
+                    ts = t.get("timestamp", t.get("date", "unknown"))[:19]
+                    print(f"    {ts}  {t['type']:12s}  ${t['amount']:.2f}{note}")
+            print("=" * 50)
+        sys.exit(0)
 
     if not args.confirm:
         print("ERROR: --confirm flag required for live trading.")
@@ -2412,6 +2778,21 @@ def main():
         ],
         force=True,
     )
+
+    # Process --deposit / --withdraw before starting bot
+    if args.deposit:
+        record_ledger_transaction(
+            LEDGER_PATH, "deposit", args.deposit,
+            note="Manual deposit via --deposit CLI flag"
+        )
+        logging.info(f"Recorded deposit: ${args.deposit:.2f}")
+
+    if args.withdraw:
+        record_ledger_transaction(
+            LEDGER_PATH, "withdrawal", args.withdraw,
+            note="Manual withdrawal via --withdraw CLI flag"
+        )
+        logging.info(f"Recorded withdrawal: ${args.withdraw:.2f}")
 
     bot = V14PortfolioLiveAster(
         capital=args.capital,
