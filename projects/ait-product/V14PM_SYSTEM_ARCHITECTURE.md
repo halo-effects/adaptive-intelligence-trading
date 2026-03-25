@@ -36,7 +36,7 @@ Then it rotates to the next best opportunity. Rinse and repeat, 24/7.
 |---------|-------------|----------------|
 | **1x Leverage** | No borrowing, no liquidation risk | You can't lose more than you put in |
 | **Exchange Is Truth** | Position state synced from exchange every 65s cycle | Engine can never diverge from reality |
-| **Resting Limit Orders** | Exchange handles take-profit, not the bot | Even if the bot crashes, your TP order sits on the exchange |
+| **Resting Limit Orders** | Exchange handles take-profit, not the bot | Even if the bot crashes, your TP order sits on the exchange. TP price is always computed from the actual exchange entry price (not engine's candle-based estimate) to account for spread/slippage. |
 | **Human Approval** | Direction changes require Telegram confirmation | The bot never flips strategy on its own |
 | **PAUSE/RESUME** | Freeze all trading with one command | Instant kill switch, existing TPs stay active |
 | **No Engine Position Tracking** | Engine doesn't maintain its own position state | Eliminates entire class of drift/divergence bugs |
@@ -584,6 +584,18 @@ and candle **low** (for shorts), not candle close. This ensures wicks that touch
 trigger a fill at the TP price, matching the behavior of a resting exchange limit order.
 Previously, the engine could miss TPs when the wick touched the TP level but the candle
 closed below it. Files updated: `v14_dca_engine.py`, `v14_lifecycle_engine.py`.
+
+**TP Price — Exchange-as-Truth (updated 2026-03-24):** `_place_tp_order()` computes the TP
+price from the **actual exchange entry price**, not the engine's candle-based TP. The engine
+processes historical candles and computes TP from the candle close price, but the actual fill
+price can differ significantly due to spread/slippage (observed: 5.1% spread on HYPE entry).
+Using the engine's TP could result in a sell limit below the actual entry price, which the
+exchange correctly rejects. The flow is now:
+1. Engine tick generates BUY at candle close price → market buy executes at actual price
+2. `_place_tp_order()` fetches exchange position entry price via `fetch_open_positions()`
+3. TP = `exchange_entry × (1 + DCA_TP_PCT)` — always above actual cost basis
+4. If fetch fails, falls back to engine's `eng.long_tp` (best effort)
+5. TP recovery (`_check_tp_fills`) retries placement for any position missing a TP order
 
 **Layer timing:** There is no cooldown between layers at any risk profile (Low,
 Medium, or High). When price drops through multiple deviation thresholds, the

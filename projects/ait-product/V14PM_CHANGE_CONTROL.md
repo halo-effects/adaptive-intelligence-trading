@@ -1,14 +1,17 @@
-# V14PM Live Bot — Unified Audit
-_Created: 2026-03-20 | Consolidates: V14PM_LIVE_AUDIT_2026-03-19.md + V14PM_VS_V14_LIVE_AUDIT.md_
+# V14PM Live Bot — Change Control Log
+_Created: 2026-03-20 | Renamed from V14PM_UNIFIED_AUDIT.md: 2026-03-24_
+_Source: Initial audit of `run_v14_portfolio_live_aster.py` against `run_v14_live_aster.py`_
 
 ---
 
 ## Summary
 
-Comprehensive audit of `run_v14_portfolio_live_aster.py` against the battle-tested
-`run_v14_live_aster.py`. Covers all 20 critical execution paths.
+Production change control for V14PM Live Bot. Tracks all code changes, bug fixes,
+and architectural decisions applied to the live trading system. Originally a 20-path
+audit comparing the PM bot against the battle-tested single-coin bot.
 
-**Result: 17 of 20 items resolved. 3 remaining (all P2 — operational, not trade-blocking).**
+**Initial audit: 17 of 20 items resolved. 3 remaining (all P2 — operational, not trade-blocking).**
+**Post-audit changes: 4 production fixes applied (2026-03-21 through 2026-03-24).**
 
 ---
 
@@ -18,9 +21,10 @@ Comprehensive audit of `run_v14_portfolio_live_aster.py` against the battle-test
 - Added `fetch_my_trades()` fallback when Aster doesn't return fill price on market orders
 - Spread logging on every fill (bps), Telegram alert if >50bps
 
-### 2. TP Price Calculation — FIXED
-- TP recalculated from actual fill price after every market buy (not candle close)
+### 2. TP Price Calculation — FIXED (updated 2026-03-24)
+- TP recalculated from actual **exchange entry price** after every market buy (not candle close)
 - `cs.tp_limit_price` stored separately in CoinState for correction math
+- **2026-03-24 fix:** `_place_tp_order()` now fetches exchange position entry price and computes TP from that, replacing the engine's candle-based TP. Previously, the engine would compute TP from the historical candle close price (e.g., $38.35), but the actual fill could be $40.31 due to spread/slippage. The old TP ($38.93) would be below entry, causing exchange rejection ("Limit price can't be lower than mark price"). Now: `TP = exchange_entry × (1 + DCA_TP_PCT)`, always above the actual entry.
 
 ### 3. LIVE GUARD (Engine TP Block) — FIXED
 - Full `_snapshot_engine()` taken before every tick
@@ -169,6 +173,10 @@ These are capabilities the new bot has that the old bot never had:
 | 2026-03-19 PM | cash_available fixed | Passes `cs.allocated_capital` instead of 0 |
 | 2026-03-20 AM | Unified audit created | Consolidated both docs, verified all fixes in code |
 | 2026-03-20 AM | **Candle replay bug fixed** | `last_candle_ts` set to `now` (not 0) after TP fill and fresh engine creation. Prevents historical candle replay generating real orders. |
+| 2026-03-21 AM | **State persistence bug fixed** | BUY rejections now use pre-tick snapshot rollback instead of trade-history-dependent `reject_action()`. Trade history is empty after restore, causing silent rollback failures and engine state corruption. |
+| 2026-03-21 AM | **Startup rebalance guard** | Skip initial `_do_rebalance()` when restoring from saved state. Prevents overwriting restored engine values before reconciliation runs. |
+| 2026-03-24 PM | **TP price exchange-as-truth** | `_place_tp_order()` now computes TP from actual exchange entry price instead of engine's candle-based TP. Fixes exchange rejection when spread causes candle price ≠ fill price. Affected HYPE/USDT ($38.93 TP rejected, actual entry $40.31) and TAO/USDT ($265.98 TP rejected, actual entry $336.76). |
+| 2026-03-24 PM | **Multi-coin scaling live** | Scanner automatically picked HYPE and TAO at midnight UTC rebalance. Tier system confirmed: 3 coins at $340 equity, 90/10 split. TP recovery successfully placed orders for both new coins after fix. |
 
 ---
 
