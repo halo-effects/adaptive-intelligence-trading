@@ -834,6 +834,7 @@ function renderPositions(){
     html+='<span class="dir-badge '+side+'">'+side.toUpperCase()+'</span>';
     html+='</div>';
     html+='<span class="pb pb-'+phase+'">'+phase.replace('_',' ')+'</span>';
+    if(c.paused){html+='<span class="pb" style="background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3);margin-left:6px">⏸ PAUSED</span>';}
     html+='</div>';
 
     // Stats
