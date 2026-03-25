@@ -1127,31 +1127,51 @@ class V14PortfolioLiveAster:
     def _place_tp_order(self, sym: str, cs: CoinState):
         """Place (or replace) TP limit order for a coin.
         Stores the TP price in CoinState (Audit #8) so we never rely on
-        eng.long_tp which can shift after engine ticks."""
+        eng.long_tp which can shift after engine ticks.
+
+        Exchange-as-truth: TP price is calculated from the ACTUAL exchange
+        entry price, not the engine's candle-based TP. The engine processes
+        historical candles and computes TP from candle close prices, but the
+        actual fill price can differ significantly (spread/slippage). Using
+        the engine's TP could result in a sell BELOW the actual entry price.
+        """
         if not cs.engine or not cs.engine._engine:
             return
         eng = cs.engine._engine
-        tp_price = eng.long_tp
-        if not tp_price:
-            return
+        tp_pct = eng.cfg.DCA_TP_PCT if hasattr(eng, 'cfg') and hasattr(eng.cfg, 'DCA_TP_PCT') else 0.015
 
-        # Use actual exchange position size when available (ported from old bot).
-        # Engine's eng.long_coins can drift from reality due to partial fills,
-        # leverage differences, or rounding.
+        # Use actual exchange position for BOTH qty and entry price (exchange-as-truth).
         qty = eng.long_coins
+        tp_price = eng.long_tp  # fallback
         try:
             positions = self.client.fetch_open_positions()
             base = sym.split("/")[0]
             if base in positions and positions[base].get("qty", 0) > 0:
-                exchange_qty = positions[base]["qty"]
+                pos = positions[base]
+                exchange_qty = pos["qty"]
+                exchange_entry = pos.get("entry_price", 0)
                 if abs(exchange_qty - qty) > 0.001:
                     logger.info(
                         f"TP qty for {sym}: using exchange position {exchange_qty:.4f} "
                         f"(engine had {qty:.4f})"
                     )
                     qty = exchange_qty
+                # Always compute TP from actual exchange entry price
+                if exchange_entry and exchange_entry > 0:
+                    exchange_tp = exchange_entry * (1 + tp_pct)
+                    if abs(exchange_tp - tp_price) > 0.0001:
+                        logger.info(
+                            f"TP price for {sym}: using exchange entry ${exchange_entry:.6f} "
+                            f"→ TP ${exchange_tp:.6f} (engine had ${tp_price:.6f})"
+                        )
+                    tp_price = exchange_tp
+                    # Update engine TP to match exchange truth
+                    eng.long_tp = tp_price
         except Exception as e:
-            logger.warning(f"Position fetch for TP qty failed ({sym}), using engine qty: {e}")
+            logger.warning(f"Position fetch for TP failed ({sym}), using engine values: {e}")
+
+        if not tp_price:
+            return
 
         if not qty:
             return
