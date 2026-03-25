@@ -835,6 +835,7 @@ function renderPositions(){
     html+='</div>';
     html+='<span class="pb pb-'+phase+'">'+phase.replace('_',' ')+'</span>';
     if(c.paused){html+='<span class="pb" style="background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3);margin-left:6px">⏸ PAUSED</span>';}
+    if(c.regime_flagged){html+='<span class="pb" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);margin-left:6px">🚩 REGIME CONFLICT</span>';}
     html+='</div>';
 
     // Stats
@@ -1179,10 +1180,15 @@ function renderFlowDiagram(){
     var trendMult=trendData?trendData.trend_multiplier:1.0;
     var tradeScore=dcaScore!=null?dcaScore*trendMult:null;
 
-    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData});
+    var isPaused=c.paused||false;
+    var isRegimeFlagged=c.regime_flagged||false;
+    var isExcluded=isPaused||isRegimeFlagged;
+    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData,isPaused:isPaused,isRegimeFlagged:isRegimeFlagged,isExcluded:isExcluded});
   });
 
   rowData.sort(function(a,b){
+    // Excluded coins (paused/regime-flagged) sort to bottom
+    if(a.isExcluded!==b.isExcluded)return a.isExcluded?1:-1;
     var as=a.tradeScore!=null?a.tradeScore:-999;
     var bs=b.tradeScore!=null?b.tradeScore:-999;
     return bs-as;
@@ -1200,8 +1206,12 @@ function renderFlowDiagram(){
     var capHtml=rd.capFree!=null?'<span style="color:'+capColor(rd.capFree)+'">'+Math.round(rd.capFree*100)+'%</span>':'--';
     var ddHtml=rd.ddPct!=null?'<span style="color:'+ddColor(rd.ddPct)+'">'+rd.ddPct.toFixed(1)+'%</span>':'--';
 
-    h+='<tr'+(rd.isActive?' style="background:rgba(99,102,241,.06)"':'')+'>';
-    h+='<td class="coin-name">'+rd.m.label+(rd.isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'')+'</td>';
+    var rowStyle=rd.isExcluded?'opacity:0.5;background:rgba(239,68,68,.03)':rd.isActive?'background:rgba(99,102,241,.06)':'';
+    h+='<tr'+(rowStyle?' style="'+rowStyle+'"':'')+'>';
+    var badges=rd.isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'';
+    if(rd.isRegimeFlagged)badges+=' <span style="font-size:.55rem;color:var(--red);vertical-align:middle">🚩 FLAGGED</span>';
+    if(rd.isPaused)badges+=' <span style="font-size:.55rem;color:var(--amber);vertical-align:middle">⏸ PAUSED</span>';
+    h+='<td class="coin-name">'+rd.m.label+badges+'</td>';
     h+='<td>'+phaseHtml+'</td>';
     h+='<td style="text-align:center">'+scoreHtml+'</td>';
     var trendHtml='<span style="color:var(--text3)">--</span>';
