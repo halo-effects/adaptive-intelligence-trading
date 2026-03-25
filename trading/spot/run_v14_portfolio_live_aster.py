@@ -607,6 +607,11 @@ class CoinState:
         self._last_buy_time: float = 0.0  # Dedup guard: timestamp of last executed buy
         self.layer_count: int = 0         # Layers in current position (synced from exchange)
         self.paused: bool = False         # Per-coin pause (Upgrade 2): blocks new orders, TPs active
+        # Per-coin regime flagging (Upgrade 3)
+        self.regime_flagged: bool = False              # True when coin signals conflict with global direction
+        self.coin_regime_signal: Optional[str] = None  # "TOP" or "BOTTOM"
+        self.flagged_at: Optional[str] = None          # ISO timestamp when flagged
+        self.regime_cooldown_until: float = 0.0        # Unix timestamp — no re-flag before this
 
     def to_dict(self) -> dict:
         return {
@@ -619,6 +624,10 @@ class CoinState:
             "last_funding_check_ms": self.last_funding_check_ms,
             "layer_count": self.layer_count,
             "paused": self.paused,
+            "regime_flagged": self.regime_flagged,
+            "coin_regime_signal": self.coin_regime_signal,
+            "flagged_at": self.flagged_at,
+            "regime_cooldown_until": self.regime_cooldown_until,
         }
 
 
@@ -798,6 +807,10 @@ class V14PortfolioLiveAster:
             cs.last_funding_check_ms = cs_data.get("last_funding_check_ms", 0)
             cs.layer_count = cs_data.get("layer_count", 0)
             cs.paused = cs_data.get("paused", False)
+            cs.regime_flagged = cs_data.get("regime_flagged", False)
+            cs.coin_regime_signal = cs_data.get("coin_regime_signal")
+            cs.flagged_at = cs_data.get("flagged_at")
+            cs.regime_cooldown_until = cs_data.get("regime_cooldown_until", 0.0)
 
             engine_state = cs_data.get("engine_state", {})
             if engine_state:
@@ -1098,6 +1111,115 @@ class V14PortfolioLiveAster:
         )
         self._save_state()
 
+    # ── Per-Coin Regime Flagging (Upgrade 3) ─────────────────────────────────
+
+    REGIME_COOLDOWN_HOURS = 24  # Hours before a manually-resumed coin can be re-flagged
+
+    def _check_coin_regime_conflict(self, sym: str, cs: 'CoinState'):
+        """Check if a coin's engine signals conflict with global direction.
+        Runs after each candle tick. Flags the coin if conflict detected.
+        """
+        if not cs.engine or not cs.engine._engine:
+            return
+        if cs.regime_flagged:
+            return  # Already flagged
+        if cs.paused:
+            return  # Don't flag paused coins
+
+        # Cooldown check (Q6: 24h after manual RESUME)
+        if time.time() < cs.regime_cooldown_until:
+            return
+
+        eng = cs.engine._engine
+
+        # Global direction: currently always LONG (until full regime flip is implemented)
+        global_direction = "LONG"
+
+        # Check if the engine detected a top (wants SHORT) while global is LONG
+        if global_direction == "LONG" and getattr(eng, 'top_detected', False):
+            cs.regime_flagged = True
+            cs.coin_regime_signal = "TOP"
+            cs.flagged_at = datetime.now(timezone.utc).isoformat()
+            coin_name = sym.split("/")[0]
+            logger.warning(f"REGIME FLAG: {sym} — top detected, conflicts with global LONG")
+
+            # Count total flagged coins for context
+            flagged_count = sum(1 for s, c in self.coins.items() if c.regime_flagged)
+            flagged_names = [s.split("/")[0] for s, c in self.coins.items() if c.regime_flagged]
+
+            send_telegram(
+                f"\U0001f6a9 {TG_PREFIX} <b>Coin Regime Conflict: {coin_name}</b>\n"
+                f"Signal: TOP DETECTED (wants Short)\n"
+                f"Global direction: LONG\n"
+                f"Flagged coins: {flagged_count}/{len(self.coins)} ({', '.join(flagged_names)})\n\n"
+                f"Coin removed from active trading.\n"
+                f"Open positions can still hit TPs.\n"
+                f"Auto-resumes on global regime flip or RESUME {coin_name}."
+            )
+            self._save_state()
+
+        # Check for SHORT direction with bottom detection (future use)
+        elif global_direction == "SHORT" and getattr(eng, 'conviction_fired', False):
+            cs.regime_flagged = True
+            cs.coin_regime_signal = "BOTTOM"
+            cs.flagged_at = datetime.now(timezone.utc).isoformat()
+            coin_name = sym.split("/")[0]
+            logger.warning(f"REGIME FLAG: {sym} — bottom detected, conflicts with global SHORT")
+
+            flagged_count = sum(1 for s, c in self.coins.items() if c.regime_flagged)
+            flagged_names = [s.split("/")[0] for s, c in self.coins.items() if c.regime_flagged]
+
+            send_telegram(
+                f"\U0001f6a9 {TG_PREFIX} <b>Coin Regime Conflict: {coin_name}</b>\n"
+                f"Signal: BOTTOM DETECTED (wants Long)\n"
+                f"Global direction: SHORT\n"
+                f"Flagged coins: {flagged_count}/{len(self.coins)} ({', '.join(flagged_names)})\n\n"
+                f"Coin removed from active trading.\n"
+                f"Open positions can still hit TPs.\n"
+                f"Auto-resumes on global regime flip or RESUME {coin_name}."
+            )
+            self._save_state()
+
+    def _clear_regime_flag_on_tp(self, sym: str, cs: 'CoinState'):
+        """Auto-clear regime flag when TP fills and no position remains (Q5: A)."""
+        if not cs.regime_flagged:
+            return
+        # Check if position is fully closed
+        eng = cs.engine._engine if cs.engine else None
+        if eng and eng.long_coins == 0 and eng.short_coins == 0:
+            coin_name = sym.split("/")[0]
+            cs.regime_flagged = False
+            cs.coin_regime_signal = None
+            cs.flagged_at = None
+            logger.info(f"REGIME UNFLAG: {sym} — TP filled, no position remaining")
+            send_telegram(
+                f"\u2705 {TG_PREFIX} <b>{coin_name} Regime Flag Cleared</b>\n"
+                f"TP filled, no position remaining.\n"
+                f"Coin returned to opportunity list."
+            )
+
+    def _clear_matching_regime_flags(self, new_direction: str):
+        """After global regime change, unflag coins that now match the new direction."""
+        for sym, cs in self.coins.items():
+            if cs.regime_flagged:
+                # TOP flag + new direction SHORT = match → unflag
+                # BOTTOM flag + new direction LONG = match → unflag
+                should_clear = (
+                    (cs.coin_regime_signal == "TOP" and new_direction == "SHORT") or
+                    (cs.coin_regime_signal == "BOTTOM" and new_direction == "LONG")
+                )
+                if should_clear:
+                    coin_name = sym.split("/")[0]
+                    cs.regime_flagged = False
+                    cs.coin_regime_signal = None
+                    cs.flagged_at = None
+                    logger.info(f"REGIME UNFLAG: {sym} — matches new global direction {new_direction}")
+                    send_telegram(
+                        f"\u2705 {TG_PREFIX} <b>{coin_name} Regime Flag Cleared</b>\n"
+                        f"Global direction changed to {new_direction}.\n"
+                        f"Coin signal now matches — returned to opportunity list."
+                    )
+
     # ── Funding rate tracking ─────────────────────────────────────────────────
 
     def _update_funding(self):
@@ -1384,6 +1506,9 @@ class V14PortfolioLiveAster:
         cs.cumulative_funding = 0.0
         self.tracker.save_csv()
 
+        # Upgrade 3: auto-clear regime flag if position fully closed (Q5: A)
+        self._clear_regime_flag_on_tp(sym, cs)
+
         # Do NOT reset last_candle_ts — the old proven bot never does.
         # The engine naturally re-enters on the next complete candle.
         # Resetting to 0 caused the 635 GRASS incident (replayed 50 historical candles).
@@ -1478,6 +1603,13 @@ class V14PortfolioLiveAster:
             # Per-coin pause (Upgrade 2): block buys for individually paused coins
             if cs.paused:
                 logger.info(f"BUY blocked for {sym} — coin is paused")
+                if cs.engine:
+                    cs.engine.reject_action(action)
+                return
+
+            # Per-coin regime flag (Upgrade 3): block buys for regime-conflicted coins
+            if cs.regime_flagged:
+                logger.info(f"BUY blocked for {sym} — regime conflict ({cs.coin_regime_signal})")
                 if cs.engine:
                     cs.engine.reject_action(action)
                 return
@@ -1688,14 +1820,17 @@ class V14PortfolioLiveAster:
             scanner_data = self.router.load_scanner_json(str(SCANNER_PATH))
             current_equity = self._compute_equity()
 
-            # Upgrade 2: exclude paused coins from rebalance candidates
-            paused_coins = {sym.split("/")[0] for sym, cs in self.coins.items() if cs.paused}
-            if paused_coins:
+            # Upgrade 2+3: exclude paused and regime-flagged coins from rebalance candidates
+            excluded_coins = {
+                sym.split("/")[0] for sym, cs in self.coins.items()
+                if cs.paused or cs.regime_flagged
+            }
+            if excluded_coins:
                 scanner_data = [
                     entry for entry in scanner_data
-                    if entry.get("coin", entry.get("symbol", "").split("/")[0]) not in paused_coins
+                    if entry.get("coin", entry.get("symbol", "").split("/")[0]) not in excluded_coins
                 ]
-                logger.info(f"Rebalance excluding paused coins: {paused_coins}")
+                logger.info(f"Rebalance excluding paused/flagged coins: {excluded_coins}")
 
             allocations = self.router.rebalance_daily(scanner_data, current_equity=current_equity)
 
@@ -2035,15 +2170,27 @@ class V14PortfolioLiveAster:
                 )
                 return
             cs = self.coins[target]
-            if not cs.paused:
-                send_telegram(f"ℹ️ {TG_PREFIX} {coin_name} is not paused.")
+            if not cs.paused and not cs.regime_flagged:
+                send_telegram(f"ℹ️ {TG_PREFIX} {coin_name} is not paused or flagged.")
                 return
+            was_flagged = cs.regime_flagged
             cs.paused = False
+            cs.regime_flagged = False
+            cs.coin_regime_signal = None
+            cs.flagged_at = None
+            # Q6: 24h cooldown after manual RESUME of a regime-flagged coin
+            if was_flagged:
+                cs.regime_cooldown_until = time.time() + (self.REGIME_COOLDOWN_HOURS * 3600)
+            status_parts = []
+            if was_flagged:
+                status_parts.append(f"regime flag cleared (24h cooldown active)")
+            status_parts.append("trading active")
             send_telegram(
                 f"▶️ {TG_PREFIX} <b>{coin_name} Resumed</b>\n"
-                f"Trading active for {coin_name}."
+                f"{'; '.join(status_parts).capitalize()}."
             )
-            logger.info(f"RESUME {coin_name}: per-coin pause cleared")
+            logger.info(f"RESUME {coin_name}: pause/flag cleared" +
+                        (f" (cooldown until {datetime.fromtimestamp(cs.regime_cooldown_until, tz=timezone.utc).isoformat()})" if was_flagged else ""))
             self._save_state()
 
         elif text.startswith("CLOSE "):
@@ -2358,6 +2505,10 @@ class V14PortfolioLiveAster:
                 coin_data["tp_order_id"]  = cs.tp_order_id
                 coin_data["layer_count"]  = cs.layer_count
                 coin_data["paused"]       = cs.paused
+                coin_data["regime_flagged"] = cs.regime_flagged
+                if cs.regime_flagged:
+                    coin_data["coin_regime_signal"] = cs.coin_regime_signal
+                    coin_data["flagged_at"] = cs.flagged_at
                 if cs.tp_limit_price:
                     coin_data["next_tp_price"] = cs.tp_limit_price
                 if sym in self._cfgi_coins:
@@ -2650,6 +2801,9 @@ class V14PortfolioLiveAster:
                                     f"Engine tick {sym}: no action "
                                     f"(warmed_up={cs.engine._warmed_up})"
                                 )
+
+                            # Upgrade 3: check for per-coin regime conflict after each tick
+                            self._check_coin_regime_conflict(sym, cs)
 
                             cs.last_candle_ts = ts_ms
                             cs.engine._last_candle_ts = ts_ms
