@@ -1,9 +1,9 @@
 # V14PM Live Bot — Upgrade Scope
 
-> **Updated 2026-03-23** — Added Upgrade 0 (Adaptive Tiers & Pool Split). Reordered implementation sequence. Exchange-as-truth architecture is live since 2026-03-21.
+> **Updated 2026-03-24** — All four upgrades (0–3) deployed to V14PM Live. Upgrade 0 (Adaptive Tiers), Upgrade 1 (Dynamic Capital), Upgrade 2 (Per-Coin Pause), Upgrade 3 (Per-Coin Regime Flagging) all live on Aster Perps.
 
-**Date:** 2026-03-23
-**Status:** Upgrade 0 scoped from paper bot performance data (220 trades, 18 days)
+**Date:** 2026-03-24
+**Status:** All upgrades deployed and running on V14PM Live (Aster Perps, ~$340 USDT)
 
 ---
 
@@ -485,6 +485,8 @@ def resize(self, new_equity: float):
 
 ## Upgrade 2: Per-Coin Pause
 
+> **✅ DEPLOYED 2026-03-24** — Live on V14PM Live (Aster Perps).
+
 ### What Exists Today
 
 **Global PAUSE** (`PAUSE` / `RESUME` commands):
@@ -557,9 +559,24 @@ elif text.startswith("RESUME ") and len(text.split()) == 2:
 - Straightforward boolean flag with clear gate points
 - No new data flows or external dependencies
 
+### Deployment Notes (2026-03-24)
+
+**Implementation matches spec exactly.** Key decisions confirmed:
+- **Q3 (Paused capital): A** — Capital held in reserve, not redistributed
+- **Q4 (Global RESUME): A** — Per-coin pauses survive global RESUME
+
+**Actual code changes:**
+- `CoinState.paused` field added, persisted to `state.json`
+- Buy gate in `_execute_action()` checks `cs.paused` before allowing BUY orders; calls `cs.engine.reject_action()` to keep engine state consistent
+- Rebalance exclusion: paused coins filtered from scanner data before `rebalance_daily()`
+- `PAUSE <COIN>` / `RESUME <COIN>` Telegram commands with confirmation messages
+- Dashboard: position card shows "⏸ PAUSED" amber badge; opportunity table dims paused rows (50% opacity) and sorts them to bottom
+
 ---
 
 ## Upgrade 3: Per-Coin Regime Flagging
+
+> **✅ DEPLOYED 2026-03-24** — Live on V14PM Live (Aster Perps).
 
 ### What Exists Today
 
@@ -694,6 +711,58 @@ def _clear_matching_regime_flags(self, new_direction: str):
 - The per-coin engine's `top_detected` and `conviction_fired` flags ARE available in the V14 DCA engine
 - **The detection should come from the live engine's signal stack** (processing real candles), not from the scanner (which is a backtest summary)
 
+### Deployment Notes (2026-03-24)
+
+**Implementation matches spec with Q5/Q6 decisions confirmed:**
+- **Q5 (Flag persistence after TP fill): A** — Auto-clear flag when TP fills and no position remains. Nothing to protect = flag cleared. Coin returns to opportunity list.
+- **Q6 (Manual RESUME cooldown): A** — 24-hour cooldown after manual RESUME before re-flagging. Respects operator intent.
+
+**Actual code changes:**
+
+**CoinState fields added:**
+```python
+regime_flagged: bool = False              # True when coin signals conflict with global direction
+coin_regime_signal: Optional[str] = None  # "TOP" or "BOTTOM"
+flagged_at: Optional[str] = None          # ISO timestamp when flagged
+regime_cooldown_until: float = 0.0        # Unix timestamp — no re-flag before this
+```
+
+**Detection (`_check_coin_regime_conflict`):**
+- Runs after each candle tick for every active coin
+- Checks engine's `top_detected` (LONG global → wants SHORT) and `conviction_fired` (SHORT global → wants LONG)
+- Skips already-flagged, paused, and cooldown-active coins
+- On flag: sets fields, sends 🚩 Telegram alert with flagged coin count, saves state
+
+**Buy gate (in `_execute_action`):**
+```python
+if cs.regime_flagged:
+    logger.info(f"BUY blocked for {sym} — regime conflict ({cs.coin_regime_signal})")
+    cs.engine.reject_action(action)
+    return
+```
+
+**Auto-clear on TP fill (`_clear_regime_flag_on_tp`):**
+- Called in `_handle_tp_fill()` after position closes
+- Checks `eng.long_coins == 0 and eng.short_coins == 0`
+- Clears flag, sends ✅ Telegram notification
+
+**Auto-clear on global regime flip (`_clear_matching_regime_flags`):**
+- TOP flag + new direction SHORT = match → unflag
+- BOTTOM flag + new direction LONG = match → unflag
+- Sends ✅ Telegram notification per cleared coin
+
+**RESUME command updated:**
+- `RESUME <COIN>` now clears both `paused` and `regime_flagged`
+- If coin was regime-flagged, sets 24h cooldown (`regime_cooldown_until`)
+- Telegram confirmation includes cooldown status
+
+**Rebalance exclusion:** Updated to filter both paused AND regime-flagged coins from scanner data.
+
+**Dashboard:**
+- Position card: "🚩 REGIME CONFLICT" red badge (alongside existing PAUSED badge)
+- Opportunity table: flagged coins show "🚩 FLAGGED" badge, dimmed rows (50% opacity, red tint), sorted to bottom
+- Phase column shows engine's actual phase (e.g., "Short DCA" in red) reflecting the conflict
+
 ---
 
 ## Interaction Between Upgrades 2 & 3
@@ -772,18 +841,18 @@ if cs.paused or cs.regime_flagged:
 
 ## Implementation Order
 
-**Recommended sequence:**
+**All upgrades deployed in sequence on 2026-03-24:**
 
-1. **Upgrade 0 (Adaptive Tiers & Pool Split)** — **PREREQUISITE for capital deposit.** Lowest complexity (two lookup tables + hysteresis + parameterized split). Must land before $1K deposit so the bot runs 3 coins from the start.
-2. **Upgrade 1 (Dynamic Capital)** — Needed immediately after Upgrade 0 so deposits are auto-detected and capital is adjusted without restart. The `resize()` method must call `get_tier_split()` to recalculate pools on deposit.
-3. **Upgrade 2 (Per-Coin Pause)** — Useful once 3+ coins are trading. Establishes per-coin gating pattern for Upgrade 3.
-4. **Upgrade 3 (Per-Coin Regime Flagging)** — Highest complexity, builds on the per-coin pause pattern.
+1. ✅ **Upgrade 0 (Adaptive Tiers & Pool Split)** — Deployed. 26/26 tests pass (`test_tier_upgrade0.py`).
+2. ✅ **Upgrade 1 (Dynamic Capital)** — Deployed. 19/19 tests pass (`test_upgrade1_capital.py`).
+3. ✅ **Upgrade 2 (Per-Coin Pause)** — Deployed. Tested manually via Telegram commands.
+4. ✅ **Upgrade 3 (Per-Coin Regime Flagging)** — Deployed. All 45 pre-existing tests pass (no regressions).
 
-**Estimated effort:**
-- Upgrade 0: ~1 hour (two tables, one static method, parameterize existing split)
-- Upgrade 1: ~2-3 hours (porting + Router resize with tier-aware split)
-- Upgrade 2: ~2-3 hours
-- Upgrade 3: ~4-5 hours (new detection logic + auto-flag/unflag + dashboard)
+**Actual effort (single session):**
+- Upgrade 0: ~1 hour
+- Upgrade 1: ~2 hours
+- Upgrade 2: ~1.5 hours
+- Upgrade 3: ~1.5 hours (leveraged Upgrade 2 pattern heavily)
 
 **Critical path for capital deployment:**
 ```
@@ -813,10 +882,6 @@ Upgrade 0 (tiers) → Upgrade 1 (deposits) → Deposit $1K → Bot runs 3 coins 
 
    > **Recommendation:** Hold paused capital in reserve until unpaused. Redistributing adds complexity and churn. The 25% reserve pool already provides buffer for new opportunities.
 
-4. **Regime flag persistence:** If a flagged coin's TP fills and it has no position, should it stay flagged (waiting for global flip) or auto-clear since there's nothing to protect?
+4. ~~**Regime flag persistence:**~~ **RESOLVED — Q5: A.** Auto-clear flag when TP fills and no position remains. Implemented in `_clear_regime_flag_on_tp()`.
 
-   > **Recommendation:** Auto-clear the flag when the TP fills and no position remains. The flag exists to protect open positions — there's nothing to protect if the position is gone.
-
-5. **Manual RESUME overriding regime flag:** If Brett manually resumes a regime-flagged coin, should it be immune to re-flagging for some cooldown period, or can it re-flag immediately on the next candle?
-
-   > **Recommendation:** 24h cooldown after manual RESUME before the coin can be re-flagged. If Brett overrode the flag, there's a reason — respect that intent for at least a day.
+5. ~~**Manual RESUME overriding regime flag:**~~ **RESOLVED — Q6: A.** 24h cooldown after manual RESUME before re-flagging. Implemented via `regime_cooldown_until` field (Unix timestamp).

@@ -1079,9 +1079,20 @@ run_v14_portfolio_live_aster.py
     │    ├─ Tiered alerts → Telegram
     │    └─ APPROVE / DENY → direction change
     │
+    ├─ Capital Ledger                  (dynamic capital tracking)
+    │    ├─ Auto-detect deposits/withdrawals (every 65s sync)
+    │    ├─ capital_ledger.json        (persistent transaction log)
+    │    └─ resize() → tier + split recalculation
+    │
+    ├─ Per-Coin Governance             (per-coin trading controls)
+    │    ├─ Pause (manual)             (PAUSE/RESUME <COIN>)
+    │    └─ Regime Flag (auto)         (signal conflict detection)
+    │
     ├─ Telegram Command Interface      (governance layer)
     │    ├─ APPROVE / DENY             (regime change)
-    │    ├─ PAUSE / RESUME             (trading freeze)
+    │    ├─ PAUSE / RESUME             (global trading freeze)
+    │    ├─ PAUSE / RESUME <COIN>      (per-coin pause + regime flag clear)
+    │    ├─ DEPOSIT / WITHDRAW / CAPITAL (capital management)
     │    └─ CLOSE <COIN> / CLOSE ALL   (manual position override)
     │
     ├─ AsterPerpClient                 (Aster Perps via CCXT)
@@ -1142,6 +1153,40 @@ When a position closes (TP hit):
 2. Run scanner to refresh rankings
 3. Evaluate next best qualifying coin
 4. Deploy to new position
+
+### 7.2.1 Dynamic Capital Management (added 2026-03-24, Upgrade 1)
+
+Supports runtime deposits and withdrawals without bot restart.
+
+**Capital Ledger (`capital_ledger.json`):**
+- Tracks seed capital, all deposits/withdrawals with timestamps and reasons
+- Loaded on startup — if ledger exists, overrides `--capital` CLI arg
+- Written atomically on every capital change
+- Location: `trading/spot/live/v14pm/capital_ledger.json`
+
+**Auto-detection (`_detect_capital_change`):**
+- Runs every 65s sync cycle (piggybacks on `_sync_positions_from_exchange`)
+- Compares exchange total balance against tracked capital + invested
+- Threshold: max($5, 2% of tracked capital) — catches real deposits, ignores PnL fluctuation
+- On detection: records to ledger, adjusts `tracked_capital`, calls `router.resize()`, sends Telegram alert
+- Alert format: `📥 Deposit detected: +$X` or `📤 Withdrawal detected: -$X`
+
+**Router `resize(new_equity)`:**
+- Recalculates tier coin cap and pool split via hysteresis (same as rebalance)
+- Updates active/reserve pool totals and cash amounts
+- May trigger tier changes (e.g., deposit $2K pushes from 3-coin to 4-coin tier)
+
+**Telegram commands:**
+- `DEPOSIT <amt>` — Manual deposit recording (for when auto-detection misses or hasn't caught up)
+- `WITHDRAW <amt>` — Manual withdrawal recording (safety check: refuses if amount > free balance)
+- `CAPITAL` — Shows: seed, tracked, exchange balance, invested, free cash, deposits/withdrawals total
+
+**CLI flags:**
+- `--deposit <amt>` — Record deposit on startup
+- `--withdraw <amt>` — Record withdrawal on startup
+- `--ledger` — Print ledger summary and exit
+
+**State persistence:** `tracked_capital` field in `state.json`, full ledger in `capital_ledger.json`.
 
 ### 7.3 Daily Rebalance
 
@@ -1239,7 +1284,7 @@ Phase 3: DEPLOY (automatic)
 
 An emergency safety valve — freezes all trading without initiating a direction change.
 
-**PAUSE** (via Telegram: `PAUSE`):
+**Global PAUSE** (via Telegram: `PAUSE`):
 - Immediately freezes all grids — no new positions, no new DCA layers
 - Existing TP limit orders **stay active** on exchange (let winners close)
 - Bot keeps polling — monitors TP fills, updates dashboard, sends status
@@ -1248,11 +1293,21 @@ An emergency safety valve — freezes all trading without initiating a direction
 - Status shows: `⏸️ PAUSED — trading frozen by operator`
 - **Persisted to `state.json`** — survives bot restart
 
-**RESUME** (via Telegram: `RESUME`):
+**Global RESUME** (via Telegram: `RESUME`):
 - Unfreezes grids — new entries and DCA layers resume
 - Existing positions continue from where they were
+- **Does NOT clear per-coin pauses** — individually paused coins stay paused
 - Status returns to normal operations
 - Telegram confirms: "Trading resumed — grids active"
+
+**Per-Coin PAUSE / RESUME** (added 2026-03-24, Upgrade 2):
+- `PAUSE <COIN>` — Pause a specific coin. Blocks new orders for that coin only.
+- `RESUME <COIN>` — Resume a specific coin. Also clears regime flag if present (see §7.7.1).
+- Per-coin pauses survive global RESUME (they are independent).
+- Paused coin's capital held in reserve — not redistributed to other coins.
+- Paused coins excluded from rebalance candidate list.
+- TP limit orders stay active on exchange — positions can still close.
+- Persisted in `state.json` per coin (`paused: true/false`).
 
 **Difference from wind-down:** PAUSE has no destination — it's "stop until I say
 otherwise." RESUME returns to the pre-pause state. Wind-down has a purpose
@@ -1264,7 +1319,73 @@ Normal States:      LONG_DCA ←→ ROUTER ←→ SHORT_DCA
 Override:           PAUSED      PAUSED     PAUSED
                        ↕           ↕          ↕
 Direction Change:  WIND_DOWN → (all closed) → flip
+
+Per-coin:   ACTIVE ←→ PAUSED (manual)
+                ↕
+            REGIME FLAGGED (automatic, see §7.7.1)
 ```
+
+#### 7.7.1 Per-Coin Regime Flagging (added 2026-03-24, Upgrade 3)
+
+Automatic per-coin protection when an individual coin's engine signals conflict
+with the portfolio's global direction. Extends the per-coin pause pattern with
+automatic detection and lifecycle management.
+
+**Detection (`_check_coin_regime_conflict`):**
+After each candle tick, check if the coin's engine fired a signal that conflicts
+with the global direction:
+- Global is LONG + engine fires `top_detected` → flag coin (signal: "TOP")
+- Global is SHORT + engine fires `conviction_fired` → flag coin (signal: "BOTTOM")
+- Skips already-flagged, paused, and cooldown-active coins
+
+**CoinState fields:**
+```python
+regime_flagged: bool = False              # True when signals conflict with global direction
+coin_regime_signal: Optional[str] = None  # "TOP" or "BOTTOM"
+flagged_at: Optional[str] = None          # ISO timestamp when flagged
+regime_cooldown_until: float = 0.0        # Unix timestamp — no re-flag before this
+```
+
+**Behavior when regime-flagged:**
+
+| Behavior | Effect |
+|----------|--------|
+| New orders | ❌ Blocked (buy gate rejects with `reject_action()`) |
+| TP fills | ✅ Active — exchange limit orders continue |
+| Rebalance candidate | ❌ Excluded from scanner data |
+| Signal scanning | ✅ Continues — engine keeps evaluating candles |
+| Global regime count | ✅ Flagged coins count toward aggregate signal |
+| Dashboard | 🚩 REGIME CONFLICT badge (red), dimmed in opportunity table |
+
+**Auto-clear conditions:**
+1. **TP fill with no remaining position:** Flag cleared automatically when TP fills
+   and `eng.long_coins == 0 and eng.short_coins == 0`. Nothing to protect = flag cleared.
+   Coin returns to opportunity list. (`_clear_regime_flag_on_tp`)
+2. **Global regime flip:** When global direction changes to match the coin's signal
+   (e.g., global flips to SHORT and coin was flagged TOP), flag auto-clears.
+   (`_clear_matching_regime_flags`)
+
+**Manual override:**
+`RESUME <COIN>` clears both pause AND regime flag. If a regime flag was active,
+a **24-hour cooldown** is applied (`regime_cooldown_until`). During cooldown,
+the coin cannot be auto-re-flagged — respects operator intent.
+
+**Telegram alerts:**
+- 🚩 On flag: coin name, signal direction, global direction, flagged coin count
+- ✅ On auto-clear (TP fill): coin returned to opportunity list
+- ✅ On auto-clear (regime flip): global direction matches
+- ▶️ On manual RESUME: cooldown status included
+
+**Interaction with per-coin pause:**
+
+| Behavior | Paused (manual) | Regime Flagged (auto) |
+|----------|:---------------:|:---------------------:|
+| New orders blocked | ✅ | ✅ |
+| TPs active | ✅ | ✅ |
+| Excluded from rebalance | ✅ | ✅ |
+| Cleared by | `RESUME <COIN>` | TP fill / regime flip / `RESUME <COIN>` |
+| Counts toward regime signal | ❌ | ✅ |
+| 24h cooldown after manual clear | ❌ | ✅ |
 
 ### 7.8 Telegram Command Interface
 
@@ -1275,9 +1396,14 @@ The bot listens for and processes these Telegram commands:
 | `APPROVE` | Regime change alert active | Initiate wind-down → direction flip |
 | `DENY` | Regime change alert active | Log signal, continue current direction |
 | `PAUSE` | Any time | Freeze all grids (governance override) |
-| `RESUME` | Bot is paused | Unfreeze grids, resume normal trading |
+| `RESUME` | Bot is paused | Unfreeze grids, resume normal trading (preserves per-coin pauses) |
+| `PAUSE <COIN>` | Any time | Pause specific coin (Upgrade 2) |
+| `RESUME <COIN>` | Coin is paused/flagged | Resume specific coin; clears regime flag with 24h cooldown (Upgrades 2+3) |
 | `CLOSE <COIN>` | Wind-down or paused | Force-close specific coin at market |
 | `CLOSE ALL` | Wind-down or paused | Force-close all remaining positions |
+| `DEPOSIT <amt>` | Any time | Record manual deposit, resize pools (Upgrade 1) |
+| `WITHDRAW <amt>` | Any time | Record manual withdrawal, resize pools (Upgrade 1) |
+| `CAPITAL` | Any time | Show capital breakdown: seed, current, exchange balance, invested (Upgrade 1) |
 
 **Implementation:** Bot polls for Telegram messages from authorized chat ID.
 Commands are case-insensitive. Unknown commands are ignored.
@@ -1296,9 +1422,13 @@ At 1x leverage with DCA hold times of hours to days, funding is typically neglig
 
 ### 7.10 Current Bot Status (2026-03-24)
 
-- **V14PM Live (Aster Perps):** ✅ **LIVE as of 2026-03-19.** ~$318 real USDT on Aster Perps.
-  **Upgrade 0 deployed 2026-03-24:** Adaptive tiers (3 coin slots at current equity, 90/10 split)
-  with 5% hysteresis. Scanner selected GRASS/USDT as active coin.
+- **V14PM Live (Aster Perps):** ✅ **LIVE as of 2026-03-19.** ~$340 real USDT on Aster Perps.
+  **All four upgrades deployed 2026-03-24:**
+  - Upgrade 0: Adaptive tiers (3 coin slots at current equity, 90/10 split) with 5% hysteresis
+  - Upgrade 1: Dynamic capital management (auto-detect deposits/withdrawals, capital ledger)
+  - Upgrade 2: Per-coin pause (PAUSE/RESUME per coin, rebalance exclusion)
+  - Upgrade 3: Per-coin regime flagging (auto-flag signal conflicts, 24h cooldown)
+  Active coins: GRASS/USDT, TAO/USDT, HYPE/USDT.
   Exchange-as-truth architecture (2026-03-21). Resting limit orders, Telegram commands operational.
 - **V14 Live (Aster Spot, legacy):** ❌ **RETIRED 2026-03-19** — replaced by V14PM Live.
   Position closed, funds transferred to Perps. Scheduled task `V14LiveAster` still exists
@@ -1927,6 +2057,40 @@ active exchange limit orders via its internal TP detection.
 universe ranking, meaning poor-performing coins at the tail could appear as summary picks.
 
 **Fix:** Summary picks now derived from `scored_rankings[:5]` (top 5 only). See §4.1.
+
+### 17.7 2026-03-24: False "Bot Frozen" Alerts — PowerShell Timezone Parsing Bug
+
+**Component:** Heartbeat monitoring script (OpenClaw agent)
+**Severity:** Medium (unnecessary bot restarts, false critical alerts)
+**Status:** ✅ Root cause identified and fixed
+
+**What happened:** OpenClaw heartbeat checks reported V14PM Live as "frozen" with
+~25,200 seconds (7 hours) of staleness — matching the PDT/UTC offset exactly.
+The bot was restarted 6+ times in 24 hours due to false alerts. All restarts were
+unnecessary — the bot was running normally the entire time.
+
+**Root cause:** PowerShell's `[datetime]::Parse()` silently converts ISO timestamps
+with `+00:00` offset to local time (Kind=Local). When subtracted from `[datetime]::UtcNow`
+(Kind=Utc), the local-time value is treated as-is, creating a phantom 7-hour offset
+matching the PDT timezone.
+
+```powershell
+# BAD: [datetime]::Parse("2026-03-25T04:03:53+00:00") → 03/24 21:03 (Local, Kind=Local)
+# Subtracting UtcNow (04:04 UTC) from Local (21:03 "UTC") = 25,200 seconds
+
+# GOOD: [datetimeoffset]::Parse("2026-03-25T04:03:53+00:00").UtcDateTime → 04:03 (UTC)
+# Subtracting UtcNow (04:04 UTC) from UTC (04:03 UTC) = 42 seconds
+```
+
+**Fix:** Use `[datetimeoffset]::Parse($ts).UtcDateTime` instead of `[datetime]::Parse($ts)`
+when comparing ISO timestamps against `[datetime]::UtcNow`.
+
+**Impact:** No data loss or financial impact. Exchange-as-truth architecture ensured
+all positions and TP orders were preserved across unnecessary restarts. Upgrades 0–3
+deployed during the same session were unaffected.
+
+**Lesson:** Never use `[datetime]::Parse()` for UTC timestamp comparison in PowerShell.
+Always use `[datetimeoffset]` for timezone-aware parsing.
 
 ---
 

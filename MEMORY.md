@@ -19,23 +19,22 @@ _Curated essentials. For details, see the structured files below._
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
 ## AIT - Current State (2026-03-24)
-- **V14PM Live (Aster)**: GRASS/USDT, LONG_DCA. PID 2908. equity=$317.50.
-  - **Upgrade 0 LIVE (2026-03-24)**: Adaptive tiers + pool split + 5% hysteresis.
-  - 3 coin slots (was 1), 90/10 split (was 75/25). Ready for $1K deposit.
+- **V14PM Live (Aster)**: 3 coins (GRASS, TAO, HYPE), LONG_DCA. equity=$329. 90/10 split, 3-coin tier.
+  - **All 4 upgrades LIVE (2026-03-24)**: Tiers, Dynamic Capital, Per-Coin Pause, Per-Coin Regime Flagging.
   - Exchange-as-truth architecture (2026-03-21).
+  - Telegram commands: PAUSE/RESUME (global + per-coin), DEPOSIT/WITHDRAW/CAPITAL, CLOSE, APPROVE/DENY.
 - **V14PM Paper (MVP)**: $50K capital, 5 coin slots (concentration pivot)
 - **V14 Paper**: +583.8% (~$68.4K equity)
 - **V14-ETF**: RETIRED (2026-03-17)
 - **3 bots running** on Windows (V14 Paper, V14PM Paper, V14PM Live). Cloud migration pending.
-- **Upgrade 0 (2026-03-24)**: New tier tables (3→4→5→10 coins), adaptive pool split (90/10→80/20→75/25), 5% hysteresis on both. Tier indices persisted in state.json. 26/26 tests pass.
-- **Exchange-as-truth refactor (2026-03-21)**: Removed LIVE GUARD, rollbacks, reconciliation. Engine is signal-only; exchange API is single source of truth for positions. ~280 lines removed.
-- **Gap analysis (2026-03-21)**: 13 gaps found, all P1/P2 resolved. Key: orphaned TP cleanup, CapitalRouter 75/25 (now superseded by adaptive split), SHORT rejection, engine capital reset on BUY.
-- **Ghost process lesson (2026-03-21)**: Always `Get-Process python` first — zombie PID from March 19 wasted 2+ hours.
-- **Next upgrades**: Upgrade 1 (Dynamic Capital / Deposits) → Upgrade 2 (Per-Coin Pause) → Upgrade 3 (Regime Flagging). Scope doc: `V14PM_UPGRADE_SCOPE.md`.
-- Architecture doc: `V14PM_SYSTEM_ARCHITECTURE.md`
+- **Upgrades deployed 2026-03-24**: 0 (Adaptive tiers, 26 tests), 1 (Dynamic capital, 19 tests), 2 (Per-coin pause), 3 (Per-coin regime flagging). All passing, 45 total tests.
+- **Exchange-as-truth refactor (2026-03-21)**: Engine is signal-only; exchange API is single source of truth.
+- **PowerShell timezone bug (2026-03-24)**: `[datetime]::Parse()` converts +00:00 to local time silently. Use `[datetimeoffset]::Parse().UtcDateTime`. Caused 6 false "frozen" alerts. Documented in incident log §17.7.
+- **Ghost process lesson (2026-03-21)**: Always `Get-Process python` first.
+- Architecture doc: `V14PM_SYSTEM_ARCHITECTURE.md` | Scope doc: `V14PM_UPGRADE_SCOPE.md`
 
 ## Active Projects
-- **AIT**: Primary. V14PM is the MVP. Exchange-as-truth architecture LIVE (2026-03-21). All P0/P1 audit items resolved by architecture refactor. Next: cloud migration, WebSocket fills, DB as position truth.
+- **AIT**: Primary. V14PM is the MVP. All 4 upgrades deployed 2026-03-24. Next: cloud migration, WebSocket fills, DB as position truth, $1K deposit to Aster.
 - **Basis**: Docs at 7.5-8/10 (2026-03-21). 152.3KB "Complete Agent Guide" in `projects/basis/basis-docs/COMPLETE.md` (17 sections + INDEX). hybridMultiplier=100=Stable+ confirmed from Solidity. 5 test tokens on BSC. Contract-enforced limits documented. 25% airdrop confirmed (5% leaderboard top 50). Points spec complete. Tweet verification + bug reporting live. Action test: agent designed 4-module bot, "would build tonight." Next: Alex return schemas (7→8+), points backend build, clear TBD placeholders, prediction market testing.
 - **TrustedBusinessReviews.com**: WordPress → static HTML. Malware cleanup.
 - **ShadowQuery**: Deferred.

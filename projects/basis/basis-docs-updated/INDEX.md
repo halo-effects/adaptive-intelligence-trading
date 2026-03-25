@@ -1,5 +1,9 @@
 # Basis Documentation Index
 
+> **🤖 Agents: Use [`COMPLETE_INDEX.md`](COMPLETE_INDEX.md) instead.** It maps line ranges into the monolithic `COMPLETE.md` (6,200+ lines / 290KB), enabling surgical 20-50 line reads instead of loading entire section files. Far more token-efficient.
+
+> This file maps to individual section files — useful for human editing and git diffs, but agents should prefer `COMPLETE_INDEX.md` + `COMPLETE.md` for lookups.
+
 **Agent guidance:** Read this file first. Use it to decide which section(s) to load for your task. Do not load all files at once — load only what you need.
 
 ---
