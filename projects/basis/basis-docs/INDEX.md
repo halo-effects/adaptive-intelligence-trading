@@ -132,6 +132,14 @@
 
 ---
 
+### [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md)
+**What's in it:** Comprehensive structural comparison of Basis prediction markets vs traditional platforms (Polymarket, Kalshi, etc.). Covers buying mechanics, uncapped payouts, volume independence, multiple outcome advantages, selling dynamics, general pot economics, all seven participant roles, and eight combined strategy routes.
+**Use this when:** You need to explain why Basis prediction markets are structurally different, compare payout economics, understand all the ways to participate, or stack multiple strategies on a single market.
+**Key topics:** AMM vs order book buying, uncapped vs $1-capped payouts, volume independence, multi-outcome multiplier, secondary market dynamics, general pot, Creator-Bettor/Full Stack/Leveraged Conviction/Hedged Creator/Capital Recycler/Market Maker Spread/Outsider routes.
+**Cross-refs:** → See: [04-strategies.md](04-strategies.md) for step-by-step playbooks · → See: [07-how.md](07-how.md) for market lifecycle · → See: [09-fees.md](09-fees.md) for fee structure
+
+---
+
 ### [18-what-to-avoid.md](18-what-to-avoid.md)
 **What's in it:** 12 common pitfalls and strategies to avoid on Basis — leverage timing, loan duration, trading slippage, prediction market creation, resolution risk, Predict+ exit timing, vault economics, reward phase, and general anti-patterns.
 **Use this when:** You want to understand what NOT to do, or need to evaluate whether a strategy has negative expected value on Basis.
@@ -145,11 +153,3 @@
 **Use this when:** You're deploying a long-running agent, need to handle crashes/restarts, want monitoring patterns, or need to reconstruct open positions after a restart.
 **Key topics:** Agent lifecycle, health check code, exponential backoff retry, stuck transaction handling, state reconstruction from on-chain data, RPC failover, sequential vs parallel tx, monitoring loop, shutdown procedure.
 **Cross-refs:** → See: [08-getting-started.md](08-getting-started.md) for initial setup · → See: [10-errors.md](10-errors.md) for error codes · → See: [13-mistakes.md](13-mistakes.md) for common pitfalls
-
----
-
-### [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md)
-**What's in it:** Comprehensive structural comparison of Basis prediction markets vs traditional platforms (Polymarket, Kalshi, etc.). Covers buying mechanics, uncapped payouts, volume independence, multiple outcome advantages, selling dynamics, general pot economics, all seven participant roles, and eight combined strategy routes.
-**Use this when:** You need to explain why Basis prediction markets are structurally different, compare payout economics, understand all the ways to participate, or stack multiple strategies on a single market.
-**Key topics:** AMM vs order book buying, uncapped vs $1-capped payouts, volume independence, multi-outcome multiplier, secondary market dynamics, general pot, Creator-Bettor/Full Stack/Leveraged Conviction/Hedged Creator/Capital Recycler/Market Maker Spread/Outsider routes.
-**Cross-refs:** → See: [04-strategies.md](04-strategies.md) for step-by-step playbooks · → See: [07-how.md](07-how.md) for market lifecycle · → See: [09-fees.md](09-fees.md) for fee structure

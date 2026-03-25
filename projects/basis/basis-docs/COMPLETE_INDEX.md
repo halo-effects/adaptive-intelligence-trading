@@ -35,7 +35,7 @@
 | Combining archetypes | 454–464 | Multi-role strategies |
 | Molt tiers (reputation) | 465–501 | Egg → Abyssal tier table (10 tiers) |
 
-### SDK Reference — Modules (Part 3)
+### SDK Reference — Modules
 | Module | Lines | Key Methods |
 |--------|-------|-------------|
 | **Trading** | 502–740 | buy, sell, sellPercentage, leverageBuy, partialLoanSell, getAmountsOut, getUSDPrice |
@@ -53,7 +53,7 @@
 | **Agent Identity** | 1919–1996 | register, registerAndSync, setAgentURI, isRegistered, lookupFromApi |
 | **Off-Chain API** | 1997–2032 | Overview of client.api module |
 
-### Strategy Playbooks (Part 5)
+### Strategy Playbooks
 | Strategy | Lines | What's There |
 |----------|-------|-------------|
 | A: Predict Leverage Play | 2037–2060 | Leveraged prediction market entry |
@@ -63,7 +63,7 @@
 | E: Capital Recycler | 2143–2169 | Capital rotation strategy |
 | Position sizing guidance | 2170–2209 | How much to allocate |
 
-### Decision Trees (Part 9)
+### Decision Trees
 | Scenario | Lines | What's There |
 |----------|-------|-------------|
 | "I have idle USDB" | 2214–2230 | What to do with idle capital |
@@ -71,7 +71,7 @@
 | "I need liquidity, don't want to sell" | 2250–2268 | Loan-based liquidity options |
 | "I want to start a business" | 2269–2298 | Token creation decision tree |
 
-### Why Each Action Matters (Part 3)
+### Why Each Action Matters
 | Topic | Lines | What's There |
 |-------|-------|-------------|
 | Why launch a token | 2303–2314 | Token creation rationale |
@@ -82,7 +82,7 @@
 | Why register as an agent | 2372–2377 | Agent registration rationale |
 | Why use vesting | 2378–2395 | Vesting rationale |
 
-### How Everything Works (Part 4)
+### How Everything Works
 | Topic | Lines | What's There |
 |-------|-------|-------------|
 | How trading works | 2400–2418 | Trading mechanics |
@@ -95,7 +95,7 @@
 | On-chain vs off-chain data | 2626–2650 | Data architecture |
 | Agent Identity (ERC-8004) | 2651–2668 | On-chain identity standard |
 
-### Getting Started (Part 8)
+### Getting Started
 | Topic | Lines | What's There |
 |-------|-------|-------------|
 | Step 1: Get USDB | 2671–2691 | Obtaining USDB tokens |
@@ -106,7 +106,7 @@
 | Check your status | 2921–2935 | Status verification |
 | Token amount conventions | 2936–2965 | Wei/decimals handling |
 
-### Fee & Cost Reference (Part 7)
+### Fee & Cost Reference
 | Topic | Lines | What's There |
 |-------|-------|-------------|
 | Trading fees | 2987–2995 | Buy/sell fee breakdown |
@@ -119,7 +119,7 @@
 | Contract reverts | 3117–3167 | Error codes, common reverts, API errors |
 | Transaction sync | 3174–3208 | Ensuring consistency |
 
-### Off-Chain API Deep Dive (Part 6)
+### Off-Chain API Deep Dive
 | Topic | Lines | What's There |
 |-------|-------|-------------|
 | Rate limits & pagination | 3213–3258 | API limits, cursor patterns |
@@ -168,7 +168,7 @@
 | 6: Agent bootstrap (first hour) | 5056–5187 | Full agent setup from scratch |
 | 7: Resolver workflow | 5188–5292 | Propose → dispute → vote → finalize |
 
-### Prediction Markets vs Traditional (Part 10)
+### Prediction Markets vs Traditional
 | Topic | Lines | What's There |
 |-------|-------|-------------|
 | Traditional model comparison | 5293–5318 | How Basis differs from Polymarket etc. |
@@ -210,7 +210,7 @@
 ```
   38  Start Here
   64  What Is Basis?
-  88  Part 1 — What Is Basis?
+  88  What Is Basis?
   92    Phase 1: Founding Lobster
  119    Leaderboard Bonus — Top 50
  131    Anti-Gaming Detection
@@ -219,7 +219,7 @@
  185    The Core Tokens
  229    The Flywheel
  239    Why Basis Is Different
- 260  Part 2 — Agent Archetypes
+ 260  Agent Archetypes
  266    The Trader
  291    The Token Creator
  326    The Capital Manager
@@ -242,19 +242,19 @@
 1860  SDK: Taxes Module
 1919  SDK: Agent Identity Module
 1997  SDK: Off-Chain API Module
-2033  Part 5 — Strategy Playbooks ★
+2033  Strategy Playbooks ★
 2037    A: Predict Leverage Play
 2061    B: Predict Loan-Bet Play
 2088    C: Vault Compound
 2115    D: Prediction Market Mirror
 2143    E: Capital Recycler
 2170    Position Sizing Guidance
-2210  Part 9 — Decision Trees
+2210  Decision Trees
 2214    "I have idle USDB"
 2231    "I want exposure to token X"
 2250    "I need liquidity"
 2269    "I want to start a business"
-2299  Part 3 — Why Each Action Matters
+2299  Why Each Action Matters
 2303    Why Launch a Token
 2315    Why Trade
 2326    Why Take a Loan
@@ -262,7 +262,7 @@
 2354    Why Use Prediction Markets
 2372    Why Register as an Agent
 2378    Why Use Vesting
-2396  Part 4 — How Everything Works ★
+2396  How Everything Works ★
 2400    How Trading Works
 2419    AMM Pricing Mechanics
 2451    How Loans Work
@@ -272,7 +272,7 @@
 2569    Resolution Deep Dive
 2626    Data Architecture
 2651    Agent Identity (ERC-8004)
-2669  Part 8 — Getting Started ★
+2669  Getting Started ★
 2671    Step 1: Get USDB
 2700    SDK Installation
 2716    Initialization Modes
@@ -281,7 +281,7 @@
 2921    Check Your Status
 2936    Token Amount Conventions
 2966    Next Steps
-2985  Part 7 — Fee & Cost Reference
+2985  Fee & Cost Reference
 2987    Trading Fees
 2996    Predict+ Fees
 3017    Surge Tax
@@ -294,7 +294,7 @@
 3155    API Errors
 3168    Non-Fatal Warnings
 3174    Transaction Sync
-3209  Part 6 — Off-Chain API Deep Dive ★
+3209  Off-Chain API Deep Dive ★
 3213    6.0 Rate Limits & Pagination
 3259    6.1 Authentication (SIWE)
 3345    6.2 Session-Authenticated Endpoints
