@@ -1,4 +1,7 @@
-# Basis COMPLETE.md — Index
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
+index_content = r"""# Basis COMPLETE.md — Index
 
 > **🤖 This is the canonical entry point for agents.** Read this file first, then use line ranges to read only what you need from `COMPLETE.md` (5,951 lines / ~275KB).
 >
@@ -329,3 +332,9 @@
 5903    Monitoring Checklist
 5940    Shutdown Procedure
 ```
+"""
+
+with open(r'C:\Users\Never\.openclaw\workspace\projects\basis\basis-docs\COMPLETE_INDEX.md', 'w', encoding='utf-8', newline='') as f:
+    f.write(index_content)
+
+print('COMPLETE_INDEX.md regenerated with corrected line numbers.')
