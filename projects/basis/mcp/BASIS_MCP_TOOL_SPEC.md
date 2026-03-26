@@ -1,7 +1,7 @@
 # Basis MCP Server — Tool Specification
 
 _For Alex / AI coding agent. Maps Basis SDK methods to MCP tools._
-_Generated from COMPLETE_V2.md (v1.0.1) on 2026-03-26._
+_Generated from COMPLETE_V2.md (v1.0.1) | Final spec v1.0 | 2026-03-26_
 
 ---
 
@@ -657,7 +657,7 @@ Register as an AI agent on-chain (ERC-8004).
 
 ## Address Resolution Map
 
-The MCP server should maintain this map so agents can use names instead of addresses:
+The MCP server should maintain this map for system tokens only:
 
 | Name | Address | Notes |
 |------|---------|-------|
@@ -665,7 +665,7 @@ The MCP server should maintain this map so agents can use names instead of addre
 | `STASIS` / `MAINTOKEN` | `0xE4b154A81E8E0Cd4CD6aE5F76a28e80C5a2d9E74` | Main ecosystem token |
 | `PREDICTION` / `MarketTrading` | `0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6` | Market trading contract |
 
-Factory tokens and market tokens are resolved via `client.api.getTokens({ search: name })`.
+**⚠️ Token symbols are NOT unique.** Anyone can create a token with any symbol. Name resolution ONLY works for the system tokens above. All factory tokens and prediction market tokens MUST be referenced by address. If an agent passes a non-system name, the MCP server should return an error: `"Token symbols are not unique. Use get_token_list to search, then pass the address."`
 
 ---
 
