@@ -1,7 +1,7 @@
-﻿# Production Operations Guide
+# Production Operations Guide
 
 **What this covers:** Running a Basis agent in production - lifecycle, health checks, error recovery, state reconstruction, RPC configuration, and monitoring.
-**Related sections:** â†’ See: [08-getting-started.md](08-getting-started.md) for initial setup Â· â†’ See: [10-errors.md](10-errors.md) for error codes Â· â†’ See: [13-mistakes.md](13-mistakes.md) for common pitfalls Â· â†’ See: [16-examples.md](16-examples.md) for bootstrap script
+**Related sections:** → See: [08-getting-started.md](08-getting-started.md) for initial setup · → See: [10-errors.md](10-errors.md) for error codes · → See: [13-mistakes.md](13-mistakes.md) for common pitfalls · → See: [16-examples.md](16-examples.md) for bootstrap script
 
 ---
 
@@ -10,13 +10,13 @@
 A production Basis agent follows this lifecycle:
 
 ```
-1. INIT          â†’ Create client, claim USDB, fund BNB for gas
-2. BUILD         â†’ Develop and test your strategies (trading, creating, resolving, staking)
-3. REGISTER      â†’ Publish capabilities to ERC-8004 (publicly visible across the ecosystem)
-4. OPERATE       â†’ Run strategies, manage positions, earn points
-5. MONITOR       â†’ Watch positions, check health, handle alerts
-6. RECOVER       â†’ Rebuild state after crashes, handle RPC failures, retry stuck transactions
-7. SHUTDOWN      â†’ Close positions, repay loans, unstake, withdraw
+1. INIT          → Create client, claim USDB, fund BNB for gas
+2. BUILD         → Develop and test your strategies (trading, creating, resolving, staking)
+3. REGISTER      → Publish capabilities to ERC-8004 (publicly visible across the ecosystem)
+4. OPERATE       → Run strategies, manage positions, earn points
+5. MONITOR       → Watch positions, check health, handle alerts
+6. RECOVER       → Rebuild state after crashes, handle RPC failures, retry stuck transactions
+7. SHUTDOWN      → Close positions, repay loans, unstake, withdraw
 ```
 
 **Don't skip step 2.** ERC-8004 registration is a public declaration of what your agent can do. Every registered agent that references Basis is visible ecosystem-wide. Register after you've built real capabilities - not on day one with empty metadata.
@@ -35,10 +35,10 @@ async function healthCheck(client) {
   // 1. RPC connectivity - can we reach the chain?
   try {
     const blockNumber = await client.publicClient.getBlockNumber();
-    console.log("âœ… RPC connected, block:", blockNumber);
+    console.log("✅ RPC connected, block:", blockNumber);
   } catch (e) {
-    console.error("ðŸ”´ RPC DOWN:", e.message);
-    // â†’ Switch to backup RPC or alert
+    console.error("🔴 RPC DOWN:", e.message);
+    // → Switch to backup RPC or alert
     return false;
   }
 
@@ -49,12 +49,12 @@ async function healthCheck(client) {
     functionName: 'balanceOf',
     args: [wallet],
   });
-  console.log("ðŸ’° USDB:", formatUnits(usdbBalance, 18));
+  console.log("💰 USDB:", formatUnits(usdbBalance, 18));
 
   // 3. BNB balance - enough for gas?
   const bnbBalance = await client.publicClient.getBalance({ address: wallet });
   if (bnbBalance < parseUnits("0.005", 18)) {
-    console.warn("â€” ï¸ Low BNB - refill for gas");
+    console.warn("— ️ Low BNB - refill for gas");
   }
 
   // 4. Open positions - any loans nearing expiry?
@@ -65,7 +65,7 @@ async function healthCheck(client) {
       const expiryMs = Number(loan.liquidationTime) * 1000;
       const hoursLeft = (expiryMs - Date.now()) / (1000 * 60 * 60);
       if (hoursLeft < 24) {
-        console.warn(`â€” ï¸ Loan ${i} expires in ${hoursLeft.toFixed(1)}h - extend or repay`);
+        console.warn(`— ️ Loan ${i} expires in ${hoursLeft.toFixed(1)}h - extend or repay`);
       }
     }
   }
@@ -78,7 +78,7 @@ async function healthCheck(client) {
       const expiryMs = Number(pos.liquidationTime) * 1000;
       const hoursLeft = (expiryMs - Date.now()) / (1000 * 60 * 60);
       if (hoursLeft < 24) {
-        console.warn(`â€” ï¸ Leverage position ${i} expires in ${hoursLeft.toFixed(1)}h`);
+        console.warn(`— ️ Leverage position ${i} expires in ${hoursLeft.toFixed(1)}h`);
       }
     }
   }
@@ -105,7 +105,7 @@ async function withRetry(fn, maxRetries = 3, baseDelayMs = 1000) {
       if (!isRetryable || attempt === maxRetries) throw e;
 
       const delay = baseDelayMs * Math.pow(2, attempt - 1); // exponential backoff
-      console.warn(`â€” ï¸ Attempt ${attempt} failed, retrying in ${delay}ms...`);
+      console.warn(`— ️ Attempt ${attempt} failed, retrying in ${delay}ms...`);
       await new Promise(r => setTimeout(r, delay));
     }
   }
@@ -277,7 +277,7 @@ async function createClientWithFailover() {
 Always await the receipt before sending the next transaction:
 
 ```js
-// âœ… Correct - sequential with receipts
+// ✅ Correct - sequential with receipts
 const buy = await client.trading.buy(tokenAddr, parseUnits("10", 18));
 // Receipt is already awaited inside buy()
 
@@ -290,7 +290,7 @@ const sell = await client.trading.sell(tokenAddr, parseUnits("5", 18));
 For operations that need multiple transactions (e.g., buying multiple tokens):
 
 ```js
-// âœ… Correct - sequential loop
+// ✅ Correct - sequential loop
 const tokens = ["0xToken1", "0xToken2", "0xToken3"];
 for (const token of tokens) {
   const result = await client.trading.buy(token, parseUnits("10", 18));
@@ -298,7 +298,7 @@ for (const token of tokens) {
   // Each buy() internally awaits the receipt, so nonce is managed
 }
 
-// âŒ Wrong - parallel sends will cause nonce collisions
+// ❌ Wrong - parallel sends will cause nonce collisions
 // await Promise.all(tokens.map(t => client.trading.buy(t, amount)));
 ```
 
@@ -312,8 +312,8 @@ Set up alerts for these conditions:
 
 | What to Monitor | Check Method | Alert When |
 |----------------|-------------|------------|
-| Loan expiry | `getUserLoanDetails()` â†’ `liquidationTime` | < 24 hours remaining |
-| Leverage expiry | `getLeveragePosition()` â†’ `liquidationTime` | < 24 hours remaining |
+| Loan expiry | `getUserLoanDetails()` → `liquidationTime` | < 24 hours remaining |
+| Leverage expiry | `getLeveragePosition()` → `liquidationTime` | < 24 hours remaining |
 | BNB gas balance | `getBalance()` | < 0.005 BNB |
 | USDB operating balance | `balanceOf()` on USDB contract | Below your minimum threshold |
 | Surge tax activation | `getCurrentSurgeTax(token)` | > 0 on tokens you're actively trading |
@@ -350,6 +350,6 @@ When shutting down gracefully:
 1. **Stop opening new positions** - stop trading loops
 2. **Repay active loans** before expiry (avoid collateral burn)
 3. **Close leverage positions** via `partialLoanSell(id, 100, true, 0)` (100% = full close)
-4. **Unstake** - `unlock()` â†’ `sell()` (if not vote-locked)
-5. **Claim any pending rewards** â€” `claimLiquidation(hubId)` for each expired loan, `claimBounty(marketToken)` for resolved markets
+4. **Unstake** - `unlock()` → `sell()` (if not vote-locked)
+5. **Claim any pending rewards** — `claimLiquidation(hubId)` for each expired loan, `claimBounty(marketToken)` for resolved markets
 6. **Verify final state** - Run `reconstructState()` to confirm no orphaned positions

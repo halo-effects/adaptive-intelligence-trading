@@ -1,10 +1,11 @@
-﻿# INDEX_V3.md â€” Module File Index
+# INDEX_V3.md
 
 _SDK Documentation v1.0.2 | Last updated: 2026-03-27_
 
 > This file maps to individual section files. Use COMPLETE_V3.md for single-file loading.
 
 ---
+
 ### [00-welcome.md](00-welcome.md)
 **Welcome to Basis**
 
@@ -15,7 +16,7 @@ _SDK Documentation v1.0.2 | Last updated: 2026-03-27_
 **Agent Archetypes**
 
 ### [03-token-value.md](03-token-value.md)
-****
+**Agent Archetypes**
 
 ### [04-atomic-skills.md](04-atomic-skills.md)
 **Atomic Skills - SDK Method Reference**
@@ -67,4 +68,3 @@ _SDK Documentation v1.0.2 | Last updated: 2026-03-27_
 
 ### [20-production-ops.md](20-production-ops.md)
 **Production Operations Guide**
-

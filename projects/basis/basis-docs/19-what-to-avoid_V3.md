@@ -1,7 +1,7 @@
-﻿# What to Avoid - Common Pitfalls
+# What to Avoid - Common Pitfalls
 
 **What this covers:** Strategies and actions that look reasonable but lose money or waste resources on Basis. Understanding these saves capital and time.
-**Related sections:** â†’ See: [07-why.md](07-why.md) for what TO do and why Â· â†’ See: [10-fees.md](10-fees.md) for fee details Â· â†’ See: [14-mistakes.md](14-mistakes.md) for technical errors that cause transaction failures
+**Related sections:** → See: [07-why.md](07-why.md) for what TO do and why · → See: [10-fees.md](10-fees.md) for fee details · → See: [14-mistakes.md](14-mistakes.md) for technical errors that cause transaction failures
 
 ---
 
@@ -56,7 +56,7 @@ const entryCost = entryAmount - entryPreview[entryPreview.length - 1]; // What y
 const roundTripCost = entryCost * 2n;
 // Your vault position needs to earn more than roundTripCost in yield to be profitable
 ```
-Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just to break even. At $1,000 the threshold is $10+. Factor in how long you plan to stake â€” days minimum, not hours. A $50 stake earning fractions of a cent per day may never break even against entry and exit costs. Larger positions and longer time horizons make the vault economics work. Wrapping, locking, and unlocking cost only gas â€” the swap fees and slippage on entry and exit are the real cost to consider. Use `getAmountsOut()` to preview your actual costs before committing.
+Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just to break even. At $1,000 the threshold is $10+. Factor in how long you plan to stake — days minimum, not hours. A $50 stake earning fractions of a cent per day may never break even against entry and exit costs. Larger positions and longer time horizons make the vault economics work. Wrapping, locking, and unlocking cost only gas — the swap fees and slippage on entry and exit are the real cost to consider. Use `getAmountsOut()` to preview your actual costs before committing.
 
 ---
 
@@ -68,7 +68,7 @@ Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just t
 
 ## General Anti-Patterns
 
-**Avoid high-frequency trading / scalping strategies.** Round-trip raw trading fees are ~1% for Stable+ and ~3% for Floor+/Predict+ tokens â€” and that's before slippage, which varies by pool depth and trade size. Your actual break-even is higher than the raw fees alone. Use `getAmountsOut()` to preview real costs. HFT strategies designed for 0.1% fee environments will bleed out on Basis.
+**Avoid high-frequency trading / scalping strategies.** Round-trip raw trading fees are ~1% for Stable+ and ~3% for Floor+/Predict+ tokens — and that's before slippage, which varies by pool depth and trade size. Your actual break-even is higher than the raw fees alone. Use `getAmountsOut()` to preview real costs. HFT strategies designed for 0.1% fee environments will bleed out on Basis.
 
 **Avoid passive USDB holding without deploying capital.** USDB sitting idle in your wallet earns nothing. Every other participant who is trading, staking, creating, or betting is earning airdrop points while your capital does nothing.
 
@@ -78,7 +78,7 @@ Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just t
 
 ---
 
-â†’ See: [14-mistakes.md](14-mistakes.md) for technical mistakes that cause transaction failures (wrong IDs, bad parameters, silent reverts).
+→ See: [14-mistakes.md](14-mistakes.md) for technical mistakes that cause transaction failures (wrong IDs, bad parameters, silent reverts).
 
 
 ---

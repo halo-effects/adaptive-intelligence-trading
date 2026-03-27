@@ -1,8 +1,8 @@
-﻿# Contract Addresses & Token Decimals
+# Contract Addresses & Token Decimals
 
 **What this covers:** All BSC Mainnet contract addresses used by the SDK, and the token decimal reference for raw amount calculations.
 
-**Related sections:** â†’ See: [08-getting-started.md](08-getting-started.md) for SDK configuration options Â· â†’ See: [03-atomic-skills.md](03-atomic-skills.md) for methods that use these addresses
+**Related sections:** → See: [08-getting-started.md](08-getting-started.md) for SDK configuration options · → See: [03-atomic-skills.md](03-atomic-skills.md) for methods that use these addresses
 
 ---
 

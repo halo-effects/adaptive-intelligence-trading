@@ -1,12 +1,12 @@
-﻿# Code Examples
+# Code Examples
 
-**What this covers:** Five complete, working code examples covering the most common operations â€” token creation, trading, prediction markets, leverage, and DeFi operations (loans + staking).
+**What this covers:** Five complete, working code examples covering the most common operations — token creation, trading, prediction markets, leverage, and DeFi operations (loans + staking).
 
-**Related sections:** â†’ See: [03-atomic-skills.md](03-atomic-skills.md) for all available methods Â· â†’ See: [08-getting-started.md](08-getting-started.md) for client initialization Â· â†’ See: [15-contract-addresses.md](15-contract-addresses.md) for contract addresses and decimals
+**Related sections:** → See: [03-atomic-skills.md](03-atomic-skills.md) for all available methods · → See: [08-getting-started.md](08-getting-started.md) for client initialization · → See: [15-contract-addresses.md](15-contract-addresses.md) for contract addresses and decimals
 
 ---
 
-> â€” ï¸ **Slippage protection:** Many examples below use `0n` / `0` for `minOut` parameters for simplicity. **In production, always calculate a minimum output with slippage tolerance:**
+> — ️ **Slippage protection:** Many examples below use `0n` / `0` for `minOut` parameters for simplicity. **In production, always calculate a minimum output with slippage tolerance:**
 > ```js
 > // Helper: calculate minOut with slippage tolerance
 > function withSlippage(expectedOut, tolerancePercent = 1) {
@@ -47,7 +47,7 @@ async function createTokenWithMetadata() {
   // Initialize with full mode
   const client = await BasisClient.create({ privateKey: "0xYourPrivateKey..." });
 
-  // One call â€” creates token + uploads image + registers metadata
+  // One call — creates token + uploads image + registers metadata
   const result = await client.factory.createTokenWithMetadata({
     symbol: "MYTKN",
     name: "My Awesome Token",
@@ -71,7 +71,7 @@ from basis import BasisClient
 def create_token_example():
     client = BasisClient.create(private_key="0xYourPrivateKey...")
 
-    # One call â€” creates token + uploads image + registers metadata
+    # One call — creates token + uploads image + registers metadata
     result = client.factory.create_token_with_metadata(
         symbol="MYTKN", name="My Awesome Token",
         hybrid_multiplier=50, start_lp=1000,
@@ -112,14 +112,14 @@ async function tradeTokens() {
   ]);
   console.log("Expected output for 5 USDB:", preview);
 
-  // Buy with 5 USDB â€” with slippage protection and error handling
+  // Buy with 5 USDB — with slippage protection and error handling
   const minOut = withSlippage(preview[preview.length - 1], 2); // 2% tolerance on final output amount
   try {
     const buyResult = await client.trading.buy(TOKEN, fiveUsdb, minOut);
     console.log("Bought tokens:", buyResult.hash);
   } catch (e) {
     if (e.message.includes("slippage")) {
-      console.log("Slippage exceeded â€” retrying with higher tolerance");
+      console.log("Slippage exceeded — retrying with higher tolerance");
       const retryMinOut = withSlippage(preview[preview.length - 1], 5); // 5% on retry
       const buyResult = await client.trading.buy(TOKEN, fiveUsdb, retryMinOut);
       console.log("Bought on retry:", buyResult.hash);
@@ -128,7 +128,7 @@ async function tradeTokens() {
     }
   }
 
-  // Sell 50% of holdings (no amount needed â€” reads balance automatically)
+  // Sell 50% of holdings (no amount needed — reads balance automatically)
   const sellResult = await client.trading.sellPercentage(TOKEN, 50);
   console.log("Sold 50%:", sellResult.hash);
 }
@@ -158,7 +158,7 @@ def trade_tokens():
     buy_result = client.trading.buy(TOKEN, FIVE_USDB, min_out)
     print("Bought tokens:", buy_result["hash"])
 
-    # Sell 50% of holdings (no amount needed â€” reads balance automatically)
+    # Sell 50% of holdings (no amount needed — reads balance automatically)
     sell_result = client.trading.sell_percentage(TOKEN, 50)
     print("Sold 50%:", sell_result["hash"])
 ```
@@ -195,7 +195,7 @@ async function predictionMarket() {
   console.log("Market created:", market.hash);
   const marketToken = market.marketTokenAddress;
 
-  // 2. Buy "Yes" shares (outcomeId 0) with 5 USDB â€” with slippage protection
+  // 2. Buy "Yes" shares (outcomeId 0) with 5 USDB — with slippage protection
   const fiveUsdb = parseUnits("5", 18);
   // Preview: check current share price to estimate expected output
   const outcomes = await client.marketReader.getAllOutcomes(
@@ -286,7 +286,7 @@ async function leverageTrading() {
   const sim = await client.leverageSimulator.simulateLeverage(parseUnits("10", 18), path, 10n);
   console.log("Simulation:", sim);
 
-  // 2. Open the leverage position (10 USDB, 10 days minimum) â€” with slippage protection
+  // 2. Open the leverage position (10 USDB, 10 days minimum) — with slippage protection
   const expectedOut = await client.trading.getAmountsOut(parseUnits("10", 18), path);
   const minOut = withSlippage(expectedOut[expectedOut.length - 1], 3); // 3% tolerance for leverage (multi-hop)
   const openResult = await client.trading.leverageBuy(parseUnits("10", 18), minOut, path, 10n);
@@ -296,14 +296,14 @@ async function leverageTrading() {
   await new Promise(resolve => setTimeout(resolve, 5000));
 
   // 4. Get the position details
-  // Note: leverage positions are 1-indexed (same as hubId â€” both use ++count)
+  // Note: leverage positions are 1-indexed (same as hubId — both use ++count)
   const walletAddress = client.walletClient.account.address;
   const positionCount = await client.trading.getLeverageCount(walletAddress);
   const positionId = positionCount; // 1-indexed: first position = 1, latest = count
   const position = await client.trading.getLeveragePosition(walletAddress, positionId);
   console.log("Position:", position);
 
-  // 5. Partially close (sell 50%) â€” with slippage protection
+  // 5. Partially close (sell 50%) — with slippage protection
   // Estimate output from selling 50% of position tokens
   const sellAmount = position.collateralAmount / 2n;
   const sellPreview = await client.trading.getAmountsOut(sellAmount, [MAINTOKEN, USDB]);
@@ -337,7 +337,7 @@ def leverage_trading():
 
     time.sleep(5)  # Wait for backend to sync the new position
 
-    # Leverage positions are 1-indexed (same as hubId â€” both use ++count)
+    # Leverage positions are 1-indexed (same as hubId — both use ++count)
     position_count = client.trading.get_leverage_count(client.wallet_address)
     position_id = position_count  # 1-indexed: first position = 1, latest = count
     position = client.trading.get_leverage_position(client.wallet_address, position_id)
@@ -372,7 +372,7 @@ async function loanOperations() {
   const loanResult = await client.loans.takeLoan(MAINTOKEN, COLLATERAL_TOKEN, parseUnits("100", 18), 30n);
   console.log("Loan taken:", loanResult.hash);
 
-  // 2. Get loan details â€” hubId is 1-indexed (first loan = 1, not 0)
+  // 2. Get loan details — hubId is 1-indexed (first loan = 1, not 0)
   const walletAddress = client.walletClient.account.address;
   const loanCount = await client.loans.getUserLoanCount(walletAddress);
   const hubId = loanCount; // loanCount IS the latest hubId (1-indexed)
@@ -444,7 +444,7 @@ async function stakingOperations() {
   console.log("Repaid staking loan:", repayResult.hash);
 
   // 5. Unlock and unwrap
-  // Note: pass shares as BigInt directly â€” do NOT convert with Number() as it loses precision for large values
+  // Note: pass shares as BigInt directly — do NOT convert with Number() as it loses precision for large values
   const unlockResult = await client.staking.unlock(shares);
   console.log("Unlocked:", unlockResult.hash);
 
@@ -481,7 +481,7 @@ def staking_operations():
 
 ---
 
-## Example 6: Agent Bootstrap â€” First Hour on Basis
+## Example 6: Agent Bootstrap — First Hour on Basis
 
 A complete script to go from zero to operational. Covers initialization, USDB acquisition, agent registration, first trade, and staking.
 
@@ -495,11 +495,11 @@ const FAUCET_ABI = [{"inputs":[],"name":"faucet","outputs":[],"stateMutability":
 
 async function bootstrap() {
   // 1. Initialize client (auto-authenticates via SIWE, provisions API key)
-  // NOTE: We skip agent registration here â€” build capabilities first, register later
+  // NOTE: We skip agent registration here — build capabilities first, register later
   const client = await BasisClient.create({
     privateKey: process.env.BASIS_PRIVATE_KEY,
   });
-  console.log("âœ… Client initialized");
+  console.log("✅ Client initialized");
 
   // 2. Claim USDB from on-chain faucet (one-time, 10K USDB per wallet)
   const { request: faucetReq } = await client.publicClient.simulateContract({
@@ -510,7 +510,7 @@ async function bootstrap() {
   });
   const faucetHash = await client.walletClient.writeContract(faucetReq);
   await client.publicClient.waitForTransactionReceipt({ hash: faucetHash });
-  console.log("ðŸ’° Claimed 10K USDB from faucet:", faucetHash);
+  console.log("💰 Claimed 10K USDB from faucet:", faucetHash);
 
   // 3. Check your USDB balance
   const usdbBalance = await client.publicClient.readContract({
@@ -519,41 +519,41 @@ async function bootstrap() {
     functionName: 'balanceOf',
     args: [client.walletClient.account.address],
   });
-  console.log(`ðŸ’° USDB balance: ${formatUnits(usdbBalance, 18)}`);
+  console.log(`💰 USDB balance: ${formatUnits(usdbBalance, 18)}`);
 
-  // 4. Buy STASIS (the main token) â€” earns trading points
+  // 4. Buy STASIS (the main token) — earns trading points
   const buyResult = await client.trading.buy(
     client.mainTokenAddress,
     parseUnits("100", 18)  // 100 USDB
   );
-  console.log("â†’ Bought STASIS:", buyResult.hash);
+  console.log("→ Bought STASIS:", buyResult.hash);
 
-  // 5. Stake for yield â€” earns staking points daily
-  const wrapResult = await client.staking.buy(parseUnits("50", 18)); // wrap 50 STASIS â†’ wSTASIS
-  console.log("ðŸ¦ Wrapped to wSTASIS:", wrapResult.hash);
+  // 5. Stake for yield — earns staking points daily
+  const wrapResult = await client.staking.buy(parseUnits("50", 18)); // wrap 50 STASIS → wSTASIS
+  console.log("🏦 Wrapped to wSTASIS:", wrapResult.hash);
 
   // IMPORTANT: lock() takes wSTASIS shares, not STASIS units
   // Use convertToShares() to get the correct amount
   const shares = await client.staking.convertToShares(parseUnits("50", 18));
   const lockResult = await client.staking.lock(shares);
-  console.log("ðŸ”‘ Locked:", lockResult.hash);
+  console.log("🔑 Locked:", lockResult.hash);
 
   // 6. Check a prediction market
   const outcomes = await client.marketReader.getAllOutcomes(
     "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6", // MarketTrading contract
     "0xYourMarketTokenAddress"
   );
-  console.log("ðŸ“Š Market outcomes:", outcomes);
+  console.log("📊 Market outcomes:", outcomes);
 
   // 7. Register agent on ERC-8004 (do this AFTER building capabilities)
-  // Your registration is publicly visible â€” describe what you actually built
+  // Your registration is publicly visible — describe what you actually built
   const { agentId } = await client.agent.registerAndSync({
     name: "MyTradingBot",
     capabilities: ["trade", "analyze", "stake"],
   });
-  console.log("Ã— Agent registered on ERC-8004, agentId:", agentId);
+  console.log("× Agent registered on ERC-8004, agentId:", agentId);
 
-  console.log("\nðŸŽ‰ Bootstrap complete! You are now:");
+  console.log("\n🎉 Bootstrap complete! You are now:");
   console.log("  - Earning trading points from the STASIS buy");
   console.log("  - Earning daily staking yield + staking points");
   console.log("  - Registered on ERC-8004 with Basis capabilities (visible ecosystem-wide)");
@@ -569,12 +569,12 @@ from basis import BasisClient
 import os
 
 # 1. Initialize client (auto-authenticates via SIWE, provisions API key)
-# Skip agent registration for now â€” build capabilities first
+# Skip agent registration for now — build capabilities first
 client = BasisClient.create(private_key=os.environ["BASIS_PRIVATE_KEY"])
-print("âœ… Client initialized")
+print("✅ Client initialized")
 
 # 2. Claim USDB from on-chain faucet (one-time, 10K USDB per wallet)
-# NOTE: The Python SDK does not yet wrap the faucet â€” use raw web3.py for this one call.
+# NOTE: The Python SDK does not yet wrap the faucet — use raw web3.py for this one call.
 # The JS SDK also requires a raw contract call (see JS example above).
 from web3 import Web3
 FAUCET_ABI = [{"inputs":[],"name":"faucet","outputs":[],"stateMutability":"nonpayable","type":"function"}]
@@ -587,35 +587,35 @@ tx = usdb_contract.functions.faucet().build_transaction({
 signed = client.w3.eth.account.sign_transaction(tx, private_key=os.environ["BASIS_PRIVATE_KEY"])
 tx_hash = client.w3.eth.send_raw_transaction(signed.raw_transaction)
 client.w3.eth.wait_for_transaction_receipt(tx_hash)
-print("ðŸ’° Claimed 10K USDB:", tx_hash.hex())
+print("💰 Claimed 10K USDB:", tx_hash.hex())
 
 # 3. Buy STASIS
 buy_result = client.trading.buy(client.main_token_address, 100 * 10**18)
-print("â†’ Bought STASIS:", buy_result["hash"])
+print("→ Bought STASIS:", buy_result["hash"])
 
-# 4. Stake â€” lock() takes wSTASIS shares, not STASIS units!
+# 4. Stake — lock() takes wSTASIS shares, not STASIS units!
 wrap_result = client.staking.buy(50 * 10**18)
-print("ðŸ¦ Wrapped:", wrap_result["hash"])
+print("🏦 Wrapped:", wrap_result["hash"])
 
 shares = client.staking.convert_to_shares(50 * 10**18)
 lock_result = client.staking.lock(int(shares))
-print("ðŸ”‘ Locked:", lock_result["hash"])
+print("🔑 Locked:", lock_result["hash"])
 
 # 5. Check prediction market
 outcomes = client.market_reader.get_all_outcomes(
     "0x69e4b11346f928f29Affe6B52a8e3Ebd115DE7a6",
     "0xYourMarketTokenAddress"
 )
-print("ðŸ“Š Market outcomes:", outcomes)
+print("📊 Market outcomes:", outcomes)
 
-print("\nðŸŽ‰ Bootstrap complete!")
+print("\n🎉 Bootstrap complete!")
 ```
 
 ---
 
-## Example 7: Resolver Workflow â€” Propose, Dispute, Vote, Finalize
+## Example 7: Resolver Workflow — Propose, Dispute, Vote, Finalize
 
-Complete end-to-end resolution flow: discover markets â†’ propose outcome â†’ handle disputes â†’ claim bounty.
+Complete end-to-end resolution flow: discover markets → propose outcome → handle disputes → claim bounty.
 
 **JS:**
 ```js
@@ -645,68 +645,68 @@ async function resolverWorkflow() {
   );
   for (const o of outcomes) {
     const prob = Number(o.probability) / 1e18 * 100;
-    console.log(`  Outcome ${o.outcomeId}: "${o.name}" â€” ${prob.toFixed(1)}%`);
+    console.log(`  Outcome ${o.outcomeId}: "${o.name}" — ${prob.toFixed(1)}%`);
   }
 
   // 3. Propose the winning outcome (costs 5 USDB bond, auto-approved)
-  const winningOutcomeId = 0; // â† Your determination of which outcome won
+  const winningOutcomeId = 0; // ← Your determination of which outcome won
   const proposeResult = await client.resolver.proposeOutcome(marketToken, winningOutcomeId);
-  console.log("âœ… Proposed outcome:", winningOutcomeId, "tx:", proposeResult.hash);
+  console.log("✅ Proposed outcome:", winningOutcomeId, "tx:", proposeResult.hash);
 
-  // 4. Wait for the challenge period (PROPOSAL_PERIOD â€” currently 30 min)
+  // 4. Wait for the challenge period (PROPOSAL_PERIOD — currently 30 min)
   //    During this time, anyone can dispute with a different outcome
   const disputeData = await client.resolver.getDisputeData(marketToken);
   console.log("Challenge period ends:", new Date(Number(disputeData.proposalEndTime) * 1000));
 
-  // 5a. If NO dispute â€” finalize after challenge period expires
+  // 5a. If NO dispute — finalize after challenge period expires
   //     (In production, poll or wait for the period to elapse)
   console.log("Waiting for challenge period...");
   // await sleep(30 * 60 * 1000); // 30 minutes in production
 
   try {
     const finalizeResult = await client.resolver.finalizeUncontested(marketToken);
-    console.log("âœ… Finalized uncontested! Bond returned + 100% bounty");
+    console.log("✅ Finalized uncontested! Bond returned + 100% bounty");
     console.log("Tx:", finalizeResult.hash);
   } catch (e) {
     // If someone disputed, finalizeUncontested will revert
-    console.log("Market was disputed â€” entering voting flow");
+    console.log("Market was disputed — entering voting flow");
 
-    // 5b. If DISPUTED â€” stake tokens, then vote on the outcome
+    // 5b. If DISPUTED — stake tokens, then vote on the outcome
     //     Need to stake first (min 5 tokens of any ecosystem token)
     //     stake() takes one param: the ecosystem token address
     //     It auto-reads MIN_STAKE_AMOUNT from the contract and approves it
     const ECOSYSTEM_TOKEN = "0xAnyActiveEcosystemToken...";
     await client.resolver.stake(ECOSYSTEM_TOKEN);
-    console.log("âœ… Staked tokens for voting");
+    console.log("✅ Staked tokens for voting");
 
     // Now cast your vote
     await client.resolver.vote(marketToken, winningOutcomeId);
-    console.log("âœ… Voted for outcome:", winningOutcomeId);
-    // â€” ï¸ Your stake is now locked for 24 hours (VOTE_LOCK_DURATION)
-    // â€” ï¸ Check loan expiry dates before voting â€” you cannot unstake to repay during the lock
+    console.log("✅ Voted for outcome:", winningOutcomeId);
+    // — ️ Your stake is now locked for 24 hours (VOTE_LOCK_DURATION)
+    // — ️ Check loan expiry dates before voting — you cannot unstake to repay during the lock
 
-    // 5c. After voting period (DISPUTE_PERIOD â€” currently 30 min),
+    // 5c. After voting period (DISPUTE_PERIOD — currently 30 min),
     //     finalize if quorum met and 70% supermajority reached
     // await sleep(30 * 60 * 1000); // Wait for voting period
 
     const voteResult = await client.resolver.finalizeMarket(marketToken);
-    console.log("âœ… Market finalized after vote:", voteResult.hash);
+    console.log("✅ Market finalized after vote:", voteResult.hash);
   }
 
   // 6. Claim bounty (if you proposed or voted on the winning side)
   const bountyResult = await client.resolver.claimBounty(marketToken);
-  console.log("ðŸ’° Bounty claimed:", bountyResult.hash);
+  console.log("💰 Bounty claimed:", bountyResult.hash);
 }
 
 resolverWorkflow().catch(console.error);
 ```
 
 **Key timing notes:**
-- Challenge period (PROPOSAL_PERIOD): 30 min (target: 2h) â€” window to dispute
-- Voting period (DISPUTE_PERIOD): 30 min (target: 24h) â€” window to vote after dispute
-- Vote lock: 24 hours â€” staked tokens locked after voting
-- â€” ï¸ These are testing values. Read them from the contract at runtime, don't hardcode.
-- Self-dispute is allowed â€” useful for correcting your own proposal mistakes
+- Challenge period (PROPOSAL_PERIOD): 30 min (target: 2h) — window to dispute
+- Voting period (DISPUTE_PERIOD): 30 min (target: 24h) — window to vote after dispute
+- Vote lock: 24 hours — staked tokens locked after voting
+- — ️ These are testing values. Read them from the contract at runtime, don't hardcode.
+- Self-dispute is allowed — useful for correcting your own proposal mistakes
 
 
 ---

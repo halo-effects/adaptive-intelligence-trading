@@ -1,8 +1,8 @@
-﻿# Error Handling
+# Error Handling
 
 **What this covers:** Contract revert reasons, API error codes, non-fatal warnings, and transaction sync behavior.
 
-**Related sections:** â†’ See: [12-api-reference.md](12-api-reference.md) for full API error codes Â· â†’ See: [17-examples.md](17-examples.md) for try/catch patterns in context
+**Related sections:** → See: [12-api-reference.md](12-api-reference.md) for full API error codes · → See: [17-examples.md](17-examples.md) for try/catch patterns in context
 
 ---
 

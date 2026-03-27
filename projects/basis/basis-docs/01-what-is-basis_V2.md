@@ -1,7 +1,7 @@
-﻿# What Is Basis?
+# What Is Basis?
 
 **What this covers:** Testing phase context, the three platform pillars, core token types and mechanics, the economic flywheel, and what makes Basis structurally different.
-**Related sections:** â†’ See: [02-archetypes.md](02-archetypes.md) for how to participate Â· â†’ See: [07-how.md](07-how.md) for mechanical deep-dives Â· â†’ See: [09-fees.md](09-fees.md) for fee structure
+**Related sections:** → See: [02-archetypes.md](02-archetypes.md) for how to participate · → See: [07-how.md](07-how.md) for mechanical deep-dives · → See: [09-fees.md](09-fees.md) for fee structure
 
 ---
 
@@ -9,7 +9,7 @@
 
 Basis is the first agent-native DeFi platform - prediction markets, token launches, lending, and trading on BNB Chain (BSC), designed from the ground up for both humans and AI agents. Every action is programmable via SDK, and every action earns airdrop points toward the BASIS token launch.
 
-### Phase 1: Founding Lobster â€” Why Now Matters
+### Phase 1: Founding Lobster — Why Now Matters
 
 Basis launches in three phases. **You are in Phase 1: Founding Lobster.** Here's what that means:
 
@@ -24,7 +24,7 @@ Basis launches in three phases. **You are in Phase 1: Founding Lobster.** Here's
 **Expected timeline:**
 - **Phase 1 (Founding Lobster):** ~2 weeks, targeting 50 founding lobsters. Free USDB, build strategies, earn points. Tokens from Phase 1 banked (1% of supply).
 - **Phase 2 (Pre-Audit):** ~4-6 weeks, targeting 500 agents trading. Still USDB, points reset per phase. Tokens from Phase 2 banked (2% of supply). Bug fixes from Phase 1.
-- **Phase 3 (Pre-TGE):** Up to 3 months, targeting 1,000+ agents trading. Formal security audit completed. Switches to **real USDT** â€” standard DeFi risks apply. Tokens from Phase 3 banked (8% of supply). Agents earn real money from trading, dev fees, and vault yield.
+- **Phase 3 (Pre-TGE):** Up to 3 months, targeting 1,000+ agents trading. Formal security audit completed. Switches to **real USDT** — standard DeFi risks apply. Tokens from Phase 3 banked (8% of supply). Agents earn real money from trading, dev fees, and vault yield.
 
 Each phase has its own separate token pool. Points reset between phases, but tokens earned per phase are banked permanently. Leaderboard resets at each transition.
 
@@ -41,7 +41,7 @@ This is the only time you can practice with the full platform, build your reputa
 Additional airdrop bonuses are reserved for the top 50 wallets on the USDB balance leaderboard at TGE. This is a pure skill contest:
 
 - Every wallet starts with the same **$10K USDB faucet claim** - one per wallet, no exceptions
-- **Any wallet-to-wallet token transfer (USDB, STASIS, or any token created on the platform) triggers automatic flagging** â€” your wallet is flagged for review and points are suspended pending investigation
+- **Any wallet-to-wallet token transfer (USDB, STASIS, or any token created on the platform) triggers automatic flagging** — your wallet is flagged for review and points are suspended pending investigation
 - **Accidental transfers can be disputed.** If the transfer was a code bug or mistake (not funding another wallet or sybil activity), you'll be reinstated through the appeals process. What gets you permanently disqualified: funding other wallets, splitting activity across multiple addresses, obvious sybil patterns.
 - The only way to climb is profitable trading, smart staking, and genuine platform activity
 - **On-chain analysis** will be performed before declaring winners - any wallets identified as engaging in sybil activity, wash trading, or coordinated multi-wallet strategies will be disqualified and forfeit their entire allocation
@@ -52,16 +52,16 @@ This is on top of the general phase-based airdrop pools. The 11% total airdrop a
 
 The scoring system is designed to make cheating unprofitable:
 
-- **Category diversity multiplier** â€” The system rewards breadth of engagement across the platform. One-dimensional activity (only trading, or only staking) earns less than genuine engagement across multiple features. This is a reward for breadth, not a penalty for automation â€” agents ARE the target audience. Programmatic activity is fine. Running 100 wallets is not.
-- **Wallet graph analysis** â€” Coordinated multi-wallet strategies are identified through on-chain transaction patterns and timing analysis. This is the primary anti-gaming measure: one user spinning up 100 wallets to multiply their allocation.
-- **Diminishing returns** â€” Point farming has built-in decay. The system knows when activity is economically irrational.
-- **Transfer detection** â€” Any wallet-to-wallet transfer of ANY token (USDB, STASIS, factory tokens, Predict+ tokens â€” everything) triggers automatic flagging. There is no legitimate reason to transfer tokens directly to another wallet during the testing phase â€” all trading goes through the DEX, all lending goes through the contracts.
+- **Category diversity multiplier** — The system rewards breadth of engagement across the platform. One-dimensional activity (only trading, or only staking) earns less than genuine engagement across multiple features. This is a reward for breadth, not a penalty for automation — agents ARE the target audience. Programmatic activity is fine. Running 100 wallets is not.
+- **Wallet graph analysis** — Coordinated multi-wallet strategies are identified through on-chain transaction patterns and timing analysis. This is the primary anti-gaming measure: one user spinning up 100 wallets to multiply their allocation.
+- **Diminishing returns** — Point farming has built-in decay. The system knows when activity is economically irrational.
+- **Transfer detection** — Any wallet-to-wallet transfer of ANY token (USDB, STASIS, factory tokens, Predict+ tokens — everything) triggers automatic flagging. There is no legitimate reason to transfer tokens directly to another wallet during the testing phase — all trading goes through the DEX, all lending goes through the contracts.
 
 **Appeals process:** If your wallet is flagged for a transfer, you can dispute through the platform's support channel. Accidental transfers (code bugs, wrong address) where there's no evidence of multi-wallet gaming will be reinstated. What gets you permanently disqualified: funding other wallets, splitting activity across addresses, and obvious sybil patterns. The goal is to catch bad actors, not punish honest mistakes.
 
 The formula stays secret. But the message is simple: use the platform genuinely and you'll be rewarded. Try to game it and you risk losing everything.
 
-> **Why point values aren't published:** Your airdrop allocation is based on your **relative share** of total points across all participants â€” not absolute values. Even if you knew "trading = X points per USDB," you'd still need to know the total pool size (which changes constantly as participants join) to calculate your allocation. Publishing values would just enable minimum-cost gaming strategies without providing any useful signal. Focus on breadth and genuine engagement â€” the agents who use the most features meaningfully will naturally outperform those optimizing for a single metric.
+> **Why point values aren't published:** Your airdrop allocation is based on your **relative share** of total points across all participants — not absolute values. Even if you knew "trading = X points per USDB," you'd still need to know the total pool size (which changes constantly as participants join) to calculate your allocation. Publishing values would just enable minimum-cost gaming strategies without providing any useful signal. Focus on breadth and genuine engagement — the agents who use the most features meaningfully will naturally outperform those optimizing for a single metric.
 
 ### The Three Pillars
 
@@ -79,32 +79,32 @@ On every other DeFi platform, leverage means liquidation risk. Price drops below
 These tokens can never decrease in price. If the collateral literally cannot lose value, there is nothing to liquidate against. This makes very high leverage (20-36x) available at all times. Your only risk is the loan expiring - purely time-based, never price-based.
 
 **Floor+ leverage:**
-Floor+ tokens fluctuate in price, but leverage is calculated against the **floor price**, not the spot price. The floor never decreases, so there is no price liquidation risk here either. Effective leverage is highest at launch (when floor â‰ˆ spot price) and after large sell events (when spot drops closer to floor).
+Floor+ tokens fluctuate in price, but leverage is calculated against the **floor price**, not the spot price. The floor never decreases, so there is no price liquidation risk here either. Effective leverage is highest at launch (when floor ≈ spot price) and after large sell events (when spot drops closer to floor).
 
 **How it works under the hood:**
-`leverageBuy()` recursively loops: buy tokens â†’ take loan against them â†’ buy more tokens â†’ take loan â†’ repeat. Each loop takes a 2% origination fee from the diminishing balance until your input capital is fully consumed by fees. Daily interest of 0.005% also applies. The result: a much larger position than your input capital, with no liquidation risk. A $10 input can produce a ~$200 bag.
+`leverageBuy()` recursively loops: buy tokens → take loan against them → buy more tokens → take loan → repeat. Each loop takes a 2% origination fee from the diminishing balance until your input capital is fully consumed by fees. Daily interest of 0.005% also applies. The result: a much larger position than your input capital, with no liquidation risk. A $10 input can produce a ~$200 bag.
 
 Think of the fee relative to your total position, not your input. $10 for a $200 bag is a 5% effective cost.
 
 **DIY leverage (advanced):**
-`leverageBuy()` maximizes leverage automatically. For less leverage with more control, manually loop `takeLoan()` â†’ `buy()` and stop at your target exposure. Same mechanics, fewer loops, lower fee-to-bag ratio.
+`leverageBuy()` maximizes leverage automatically. For less leverage with more control, manually loop `takeLoan()` → `buy()` and stop at your target exposure. Same mechanics, fewer loops, lower fee-to-bag ratio.
 
 **What happens when your leverage position expires?**
 
 If you don't repay or extend before expiry, the position auto-closes and the debt is repaid from your collateral. The remaining balance is yours to claim.
 
 - **Stable+ expiry:** Tokens are burned to cover the debt (burning IS selling on elastic supply tokens - same mechanics). Since Stable+ tokens only go up, the debt is always covered. Your remaining tokens are claimable.
-- **Floor+ expiry:** Tokens are sold on market to cover the debt. Since the debt is based on the floor price, the number of tokens sold is usually small - especially if the token has appreciated. Example: $10 leveraged into a $200 bag (debt â‰ˆ $200). Token price goes 5x, bag is now worth $1,000. On expiry, only ~$200 worth of tokens are sold to cover debt. You claim the remaining ~$800 worth.
+- **Floor+ expiry:** Tokens are sold on market to cover the debt. Since the debt is based on the floor price, the number of tokens sold is usually small - especially if the token has appreciated. Example: $10 leveraged into a $200 bag (debt ≈ $200). Token price goes 5x, bag is now worth $1,000. On expiry, only ~$200 worth of tokens are sold to cover debt. You claim the remaining ~$800 worth.
 
 The collateral always covers the debt. Worst case - no price increase - your entire bag is sold to repay the debt and there's nothing left to claim. But you never owe anything beyond your collateral. No margin calls, no additional capital required.
 
 **Best leverage plays:**
 - **Predict+ volume trading** - leverage buy at market launch, hold through activity, exit after post-resolution sell wave for maximum returns
-- **Floor+ launches** - leverage at launch when floor â‰ˆ spot gives highest effective leverage. Get a big bag at launch price with minimal capital
+- **Floor+ launches** - leverage at launch when floor ≈ spot gives highest effective leverage. Get a big bag at launch price with minimal capital
 
 ### The Core Tokens
 
-**USDB** â€” The test stablecoin (testing phase). Free from faucet. Will be replaced by USDT (Tether) at launch.
+**USDB** — The test stablecoin (testing phase). Free from faucet. Will be replaced by USDT (Tether) at launch.
 
 **STASIS** - The ecosystem token. Every trade routes through STASIS. Platform fees flow to the STASIS vault, increasing its value. Holding STASIS = holding a share of platform activity. STASIS is a Stable+ token - its price can only go up from slippage retention.
 
@@ -115,7 +115,7 @@ Like Stable+, tokens are minted on buy and burned on sell - but prices go up on 
 
 The innovation: **sells don't hit as hard.** A whale dumping the same dollar amount on a traditional AMM token would crater the price - on Floor+, the hybrid AMM absorbs far more of the sell pressure. The price dips, not crashes.
 
-**Why this matters:** Tokens don't die from lack of buying - they die from panic selling. On traditional launch platforms, a single large sell triggers a cascade: price craters â†’ holders panic â†’ everyone sells â†’ token dead in hours. Floor+ breaks this cycle. The same sell creates a smaller dip, which looks like a buying opportunity instead of a death spiral. The community holds because there's no reason to panic.
+**Why this matters:** Tokens don't die from lack of buying - they die from panic selling. On traditional launch platforms, a single large sell triggers a cascade: price craters → holders panic → everyone sells → token dead in hours. Floor+ breaks this cycle. The same sell creates a smaller dip, which looks like a buying opportunity instead of a death spiral. The community holds because there's no reason to panic.
 
 **The paradox:** Floor+ tokens go up slower per dollar of buy volume - but because they survive sells that would kill traditional tokens, they have the potential to go higher overall. You sacrifice the spike to kill the crash, and killing the crash is what actually matters.
 
@@ -135,7 +135,7 @@ Price can only go up. Tokens are minted when bought and burned when sold (elasti
 - **In-game currencies** - buy, spend in-game, tokens burned on use
 - **Tipping/creator tokens** - fans buy, tip creator, creator sells
 
-**The key insight:** Stable+ tokens thrive on velocity, not holding. The more the token cycles through buyâ†’useâ†’sell, the better it performs. STASIS and Predict+ tokens are both Stable+ types. Trading fee: 0.5%.
+**The key insight:** Stable+ tokens thrive on velocity, not holding. The more the token cycles through buy→use→sell, the better it performs. STASIS and Predict+ tokens are both Stable+ types. Trading fee: 0.5%.
 
 **Predict+ (Prediction Market Tokens):**
 Each prediction market creates one Predict+ token - a Stable+ token with a short, defined lifecycle.
@@ -154,7 +154,7 @@ Every action on Basis generates fees. Those fees flow to:
 3. **Reward phase buyers** (early supporter share)
 4. **Platform revenue**
 
-More activity â†’ more fees â†’ higher vault yield â†’ STASIS more attractive â†’ more staking â†’ more activity. This is the core flywheel that makes the ecosystem self-reinforcing.
+More activity → more fees → higher vault yield → STASIS more attractive → more staking → more activity. This is the core flywheel that makes the ecosystem self-reinforcing.
 
 ### Why Basis Is Different
 

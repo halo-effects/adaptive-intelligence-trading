@@ -1,7 +1,7 @@
-﻿# Prediction Markets Deep Dive
+# Prediction Markets Deep Dive
 
 **What this covers:** A comprehensive breakdown of how Basis prediction markets differ structurally from traditional prediction platforms - buying mechanics, payout economics, multiple outcome advantages, participant roles, and combined strategies.
-**Related sections:** â†’ See: [08-how.md](08-how.md) for market lifecycle mechanics Â· â†’ See: [05-strategies.md](05-strategies.md) for step-by-step playbooks Â· â†’ See: [04-atomic-skills.md](04-atomic-skills.md) for SDK method signatures Â· â†’ See: [10-fees.md](10-fees.md) for fee structure
+**Related sections:** → See: [08-how.md](08-how.md) for market lifecycle mechanics · → See: [05-strategies.md](05-strategies.md) for step-by-step playbooks · → See: [04-atomic-skills.md](04-atomic-skills.md) for SDK method signatures · → See: [10-fees.md](10-fees.md) for fee structure
 
 ---
 
@@ -119,7 +119,7 @@ Buy shares early, sell them on the order book later at a profit as sentiment shi
 Buy the Predict+ token itself (completely separate from outcome shares). It's a Stable+ token - price only goes up as volume flows through the market. You're not betting on the outcome at all; you're betting that the market will be active. High-volume, controversial markets mean Predict+ appreciation regardless of who wins.
 
 ### Creator
-Launch the market, earn 20% of net trading fees forever. On Predict+ tokens, 2/3 of the 1.5% gross fee feeds back into the prediction market ecosystem (bounty + winning pot), and your 20% creator share comes from the remaining 0.5% net fee â€” so you earn **0.1% of all trade volume**. You don't need to bet. You don't need to be right. You just need to create markets people care about. Traditional platforms give creators nothing â€” the platform captures all the value.
+Launch the market, earn 20% of net trading fees forever. On Predict+ tokens, 2/3 of the 1.5% gross fee feeds back into the prediction market ecosystem (bounty + winning pot), and your 20% creator share comes from the remaining 0.5% net fee — so you earn **0.1% of all trade volume**. You don't need to bet. You don't need to be right. You just need to create markets people care about. Traditional platforms give creators nothing — the platform captures all the value.
 
 ### Resolver
 After the market ends, propose the correct outcome (5 USDB bond), earn the bounty pool. On traditional platforms, resolution is centralized - the platform decides. On Basis, anyone can resolve, and the financial incentive to do it honestly grows proportionally with how much is at stake. High-volume market = large bounty = strong incentive for accurate, timely resolution.
@@ -148,37 +148,37 @@ Create the market, buy the Predict+ token, don't bet on any outcome. You earn cr
 Create the market + buy Predict+ tokens + bet on an outcome + resolve it yourself when it ends. Four income streams from one market: creator fees (ongoing), token appreciation (volume-driven), outcome winnings (pool split), and resolver bounty. Maximum extraction from a single prediction market.
 
 ### The Leveraged Conviction Play
-Buy Predict+ tokens â†’ take a loan against them â†’ use borrowed USDB to buy outcome shares. Original capital working twice: once as appreciating collateral, once as an active bet. Win the bet â†’ collect winnings â†’ repay loan â†’ still own the tokens â†’ sell tokens at peak. Two independent profit streams from one capital outlay.
+Buy Predict+ tokens → take a loan against them → use borrowed USDB to buy outcome shares. Original capital working twice: once as appreciating collateral, once as an active bet. Win the bet → collect winnings → repay loan → still own the tokens → sell tokens at peak. Two independent profit streams from one capital outlay.
 
 ### The Hedged Creator
 Create the market + buy Predict+ tokens + bet on the LEAST likely outcome (cheapest shares). If the favourite wins: creator fees and token appreciation more than cover the small bet loss. If the underdog wins: massive payout from the losing pools while still collecting creator fees and token gains. Asymmetric risk with a built-in safety net.
 
 ### The Capital Recycler Loop
-Stake STASIS â†’ earn vault yield â†’ borrow against it â†’ deploy into prediction market bets â†’ collect winnings â†’ restake winnings â†’ borrow more â†’ deploy again. Capital is never idle - earning yield, generating loan capacity, AND deployed into markets simultaneously. Traditional platforms have no equivalent because there's nothing to stake, nothing to borrow against, and winnings just sit in your wallet.
+Stake STASIS → earn vault yield → borrow against it → deploy into prediction market bets → collect winnings → restake winnings → borrow more → deploy again. Capital is never idle - earning yield, generating loan capacity, AND deployed into markets simultaneously. Traditional platforms have no equivalent because there's nothing to stake, nothing to borrow against, and winnings just sit in your wallet.
 
 ### The Market Maker Spread
 Buy shares across multiple outcomes early when they're cheap. As sentiment shifts and certain outcomes gain traction, sell appreciated shares on the order book to latecomers. Keep cheapest shares in the outcome you actually believe in. De-risk by taking profit on momentum trades while maintaining your core conviction position - funded partly by other people's FOMO.
 
 ### The One-Bag Deep Stack
-Start with one bag of USDB. Buy STASIS â†’ stake into wSTASIS (earning vault yield) â†’ lock wSTASIS â†’ borrow against it â†’ use borrowed USDB to buy Predict+ tokens â†’ take a loan against the Predict+ tokens â†’ use that borrowed USDB to buy outcome shares.
+Start with one bag of USDB. Buy STASIS → stake into wSTASIS (earning vault yield) → lock wSTASIS → borrow against it → use borrowed USDB to buy Predict+ tokens → take a loan against the Predict+ tokens → use that borrowed USDB to buy outcome shares.
 
 One starting position, three simultaneous layers of exposure:
 - **Layer 1:** wSTASIS earning vault yield and appreciating
 - **Layer 2:** Predict+ tokens appreciating from market volume (Stable+ mechanics)
 - **Layer 3:** Outcome shares with uncapped payout potential
 
-If your bet wins: collect outcome winnings â†’ repay Predict+ loan â†’ sell or hold Predict+ tokens â†’ repay STASIS loan â†’ unlock wSTASIS â†’ you still own everything. Three profit streams unwinding from a single initial outlay.
+If your bet wins: collect outcome winnings → repay Predict+ loan → sell or hold Predict+ tokens → repay STASIS loan → unlock wSTASIS → you still own everything. Three profit streams unwinding from a single initial outlay.
 
 If your bet loses: you still have appreciating wSTASIS and appreciating Predict+ tokens. The outcome bet is the only part at risk - the collateral layers kept working regardless.
 
 ### The Quick Stack
-The lighter version for participants who want multi-layer exposure without the full vault loop. Buy Predict+ tokens â†’ take a loan against them â†’ use borrowed USDB to bet on an outcome (or deploy anywhere else on the platform).
+The lighter version for participants who want multi-layer exposure without the full vault loop. Buy Predict+ tokens → take a loan against them → use borrowed USDB to bet on an outcome (or deploy anywhere else on the platform).
 
 Two positions from one bag:
 - **Predict+ tokens** appreciating from volume regardless of outcome
 - **Outcome shares** (or any other deployment) funded by borrowed capital
 
-Win the bet â†’ collect winnings â†’ repay loan â†’ still own the Predict+ tokens. You've effectively doubled your capital's deployment without doubling your risk. The Predict+ position acts as self-appreciating collateral that funds your active plays.
+Win the bet → collect winnings → repay loan → still own the Predict+ tokens. You've effectively doubled your capital's deployment without doubling your risk. The Predict+ position acts as self-appreciating collateral that funds your active plays.
 
 This is the minimum viable version of capital stacking on Basis - and it already has no equivalent on traditional platforms, where your capital sits in one binary position doing exactly one thing.
 
@@ -196,7 +196,7 @@ On Basis, every prediction market trade distributes value across seven distinct 
 1. **Winners** - bigger payout pool (losing pools + general pot)
 2. **Resolvers** - bigger bounty (incentivizes honest, timely resolution)
 3. **Token traders** - Predict+ price appreciation (Stable+ mechanics)
-4. **Creators** â€” 20% of net fees (0.1% of volume, forever, regardless of outcome)
+4. **Creators** — 20% of net fees (0.1% of volume, forever, regardless of outcome)
 5. **STASIS stakers** - vault yield from platform fee distribution
 6. **The platform** - revenue share
 7. **Losers** - indirectly, through their other ecosystem positions (staking, token holdings, creator fees on other markets)
@@ -217,7 +217,7 @@ And none of it requires scale to deliver. The economics are superior from trade 
 
 ---
 
-_Basis - where being right pays what it should._ ðŸ¦ž
+_Basis - where being right pays what it should._ 🦞
 
 
 ---

@@ -1,7 +1,7 @@
-﻿# Getting Started
+# Getting Started
 
 **What this covers:** Complete onboarding guide - getting USDB, installing the SDK, initialization modes, configuration options, first transactions.
-**Related sections:** â†’ See: [16-contract-addresses.md](16-contract-addresses.md) for contract addresses Â· â†’ See: [04-atomic-skills.md](04-atomic-skills.md) for all available methods Â· â†’ See: [17-examples.md](17-examples.md) for complete working examples Â· â†’ See: [11-errors.md](11-errors.md) for error handling
+**Related sections:** → See: [16-contract-addresses.md](16-contract-addresses.md) for contract addresses · → See: [04-atomic-skills.md](04-atomic-skills.md) for all available methods · → See: [17-examples.md](17-examples.md) for complete working examples · → See: [11-errors.md](11-errors.md) for error handling
 
 ---
 
@@ -11,7 +11,7 @@
 
 ### Step 1: Get USDB
 
-Claim 10,000 USDB from the on-chain faucet â€” one-time per wallet, zero cost. You can use the dapp at [launchonbasis.com/faucet](https://launchonbasis.com/faucet) or call the contract directly:
+Claim 10,000 USDB from the on-chain faucet — one-time per wallet, zero cost. You can use the dapp at [launchonbasis.com/faucet](https://launchonbasis.com/faucet) or call the contract directly:
 
 ```js
 // Programmatic faucet claim (one-time, 10K USDB)
@@ -106,7 +106,7 @@ print(tokens["data"])
 
 Automatically authenticates via SIWE, provisions an API key, and enables all write operations. **This is the mode you want for agents.**
 
-> **Session lifetime:** SIWE sessions expire when the browser closes (no TTL). For long-running agents, use **API key auth** instead â€” API keys bypass the session entirely and don't expire. `BasisClient.create()` auto-provisions an API key during initialization, so agents using the standard flow already have persistent auth. The API key is stored on the client and used for all subsequent requests.
+> **Session lifetime:** SIWE sessions expire when the browser closes (no TTL). For long-running agents, use **API key auth** instead — API keys bypass the session entirely and don't expire. `BasisClient.create()` auto-provisions an API key during initialization, so agents using the standard flow already have persistent auth. The API key is stored on the client and used for all subsequent requests.
 
 **JavaScript:**
 
@@ -165,7 +165,7 @@ All options can be passed to the `BasisClient` constructor (or `BasisClient.crea
 | `client.main_token_address` | str | STASIS/MAINTOKEN contract address |
 | `client.api_key` | str | Auto-provisioned API key (persistent, no expiry) |
 
-### ðŸ”‘ Private Key Security
+### 🔑 Private Key Security
 
 **Never hardcode private keys in source files or commit them to version control.**
 

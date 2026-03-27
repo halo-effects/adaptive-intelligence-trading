@@ -1,7 +1,7 @@
-﻿# How Everything Works
+# How Everything Works
 
 **What this covers:** Mechanical deep-dives into how each system actually works - trading paths, loan system, vault layers, leverage loops, prediction market lifecycle, agent identity.
-**Related sections:** â†’ See: [06-why.md](06-why.md) for the rationale Â· â†’ See: [03-atomic-skills.md](03-atomic-skills.md) for method signatures Â· â†’ See: [09-fees.md](09-fees.md) for fee details Â· â†’ See: [13-mistakes.md](13-mistakes.md) for common errors
+**Related sections:** → See: [06-why.md](06-why.md) for the rationale · → See: [03-atomic-skills.md](03-atomic-skills.md) for method signatures · → See: [09-fees.md](09-fees.md) for fee details · → See: [13-mistakes.md](13-mistakes.md) for common errors
 
 ---
 
@@ -14,8 +14,8 @@
 All trades route through STASIS. No direct token-to-token swaps.
 
 **Swap paths**:
-- Buying STASIS: `USDB â†’ STASIS` (2-hop)
-- Buying a factory token: `USDB â†’ STASIS â†’ Token` (3-hop)
+- Buying STASIS: `USDB → STASIS` (2-hop)
+- Buying a factory token: `USDB → STASIS → Token` (3-hop)
 - Selling reverses the path
 
 **Tax structure**:
@@ -30,18 +30,18 @@ All trades route through STASIS. No direct token-to-token swaps.
 
 ### AMM Pricing Mechanics
 
-Basis uses a **modified constant-product AMM** (similar to Uniswap V2's `x Ã— y = k`), but with a critical modification: the `hybridMultiplier` parameter controls how much of each sell's value is retained in the pool versus returned to the seller.
+Basis uses a **modified constant-product AMM** (similar to Uniswap V2's `x × y = k`), but with a critical modification: the `hybridMultiplier` parameter controls how much of each sell's value is retained in the pool versus returned to the seller.
 
 **How it works:**
-- **Buys** work like a standard AMM â€” you send USDB, receive tokens, price increases along the curve
+- **Buys** work like a standard AMM — you send USDB, receive tokens, price increases along the curve
 - **Sells** are where Basis diverges: a portion of the sell value stays in the pool (slippage retention), which maintains or increases the reserves
 - The `hybridMultiplier` (1-100) controls the retention rate:
-  - **multiplier=100 (Stable+/Predict+):** 100% retention â€” ALL sell value stays in the pool. Price never drops. "Up-only."
-  - **multiplier=1 (Floor+):** Minimal retention â€” most sell value returns to seller, but some stays, creating a rising floor price
-  - **multiplier=45 (mid Floor+):** Moderate retention â€” balanced between seller return and floor accumulation
+  - **multiplier=100 (Stable+/Predict+):** 100% retention — ALL sell value stays in the pool. Price never drops. "Up-only."
+  - **multiplier=1 (Floor+):** Minimal retention — most sell value returns to seller, but some stays, creating a rising floor price
+  - **multiplier=45 (mid Floor+):** Moderate retention — balanced between seller return and floor accumulation
 
 **How `startLP` initializes reserves:** When a creator sets `startLP` (e.g., $1,000), the contract:
-1. Converts that dollar value to STASIS at the current STASIS price (e.g., $1,000 â†’ 837 STASIS at $1.19/STASIS)
+1. Converts that dollar value to STASIS at the current STASIS price (e.g., $1,000 → 837 STASIS at $1.19/STASIS)
 2. Sets the token side of the pool so the starting price = $1 per token (e.g., 837 STASIS : 1,000 tokens)
 3. This creates a standard AMM pair, but with the `hybridMultiplier` modifying how sells affect reserves going forward
 
@@ -49,7 +49,7 @@ Higher `startLP` = deeper pool = less price impact per trade. The `startLP` tabl
 
 **Price impact formula:** Use `getAmountsOut(amount, path)` to preview exact output for any trade size. The contract handles the multiplier-adjusted calculation internally.
 
-**Why this matters for agents:** Standard AMM arbitrage assumptions don't apply. On Stable+ tokens, selling doesn't lower the price â€” it literally can't. On Floor+ tokens, the floor rises with every sell. Model your strategies accordingly.
+**Why this matters for agents:** Standard AMM arbitrage assumptions don't apply. On Stable+ tokens, selling doesn't lower the price — it literally can't. On Floor+ tokens, the floor rises with every sell. Model your strategies accordingly.
 
 ---
 
@@ -99,29 +99,29 @@ Higher `startLP` = deeper pool = less price impact per trade. The `startLP` tabl
 >
 > **Why this matters:** It's impossible to quote a fixed APY because it changes with platform activity and staking participation. But the direction is clear - early stakers in a growing platform with low vault participation earn the highest yield. As volume increases, total yield grows. As more people stake, individual yield moderates. The market finds its own equilibrium.
 >
-> **Cost to participate:** Gas only. Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the 0.5% raw swap fee when buying STASIS and again when selling (~1% raw fees round-trip) plus variable slippage on both legs. Slippage depends on transaction size and pool liquidity â€” use `getAmountsOut()` to preview actual costs. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
+> **Cost to participate:** Gas only. Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the 0.5% raw swap fee when buying STASIS and again when selling (~1% raw fees round-trip) plus variable slippage on both legs. Slippage depends on transaction size and pool liquidity — use `getAmountsOut()` to preview actual costs. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
 
 Three layers:
 
 **Layer 1 - Passive Yield** (wrap/unwrap):
 ```
-STASIS â†’ staking.buy() â†’ wSTASIS (yield-bearing)
-wSTASIS â†’ staking.sell() â†’ STASIS (more than deposited)
+STASIS → staking.buy() → wSTASIS (yield-bearing)
+wSTASIS → staking.sell() → STASIS (more than deposited)
 ```
 
 **Layer 2 - Collateral** (lock/unlock):
 ```
-wSTASIS â†’ staking.lock() â†’ Locked (still earning yield)
-Locked â†’ staking.unlock() â†’ wSTASIS (only after repaying loan)
+wSTASIS → staking.lock() → Locked (still earning yield)
+Locked → staking.unlock() → wSTASIS (only after repaying loan)
 ```
 
 **Layer 3 - Borrowing** (borrow/repay):
 ```
-Locked â†’ staking.borrow(amount, days) â†’ Liquid STASIS
-Liquid â†’ staking.repay() â†’ Loan cleared, can now unlock
+Locked → staking.borrow(amount, days) → Liquid STASIS
+Liquid → staking.repay() → Loan cleared, can now unlock
 ```
 
-**Quick exit**: `staking.sell(shares, claimUSDB=True)` does atomic unwrapâ†’USDB in one transaction.
+**Quick exit**: `staking.sell(shares, claimUSDB=True)` does atomic unwrap→USDB in one transaction.
 
 ---
 
@@ -130,9 +130,9 @@ Liquid â†’ staking.repay() â†’ Loan cleared, can now unlock
 Leverage is conceptually a **recursive loan-and-buy loop**:
 
 ```
-$50 USDB â†’ buy tokens â†’ take 100% LTV loan on those tokens â†’ receive ~$48 (minus 2% fee)
-â†’ buy more tokens with $48 â†’ take another loan â†’ receive ~$47
-â†’ buy more tokens â†’ loan â†’ buy â†’ loan â†’ ... until dust remains
+$50 USDB → buy tokens → take 100% LTV loan on those tokens → receive ~$48 (minus 2% fee)
+→ buy more tokens with $48 → take another loan → receive ~$47
+→ buy more tokens → loan → buy → loan → ... until dust remains
 ```
 
 **How it actually executes:** The contract first **simulates** the full recursive loop to calculate the final position parameters, then executes the entire position in a **single atomic transaction** using the simulation endpoints. This means leverage either fully succeeds or fully fails - there is no partial execution state. You will never end up with a half-built position.
@@ -159,24 +159,24 @@ Each conceptual iteration takes a 2% origination fee, so the total leverage fee 
 1. **Buy the Predict+ token** - trade the market itself (Stable+ appreciation)
 2. **Buy outcome shares** - bet on specific outcomes (winners split entire losing pool)
 
-These are separate paths. Buying the token â€”  betting on an outcome.
+These are separate paths. Buying the token —  betting on an outcome.
 
 **Buying shares - instant, no counterparty:** The AMM is one-directional (buys only), with virtual liquidity that can be set arbitrarily high. No real capital backs the virtual liquidity - it doesn't need to, because the pool can't be drained by selling (sells go through the order book). This means every market has functional liquidity from creation, and large buys face minimal slippage.
 
 **Selling shares - order book:** Shareholders list sell orders at their chosen price. Because winners split the entire losing pool (not capped at $1), shares can be worth far more than their buy price on resolution. This creates a unique secondary market dynamic: a seller who bought at 5c can sell at 90c (18x) while the buyer at 90c gets a share worth potentially $4+ on resolution. Both sides genuinely profit.
 
-**The general pot:** 95% of the prediction ecosystem portion of trading fees (1% of trade value Ã— 95% = 0.95% per trade) accumulates in a general pot, added to the winner's pool on resolution. The remaining 5% goes to the resolver bounty pool. This benefits all winners â€” especially latecomers who enter at high probability â€” by padding payouts above what the raw pool split alone would deliver.
+**The general pot:** 95% of the prediction ecosystem portion of trading fees (1% of trade value × 95% = 0.95% per trade) accumulates in a general pot, added to the winner's pool on resolution. The remaining 5% goes to the resolver bounty pool. This benefits all winners — especially latecomers who enter at high probability — by padding payouts above what the raw pool split alone would deliver.
 
 **Payout scales with outcomes, not volume:** In a multi-outcome market, the winner's pool absorbs ALL losing pools plus the general pot. More outcomes = larger multiplier. The ratio of winning to losing pools determines returns, not absolute volume - the economics are identical whether the market is $1M or $100M.
 
 **Resolution lifecycle**:
 ```
-Market ends â†’ Propose outcome (5 USDB bond) â†’ Challenge period (30 min*)
-  â”œâ”€â”€ No dispute â†’ finalizeUncontested() â†’ Proposer gets bond back + full bounty â†’ Winners redeem
-  â””â”€â”€ Disputed (5 USDB bond) â†’ Voting period (30 min*) â†’ Voters decide â†’ Finalize â†’ Winners redeem
-      â””â”€â”€ EARLY outcome wins â†’ Round resets, fresh proposal cycle begins
+Market ends → Propose outcome (5 USDB bond) → Challenge period (30 min*)
+  ├── No dispute → finalizeUncontested() → Proposer gets bond back + full bounty → Winners redeem
+  └── Disputed (5 USDB bond) → Voting period (30 min*) → Voters decide → Finalize → Winners redeem
+      └── EARLY outcome wins → Round resets, fresh proposal cycle begins
 ```
-*\*â€” ï¸ TESTING VALUES - will change before production. Production targets: 2 hour challenge period, 24 hour voting period. All timing parameters are configurable via `configResolver`. Do not hardcode these values - read them from the contract at runtime.*
+*\*— ️ TESTING VALUES - will change before production. Production targets: 2 hour challenge period, 24 hour voting period. All timing parameters are configurable via `configResolver`. Do not hardcode these values - read them from the contract at runtime.*
 
 ### Resolution Deep Dive
 
@@ -194,13 +194,13 @@ Market ends â†’ Propose outcome (5 USDB bond) â†’ Challenge period (30
 - To vote, you must stake at least 5 tokens of any active ecosystem token via `resolver.stake(token)` *(current staking on STASIS is a placeholder anti-spam measure - post-TGE, transitions to BASIS token staking)*
 - Voting is **one-staker-one-vote** - staking above the minimum gives no extra voting power
 - **70% supermajority** required to finalize (VOTING_CONSENSUS = 70)
-- Quorum: `bountyPool / (50 Ã— $1)`, clamped between 2 (minimum) and 100 (maximum). Based on total votes across all outcomes
+- Quorum: `bountyPool / (50 × $1)`, clamped between 2 (minimum) and 100 (maximum). Based on total votes across all outcomes
 - **Ties / no supermajority:** Finalization reverts with "Tie - vote more". Must reach 70% consensus within the voting period
 
 **Bond outcomes:**
 - Correct proposer or disputer gets BOTH bonds (theirs + opponent's)
-- Neither correct â†’ insurance pool gets both bonds
-- Uncontested â†’ proposer gets bond back + full bounty
+- Neither correct → insurance pool gets both bonds
+- Uncontested → proposer gets bond back + full bounty
 
 **Bounty distribution:**
 - Uncontested: 100% to proposer
@@ -229,9 +229,9 @@ Market ends â†’ Propose outcome (5 USDB bond) â†’ Challenge period (30
 - Voting window: 15 minutes from first vote cast
 - Majority of votes determines winner; anyone can call `finalize()` after 15 minutes
 
-**Post-resolution selling**: On Basis, mass selling after resolution pushes the price UP (selling burns tokens â†’ slippage stays in pool â†’ price rises). Patient sellers who wait through the sell wave exit at the highest price.
+**Post-resolution selling**: On Basis, mass selling after resolution pushes the price UP (selling burns tokens → slippage stays in pool → price rises). Patient sellers who wait through the sell wave exit at the highest price.
 
-â†’ See: [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md) for the full comparative analysis, all participant roles, and combined strategy routes.
+→ See: [17-prediction-market-deep-dive.md](17-prediction-market-deep-dive.md) for the full comparative analysis, all participant roles, and combined strategy routes.
 
 ---
 

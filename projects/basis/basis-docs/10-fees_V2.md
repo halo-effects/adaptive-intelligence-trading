@@ -1,7 +1,7 @@
-﻿# Fee & Cost Master Reference
+# Fee & Cost Master Reference
 
 **What this covers:** Complete fee reference - trading fees by token type, loan cost model, vault costs, gas estimates.
-**Related sections:** â†’ See: [07-how.md](07-how.md) for mechanics Â· â†’ See: [13-mistakes.md](13-mistakes.md) for common cost mistakes Â· â†’ See: [06-why.md](06-why.md) for loan cost strategy
+**Related sections:** → See: [07-how.md](07-how.md) for mechanics · → See: [13-mistakes.md](13-mistakes.md) for common cost mistakes · → See: [06-why.md](06-why.md) for loan cost strategy
 
 ---
 
@@ -52,7 +52,7 @@ The surge tax is a temporary extra fee that **token creators manually activate**
 | Predict+ | N/A - surge disabled | 1.5% (base only) |
 
 **Timing constraints:**
-- Surge duration: â‰¥ 1 hour (linear decay to zero)
+- Surge duration: ≥ 1 hour (linear decay to zero)
 - Quota: maximum 7 days of surge per rolling 30-day window
 
 **How it works:** The creator activates a surge with chosen start/end rates and duration (min 1 hour). The extra fee goes primarily to the creator (all surge basis points are added to the dev portion of fee distribution). The more stable the token (higher hybridMultiplier), the lower the maximum allowed surge - because stable tokens already absorb sell pressure structurally. Check `getAvailableSurgeQuota(token)` before starting a surge to see remaining quota.
@@ -66,7 +66,7 @@ The surge tax is a temporary extra fee that **token creators manually activate**
 | Origination | 2% flat | Deducted upfront. One-time, non-refundable. |
 | Daily interest | 0.005% per day | On collateral value, applies to all loans |
 | Extension | 0.005% per day | Same rate as daily interest, paid upfront when extending |
-| Repayment | Repay USDB debt â†’ collateral returned | You repay the `fullAmount` from `getUserLoanDetails()` â€” this is the total USDB obligation (original loan value + all prepaid interest). Your collateral tokens are returned to your wallet. No discount for early repay â€” the full prepaid amount is owed regardless of when you repay. |
+| Repayment | Repay USDB debt → collateral returned | You repay the `fullAmount` from `getUserLoanDetails()` — this is the total USDB obligation (original loan value + all prepaid interest). Your collateral tokens are returned to your wallet. No discount for early repay — the full prepaid amount is owed regardless of when you repay. |
 | Expiry (no repay) | Collateral burned to cover debt | If you don't repay before loan expiry, collateral tokens are burned (burned = sold on elastic supply tokens). Any remaining collateral value above the debt is claimable via `claimLiquidation(hubId)` - it is NOT automatically returned. |
 
 **Total cost by duration**:
@@ -78,9 +78,9 @@ The surge tax is a temporary extra fee that **token creators manually activate**
 | 90 days | 2.00% | 0.40% | **2.40%** |
 | 365 days | 2.00% | 1.78% | **3.78%** |
 
-**How to calculate extension cost:** The minimum loan is 10 days (covered by origination). Extension cost only applies to days beyond the initial 10. Formula: `(totalDays - 10) Ã— 0.005%`. For 365 days: `(365 - 10) Ã— 0.005% = 355 Ã— 0.005% = 1.775% â‰ˆ 1.78%`.
+**How to calculate extension cost:** The minimum loan is 10 days (covered by origination). Extension cost only applies to days beyond the initial 10. Formula: `(totalDays - 10) × 0.005%`. For 365 days: `(365 - 10) × 0.005% = 355 × 0.005% = 1.775% ≈ 1.78%`.
 
-**Key takeaway**: A year-long loan costs ~3.78% total - NOT 2% Ã— 365 days. The 2% is a flat origination fee, not an annual rate.
+**Key takeaway**: A year-long loan costs ~3.78% total - NOT 2% × 365 days. The 2% is a flat origination fee, not an annual rate.
 
 ### Vault Costs & Yield
 
@@ -108,7 +108,7 @@ There is no fixed APY to quote. Early stakers in a growing platform with low vau
 | Veto | 5 USDB bond | One per market, post-voting only |
 | Stake to vote | 5 tokens minimum | Any active ecosystem token. One-staker-one-vote |
 
-**Bond outcomes:** Correct party gets both bonds. Neither correct â†’ insurance gets both. Uncontested â†’ proposer gets bond + 100% bounty. See [07-how.md](07-how.md) for full distribution rules.
+**Bond outcomes:** Correct party gets both bonds. Neither correct → insurance gets both. Uncontested → proposer gets bond + 100% bounty. See [07-how.md](07-how.md) for full distribution rules.
 
 ---
 

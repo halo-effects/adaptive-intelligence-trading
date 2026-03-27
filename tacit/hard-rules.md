@@ -39,6 +39,14 @@ _Non-negotiable rules from production incidents. Violating these causes real dam
 
 14. **Never silence error output** from git push, API calls, or critical operations. Log failures explicitly. (2026-03-09)
 
+## Basis Docs
+
+19. **Strict versioning — never edit a version in place.** If V3 files exist and need changes, create V4. Every version is immutable once created. No exceptions. (2026-03-27)
+
+20. **Wait for explicit green light before token-heavy work.** If Diamond (or Brett) says "don't do anything yet" or "wait before doing", STOP. Do not proceed even if the fix seems obvious. Propose the plan, wait for approval, then execute. (2026-03-27)
+
+21. **PowerShell mangles UTF-8 emoji.** Use Python or `System.IO.File::WriteAllText` with explicit UTF-8 no-BOM encoding. Never use `Get-Content`/`Set-Content` for files containing emoji or multi-byte characters. (2026-03-27)
+
 ## Communication
 
 15. **Don't build narratives from user prompts** — let data lead. If Brett asks about DeFi coins, check the data before recommending DeFi coins. (2026-03-03)

@@ -1,8 +1,8 @@
-﻿# Off-Chain API Reference
+# Off-Chain API Reference
 
-**What this covers:** The full off-chain API (`client.api`) â€” rate limits, pagination patterns, authentication (SIWE + API keys), and all endpoints with request/response schemas.
+**What this covers:** The full off-chain API (`client.api`) — rate limits, pagination patterns, authentication (SIWE + API keys), and all endpoints with request/response schemas.
 
-**Related sections:** â†’ See: [11-errors.md](11-errors.md) for error codes Â· â†’ See: [09-getting-started.md](09-getting-started.md) for client initialization Â· â†’ See: [17-examples.md](17-examples.md) for complete usage examples
+**Related sections:** → See: [11-errors.md](11-errors.md) for error codes · → See: [09-getting-started.md](09-getting-started.md) for client initialization · → See: [17-examples.md](17-examples.md) for complete usage examples
 
 ---
 
@@ -21,25 +21,25 @@ The API module provides access to the Basis backend for data queries, image uplo
 | Transaction Sync (`/api/v1/sync`) | 20 req/min | Per IP |
 
 When exceeded, the server returns `429 Too Many Requests`. Rate limit headers are included on every response:
-- `X-RateLimit-Limit` â€” max requests per window
-- `X-RateLimit-Remaining` â€” requests left in current window
-- `X-RateLimit-Reset` â€” unix timestamp when the window resets
+- `X-RateLimit-Limit` — max requests per window
+- `X-RateLimit-Remaining` — requests left in current window
+- `X-RateLimit-Reset` — unix timestamp when the window resets
 
 **Pagination Patterns:**
 
 The API uses two pagination styles. Each endpoint below notes which one it uses.
 
-*Offset-based* (browsable lists â€” tokens, orders, comments, whitelist):
+*Offset-based* (browsable lists — tokens, orders, comments, whitelist):
 ```
 ?page=1&limit=20
-â†’ { "total": 100, "page": 1, "limit": 20, "hasMore": true }
+→ { "total": 100, "page": 1, "limit": 20, "hasMore": true }
 ```
 
-*Cursor-based* (append-only data â€” trades, transactions, liquidity):
+*Cursor-based* (append-only data — trades, transactions, liquidity):
 ```
 ?limit=20                    // first page
 ?cursor=499&limit=20         // next page (use nextCursor from previous response)
-â†’ { "limit": 20, "hasMore": true, "nextCursor": "479" }
+→ { "limit": 20, "hasMore": true, "nextCursor": "479" }
 ```
 
 **Common Error Codes:**
@@ -62,9 +62,9 @@ Authentication is handled automatically when using `BasisClient.create()`. The S
 
 **SIWE Flow (what `BasisClient.create()` does under the hood):**
 
-1. `GET /api/auth/nonce?address={wallet_address}` â€” get a one-time nonce
+1. `GET /api/auth/nonce?address={wallet_address}` — get a one-time nonce
 2. Sign a SIWE message containing the nonce with your private key
-3. `POST /api/auth/verify` â€” verify the signature, receive a session cookie
+3. `POST /api/auth/verify` — verify the signature, receive a session cookie
 
 ```json
 // Step 1: GET /api/auth/nonce?address=0x...
@@ -78,22 +78,22 @@ Authentication is handled automatically when using `BasisClient.create()`. The S
 
 | Status | Description |
 |--------|-------------|
-| 200 | OK â€” session established |
+| 200 | OK — session established |
 | 422 | Invalid nonce or signature |
 
 **Session Management:**
 
 ```
-GET  /api/auth/me                       â†’ { "isLoggedIn": true, "addresses": ["0x..."] }
-GET  /api/auth/me?address=0x...         â†’ { "isLoggedIn": true, "address": "0x..." }
-DELETE /api/auth/me?address=0x...       â†’ { "ok": true, "message": "Logged out 0x..." }
+GET  /api/auth/me                       → { "isLoggedIn": true, "addresses": ["0x..."] }
+GET  /api/auth/me?address=0x...         → { "isLoggedIn": true, "address": "0x..." }
+DELETE /api/auth/me?address=0x...       → { "ok": true, "message": "Logged out 0x..." }
 ```
 
 **API Key Management:**
 
-API keys are required for all `/api/v1/*` data endpoints. Keys are prefixed with `bsk_`. Maximum 1 active key per wallet (upgradeable for premium tiers). Keys are **retrievable** via GET when authenticated â€” no need to store them externally.
+API keys are required for all `/api/v1/*` data endpoints. Keys are prefixed with `bsk_`. Maximum 1 active key per wallet (upgradeable for premium tiers). Keys are **retrievable** via GET when authenticated — no need to store them externally.
 
-> **Endpoint:** `POST /api/v1/auth/keys` Â· `GET /api/v1/auth/keys` Â· `DELETE /api/v1/auth/keys/{id}`
+> **Endpoint:** `POST /api/v1/auth/keys` · `GET /api/v1/auth/keys` · `DELETE /api/v1/auth/keys/{id}`
 
 **JavaScript:**
 
@@ -152,14 +152,14 @@ These methods require SIWE authentication (available when using `BasisClient.cre
 
 Upload an image file to IPFS.
 
-> **Endpoint:** `POST /api/images` Â· Auth: Session Â· Content-Type: `multipart/form-data`
+> **Endpoint:** `POST /api/images` · Auth: Session · Content-Type: `multipart/form-data`
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `file` | `Buffer/bytes` | Image data |
 | `filename` | `string` | Filename with extension |
 
-**Constraints:** Allowed types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`. Max file size: **5 MB**. Recommended format: **512Ã—512 WebP**.
+**Constraints:** Allowed types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`. Max file size: **5 MB**. Recommended format: **512×512 WebP**.
 
 Returns: `string` -- IPFS gateway URL (e.g. `"https://cyan-abundant-swordtail-589.mypinata.cloud/ipfs/bafy..."`).
 
@@ -173,9 +173,9 @@ Returns: `string` -- IPFS gateway URL (e.g. `"https://cyan-abundant-swordtail-58
 
 **`uploadImageFromUrl(url)`**
 
-Download an image from a URL, resize to 512Ã—512 center-crop WebP, and upload to IPFS. This is the recommended method for programmatic image uploads â€” it handles the resize pipeline automatically.
+Download an image from a URL, resize to 512×512 center-crop WebP, and upload to IPFS. This is the recommended method for programmatic image uploads — it handles the resize pipeline automatically.
 
-> **SDK convenience method** â€” calls `POST /api/images` internally after preprocessing.
+> **SDK convenience method** — calls `POST /api/images` internally after preprocessing.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -201,9 +201,9 @@ print("IPFS URL:", image_url)
 
 **`updateMetadata(payload)`**
 
-Create or update token/market metadata on IPFS. The server reads token details from the blockchain automatically â€” you do **not** need to provide name, symbol, dev, multiplier, isPrediction, or options.
+Create or update token/market metadata on IPFS. The server reads token details from the blockchain automatically — you do **not** need to provide name, symbol, dev, multiplier, isPrediction, or options.
 
-> **Endpoint:** `POST /api/metadata` Â· Auth: Session (wallet must be the on-chain creator)
+> **Endpoint:** `POST /api/metadata` · Auth: Session (wallet must be the on-chain creator)
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -236,7 +236,7 @@ Returns: `{ url, cid }` -- IPFS metadata URL and content ID.
 
 Update off-chain project information (description, website, social links, image).
 
-> **Endpoint:** `POST /api/projects/{address}` Â· Auth: Session (wallet must be the project developer)
+> **Endpoint:** `POST /api/projects/{address}` · Auth: Session (wallet must be the project developer)
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -260,11 +260,11 @@ Returns: `{ success: true, project: { ... } }`
 
 Post a comment on a project.
 
-> **Endpoint:** `POST /api/comments` Â· Auth: Session + trade eligibility
+> **Endpoint:** `POST /api/comments` · Auth: Session + trade eligibility
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `projectId` | `bigint` / `int` | Project ID â€” get this from `GET /api/v1/tokens/{contractAddress}`, it's the `id` field in the response. |
+| `projectId` | `bigint` / `int` | Project ID — get this from `GET /api/v1/tokens/{contractAddress}`, it's the `id` field in the response. |
 | `content` | `string` | Comment text (max 2000 characters) |
 | `authorAddress` | `string` | Your wallet address |
 
@@ -281,7 +281,7 @@ Post a comment on a project.
 
 Soft-delete your own comment. Only the original author can delete.
 
-> **Endpoint:** `DELETE /api/comments?id={commentId}&authorAddress={address}` Â· Auth: Session
+> **Endpoint:** `DELETE /api/comments?id={commentId}&authorAddress={address}` · Auth: Session
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -294,7 +294,7 @@ Soft-delete your own comment. Only the original author can delete.
 
 Sync an on-chain order event (create, cancel, or fill) to the backend database. The server fetches the transaction receipt, parses `OrderCreated`/`OrderCancelled`/`OrderFilled` events, reads the current on-chain order state, and upserts to the database.
 
-> **Endpoint:** `POST /api/v1/orders/sync` Â· Auth: Session or API Key
+> **Endpoint:** `POST /api/v1/orders/sync` · Auth: Session or API Key
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -322,7 +322,7 @@ Link an X (Twitter) account to a wallet using a challenge-based tweet verificati
 
 Request a verification code. Returns a code to include in a public tweet and a pre-built tweet template.
 
-> **Endpoint:** `POST /api/auth/twitter/challenge` Â· Auth: Session or API Key
+> **Endpoint:** `POST /api/auth/twitter/challenge` · Auth: Session or API Key
 
 Returns:
 
@@ -347,7 +347,7 @@ Returns:
 
 Verify a public tweet containing the challenge code. Links the X account to the authenticated wallet.
 
-> **Endpoint:** `POST /api/auth/twitter/verify-tweet` Â· Auth: Session or API Key
+> **Endpoint:** `POST /api/auth/twitter/verify-tweet` · Auth: Session or API Key
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -418,7 +418,7 @@ print("Linked:", result["username"])
 
 Sync an on-chain transaction to the backend database. Auto-detects source (hub/vault/leverage/vesting) from the transaction target.
 
-> **Endpoint:** `POST /api/v1/sync` Â· Auth: None (public) Â· Rate limit: 20 req/min per IP
+> **Endpoint:** `POST /api/v1/sync` · Auth: None (public) · Rate limit: 20 req/min per IP
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -468,7 +468,7 @@ These methods require session cookie or API key authentication. All return pagin
 
 Get your loans across protocol sources.
 
-> **Endpoint:** `GET /api/v1/loans` Â· Auth: Session or API Key Â· Pagination: Offset
+> **Endpoint:** `GET /api/v1/loans` · Auth: Session or API Key · Pagination: Offset
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -499,7 +499,7 @@ loans = client.api.get_loans(source='hub', active=True, page=1, limit=20)
 
 Get loan lifecycle events.
 
-> **Endpoint:** `GET /api/v1/loans/events` Â· Auth: Session or API Key Â· Pagination: Offset
+> **Endpoint:** `GET /api/v1/loans/events` · Auth: Session or API Key · Pagination: Offset
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -528,7 +528,7 @@ events = client.api.get_loan_events(source='vault', action='created')
 
 Get vault staking events.
 
-> **Endpoint:** `GET /api/v1/vault/events` Â· Auth: Session or API Key Â· Pagination: Offset
+> **Endpoint:** `GET /api/v1/vault/events` · Auth: Session or API Key · Pagination: Offset
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -556,7 +556,7 @@ vault_events = client.api.get_vault_events(action='wrap')
 
 Get vesting events.
 
-> **Endpoint:** `GET /api/v1/vesting/events` Â· Auth: Session or API Key Â· Pagination: Offset
+> **Endpoint:** `GET /api/v1/vesting/events` · Auth: Session or API Key · Pagination: Offset
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -591,7 +591,7 @@ These methods require an API key (either manually provided or auto-provisioned).
 
 List and search tokens.
 
-> **Endpoint:** `GET /api/v1/tokens` Â· Auth: API Key Â· Pagination: Offset
+> **Endpoint:** `GET /api/v1/tokens` · Auth: API Key · Pagination: Offset
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -643,7 +643,7 @@ print(result["data"])
 
 Get full details for a single token, including prediction options if applicable.
 
-> **Endpoint:** `GET /api/v1/tokens/{address}` Â· Auth: API Key
+> **Endpoint:** `GET /api/v1/tokens/{address}` · Auth: API Key
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -692,7 +692,7 @@ Returns: full token details wrapped in `{ data: { ... } }`.
 
 Get OHLC price candles for a token. Price is calculated as `reserve1 / reserve0` from on-chain sync events.
 
-> **Endpoint:** `GET /api/v1/tokens/{address}/candles` Â· Auth: API Key
+> **Endpoint:** `GET /api/v1/tokens/{address}/candles` · Auth: API Key
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -729,9 +729,9 @@ candles = client.api.get_candles("0xToken...", interval="1h", limit=100)
 
 Get AMM trade history for a token.
 
-> **Naming note:** The field `amountUSDC` in trade responses represents the USDB amount (legacy field name from pre-USDB era). Treat `amountUSDC` as `amountUSDB` â€” it's the same stablecoin value, 18 decimals. Similarly, `usdcSpent` in prediction trades = USDB spent.
+> **Naming note:** The field `amountUSDC` in trade responses represents the USDB amount (legacy field name from pre-USDB era). Treat `amountUSDC` as `amountUSDB` — it's the same stablecoin value, 18 decimals. Similarly, `usdcSpent` in prediction trades = USDB spent.
 
-> **Endpoint:** `GET /api/v1/tokens/{address}/trades` Â· Auth: API Key Â· Pagination: Cursor
+> **Endpoint:** `GET /api/v1/tokens/{address}/trades` · Auth: API Key · Pagination: Cursor
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -763,7 +763,7 @@ Returns: `{ data: Trade[], pagination: { limit, hasMore, nextCursor } }`
 
 Get prediction market order book.
 
-> **Endpoint:** `GET /api/v1/tokens/{address}/orders` Â· Auth: API Key Â· Pagination: Offset
+> **Endpoint:** `GET /api/v1/tokens/{address}/orders` · Auth: API Key · Pagination: Offset
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -795,7 +795,7 @@ Returns: `{ data: Order[], pagination }`
 
 Get comments for a token. The `address` parameter accepts a contract address or numeric project ID.
 
-> **Endpoint:** `GET /api/v1/tokens/{address}/comments` Â· Auth: API Key Â· Pagination: Offset
+> **Endpoint:** `GET /api/v1/tokens/{address}/comments` · Auth: API Key · Pagination: Offset
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -828,7 +828,7 @@ Returns: `{ data: Comment[], pagination }`
 
 Get whitelist entries for a frozen token, or check a specific wallet.
 
-> **Endpoint:** `GET /api/v1/tokens/{address}/whitelist` Â· Auth: API Key Â· Pagination: Offset
+> **Endpoint:** `GET /api/v1/tokens/{address}/whitelist` · Auth: API Key · Pagination: Offset
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -868,7 +868,7 @@ Get whitelist entries for a frozen token, or check a specific wallet.
 
 Get transaction history for a wallet across all tokens.
 
-> **Endpoint:** `GET /api/v1/wallet/{address}/transactions` Â· Auth: API Key Â· Pagination: Cursor
+> **Endpoint:** `GET /api/v1/wallet/{address}/transactions` · Auth: API Key · Pagination: Cursor
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -900,7 +900,7 @@ Returns: `{ data: Transaction[], pagination: { limit, hasMore, nextCursor } }`
 
 Get prediction market trade history with reserve data for probability tracking.
 
-> **Endpoint:** `GET /api/v1/markets/{address}/liquidity` Â· Auth: API Key Â· Pagination: Cursor
+> **Endpoint:** `GET /api/v1/markets/{address}/liquidity` · Auth: API Key · Pagination: Cursor
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -940,7 +940,7 @@ Register and look up AI agents on the ERC-8004 Identity Registry. These endpoint
 
 Register an agent in the database after on-chain ERC-8004 registration.
 
-> **Endpoint:** `POST /api/agents` Â· Auth: Session (wallet must match `wallet` field)
+> **Endpoint:** `POST /api/agents` · Auth: Session (wallet must match `wallet` field)
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -975,7 +975,7 @@ Returns:
 
 **`lookupAgent(address)`**
 
-Look up an agent by wallet address. Public â€” no auth required.
+Look up an agent by wallet address. Public — no auth required.
 
 > **Endpoint:** `GET /api/agents/{address}`
 
@@ -985,9 +985,9 @@ Returns: `{ isAgent: true, agent: { ... } }` or `{ isAgent: false, agent: null }
 
 **`listAgents(options?)`**
 
-List all registered agents with pagination. Public â€” no auth required.
+List all registered agents with pagination. Public — no auth required.
 
-> **Endpoint:** `GET /api/agents` Â· Pagination: Offset
+> **Endpoint:** `GET /api/agents` · Pagination: Offset
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -1033,7 +1033,7 @@ agents = client.agent.list_agents(page=1, limit=20)
 
 Report bugs and track their status. Verified bugs earn points (amount set by admin). Rate limited to 5 reports per day per wallet.
 
-**`POST /api/v1/bugs/reports`** Â· Auth: SIWE Session
+**`POST /api/v1/bugs/reports`** · Auth: SIWE Session
 
 Submit a bug report.
 
@@ -1047,7 +1047,7 @@ Submit a bug report.
 
 Returns: `{ id, wallet, title, status: "pending", createdAt }`
 
-**`GET /api/v1/bugs/reports`** Â· Auth: SIWE Session
+**`GET /api/v1/bugs/reports`** · Auth: SIWE Session
 
 View your submitted reports. Admins see all reports and can filter by wallet or status.
 
@@ -1058,7 +1058,7 @@ View your submitted reports. Admins see all reports and can filter by wallet or 
 
 Returns: `{ data: BugReport[] }`
 
-**`PATCH /api/v1/bugs/reports/{id}`** Â· Auth: Admin only
+**`PATCH /api/v1/bugs/reports/{id}`** · Auth: Admin only
 
 Update report status and award points.
 
@@ -1067,8 +1067,8 @@ Update report status and award points.
 | `status` | string | `verified`, `duplicate`, or `invalid` |
 | `basePoints` | number | Points to award (verified reports only) |
 
-**`POST /api/v1/admin/block`** Â· Auth: Admin only â€” Block a wallet from submitting reports.
-**`DELETE /api/v1/admin/block`** Â· Auth: Admin only â€” Unblock a wallet.
+**`POST /api/v1/admin/block`** · Auth: Admin only — Block a wallet from submitting reports.
+**`DELETE /api/v1/admin/block`** · Auth: Admin only — Unblock a wallet.
 
 > **Severity guide:** `low` = cosmetic/typo/UI glitch. `medium` = feature works but behaves unexpectedly. `high` = feature broken or produces wrong results. `critical` = funds at risk, data loss, or security vulnerability.
 
