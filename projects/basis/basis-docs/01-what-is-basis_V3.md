@@ -67,7 +67,7 @@ The formula stays secret. But the message is simple: use the platform genuinely 
 
 **Token Creation** - Anyone can launch a token. Tokens are tradeable on the DEX from the moment of creation. The initial **reward phase** is the first period where early buyers earn reward shares (claimable via `claimRewards()`). The creator earns a share of every trade - forever. Tokens come in two types: Stable+ (price only goes up) and Floor+ (price moves freely but has a rising floor).
 
-**Prediction Markets** - Create markets on any question with definable outcomes. Each market creates a Predict+ token (tradeable separately from the betting pool). An AMM provides instant liquidity, an order book allows limit pricing, and a resolution system with bounties incentivizes honest outcomes. Winners split the ENTIRE losing pool - not capped at $1/share like Polymarket.
+**Prediction Markets** - Create markets on any question with definable outcomes. Each market creates a Predict+ token (tradeable separately from the betting pool). An AMM provides instant liquidity, an order book allows limit pricing, and a resolution system with bounties incentivizes honest outcomes. Winners split the ENTIRE losing pool - not capped at $1/share like most prediction markets (e.g. Polymarket, Kalshi).
 
 **DeFi Primitives** - Loans, leverage, staking vault, vesting. All integrated. You can stake STASIS for yield, borrow against it, take leveraged positions with no price liquidation, and vest tokens for team distribution.
 
@@ -142,7 +142,7 @@ Each prediction market creates one Predict+ token - a Stable+ token with a short
 
 This is the **ideal use case for Stable+ mechanics**: the token launches fresh with zero supply, gets the strongest price appreciation during the low-supply early period, and resolves before it ever hits the supply wall that long-lived Stable+ tokens eventually face.
 
-Buying the Predict+ token is **separate** from betting on outcomes - the token can be traded for appreciation, used as loan collateral, or held. Betting happens through a separate pool: buy shares in specific outcomes, and when the market resolves, winners split the entire losing pool - not capped at $1/share like Polymarket. Trading fee: 1.5%.
+Buying the Predict+ token is **separate** from betting on outcomes - the token can be traded for appreciation, used as loan collateral, or held. Betting happens through a separate pool: buy shares in specific outcomes, and when the market resolves, winners split the entire losing pool - not capped at $1/share like most prediction markets (e.g. Polymarket, Kalshi). Trading fee: 1.5%.
 
 **Anti-rug by design:** 100% elastic supply means every token in circulation was purchased at market price. Zero pre-minting, zero insider allocations. It's mathematically impossible for creators to dump insider tokens.
 

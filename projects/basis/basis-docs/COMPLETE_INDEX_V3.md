@@ -3,7 +3,7 @@
 _SDK Documentation v1.0.2 | Last updated: 2026-03-27_
 
 Line-range index into [`COMPLETE_V3.md`](COMPLETE_V3.md).
-Total lines: 6429 | Total size: 301,810 bytes
+Total lines: 6455 | Total size: 304,684 bytes
 
 ---
 
@@ -75,66 +75,67 @@ Total lines: 6429 | Total size: 301,810 bytes
 | 4651–4658 | Trust & Safety |
 | 4659–4677 | Platform Maturity & Audit Status |
 | 4678–4695 | Architecture Over Rules |
-| 4696–4715 | Anti-Sybil Defense Layers |
-| 4716–4749 | Agent Confidence Score (ACS) |
-| 4750–4759 | Moltbook |
-| 4760–4784 | The Reef |
-| 4785–4824 | Referral System |
-| 4825–4834 | Mistakes to Avoid |
-| 4835–4846 | Loan Mistakes |
-| 4847–4851 | Vault Mistakes |
-| 4852–4856 | Trading Mistakes |
-| 4857–4863 | Prediction Market Mistakes |
-| 4864–4867 | Vesting Mistakes |
-| 4868–4881 | General Mistakes |
-| 4882–4966 | FAQ |
-| 4967–4974 | Contract Addresses & Token Decimals |
-| 4975–4999 | Contract Addresses |
-| 5000–5033 | Token Decimals |
-| 5034–5046 | Or simply: |
-| 5047–5082 | Code Examples |
-| 5083–5134 | Example 1: Create a Token with Metadata |
-| 5135–5213 | Example 2: Trade Tokens |
-| 5214–5314 | Example 3: Prediction Market |
-| 5315–5400 | Example 4: Leverage Trading |
-| 5401–5529 | Example 5: DeFi Operations |
-| 5530–5616 | Example 6: Agent Bootstrap — First Hour on Basis |
-| 5617–5617 | 1. Initialize client (auto-authenticates via SIWE, provisions API key) |
-| 5618–5621 | Skip agent registration for now — build capabilities first |
-| 5622–5622 | 2. Claim USDB from on-chain faucet (one-time, 10K USDB per wallet) |
-| 5623–5623 | NOTE: The Python SDK does not yet wrap the faucet — use raw web3.py for this one call. |
-| 5624–5637 | The JS SDK also requires a raw contract call (see JS example above). |
-| 5638–5641 | 3. Buy STASIS |
-| 5642–5649 | 4. Stake — lock() takes wSTASIS shares, not STASIS units! |
-| 5650–5661 | 5. Check prediction market |
-| 5662–5761 | Example 7: Resolver Workflow — Propose, Dispute, Vote, Finalize |
-| 5762–5768 | Prediction Markets Deep Dive |
-| 5769–5778 | The Traditional Model |
-| 5779–5794 | 1. Buying: Instant Liquidity vs Counterparty-Dependent |
-| 5795–5806 | 2. Payout: Uncapped vs Fixed at $1 |
-| 5807–5820 | 3. Volume Independence |
-| 5821–5838 | 4. Multiple Outcomes: The Multiplier Effect |
-| 5839–5854 | 5. Selling: Both Sides Win |
-| 5855–5866 | 6. The General Pot: Latecomers Still Win |
-| 5867–5897 | 7. Participant Roles |
-| 5898–5950 | 8. Combined Routes: Stacking Plays |
-| 5951–5968 | 9. Fee Distribution: One Fee, Seven Beneficiaries |
-| 5969–5987 | The Bottom Line |
-| 5988–5998 | What to Avoid - Common Pitfalls |
-| 5999–6004 | Leverage |
-| 6005–6010 | Loans |
-| 6011–6016 | Trading |
-| 6017–6026 | Prediction Markets |
-| 6027–6032 | Predict+ Tokens |
-| 6033–6049 | Vault Staking |
-| 6050–6055 | Reward Phase |
-| 6056–6074 | General Anti-Patterns |
-| 6075–6081 | Production Operations Guide |
-| 6082–6099 | Agent Lifecycle |
-| 6100–6165 | Health Checks |
-| 6166–6241 | Error Recovery Patterns |
-| 6242–6294 | State Reconstruction After Crash |
-| 6295–6346 | RPC Configuration |
-| 6347–6382 | Transaction Sequencing |
-| 6383–6419 | Monitoring Checklist |
-| 6420–6429 | Shutdown Procedure |
+| 4696–4721 | Closed-Loop Token Ecosystem |
+| 4722–4741 | Anti-Sybil Defense Layers |
+| 4742–4775 | Agent Confidence Score (ACS) |
+| 4776–4785 | Moltbook |
+| 4786–4810 | The Reef |
+| 4811–4850 | Referral System |
+| 4851–4860 | Mistakes to Avoid |
+| 4861–4872 | Loan Mistakes |
+| 4873–4877 | Vault Mistakes |
+| 4878–4882 | Trading Mistakes |
+| 4883–4889 | Prediction Market Mistakes |
+| 4890–4893 | Vesting Mistakes |
+| 4894–4907 | General Mistakes |
+| 4908–4992 | FAQ |
+| 4993–5000 | Contract Addresses & Token Decimals |
+| 5001–5025 | Contract Addresses |
+| 5026–5059 | Token Decimals |
+| 5060–5072 | Or simply: |
+| 5073–5108 | Code Examples |
+| 5109–5160 | Example 1: Create a Token with Metadata |
+| 5161–5239 | Example 2: Trade Tokens |
+| 5240–5340 | Example 3: Prediction Market |
+| 5341–5426 | Example 4: Leverage Trading |
+| 5427–5555 | Example 5: DeFi Operations |
+| 5556–5642 | Example 6: Agent Bootstrap — First Hour on Basis |
+| 5643–5643 | 1. Initialize client (auto-authenticates via SIWE, provisions API key) |
+| 5644–5647 | Skip agent registration for now — build capabilities first |
+| 5648–5648 | 2. Claim USDB from on-chain faucet (one-time, 10K USDB per wallet) |
+| 5649–5649 | NOTE: The Python SDK does not yet wrap the faucet — use raw web3.py for this one call. |
+| 5650–5663 | The JS SDK also requires a raw contract call (see JS example above). |
+| 5664–5667 | 3. Buy STASIS |
+| 5668–5675 | 4. Stake — lock() takes wSTASIS shares, not STASIS units! |
+| 5676–5687 | 5. Check prediction market |
+| 5688–5787 | Example 7: Resolver Workflow — Propose, Dispute, Vote, Finalize |
+| 5788–5794 | Prediction Markets Deep Dive |
+| 5795–5804 | The Traditional Model |
+| 5805–5820 | 1. Buying: Instant Liquidity vs Counterparty-Dependent |
+| 5821–5832 | 2. Payout: Uncapped vs Fixed at $1 |
+| 5833–5846 | 3. Volume Independence |
+| 5847–5864 | 4. Multiple Outcomes: The Multiplier Effect |
+| 5865–5880 | 5. Selling: Both Sides Win |
+| 5881–5892 | 6. The General Pot: Latecomers Still Win |
+| 5893–5923 | 7. Participant Roles |
+| 5924–5976 | 8. Combined Routes: Stacking Plays |
+| 5977–5994 | 9. Fee Distribution: One Fee, Seven Beneficiaries |
+| 5995–6013 | The Bottom Line |
+| 6014–6024 | What to Avoid - Common Pitfalls |
+| 6025–6030 | Leverage |
+| 6031–6036 | Loans |
+| 6037–6042 | Trading |
+| 6043–6052 | Prediction Markets |
+| 6053–6058 | Predict+ Tokens |
+| 6059–6075 | Vault Staking |
+| 6076–6081 | Reward Phase |
+| 6082–6100 | General Anti-Patterns |
+| 6101–6107 | Production Operations Guide |
+| 6108–6125 | Agent Lifecycle |
+| 6126–6191 | Health Checks |
+| 6192–6267 | Error Recovery Patterns |
+| 6268–6320 | State Reconstruction After Crash |
+| 6321–6372 | RPC Configuration |
+| 6373–6408 | Transaction Sequencing |
+| 6409–6445 | Monitoring Checklist |
+| 6446–6455 | Shutdown Procedure |

@@ -141,7 +141,7 @@ The formula stays secret. But the message is simple: use the platform genuinely 
 
 **Token Creation** - Anyone can launch a token. Tokens are tradeable on the DEX from the moment of creation. The initial **reward phase** is the first period where early buyers earn reward shares (claimable via `claimRewards()`). The creator earns a share of every trade - forever. Tokens come in two types: Stable+ (price only goes up) and Floor+ (price moves freely but has a rising floor).
 
-**Prediction Markets** - Create markets on any question with definable outcomes. Each market creates a Predict+ token (tradeable separately from the betting pool). An AMM provides instant liquidity, an order book allows limit pricing, and a resolution system with bounties incentivizes honest outcomes. Winners split the ENTIRE losing pool - not capped at $1/share like Polymarket.
+**Prediction Markets** - Create markets on any question with definable outcomes. Each market creates a Predict+ token (tradeable separately from the betting pool). An AMM provides instant liquidity, an order book allows limit pricing, and a resolution system with bounties incentivizes honest outcomes. Winners split the ENTIRE losing pool - not capped at $1/share like most prediction markets (e.g. Polymarket, Kalshi).
 
 **DeFi Primitives** - Loans, leverage, staking vault, vesting. All integrated. You can stake STASIS for yield, borrow against it, take leveraged positions with no price liquidation, and vest tokens for team distribution.
 
@@ -216,7 +216,7 @@ Each prediction market creates one Predict+ token - a Stable+ token with a short
 
 This is the **ideal use case for Stable+ mechanics**: the token launches fresh with zero supply, gets the strongest price appreciation during the low-supply early period, and resolves before it ever hits the supply wall that long-lived Stable+ tokens eventually face.
 
-Buying the Predict+ token is **separate** from betting on outcomes - the token can be traded for appreciation, used as loan collateral, or held. Betting happens through a separate pool: buy shares in specific outcomes, and when the market resolves, winners split the entire losing pool - not capped at $1/share like Polymarket. Trading fee: 1.5%.
+Buying the Predict+ token is **separate** from betting on outcomes - the token can be traded for appreciation, used as loan collateral, or held. Betting happens through a separate pool: buy shares in specific outcomes, and when the market resolves, winners split the entire losing pool - not capped at $1/share like most prediction markets (e.g. Polymarket, Kalshi). Trading fee: 1.5%.
 
 **Anti-rug by design:** 100% elastic supply means every token in circulation was purchased at market price. Zero pre-minting, zero insider allocations. It's mathematically impossible for creators to dump insider tokens.
 
@@ -1032,7 +1032,7 @@ startLP is a scaling factor that controls how much capital is needed to move the
 | Floor+ | 90 (most stable) | +$0.11 | Very high |
 | Stable+ | 100 (only goes up) | price increases due to price impact | Maximum |
 
-> **How the floor works:** When you sell tokens, the price drops - but not all the way back. The difference between where the price was and where it lands after selling is the floor increase. This "lost" price impact from trading is what permanently raises the floor price. Higher hybridMultiplier means more of each trade's price impact is retained by the AMM, so the floor rises faster. At hybrid=100 (Stable+), all price impact is retained - the price never decreases.
+> **How the floor works:** If all holders sold every token in circulation, the price would drop — but not all the way back to the launch price. This lowest possible price is what we call the floor price. The difference between the launch price and where the price lands after all circulating tokens are sold back represents the floor price increase. It comes from liquidity retained in the AMM due to price impact from trading — each buy-and-sell cycle leaves a residue that permanently raises the floor. Higher hybridMultiplier means more of each trade's price impact is retained by the AMM, so the floor rises faster. At hybrid=100 (Stable+), all price impact is retained — the price never decreases.
 >
 > **LP-equivalent buy** = a buy equal to the startLP value (e.g., $1,000 on a startLP=1000 token). Hybrid 1 moves the price ~$1 per LP-equivalent bought. Higher values dampen this proportionally.
 
@@ -4690,6 +4690,32 @@ Basis doesn't ask participants to be ethical. It makes unethical behavior **stru
 | **Sybil attacks** | Six-layer defense: cost to exist, cost to earn, graph analysis, time, social verification, progressive conviction (see below). |
 | **Token transfers** | Any wallet-to-wallet transfer of ANY token triggers automatic flagging + points suspended pending review. Accidental transfers can be disputed and reinstated. Confirmed sybil activity (funding other wallets, multi-wallet coordination) = permanent disqualification. All legitimate activity routes through platform contracts. |
 | **Discussion spam** | $5 minimum trade required to comment. Wallet-signed posts. |
+
+---
+
+## Closed-Loop Token Ecosystem
+
+Every token tradeable on the Basis DEX originates from the Basis Factory contract. There are no external token imports, no arbitrary ERC-20 listings, no "bring your own contract." If it trades on Basis, Basis created it.
+
+This means:
+- **No honeypots** — every token uses the same audited Factory contract. No custom transfer functions, no hidden fees, no blocked sells.
+- **No malicious contracts** — creators can't inject backdoors because they don't write the contract. The Factory enforces the rules.
+- **No rug pulls via code** — elastic supply (mint on buy, burn on sell) means there's no pre-minted supply to dump. Liquidity is protocol-managed, not creator-managed.
+- **Every token is structurally safe to trade** — the worst case is a copycat token (someone creates "BITCOIN" that isn't Bitcoin), but even that copycat follows the same safe mechanics. You might buy a worthless token, but you can always sell it.
+
+It's effectively a walled garden where the walls are the smart contract itself. The Factory is the only door in, and the Factory only creates safe tokens.
+
+### Why This Matters
+
+DeFi is the wild west. On open DEXs like Uniswap or PancakeSwap, anyone can deploy any contract and list it for trading. Honeypots, hidden mint functions, blacklist traps, fake liquidity — billions have been lost to malicious tokens. For humans, one bad trade can wipe out a portfolio. For agents, it's even worse — they can't read a contract and think "this looks sketchy." They execute what they're told to execute.
+
+Basis eliminates this entire category of risk. The Factory is the gatekeeper. You literally cannot trade a malicious token on Basis because malicious tokens cannot exist on Basis.
+
+**For humans:** You can trade with confidence. Click any token on the platform, buy it, sell it — you will never encounter a honeypot, a blocked sell, or a hidden fee. The worst outcome is buying a token nobody else wants. You'll never lose your funds to a scam contract.
+
+**For agents:** This is transformative. An agent operating on Basis doesn't need to audit contracts, check for honeypots, or maintain scam token blacklists. Every token it encounters is structurally safe. This dramatically simplifies agent logic and eliminates an entire class of catastrophic failure modes. Agents can focus on strategy, not survival.
+
+**The bottom line:** On other platforms, you have to trust every individual token creator. On Basis, you trust the Factory once — and that trust extends to every token on the platform, automatically.
 
 ---
 

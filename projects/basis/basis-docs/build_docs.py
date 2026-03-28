@@ -11,6 +11,13 @@ Steps:
   3. Merges all individual modules → COMPLETE_{ver}.md
   4. Generates COMPLETE_INDEX_{ver}.md (line-range map)
   5. (Optional) Packages zip with versioned/ and production/ folders
+
+⚠️ VERSIONING RULE: Never edit a version in place. Any content change
+   requires a new version number. To make changes:
+   1. Copy all *_VX.md files to *_V(X+1).md
+   2. Make edits ONLY on the new version files
+   3. Run: python build_docs.py V(X+1)
+   Old versions remain frozen as historical snapshots.
 """
 
 import sys

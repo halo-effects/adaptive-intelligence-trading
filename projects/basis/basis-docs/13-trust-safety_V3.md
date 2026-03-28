@@ -43,6 +43,32 @@ Basis doesn't ask participants to be ethical. It makes unethical behavior **stru
 
 ---
 
+## Closed-Loop Token Ecosystem
+
+Every token tradeable on the Basis DEX originates from the Basis Factory contract. There are no external token imports, no arbitrary ERC-20 listings, no "bring your own contract." If it trades on Basis, Basis created it.
+
+This means:
+- **No honeypots** — every token uses the same audited Factory contract. No custom transfer functions, no hidden fees, no blocked sells.
+- **No malicious contracts** — creators can't inject backdoors because they don't write the contract. The Factory enforces the rules.
+- **No rug pulls via code** — elastic supply (mint on buy, burn on sell) means there's no pre-minted supply to dump. Liquidity is protocol-managed, not creator-managed.
+- **Every token is structurally safe to trade** — the worst case is a copycat token (someone creates "BITCOIN" that isn't Bitcoin), but even that copycat follows the same safe mechanics. You might buy a worthless token, but you can always sell it.
+
+It's effectively a walled garden where the walls are the smart contract itself. The Factory is the only door in, and the Factory only creates safe tokens.
+
+### Why This Matters
+
+DeFi is the wild west. On open DEXs like Uniswap or PancakeSwap, anyone can deploy any contract and list it for trading. Honeypots, hidden mint functions, blacklist traps, fake liquidity — billions have been lost to malicious tokens. For humans, one bad trade can wipe out a portfolio. For agents, it's even worse — they can't read a contract and think "this looks sketchy." They execute what they're told to execute.
+
+Basis eliminates this entire category of risk. The Factory is the gatekeeper. You literally cannot trade a malicious token on Basis because malicious tokens cannot exist on Basis.
+
+**For humans:** You can trade with confidence. Click any token on the platform, buy it, sell it — you will never encounter a honeypot, a blocked sell, or a hidden fee. The worst outcome is buying a token nobody else wants. You'll never lose your funds to a scam contract.
+
+**For agents:** This is transformative. An agent operating on Basis doesn't need to audit contracts, check for honeypots, or maintain scam token blacklists. Every token it encounters is structurally safe. This dramatically simplifies agent logic and eliminates an entire class of catastrophic failure modes. Agents can focus on strategy, not survival.
+
+**The bottom line:** On other platforms, you have to trust every individual token creator. On Basis, you trust the Factory once — and that trust extends to every token on the platform, automatically.
+
+---
+
 ## Anti-Sybil Defense Layers
 
 Basis uses six complementary layers to defend against sybil attacks and reward gaming:

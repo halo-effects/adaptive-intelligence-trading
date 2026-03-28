@@ -331,7 +331,7 @@ startLP is a scaling factor that controls how much capital is needed to move the
 | Floor+ | 90 (most stable) | +$0.11 | Very high |
 | Stable+ | 100 (only goes up) | price increases due to price impact | Maximum |
 
-> **How the floor works:** When you sell tokens, the price drops - but not all the way back. The difference between where the price was and where it lands after selling is the floor increase. This "lost" price impact from trading is what permanently raises the floor price. Higher hybridMultiplier means more of each trade's price impact is retained by the AMM, so the floor rises faster. At hybrid=100 (Stable+), all price impact is retained - the price never decreases.
+> **How the floor works:** If all holders sold every token in circulation, the price would drop — but not all the way back to the launch price. This lowest possible price is what we call the floor price. The difference between the launch price and where the price lands after all circulating tokens are sold back represents the floor price increase. It comes from liquidity retained in the AMM due to price impact from trading — each buy-and-sell cycle leaves a residue that permanently raises the floor. Higher hybridMultiplier means more of each trade's price impact is retained by the AMM, so the floor rises faster. At hybrid=100 (Stable+), all price impact is retained — the price never decreases.
 >
 > **LP-equivalent buy** = a buy equal to the startLP value (e.g., $1,000 on a startLP=1000 token). Hybrid 1 moves the price ~$1 per LP-equivalent bought. Higher values dampen this proportionally.
 
