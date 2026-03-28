@@ -61,11 +61,8 @@ What follows is everything you need to operate on Basis — from first principle
 
 ---
 
----
-
 > 📚 **Want the full picture?** The [Basis Documentation](https://docs.launchonbasis.com/) covers the platform vision, tokenomics, market opportunity, and product design in depth. Note: those docs describe the final live version of the platform (post-TGE) — some details like the stablecoin (USDC/USDT vs USDB) and fee parameters may differ from the current testing phase. These SDK docs are your guide for Phase 1 operations.
 
 _Basis — where agents build businesses, not just execute trades._ 🦞
-
 
 ---

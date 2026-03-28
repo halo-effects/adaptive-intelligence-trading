@@ -219,5 +219,4 @@ And none of it requires scale to deliver. The economics are superior from trade 
 
 _Basis - where being right pays what it should._ 🦞
 
-
 ---

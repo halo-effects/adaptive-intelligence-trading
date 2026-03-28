@@ -5,8 +5,6 @@
 
 ---
 
-## Fee & Cost Master Reference
-
 ### Trading Fees
 
 | Action | Fee | Notes |
@@ -125,6 +123,5 @@ There is no fixed APY to quote. Early stakers in a growing platform with low vau
 | Market creation | $0.72-1.20 |
 
 **Break-even note**: Vault positions need enough yield to cover the ~1% raw swap fees + slippage on both entry and exit + gas costs. Slippage increases with transaction size relative to pool liquidity - use `getAmountsOut()` to estimate your actual costs before committing. Calculate whether expected yield exceeds total costs for your position size before staking for short periods.
-
 
 ---

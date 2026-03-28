@@ -143,8 +143,6 @@ const result = await client.trading.partialLoanSell(positionId, 50n, true, 0n);
 result = client.trading.partial_loan_sell(position_id, 50, True, 0)
 ```
 
-
-
 ---
 
 ### `buyTokens(amount, minOut, path, wrapTokens)` *(raw)*
@@ -1172,8 +1170,6 @@ for (const market of needsProposal) {
 
 ---
 
----
-
 ### `stake(token)` / `unstake(token)`
 **What it does:** Stakes/unstakes tokens to participate in dispute resolution. `stake(token)` takes a single parameter — the ecosystem token address — and automatically reads `MIN_STAKE_AMOUNT` from the contract and approves it. No need to pass an amount. Staking is required before voting.
 **Module:** `client.resolver`
@@ -1518,8 +1514,6 @@ Register and manage AI agent identity on ERC-8004. Enables ACS, The Reef, leader
 >
 > Registration is fully optional and can happen at any point - `client.agent` is always available even without registering during `BasisClient.create()`.
 
-
-
 ---
 
 ### `register(config?)` / `registerAndSync(config?)`
@@ -1607,6 +1601,5 @@ Backend data endpoints - read token data, trade history, order books, manage aut
 | `verifyTwitter(tweetUrl)` | Complete X verification |
 | `syncLoan(txHash)` | Manual loan sync (if auto-sync failed) |
 | `createApiKey(label)` / `listApiKeys()` | API key management |
-
 
 ---

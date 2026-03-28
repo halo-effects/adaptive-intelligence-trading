@@ -6,11 +6,9 @@
 
 ---
 
-## 6. Off-Chain API (`client.api`)
-
 The API module provides access to the Basis backend for data queries, image uploads, metadata management, and more. All methods map to REST endpoints on `https://launchonbasis.com`.
 
-### 6.0 Rate Limits & Pagination
+### Rate Limits & Pagination
 
 **Rate Limits:**
 
@@ -56,7 +54,7 @@ The API uses two pagination styles. Each endpoint below notes which one it uses.
 
 ---
 
-### 6.1 Authentication
+### Authentication
 
 Authentication is handled automatically when using `BasisClient.create()`. The SDK performs a SIWE (Sign-In with Ethereum) flow and provisions an API key. This section documents the underlying flow for transparency and debugging.
 
@@ -142,7 +140,7 @@ client.api.delete_api_key(key["id"])
 
 ---
 
-### 6.2 Session-Authenticated Endpoints
+### Session-Authenticated Endpoints
 
 These methods require SIWE authentication (available when using `BasisClient.create`).
 
@@ -312,7 +310,7 @@ Returns: `{ success: true, message: "Order synced from transaction." }`
 
 ---
 
-### 6.3 X / Twitter Verification
+### X / Twitter Verification
 
 Link an X (Twitter) account to a wallet using a challenge-based tweet verification. Accepts either session cookie or API key.
 
@@ -410,7 +408,7 @@ print("Linked:", result["username"])
 
 ---
 
-### 6.4 Transaction & Loan Sync Endpoints
+### Transaction & Loan Sync Endpoints
 
 ---
 
@@ -458,7 +456,7 @@ Returns:
 
 ---
 
-### 6.5 Loan & Event Read Endpoints
+### Loan & Event Read Endpoints
 
 These methods require session cookie or API key authentication. All return paginated results (offset-based): `{ data: [...], pagination: { total, page, limit, hasMore } }`.
 
@@ -581,7 +579,7 @@ vesting_events = client.api.get_vesting_events(action='claimed', vesting_id=5)
 
 ---
 
-### 6.6 API-Key-Authenticated Data Endpoints
+### API-Key-Authenticated Data Endpoints
 
 These methods require an API key (either manually provided or auto-provisioned). All use the `X-API-Key` header internally.
 
@@ -930,7 +928,7 @@ Returns: `{ data: LiquidityEntry[], pagination: { limit, hasMore, nextCursor } }
 
 ---
 
-### 6.7 Agent Identity Endpoints
+### Agent Identity Endpoints
 
 Register and look up AI agents on the ERC-8004 Identity Registry. These endpoints sync on-chain identity data with the backend database.
 
@@ -1029,7 +1027,7 @@ agents = client.agent.list_agents(page=1, limit=20)
 
 ---
 
-### 6.8 Bug Reporting
+### Bug Reporting
 
 Report bugs and track their status. Verified bugs earn points (amount set by admin). Rate limited to 5 reports per day per wallet.
 
@@ -1073,6 +1071,5 @@ Update report status and award points.
 > **Severity guide:** `low` = cosmetic/typo/UI glitch. `medium` = feature works but behaves unexpectedly. `high` = feature broken or produces wrong results. `critical` = funds at risk, data loss, or security vulnerability.
 
 > **Admin wallets** are configured via the `ADMIN_WALLETS` environment variable (comma-separated addresses). The `/support` page on the dapp provides a form for submitting reports and viewing your submission history.
-
 
 ---

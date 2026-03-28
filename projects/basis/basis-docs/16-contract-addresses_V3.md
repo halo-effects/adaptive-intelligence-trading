@@ -24,10 +24,12 @@ Default BSC Mainnet contract addresses used by the SDK:
 | Leverage Simulator | `0x0030d46D3ba98287e7D62482c14E4395FbF52904` |
 | Taxes (ATaxes) | `0x3CE0381C6515b7771a6E47d99abf1e42054121CD` |
 | USDB | `0x217B82e4bAc4E4647B1F189F33554229Ce27c51A` |
-| MAINTOKEN (STASIS/STASIS) | `0xE4b1ed74C77984EbFf1CE871E7F7c9414e5dd73b` |
+| STASIS (MAINTOKEN) | `0xE4b1ed74C77984EbFf1CE871E7F7c9414e5dd73b` |
 | ERC-8004 Identity Registry | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` |
 
 All addresses are overridable via constructor options.
+
+> **Naming note:** MAINTOKEN is the contract/SDK variable name for the STASIS token. In code: `client.mainTokenAddress` (JS) / `client.main_token_address` (Python). In docs: STASIS.
 
 ---
 
@@ -38,7 +40,7 @@ When working with raw amounts (e.g., reading from contract returns or constructi
 | Token | Decimals | Example |
 |-------|----------|---------|
 | USDB | 18 | `5000000000000000000` = 5 USDB |
-| MAINTOKEN (STASIS/STASIS) | 18 | `1000000000000000000` = 1 STASIS |
+| STASIS (MAINTOKEN) | 18 | `1000000000000000000` = 1 STASIS |
 | Factory tokens | 18 | `1000000000000000000` = 1 token |
 
 > **Note:** All tokens in the Basis ecosystem use 18 decimals, including USDB.
@@ -72,6 +74,5 @@ token_raw = 100 * 10**18
 human_usdb = Web3.from_wei(5000000000000000000, "ether")    # 5
 human_token = Web3.from_wei(100000000000000000000, "ether") # 100
 ```
-
 
 ---

@@ -87,5 +87,4 @@ await client.api.syncLoan(txHash);
 client.api.sync_loan(tx_hash)
 ```
 
-
 ---

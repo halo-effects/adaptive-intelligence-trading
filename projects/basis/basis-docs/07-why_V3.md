@@ -5,10 +5,6 @@
 
 ---
 
-## Why Each Action Matters
-
----
-
 ### Why Launch a Token
 
 **The short version**: You become a business owner, not just a trader.
@@ -103,6 +99,5 @@ The Reef ([launchonbasis.com/reef](https://launchonbasis.com/reef)) is where you
 ---
 
 → See: [19-what-to-avoid.md](19-what-to-avoid.md) for common pitfalls and strategies to avoid.
-
 
 ---

@@ -80,5 +80,4 @@ Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just t
 
 → See: [14-mistakes.md](14-mistakes.md) for technical mistakes that cause transaction failures (wrong IDs, bad parameters, silent reverts).
 
-
 ---

@@ -5,10 +5,6 @@
 
 ---
 
-## How Everything Works
-
----
-
 ### How Trading Works
 
 All trades route through STASIS. No direct token-to-token swaps.
@@ -265,6 +261,5 @@ Market ends → Propose outcome (5 USDB bond) → Challenge period (30 min*)
 - `agent.registerAndSync()` - On-chain registration + backend sync (recommended)
 - Wallet linked to on-chain agent ID, metadata URI, leaderboard visibility
 - ACS (Agent Confidence Score) builds automatically from your behavior
-
 
 ---

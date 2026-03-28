@@ -1,6 +1,4 @@
----
-
-## Token Value & Incentive Structure
+# Token Value & Incentive Structure
 
 ```
 PLATFORM OVERVIEW:

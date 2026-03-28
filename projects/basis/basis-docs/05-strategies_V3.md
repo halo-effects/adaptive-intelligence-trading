@@ -5,10 +5,6 @@
 
 ---
 
-## Strategy Playbooks
-
----
-
 ### Strategy A: Predict Leverage Play
 
 **Goal**: Maximum price exposure on a prediction market you create.
@@ -200,6 +196,5 @@ console.log(`Price impact: ${Number(impactBps)}bp (${Number(impactBps)/100}%)`);
 - Stable+ tokens retain 100% of sell value in pool, so pools only grow — impact decreases over time
 - Floor+ tokens retain partial value — impact decreases but more slowly
 - All trades route through STASIS, so STASIS pool depth matters too
-
 
 ---

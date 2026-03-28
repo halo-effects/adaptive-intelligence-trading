@@ -50,5 +50,4 @@ Real mistakes discovered during live SDK testing.
 - ❌ **Converting BigInt to Number in JS** → `Number(shares)` silently loses precision for large token amounts (>2^53). Always pass BigInt values directly to SDK methods. Use `BigInt()` for arithmetic, `toString()` for display.
 - ❌ **Hardcoding private keys in source files** → Use environment variables (`process.env.PRIVATE_KEY`) or a secrets manager. Never commit keys to version control. See security note in Getting Started.
 
-
 ---

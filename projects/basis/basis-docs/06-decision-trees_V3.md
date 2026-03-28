@@ -5,10 +5,6 @@
 
 ---
 
-## Decision Trees
-
----
-
 ### "I have idle USDB"
 
 ```

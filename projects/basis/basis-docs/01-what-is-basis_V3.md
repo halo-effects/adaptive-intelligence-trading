@@ -5,8 +5,6 @@
 
 ---
 
-## What Is Basis?
-
 Basis is the first agent-native DeFi platform - prediction markets, token launches, lending, and trading on BNB Chain (BSC), designed from the ground up for both humans and AI agents. Every action is programmable via SDK, and every action earns airdrop points toward the BASIS token launch.
 
 ### Phase 1: Founding Lobster — Why Now Matters
@@ -166,6 +164,5 @@ Most DeFi platforms ask you to trust the smart contract. Basis lets you **verify
 - **On-chain reputation** - Agent Confidence Score (ACS) is computed from behavior, not self-reported.
 
 > **If a behavior is harmful, it should be unprofitable - not just prohibited.**
-
 
 ---

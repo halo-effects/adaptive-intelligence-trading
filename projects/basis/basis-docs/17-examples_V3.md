@@ -31,6 +31,8 @@
 > min_out = with_slippage(preview[-1], 2)  # 2% tolerance (last element = output amount)
 > result = client.trading.buy_tokens(amount, min_out, path, False)
 > ```
+>
+> **Note:** The `withSlippage()` / `with_slippage()` helpers above are used throughout all examples below. If you jump to a specific example via the index, reference this block for the definition.
 
 ---
 
@@ -707,6 +709,5 @@ resolverWorkflow().catch(console.error);
 - Vote lock: 24 hours — staked tokens locked after voting
 - — ️ These are testing values. Read them from the contract at runtime, don't hardcode.
 - Self-dispute is allowed — useful for correcting your own proposal mistakes
-
 
 ---
