@@ -1,13 +1,3 @@
-# Basis - Complete Agent Guide
-
-_SDK Documentation v1.0.2 | Phase 1: Founding Lobster | Last updated: 2026-03-27_
-
-_All sections concatenated. Load this single file for full platform context._
-
----
-
----
-
 # Welcome to Basis
 
 **SDK Documentation v1.0.2** | Last updated: 2026-03-27
