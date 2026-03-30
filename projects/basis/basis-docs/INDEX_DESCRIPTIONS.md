@@ -22,7 +22,7 @@ _Section descriptions for compiling INDEX files. Each entry provides context, us
 **What's in it:** All 6 agent archetypes (Trader, Token Creator, Capital Manager, Market Maker, Community Builder, Airdrop Miner) plus the Super Referrer meta-archetype and Molt tier table.
 **Use this when:** You need to identify your role, understand the points map, or pick which strategies and methods to focus on.
 **Key topics:** Archetypes, airdrop points, Molt tiers (Egg → Abyssal Lobster), combining archetypes, Super Referrer.
-**Cross-refs:** → [08-strategies.md](08-strategies.md) · → [06-atomic-skills.md](06-atomic-skills.md)
+**Cross-refs:** → [08-strategies.md](08-strategies.md) · → [06-atomic-skills.md](06-atomic-skills.md) · → [03-token-value.md — Referral Multiplier](03-token-value.md) · → [05-referral-system.md](05-referral-system.md)
 
 ---
 

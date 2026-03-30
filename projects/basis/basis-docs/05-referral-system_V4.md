@@ -52,9 +52,16 @@ The kickback scales with **your own tier**, not your referrer's — so the more 
 
 ## Setting a Referral Link
 
-The on-chain referral link is set when a new user claims the faucet with a referrer address. Once set, it cannot be changed. This is the primary onboarding entry point — agents building referral networks should ensure every user they onboard passes their wallet address during the faucet claim.
+There are two ways to set the on-chain referral link:
 
-→ See: [06-atomic-skills.md — `claimFaucet(referrer?)`](06-atomic-skills.md) for the SDK method and code examples.
+1. **During faucet claim (recommended):** The new user calls `claimFaucet(yourWalletAddress)` — this claims USDB and sets the referral in one transaction.
+2. **After faucet claim (backup):** If the user already claimed without a referrer, they can call `setReferrer(yourWalletAddress)` later. One-time only — reverts if a referrer is already set.
+
+Once set by either method, the referral link is **permanent and cannot be changed**.
+
+**How to share your referral (current):** Share your wallet address directly with the person you're referring. They enter it in the referrer field on the dapp faucet page, or pass it programmatically via the SDK. Shareable referral URLs (`launchonbasis.com/?ref=0xYourWallet`) are planned but not yet live — check back for updates.
+
+→ See: [06-atomic-skills.md — `claimFaucet(referrer?)` and `setReferrer(referrer)`](06-atomic-skills.md) for the SDK methods and code examples.
 
 ## Key Details
 

@@ -1620,7 +1620,7 @@ Backend data endpoints - read token data, trade history, order books, manage aut
 | `getMyStats()` | Session/key | Your activity stats (trades, predictions, tokens created, markets, loans, days active, agent status) |
 | `getMyProjects()` | Session/key | Your created tokens and markets |
 | `getMyProfile()` | Session/key | Full profile: tier, rank, rankDelta, streak, ACS, socials, linked X account. If `stale: true`, repoll in ~10-15s. |
-| `updateMyProfile(payload)` | Session/key | Update profile. One action per call: `{ username }`, `{ social: { platform, handle } }`, `{ removeSocial }`, or `{ toggleSocialPublic }` |
+| `updateMyProfile(payload)` | Session/key | Update profile. One action per call: `{ username }`, `{ social: { platform, handle } }`, `{ removeSocial }`, or `{ toggleSocialPublic }`. **Public vs private socials:** When a social link is private (default), it's hidden from your public profile — other users won't see it. Toggle it public to make it visible on your profile page for networking and credibility. |
 | `getMyReferrals()` | Session/key | Your referral tree with details (tier, rank, layer, joined date) |
 
 **Quick reference — social & verification (auth required):**
@@ -1665,6 +1665,8 @@ Not on `client.api` — this is a direct client method (on-chain write).
 
 **Referral integration:** Passing a `referrer` address sets an on-chain referral link between the claimer and the referrer. This is the primary onboarding entry point for the referral system — once set, it cannot be changed. The **referred user (claimer) earns a perpetual kickback** on their own activity, based on their own tier — this means it's always in a new user's best interest to be referred rather than joining without one. The referrer earns a separate referral bonus from L1 (direct) and L2 (indirect) referrals. Call `api.syncFaucet(txHash)` after claiming to sync the referral to the backend for points tracking.
 
+**How to refer someone (current):** Share your wallet address directly with the user you're referring. They paste it into the referrer field on the dapp faucet page, or pass it programmatically via the SDK. There is no referral URL yet — shareable URL params (`?ref=0xYourWallet`) are planned but not yet live. Check back for updates on the link format.
+
 → See: [05-referral-system.md](05-referral-system.md) for full referral tiers, kickback rates, and L1/L2 mechanics.
 
 **Module:** `client` (top-level)
@@ -1691,5 +1693,24 @@ client.api.sync_faucet(result["hash"])
 | Param | Type | Description |
 |-------|------|-------------|
 | `referrer` | string | Optional referrer wallet address. Sets a permanent on-chain referral link. Default: zero address (no referrer). |
+
+---
+
+### `setReferrer(referrer)`
+**What it does:** Sets a referrer for your wallet after you've already claimed the faucet without one. This is a backup — if a user claimed the faucet without a referrer (didn't know anyone yet, forgot to include it), they can still link a referrer later. One-time only — reverts if a referrer is already set.
+**Module:** `client` (top-level)
+
+**JS:**
+```js
+await client.setReferrer("0xReferrerAddress");
+```
+**Python:**
+```python
+client.set_referrer("0xReferrerAddress")
+```
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `referrer` | string | Referrer wallet address. Reverts if a referrer is already set for this wallet. |
 
 ---
