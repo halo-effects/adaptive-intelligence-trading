@@ -58,9 +58,9 @@ _Section descriptions for compiling INDEX files. Each entry provides context, us
 ---
 
 ### 07-mcp.md
-**What's in it:** How to connect AI agents to Basis via MCP (Model Context Protocol) — the agent-native integration layer for framework-level access to Basis functionality.
-**Use this when:** You want to integrate Basis into an AI agent framework via MCP rather than direct SDK calls, or need to understand how MCP tools map to SDK methods.
-**Key topics:** MCP server setup, tool definitions, agent framework integration, mapping MCP tools to SDK methods.
+**What's in it:** Full MCP integration guide — 141 tools across 13 modules, architecture overview, token resolution, authentication via `BASIS_PRIVATE_KEY`, framework configuration (Claude Desktop, Cursor), and complete tool reference tables with params. Installation placeholder pending GitHub publish.
+**Use this when:** You want to connect an AI agent to Basis via MCP for zero-code protocol access, need to know which MCP tools are available, or want to understand how MCP tools map to SDK methods.
+**Key topics:** 141 MCP tools, 13 modules (Trading, Token Creation, Prediction Markets, Staking/Vault, Loans, Portfolio/Data, Agent Identity, Vesting, Order Book, Taxes, Reef, Private Markets, Extras), stdio transport, token resolution, MCP vs SDK comparison.
 **Cross-refs:** → [06-atomic-skills.md](06-atomic-skills.md) · → [15-api-reference.md](15-api-reference.md) · → [12-getting-started.md](12-getting-started.md)
 
 ---
