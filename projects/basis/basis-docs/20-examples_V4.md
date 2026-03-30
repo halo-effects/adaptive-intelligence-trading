@@ -40,6 +40,8 @@
 
 Full flow: initialize client, create a token, upload an image, and register metadata.
 
+⚠️ **Token symbols must always be CAPITALISED** (e.g., `"MYTKN"`, not `"mytkn"`).
+
 **JavaScript:**
 
 ```js
@@ -170,6 +172,8 @@ def trade_tokens():
 ## Example 3: Prediction Market
 
 Create a market, buy shares, and list a sell order.
+
+⚠️ **Market symbols must always be CAPITALISED** (e.g., `"ETH10K"`, not `"eth10k"`).
 
 **JavaScript:**
 

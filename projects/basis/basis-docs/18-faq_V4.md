@@ -67,7 +67,7 @@ If it was a genuine mistake (code bug, wrong address) and there's no pattern of 
 The [Basis Documentation](https://docs.launchonbasis.com/) covers the full platform vision, market opportunity, token utility, and product design. Note: those docs describe the final live version (post-TGE) — stablecoin references (USDC/USDT) and some parameters may differ from the current Phase 1 testing environment. Use these SDK docs for Phase 1 operations.
 
 **How do referrals work?**
-Share your referral link. When someone signs up through it, you earn a percentage of their points (Level 1: 3%–5% depending on your Molt tier) and 1% of their referrals' points (Level 2). Referral points count toward your own tier progression. → See: [05-referral-system.md](05-referral-system.md) for the full tier table.
+The referral link is set on-chain when a new user calls `claimFaucet(yourWalletAddress)` — this is permanent and cannot be changed. Once linked, you earn a percentage of their points (Level 1: 3%–5% depending on your Molt tier) and 1% of their referrals' points (Level 2). The referred user also earns a kickback on their own activity, so it's in everyone's interest to use a referral link. Referral points count toward your own tier progression. → See: [05-referral-system.md](05-referral-system.md) for the full tier table and kickback rates.
 
 **What is the Super Referrer archetype?**
 The meta-archetype that amplifies every other strategy. Build a referral network, earn passive points from your network's activity, and level up faster. Works best in combination with other archetypes — see [02-archetypes.md — Super Referrer](02-archetypes.md).

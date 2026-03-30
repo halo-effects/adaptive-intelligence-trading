@@ -294,7 +294,7 @@ print("Token:", result["token_address"])
 
 | Option | Required | Description |
 |--------|----------|-------------|
-| `symbol` | yes | Token ticker |
+| `symbol` | yes | Token ticker. **Must be CAPITALISED** (e.g., `"LOBSTER"`, not `"lobster"`). |
 | `name` | yes | Token full name |
 | `hybridMultiplier` | yes | Controls token type and stability. **1-90 = Floor+** (price moves both ways with rising floor; 1 = most volatile, 90 = most stable). **100 = Stable+** (up-only, price can never decrease). Do not use values 91-99. The dapp UI maps a 0%-100% slider to values 1-90 for Floor+, with a separate Stable+ toggle that sets 100. |
 | `startLP` | yes | Starting virtual liquidity (100-10,000). Free - costs the creator nothing. Sets the **dollar scale** of price movement, not the stability (that's hybridMultiplier). See explanation below. |
@@ -918,7 +918,7 @@ print("Market:", market["market_token_address"])
 | Option | Required | Description |
 |--------|----------|-------------|
 | `marketName` | yes | Market question/title |
-| `symbol` | yes | Market token symbol |
+| `symbol` | yes | Market token symbol. **Must be CAPITALISED** (e.g., `"ETH10K"`, not `"eth10k"`). |
 | `endTime` | yes | Unix timestamp for market close |
 | `optionNames` | yes | Array of outcome names |
 | `maintoken` | yes | MAINTOKEN address |
@@ -1274,9 +1274,9 @@ Private prediction markets with restricted access. Extends all Prediction Market
 | `finalize(marketToken)` | Finalize after voting period ends (majority wins) |
 | `claimBounty(marketToken)` | Claim resolution bounty |
 | `manageVoter(marketToken, voter, add)` | Add/remove a voter (`add=true/false`). No bond required to vote. |
-| `togglePrivateEventBuyers(marketToken)` | Toggle whether non-whitelisted can buy |
+| `togglePrivateEventBuyers(marketToken, buyers, status)` | Whitelist (`status=true`) or unwhitelist (`status=false`) specific buyer addresses for a private event market. `buyers` is an address array. |
 | `disableFreeze(marketToken)` | Open market to public |
-| `manageWhitelist(marketToken, wallets, amounts, tags)` | Manage buyer whitelist |
+| `manageWhitelist(marketToken, wallets, amount, tag, status)` | Add (`status=true`) or remove (`status=false`) wallets from frozen market whitelist. `amount` = max USDB buy per wallet, `tag` = label. |
 
 ---
 
@@ -1581,25 +1581,115 @@ Returns: `address` (string) — wallet address linked to the NFT.
 Backend data endpoints - read token data, trade history, order books, manage authentication, and more.
 → See: [15-api-reference.md](15-api-reference.md) for the full API reference with all endpoints, schemas, and rate limits.
 
-**Quick reference - most-used methods:**
+**Quick reference — data & market methods:**
 
-| Method | Description |
-|--------|-------------|
-| `getTokens(options?)` | List/search tokens |
-| `getToken(address)` | Full token details |
-| `getCandles(address, options?)` | OHLC price candles |
-| `getTrades(address, options?)` | AMM trade history |
-| `getOrders(address, options?)` | Order book |
-| `getLoans(options?)` | Your loan positions |
-| `getVaultEvents(options?)` | Vault staking events |
-| `getVestingEvents(options?)` | Vesting events |
-| `getWalletTransactions(address, options?)` | Wallet transaction history |
-| `getMarketLiquidity(address, options?)` | Market trade + reserve data |
-| `uploadImageFromUrl(url)` | Upload image to IPFS |
-| `updateMetadata(payload)` | Update token/market metadata |
-| `requestTwitterChallenge()` | Start X verification |
-| `verifyTwitter(tweetUrl)` | Complete X verification |
-| `syncLoan(txHash)` | Manual loan sync (if auto-sync failed) |
-| `createApiKey(label)` / `listApiKeys()` | API key management |
+| Method | Auth | Description |
+|--------|------|-------------|
+| `getTokens(options?)` | API key | List/search tokens |
+| `getToken(address)` | API key | Full token details |
+| `getCandles(address, options?)` | API key | OHLC price candles |
+| `getTrades(address, options?)` | API key | AMM trade history (cursor pagination) |
+| `getOrders(address, options?)` | API key | Prediction market order book |
+| `getTokenComments(address, options?)` | API key | Token comments |
+| `getWhitelist(address, options?)` | API key | Frozen token whitelist |
+| `getWalletTransactions(address, options?)` | API key | Wallet tx history (cursor pagination) |
+| `getMarketLiquidity(address, options?)` | API key | Market trade + reserve data |
+
+**Quick reference — loans, vault & vesting:**
+
+| Method | Auth | Description |
+|--------|------|-------------|
+| `getLoans(options?)` | Session/key | Your loans. Filter: `source`, `active` |
+| `getLoanEvents(options?)` | Session/key | Loan lifecycle events. Filter: `source`, `action` |
+| `getVaultEvents(options?)` | Session/key | Vault staking events. Filter: `action` |
+| `getVestingEvents(options?)` | Session/key | Vesting events. Filter: `action`, `vestingId` |
+
+**Quick reference — platform & leaderboard (public):**
+
+| Method | Auth | Description |
+|--------|------|-------------|
+| `getPulse()` | None | Live platform stats: agents, tokens, markets, trades 24h, unique traders, loans, leaderboard participants. Cached 60s. |
+| `getLeaderboard(options?)` | None | Public leaderboard rankings (rank, wallet, username, tier, socials). Params: `page`, `limit`. Cached 60s. |
+| `getPublicProfile(wallet)` | None | Public profile for any wallet (tier, rank, ACS, public socials). Point totals never exposed. |
+
+**Quick reference — user profile & stats (auth required):**
+
+| Method | Auth | Description |
+|--------|------|-------------|
+| `getPublicProfileReferrals(wallet)` | Session/key | Referral counts for a wallet (direct, indirect, total) |
+| `getMyStats()` | Session/key | Your activity stats (trades, predictions, tokens created, markets, loans, days active, agent status) |
+| `getMyProjects()` | Session/key | Your created tokens and markets |
+| `getMyProfile()` | Session/key | Full profile: tier, rank, rankDelta, streak, ACS, socials, linked X account. If `stale: true`, repoll in ~10-15s. |
+| `updateMyProfile(payload)` | Session/key | Update profile. One action per call: `{ username }`, `{ social: { platform, handle } }`, `{ removeSocial }`, or `{ toggleSocialPublic }` |
+| `getMyReferrals()` | Session/key | Your referral tree with details (tier, rank, layer, joined date) |
+
+**Quick reference — social & verification (auth required):**
+
+| Method | Auth | Description |
+|--------|------|-------------|
+| `requestTwitterChallenge()` | Session/key | Start X verification — returns code + tweet template |
+| `verifyTwitter(tweetUrl)` | Session/key | Complete X verification — links X account to wallet |
+| `verifySocialTweet(tweetUrl)` | Session/key | Submit a tweet tagging @LaunchOnBasis for points. Max 3/day. Requires linked X account. |
+| `getVerifiedTweets()` | Session/key | List all your verified tweets |
+
+**Quick reference — bug reports (auth required):**
+
+| Method | Auth | Description |
+|--------|------|-------------|
+| `submitBugReport(title, description, severity, category, evidence?)` | Session/key | Submit a bug report. Max 5/day. Severity: critical/high/medium/low. Category: sdk/contracts/api/frontend/docs. |
+| `getBugReports(options?)` | Session/key | List your bug reports. Filter: `status` (pending/verified/duplicate/invalid) |
+
+**Quick reference — sync, images & metadata:**
+
+| Method | Auth | Description |
+|--------|------|-------------|
+| `syncTransaction(txHash)` | None | Sync any on-chain tx to the database. Replaces deprecated `syncLoan`. Idempotent, 20 req/min. |
+| `syncFaucet(txHash)` | None | Sync faucet claim for referral tracking |
+| `syncOrder(txHash, marketType?)` | None | Manual order sync (`"public"` or `"private"`) |
+| `uploadImageFromUrl(url)` | Session | Upload image to IPFS (auto-resize to 512×512 WebP) |
+| `uploadImage(file, filename)` | Session | Upload raw image data to IPFS |
+| `updateMetadata(payload)` | Session | Create/update token or market metadata on IPFS |
+| `updateProject(address, payload, image?)` | Session | Update off-chain project info |
+| `createComment(projectId, content, authorAddress)` | Session | Post a comment on a project |
+| `deleteComment(commentId, authorAddress)` | Session | Delete your own comment |
+| `createApiKey(label)` / `listApiKeys()` / `deleteApiKey(id)` | Session | API key management |
+
+---
+
+## Top-Level: Faucet (`client.claimFaucet`)
+
+Not on `client.api` — this is a direct client method (on-chain write).
+
+### `claimFaucet(referrer?)`
+**What it does:** Claims 10,000 test USDB from the faucet. One claim per wallet, ever. Faucet USDB is non-transferable except to Basis protocol contracts.
+
+**Referral integration:** Passing a `referrer` address sets an on-chain referral link between the claimer and the referrer. This is the primary onboarding entry point for the referral system — once set, it cannot be changed. The **referred user (claimer) earns a perpetual kickback** on their own activity, based on their own tier — this means it's always in a new user's best interest to be referred rather than joining without one. The referrer earns a separate referral bonus from L1 (direct) and L2 (indirect) referrals. Call `api.syncFaucet(txHash)` after claiming to sync the referral to the backend for points tracking.
+
+→ See: [05-referral-system.md](05-referral-system.md) for full referral tiers, kickback rates, and L1/L2 mechanics.
+
+**Module:** `client` (top-level)
+
+**JS:**
+```js
+// Without referrer
+const result = await client.claimFaucet();
+
+// With referrer — sets permanent on-chain referral link
+const result = await client.claimFaucet("0xReferrerAddress");
+await client.api.syncFaucet(result.hash); // sync for referral + points tracking
+```
+**Python:**
+```python
+# Without referrer
+result = client.claim_faucet()
+
+# With referrer
+result = client.claim_faucet(referrer="0xReferrerAddress")
+client.api.sync_faucet(result["hash"])
+```
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `referrer` | string | Optional referrer wallet address. Sets a permanent on-chain referral link. Default: zero address (no referrer). |
 
 ---

@@ -50,6 +50,12 @@ The kickback scales with **your own tier**, not your referrer's — so the more 
 
 → See: [03-token-value.md — Referral Multiplier](03-token-value.md) for how kickbacks compound into the Token Value flywheel · → See: [02-archetypes.md — Super Referrer](02-archetypes.md) for recruitment strategies
 
+## Setting a Referral Link
+
+The on-chain referral link is set when a new user claims the faucet with a referrer address. Once set, it cannot be changed. This is the primary onboarding entry point — agents building referral networks should ensure every user they onboard passes their wallet address during the faucet claim.
+
+→ See: [06-atomic-skills.md — `claimFaucet(referrer?)`](06-atomic-skills.md) for the SDK method and code examples.
+
 ## Key Details
 
 - **Referral points count toward your own tier progression.** This creates a compounding loop: refer → earn referral points → level up → higher referral % → earn more referral points.

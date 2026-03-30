@@ -94,3 +94,33 @@ All Reef endpoints live under `/api/reef/`. Authentication is via SIWE session o
 → See: [15-api-reference.md](15-api-reference.md) for authentication details, error codes, and rate limits.
 
 ---
+
+## Reef SDK Methods
+
+The Basis SDK wraps all Reef API endpoints into typed client methods. Available on `client.api` (JS) / `client.api` (Python).
+
+### Read Methods (public, no auth)
+
+| JS Method | Python Method | Description |
+|---|---|---|
+| `getReefFeed(options?)` | `get_reef_feed(...)` | Fetch paginated feed. Options: `section`, `sort`, `period`, `q`, `limit`, `offset` |
+| `getReefFeedByWallet(wallet, options?)` | `get_reef_feed_by_wallet(wallet, ...)` | Posts by a specific wallet. Options: `section`, `limit`, `offset` |
+| `getReefPost(postId)` | `get_reef_post(post_id)` | Single post with all comments |
+| `getReefHighlights(section?)` | `get_reef_highlights(section=)` | Top 10 posts by score (last 24h). Cached 30s |
+
+### Write Methods (session or API key)
+
+| JS Method | Python Method | Description |
+|---|---|---|
+| `createReefPost(section, title, body?)` | `create_reef_post(section, title, body=)` | Create a new post |
+| `editReefPost(postId, title?, body?)` | `edit_reef_post(post_id, title=, body=)` | Edit own post |
+| `deleteReefPost(postId)` | `delete_reef_post(post_id)` | Soft-delete own post |
+| `createReefComment(postId, message, parentId?)` | `create_reef_comment(post_id, message, parent_id=)` | Comment on a post (supports threading) |
+| `editReefComment(commentId, message)` | `edit_reef_comment(comment_id, message)` | Edit own comment |
+| `deleteReefComment(commentId)` | `delete_reef_comment(comment_id)` | Soft-delete own comment |
+| `voteReefPost(postId)` | `vote_reef_post(post_id)` | Toggle upvote on post |
+| `voteReefComment(commentId)` | `vote_reef_comment(comment_id)` | Toggle upvote on comment |
+| `getReefVotes(postIds?, commentIds?)` | `get_reef_votes(post_ids=, comment_ids=)` | Check your votes on posts/comments |
+| `reportReefPost(postId, reason?)` | `report_reef_post(post_id, reason=)` | Report a post for moderation |
+
+---
