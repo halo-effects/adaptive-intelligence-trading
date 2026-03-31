@@ -1,11 +1,11 @@
 {
-  "saved_at": "2026-03-31T16:04:21.094624+00:00",
+  "saved_at": "2026-03-31T17:04:00.278442+00:00",
   "capital": 10000.0,
-  "cash": 18092.452686535526,
+  "cash": 24977.857380817342,
   "per_coin_cash": {
     "HBAR/USDT": 8589.274218448994,
     "ATOM/USDT": 568.0612109136306,
-    "LINK/USDC": 6676.694045052078,
+    "LINK/USDC": 13562.098739333895,
     "NEAR/USDT": 2258.423212120866
   },
   "deal_counter": 428,
@@ -33,14 +33,6 @@
       "regime": "LONG_DCA",
       "layers": 5,
       "invested": 10478.550319842061
-    },
-    "LINK/USDC:long": {
-      "deal_id": 428,
-      "symbol": "LINK/USDC",
-      "open_time": "2026-03-31T01:00:00+00:00",
-      "regime": "LONG_DCA",
-      "layers": 2,
-      "invested": 6783.649945105239
     }
   },
   "engines": {
@@ -85,9 +77,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-31",
       "_live_mode": true,
-      "_last_candle_ts": 1774969200000,
+      "_last_candle_ts": 1774972800000,
       "start_time": 1773163074.972557,
-      "current_price": 0.083779
+      "current_price": 0.085425
     },
     "ATOM/USDT": {
       "symbol": "ATOM/USDT",
@@ -130,9 +122,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-31",
       "_live_mode": true,
-      "_last_candle_ts": 1774969200000,
+      "_last_candle_ts": 1774972800000,
       "start_time": 1772333044.734216,
-      "current_price": 1.6784
+      "current_price": 1.6947
     },
     "LINK/USDC": {
       "symbol": "LINK/USDC",
@@ -140,17 +132,17 @@
       "profile": "medium",
       "leverage": 1.5,
       "phase": "LONG_DCA",
-      "capital": 6516.737200386127,
+      "capital": 13400.764813729089,
       "phase_start_date": "2026-02-05 00:00:00",
-      "long_coins": 781.8008241483399,
-      "long_avg_entry": 8.676954200572832,
-      "long_layers": 2,
-      "long_last_buy": "2026-03-31 09:00:00",
-      "long_tp": 8.807108513581424,
-      "long_cost": 6783.649945105239,
-      "long_trades": 64,
-      "long_wins": 63,
-      "long_pnl": 5577.566858537985,
+      "long_coins": 0,
+      "long_avg_entry": 0,
+      "long_layers": 0,
+      "long_last_buy": null,
+      "long_tp": 0,
+      "long_cost": 0,
+      "long_trades": 65,
+      "long_wins": 64,
+      "long_pnl": 5677.944526775708,
       "short_coins": 0,
       "short_avg_entry": 0,
       "short_layers": 0,
@@ -169,15 +161,15 @@
       "top_detected": true,
       "conviction_fired": true,
       "markup_cycles_completed": 2,
-      "total_fees": 159.9568446659467,
+      "total_fees": 161.33392560480306,
       "adx_below_20_streak": 0,
       "router_from_top": false,
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-31",
       "_live_mode": true,
-      "_last_candle_ts": 1774969200000,
+      "_last_candle_ts": 1774972800000,
       "start_time": 1772333044.940803,
-      "current_price": 8.6249
+      "current_price": 8.7782
     },
     "NEAR/USDT": {
       "symbol": "NEAR/USDT",
@@ -220,9 +212,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-03-31",
       "_live_mode": true,
-      "_last_candle_ts": 1774969200000,
+      "_last_candle_ts": 1774972800000,
       "start_time": 1772333045.106119,
-      "current_price": 1.1725
+      "current_price": 1.1954
     }
   }
 }
