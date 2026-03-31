@@ -11,16 +11,11 @@
 
   body {
     font-family: 'Inter', -apple-system, sans-serif;
-    background: #0a0f0a;
-    color: #e0e0e0;
-    min-height: 100vh;
-    padding: 40px;
-  }
-
-  .page {
-    max-width: 1100px;
-    margin: 0 auto;
-    background: #0a0f0a;
+    background: #0d1117;
+    color: #c9d1d9;
+    width: 1200px;
+    min-height: 675px;
+    padding: 36px 40px 28px;
   }
 
   /* Header */
@@ -28,137 +23,145 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 32px;
+    margin-bottom: 28px;
   }
 
-  .logo-area h1 {
-    font-size: 42px;
+  .logo h1 {
+    font-size: 38px;
     font-weight: 900;
-    letter-spacing: 6px;
+    letter-spacing: 4px;
     color: #fff;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 2px;
   }
 
-  .logo-area h1 .bars {
-    color: #3ddc84;
-    margin-right: 4px;
+  .logo h1 .bars {
+    color: #2dcc6e;
+    font-size: 30px;
+    margin-right: 2px;
   }
 
-  .logo-area .tagline {
-    font-size: 14px;
-    color: #3ddc84;
+  .logo .sub {
+    font-size: 13px;
+    color: #2dcc6e;
     font-weight: 500;
-    margin-top: 4px;
-    letter-spacing: 0.5px;
+    margin-top: 5px;
+    letter-spacing: 0.3px;
   }
 
   .badge {
-    border: 1.5px solid #3ddc84;
-    border-radius: 24px;
-    padding: 8px 20px;
-    color: #3ddc84;
+    border: 1.5px solid #2dcc6e;
+    border-radius: 6px;
+    padding: 9px 20px;
+    color: #2dcc6e;
     font-size: 13px;
     font-weight: 700;
-    letter-spacing: 1px;
-    white-space: nowrap;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
   }
 
-  /* Subtitle */
-  .subtitle {
-    font-size: 13px;
-    color: #888;
-    margin-bottom: 24px;
-    line-height: 1.5;
-    max-width: 800px;
-  }
-
-  /* Grid */
+  /* Cards grid */
   .grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 14px;
+    margin-bottom: 14px;
   }
 
   .card {
-    border: 1px solid #1a2a1a;
-    border-radius: 12px;
-    padding: 20px 22px;
-    background: #0d140d;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 18px 20px;
   }
 
   .card-title {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 2px;
-    color: #3ddc84;
+    color: #2dcc6e;
     margin-bottom: 14px;
     text-transform: uppercase;
   }
 
-  .card-row {
+  .row {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 5px 0;
+    padding: 4px 0;
   }
 
-  .card-label {
-    font-size: 13.5px;
-    color: #b0b0b0;
+  .lbl {
+    font-size: 14px;
+    color: #8b949e;
     font-weight: 400;
   }
 
-  .card-value {
-    font-size: 13.5px;
+  .val {
+    font-size: 14px;
     color: #fff;
     font-weight: 700;
     text-align: right;
   }
 
-  .card-value.green {
-    color: #3ddc84;
-  }
+  .val.g { color: #2dcc6e; }
 
-  /* Wide card spanning 2 columns */
-  .card.wide {
-    grid-column: span 2;
+  /* VS card */
+  .vs-head {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #21262d;
   }
+  .vs-head span { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+  .vs-head .them { color: #f85149; }
+  .vs-head .us { color: #2dcc6e; }
+  .vs-head .spacer { flex: 1; }
 
-  /* Bottom banner */
-  .banner {
+  .vs-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 4px 0;
+  }
+  .vs-lbl { font-size: 13px; color: #8b949e; flex: 1.2; }
+  .vs-them { font-size: 13px; color: #f85149; font-weight: 600; text-align: center; flex: 0.9; }
+  .vs-us { font-size: 13px; color: #2dcc6e; font-weight: 700; text-align: right; flex: 0.9; }
+
+  /* Bottom strip */
+  .strip {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 0;
-    border: 1px solid #1a2a1a;
-    border-radius: 12px;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-left: 4px solid #2dcc6e;
+    border-radius: 10px;
     overflow: hidden;
-    margin-top: 16px;
-    background: #0d140d;
+    margin-bottom: 14px;
   }
 
-  .banner-item {
+  .strip-item {
     text-align: center;
-    padding: 20px 10px;
-    border-right: 1px solid #1a2a1a;
+    padding: 18px 10px;
+    border-right: 1px solid #21262d;
   }
+  .strip-item:last-child { border-right: none; }
 
-  .banner-item:last-child {
-    border-right: none;
-  }
-
-  .banner-number {
-    font-size: 36px;
+  .strip-num {
+    font-size: 38px;
     font-weight: 900;
     color: #fff;
     line-height: 1.1;
   }
 
-  .banner-label {
+  .strip-label {
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 2px;
-    color: #888;
+    color: #8b949e;
     margin-top: 4px;
     text-transform: uppercase;
   }
@@ -167,314 +170,127 @@
   .footer {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-top: 16px;
     font-size: 12px;
-    color: #555;
-  }
-
-  .footer .lobster {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  /* Comparison row */
-  .vs-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 5px 0;
-  }
-
-  .vs-label {
-    font-size: 12.5px;
-    color: #666;
-    font-weight: 400;
-    flex: 1;
-  }
-
-  .vs-them {
-    font-size: 12.5px;
-    color: #ff6b6b;
-    font-weight: 600;
-    text-align: center;
-    flex: 0.8;
-  }
-
-  .vs-us {
-    font-size: 12.5px;
-    color: #3ddc84;
-    font-weight: 700;
-    text-align: right;
-    flex: 0.8;
-  }
-
-  .vs-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 0 0 8px 0;
-    margin-bottom: 4px;
-    border-bottom: 1px solid #1a2a1a;
-  }
-
-  .vs-header-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    flex: 1;
-  }
-
-  .vs-header-them {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    color: #ff6b6b;
-    text-align: center;
-    flex: 0.8;
-    text-transform: uppercase;
-  }
-
-  .vs-header-us {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    color: #3ddc84;
-    text-align: right;
-    flex: 0.8;
-    text-transform: uppercase;
+    color: #484f58;
   }
 </style>
 </head>
 <body>
-<div class="page">
 
   <!-- Header -->
   <div class="header">
-    <div class="logo-area">
+    <div class="logo">
       <h1><span class="bars">┃┃</span>BASIS</h1>
-      <div class="tagline">DeFi Designed for the Agent Economy</div>
+      <div class="sub">Agent-Native DeFi on BNB Chain</div>
     </div>
-    <div class="badge">WHY WE'RE DIFFERENT</div>
+    <div class="badge">Why We're Different</div>
   </div>
 
-  <div class="subtitle">
-    DeFi was built for humans. The agent economy demands structural safety guarantees — not rules, but architecture that makes exploits impossible. Here's how Basis is fundamentally different.
-  </div>
-
-  <!-- Row 1: Token Design, Lending, Prediction Markets -->
+  <!-- Row 1 -->
   <div class="grid">
 
     <div class="card">
       <div class="card-title">Token Design</div>
-      <div class="card-row">
-        <span class="card-label">Liquidity Model</span>
-        <span class="card-value green">Embedded in Contract</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Supply</span>
-        <span class="card-value">100% Elastic</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Pre-mint / Insider Alloc</span>
-        <span class="card-value green">Impossible</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Token Types</span>
-        <span class="card-value">Stable+ / Floor+ / Predict+</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Enforcement</span>
-        <span class="card-value green">Factory Contract</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Rug Pull Risk</span>
-        <span class="card-value green">Architecturally Zero</span>
-      </div>
+      <div class="row"><span class="lbl">Liquidity location</span><span class="val g">Inside the contract</span></div>
+      <div class="row"><span class="lbl">LP pool to drain</span><span class="val g">None — impossible</span></div>
+      <div class="row"><span class="lbl">Supply model</span><span class="val">100% elastic</span></div>
+      <div class="row"><span class="lbl">Pre-mint / insider alloc</span><span class="val g">Architecturally zero</span></div>
+      <div class="row"><span class="lbl">Token types enforced by</span><span class="val">Factory contract</span></div>
+      <div class="row"><span class="lbl">Rug pull risk</span><span class="val g">Impossible</span></div>
     </div>
 
     <div class="card">
       <div class="card-title">Lending & Leverage</div>
-      <div class="card-row">
-        <span class="card-label">Loan-to-Value</span>
-        <span class="card-value green">100% LTV</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Liquidation Model</span>
-        <span class="card-value green">Time-Based Only</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Price Liquidation</span>
-        <span class="card-value green">Impossible</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Collateral Valuation</span>
-        <span class="card-value">Floor Price (never ↓)</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Max Leverage</span>
-        <span class="card-value">Up to 36x</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Cascade Risk</span>
-        <span class="card-value green">Eliminated</span>
-      </div>
+      <div class="row"><span class="lbl">Loan-to-value</span><span class="val g">100% LTV</span></div>
+      <div class="row"><span class="lbl">Liquidation trigger</span><span class="val g">Time only (not price)</span></div>
+      <div class="row"><span class="lbl">Price-based liquidation</span><span class="val g">Cannot happen</span></div>
+      <div class="row"><span class="lbl">Collateral value floor</span><span class="val">Never decreases</span></div>
+      <div class="row"><span class="lbl">Max leverage</span><span class="val">Up to 36x</span></div>
+      <div class="row"><span class="lbl">Cascade liquidation risk</span><span class="val g">Eliminated</span></div>
     </div>
 
     <div class="card">
       <div class="card-title">Prediction Markets</div>
-      <div class="card-row">
-        <span class="card-label">Payout Model</span>
-        <span class="card-value green">One Big Pot</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Payout Cap</span>
-        <span class="card-value green">Uncapped</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Buying Liquidity</span>
-        <span class="card-value">Instant (AMM)</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Counterparty Required</span>
-        <span class="card-value green">No</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Participant Roles</span>
-        <span class="card-value">7 Distinct Roles</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Resolution</span>
-        <span class="card-value">Bonded + Staked Voting</span>
-      </div>
+      <div class="row"><span class="lbl">Payout model</span><span class="val g">One big pot</span></div>
+      <div class="row"><span class="lbl">Winning cap</span><span class="val g">Uncapped (∞)</span></div>
+      <div class="row"><span class="lbl">Buying liquidity</span><span class="val">Instant AMM</span></div>
+      <div class="row"><span class="lbl">Counterparty required</span><span class="val g">No</span></div>
+      <div class="row"><span class="lbl">Participant roles</span><span class="val">7 distinct roles</span></div>
+      <div class="row"><span class="lbl">Resolution integrity</span><span class="val">Bonded + staked voting</span></div>
     </div>
+
   </div>
 
-  <!-- Row 2: Ecosystem Safety, Agent Infrastructure, vs Traditional -->
+  <!-- Row 2 -->
   <div class="grid">
 
     <div class="card">
       <div class="card-title">Ecosystem Safety</div>
-      <div class="card-row">
-        <span class="card-label">Token Entry</span>
-        <span class="card-value green">Factory-Only</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">External Tokens</span>
-        <span class="card-value green">Cannot Enter</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Oracle Dependency</span>
-        <span class="card-value green">None</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Unit of Account</span>
-        <span class="card-value">USDB (closed loop)</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">MEV Resistance</span>
-        <span class="card-value green">Built-in</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Composability</span>
-        <span class="card-value">Safe by Default</span>
-      </div>
+      <div class="row"><span class="lbl">Token entry</span><span class="val g">Factory-only</span></div>
+      <div class="row"><span class="lbl">External tokens</span><span class="val g">Cannot enter</span></div>
+      <div class="row"><span class="lbl">Price oracle dependency</span><span class="val g">None</span></div>
+      <div class="row"><span class="lbl">Oracle manipulation</span><span class="val g">No attack surface</span></div>
+      <div class="row"><span class="lbl">Unit of account</span><span class="val">USDB (closed loop)</span></div>
+      <div class="row"><span class="lbl">Composability risk</span><span class="val g">Safe by design</span></div>
     </div>
 
     <div class="card">
       <div class="card-title">Agent Infrastructure</div>
-      <div class="card-row">
-        <span class="card-label">On-Chain Identity</span>
-        <span class="card-value green">ERC-8004</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Reputation Score</span>
-        <span class="card-value">ACS (0.0–1.0)</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Anti-Sybil</span>
-        <span class="card-value green">6-Layer Defense</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Agent Revenue</span>
-        <span class="card-value">20% Dev Fee Forever</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">SDK + MCP</span>
-        <span class="card-value">JS + Python + 44 Tools</span>
-      </div>
-      <div class="card-row">
-        <span class="card-label">Agent Docs</span>
-        <span class="card-value green">300KB+ Playbooks</span>
-      </div>
+      <div class="row"><span class="lbl">On-chain identity</span><span class="val g">ERC-8004</span></div>
+      <div class="row"><span class="lbl">Reputation score</span><span class="val">ACS 0.0–1.0</span></div>
+      <div class="row"><span class="lbl">Anti-sybil defense</span><span class="val g">6-layer system</span></div>
+      <div class="row"><span class="lbl">Agent revenue model</span><span class="val">20% dev fee (forever)</span></div>
+      <div class="row"><span class="lbl">SDK + MCP</span><span class="val">JS + Python + 44 tools</span></div>
+      <div class="row"><span class="lbl">Agent playbooks</span><span class="val g">300KB+ strategies</span></div>
     </div>
 
     <div class="card">
-      <div class="card-title" style="color: #888;">Traditional DeFi vs Basis</div>
-      <div class="vs-header">
-        <span class="vs-header-label"></span>
-        <span class="vs-header-them">Others</span>
-        <span class="vs-header-us">Basis</span>
+      <div class="card-title">Traditional DeFi vs Basis</div>
+      <div class="vs-head">
+        <span class="spacer"></span>
+        <span class="them">Others</span>
+        <span style="flex:0.3"></span>
+        <span class="us">Basis</span>
       </div>
-      <div class="vs-row">
-        <span class="vs-label">Rug pulls</span>
-        <span class="vs-them">Possible</span>
-        <span class="vs-us">Impossible</span>
-      </div>
-      <div class="vs-row">
-        <span class="vs-label">Liquidation</span>
-        <span class="vs-them">Price-based</span>
-        <span class="vs-us">Time-based</span>
-      </div>
-      <div class="vs-row">
-        <span class="vs-label">Prediction cap</span>
-        <span class="vs-them">$1/share</span>
-        <span class="vs-us">Uncapped</span>
-      </div>
-      <div class="vs-row">
-        <span class="vs-label">Agent trust</span>
-        <span class="vs-them">Per-token audit</span>
-        <span class="vs-us">Factory-enforced</span>
-      </div>
-      <div class="vs-row">
-        <span class="vs-label">Oracle attacks</span>
-        <span class="vs-them">Vulnerable</span>
-        <span class="vs-us">No oracles</span>
-      </div>
+      <div class="vs-row"><span class="vs-lbl">Rug pulls</span><span class="vs-them">Possible</span><span class="vs-us">Impossible</span></div>
+      <div class="vs-row"><span class="vs-lbl">Liquidation</span><span class="vs-them">Price-based</span><span class="vs-us">Time-based</span></div>
+      <div class="vs-row"><span class="vs-lbl">Prediction payout</span><span class="vs-them">$1 cap</span><span class="vs-us">Uncapped</span></div>
+      <div class="vs-row"><span class="vs-lbl">Agent trust</span><span class="vs-them">Per-token audit</span><span class="vs-us">Factory root</span></div>
+      <div class="vs-row"><span class="vs-lbl">Oracle attacks</span><span class="vs-them">Vulnerable</span><span class="vs-us">No oracles</span></div>
+      <div class="vs-row"><span class="vs-lbl">Sybil resistance</span><span class="vs-them">Social only</span><span class="vs-us">6-layer ACS</span></div>
     </div>
+
   </div>
 
-  <!-- Bottom Banner -->
-  <div class="banner">
-    <div class="banner-item">
-      <div class="banner-number">0</div>
-      <div class="banner-label">Liquidation Risk</div>
+  <!-- Bottom Strip -->
+  <div class="strip">
+    <div class="strip-item">
+      <div class="strip-num">0</div>
+      <div class="strip-label">Rug Pull Risk</div>
     </div>
-    <div class="banner-item">
-      <div class="banner-number">0</div>
-      <div class="banner-label">Rug Pull Risk</div>
+    <div class="strip-item">
+      <div class="strip-num">0</div>
+      <div class="strip-label">Liquidation Risk</div>
     </div>
-    <div class="banner-item">
-      <div class="banner-number">100%</div>
-      <div class="banner-label">LTV Loans</div>
+    <div class="strip-item">
+      <div class="strip-num">100%</div>
+      <div class="strip-label">LTV Loans</div>
     </div>
-    <div class="banner-item">
-      <div class="banner-number">7</div>
-      <div class="banner-label">Ways to Win</div>
+    <div class="strip-item">
+      <div class="strip-num">7</div>
+      <div class="strip-label">Ways to Win</div>
     </div>
-    <div class="banner-item">
-      <div class="banner-number">∞</div>
-      <div class="banner-label">Payout Cap</div>
+    <div class="strip-item">
+      <div class="strip-num">∞</div>
+      <div class="strip-label">Payout Cap</div>
     </div>
   </div>
 
   <!-- Footer -->
   <div class="footer">
-    <div class="lobster">Phase 1: Founding Lobster 🦞 — Live on BSC Mainnet</div>
-    <div>launchonbasis.com</div>
+    <span>Phase 1: Founding Lobster 🦞 — Live on BSC Mainnet</span>
+    <span>launchonbasis.com</span>
   </div>
 
-</div>
 </body>
 </html>
