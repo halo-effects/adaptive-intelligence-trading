@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BASIS — Why We're Different</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #0a0f0a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 40px;
+  }
+
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #0a0f0a;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+  }
+
+  .logo-area h1 {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .logo-area h1 .bars {
+    color: #3ddc84;
+    margin-right: 4px;
+  }
+
+  .logo-area .tagline {
+    font-size: 14px;
+    color: #3ddc84;
+    font-weight: 500;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .badge {
+    border: 1.5px solid #3ddc84;
+    border-radius: 24px;
+    padding: 8px 20px;
+    color: #3ddc84;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  /* Subtitle */
+  .subtitle {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 24px;
+    line-height: 1.5;
+    max-width: 800px;
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    border: 1px solid #1a2a1a;
+    border-radius: 12px;
+    padding: 20px 22px;
+    background: #0d140d;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #3ddc84;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+
+  .card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 5px 0;
+  }
+
+  .card-label {
+    font-size: 13.5px;
+    color: #b0b0b0;
+    font-weight: 400;
+  }
+
+  .card-value {
+    font-size: 13.5px;
+    color: #fff;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .card-value.green {
+    color: #3ddc84;
+  }
+
+  /* Wide card spanning 2 columns */
+  .card.wide {
+    grid-column: span 2;
+  }
+
+  /* Bottom banner */
+  .banner {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    border: 1px solid #1a2a1a;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 16px;
+    background: #0d140d;
+  }
+
+  .banner-item {
+    text-align: center;
+    padding: 20px 10px;
+    border-right: 1px solid #1a2a1a;
+  }
+
+  .banner-item:last-child {
+    border-right: none;
+  }
+
+  .banner-number {
+    font-size: 36px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.1;
+  }
+
+  .banner-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #888;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Footer */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    font-size: 12px;
+    color: #555;
+  }
+
+  .footer .lobster {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Comparison row */
+  .vs-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 5px 0;
+  }
+
+  .vs-label {
+    font-size: 12.5px;
+    color: #666;
+    font-weight: 400;
+    flex: 1;
+  }
+
+  .vs-them {
+    font-size: 12.5px;
+    color: #ff6b6b;
+    font-weight: 600;
+    text-align: center;
+    flex: 0.8;
+  }
+
+  .vs-us {
+    font-size: 12.5px;
+    color: #3ddc84;
+    font-weight: 700;
+    text-align: right;
+    flex: 0.8;
+  }
+
+  .vs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0 0 8px 0;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #1a2a1a;
+  }
+
+  .vs-header-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    flex: 1;
+  }
+
+  .vs-header-them {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #ff6b6b;
+    text-align: center;
+    flex: 0.8;
+    text-transform: uppercase;
+  }
+
+  .vs-header-us {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #3ddc84;
+    text-align: right;
+    flex: 0.8;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-area">
+      <h1><span class="bars">┃┃</span>BASIS</h1>
+      <div class="tagline">DeFi Designed for the Agent Economy</div>
+    </div>
+    <div class="badge">WHY WE'RE DIFFERENT</div>
+  </div>
+
+  <div class="subtitle">
+    DeFi was built for humans. The agent economy demands structural safety guarantees — not rules, but architecture that makes exploits impossible. Here's how Basis is fundamentally different.
+  </div>
+
+  <!-- Row 1: Token Design, Lending, Prediction Markets -->
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-title">Token Design</div>
+      <div class="card-row">
+        <span class="card-label">Liquidity Model</span>
+        <span class="card-value green">Embedded in Contract</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Supply</span>
+        <span class="card-value">100% Elastic</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Pre-mint / Insider Alloc</span>
+        <span class="card-value green">Impossible</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Token Types</span>
+        <span class="card-value">Stable+ / Floor+ / Predict+</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Enforcement</span>
+        <span class="card-value green">Factory Contract</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Rug Pull Risk</span>
+        <span class="card-value green">Architecturally Zero</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Lending & Leverage</div>
+      <div class="card-row">
+        <span class="card-label">Loan-to-Value</span>
+        <span class="card-value green">100% LTV</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Liquidation Model</span>
+        <span class="card-value green">Time-Based Only</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Price Liquidation</span>
+        <span class="card-value green">Impossible</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Collateral Valuation</span>
+        <span class="card-value">Floor Price (never ↓)</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Max Leverage</span>
+        <span class="card-value">Up to 36x</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Cascade Risk</span>
+        <span class="card-value green">Eliminated</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Prediction Markets</div>
+      <div class="card-row">
+        <span class="card-label">Payout Model</span>
+        <span class="card-value green">One Big Pot</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Payout Cap</span>
+        <span class="card-value green">Uncapped</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Buying Liquidity</span>
+        <span class="card-value">Instant (AMM)</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Counterparty Required</span>
+        <span class="card-value green">No</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Participant Roles</span>
+        <span class="card-value">7 Distinct Roles</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Resolution</span>
+        <span class="card-value">Bonded + Staked Voting</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Ecosystem Safety, Agent Infrastructure, vs Traditional -->
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-title">Ecosystem Safety</div>
+      <div class="card-row">
+        <span class="card-label">Token Entry</span>
+        <span class="card-value green">Factory-Only</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">External Tokens</span>
+        <span class="card-value green">Cannot Enter</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Oracle Dependency</span>
+        <span class="card-value green">None</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Unit of Account</span>
+        <span class="card-value">USDB (closed loop)</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">MEV Resistance</span>
+        <span class="card-value green">Built-in</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Composability</span>
+        <span class="card-value">Safe by Default</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Agent Infrastructure</div>
+      <div class="card-row">
+        <span class="card-label">On-Chain Identity</span>
+        <span class="card-value green">ERC-8004</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Reputation Score</span>
+        <span class="card-value">ACS (0.0–1.0)</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Anti-Sybil</span>
+        <span class="card-value green">6-Layer Defense</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Agent Revenue</span>
+        <span class="card-value">20% Dev Fee Forever</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">SDK + MCP</span>
+        <span class="card-value">JS + Python + 44 Tools</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Agent Docs</span>
+        <span class="card-value green">300KB+ Playbooks</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="color: #888;">Traditional DeFi vs Basis</div>
+      <div class="vs-header">
+        <span class="vs-header-label"></span>
+        <span class="vs-header-them">Others</span>
+        <span class="vs-header-us">Basis</span>
+      </div>
+      <div class="vs-row">
+        <span class="vs-label">Rug pulls</span>
+        <span class="vs-them">Possible</span>
+        <span class="vs-us">Impossible</span>
+      </div>
+      <div class="vs-row">
+        <span class="vs-label">Liquidation</span>
+        <span class="vs-them">Price-based</span>
+        <span class="vs-us">Time-based</span>
+      </div>
+      <div class="vs-row">
+        <span class="vs-label">Prediction cap</span>
+        <span class="vs-them">$1/share</span>
+        <span class="vs-us">Uncapped</span>
+      </div>
+      <div class="vs-row">
+        <span class="vs-label">Agent trust</span>
+        <span class="vs-them">Per-token audit</span>
+        <span class="vs-us">Factory-enforced</span>
+      </div>
+      <div class="vs-row">
+        <span class="vs-label">Oracle attacks</span>
+        <span class="vs-them">Vulnerable</span>
+        <span class="vs-us">No oracles</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Banner -->
+  <div class="banner">
+    <div class="banner-item">
+      <div class="banner-number">0</div>
+      <div class="banner-label">Liquidation Risk</div>
+    </div>
+    <div class="banner-item">
+      <div class="banner-number">0</div>
+      <div class="banner-label">Rug Pull Risk</div>
+    </div>
+    <div class="banner-item">
+      <div class="banner-number">100%</div>
+      <div class="banner-label">LTV Loans</div>
+    </div>
+    <div class="banner-item">
+      <div class="banner-number">7</div>
+      <div class="banner-label">Ways to Win</div>
+    </div>
+    <div class="banner-item">
+      <div class="banner-number">∞</div>
+      <div class="banner-label">Payout Cap</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="lobster">Phase 1: Founding Lobster 🦞 — Live on BSC Mainnet</div>
+    <div>launchonbasis.com</div>
+  </div>
+
+</div>
+</body>
+</html>
