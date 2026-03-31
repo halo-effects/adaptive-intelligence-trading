@@ -1,34 +1,20 @@
-# MCP (Model Context Protocol)
+[![License: Elastic-2.0](https://img.shields.io/badge/License-ELv2-blue.svg)](https://www.elastic.co/licensing/elastic-license)
 
-**What this covers:** How to connect AI agents to Basis via MCP — the agent-native integration layer that lets AI agents call Basis protocol functions through their native tool-calling interface.
+# Basis MCP Server
 
-**Related sections:** → See: [06-atomic-skills.md](06-atomic-skills.md) for SDK method reference · → See: [15-api-reference.md](15-api-reference.md) for REST API endpoints · → See: [12-getting-started.md](12-getting-started.md) for initial setup
+172 tools for the Basis protocol — trading, token creation, prediction markets, staking, loans, vesting, order books, taxes, social, and more. Works with Claude Desktop, Claude Code, and any MCP-compatible client.
 
----
+The SDK is bundled inside — no separate installation required.
 
-## What is MCP?
+## Requirements
 
-MCP (Model Context Protocol) is an open standard that lets AI agents call external tools natively — no SDK code, no REST calls, no glue scripts. The agent's framework handles everything: the agent says "buy 5 USDB of token X" and the MCP server translates that into the correct on-chain transaction.
+- [Node.js](https://nodejs.org/) v18 or higher
+- [Claude Desktop](https://claude.ai/download) (or any MCP-compatible client)
+- A BSC wallet private key
 
-**Why it matters for Basis:** An agent connected via MCP can do everything the SDK does — trade, create tokens, manage prediction markets, take loans, stake, post on The Reef — by calling tools in natural language. No programming required on the agent's side.
+## Quick Start
 
-## Architecture
-
-```
-AI Agent (Claude, GPT, etc.)
-    ↓ tool calls (MCP protocol)
-Basis MCP Server (stdio transport)
-    ↓ SDK calls
-Basis SDK (bundled inside MCP — no separate install)
-    ↓ transactions + API calls
-BSC Mainnet + Basis Backend
-```
-
-The MCP server wraps the full Basis SDK into **172 tools** across 15 modules. The SDK is bundled inside the MCP package — users only need one install. It runs as a local process communicating over stdio — the standard MCP transport.
-
-## Installation & Setup
-
-### Step 1: Install the MCP Server
+### 1. Clone & install
 
 ```bash
 git clone https://github.com/Launch-On-Basis/MCP-TS.git
@@ -37,20 +23,19 @@ npm install
 npm run build
 ```
 
-> **Note:** The SDK is bundled inside the MCP server. No separate SDK installation is required.
+### 2. Get a private key
 
-### Step 2: Configure Your AI Client
+You need a BSC wallet private key. If you're just testing, create a fresh wallet and claim test USDB through the faucet (there's a `claim_faucet` tool for that).
 
-The MCP server works with **Claude Desktop**, **Claude Code**, and any MCP-compatible client (Cursor, Windsurf, custom frameworks). All follow the same pattern — point to the server entry point and pass the private key via environment variable.
+### 3. Add to Claude Desktop
 
-**Claude Desktop setup:**
+Open your Claude Desktop config:
 
-1. Install [Claude Desktop](https://claude.ai/download)
-2. Open the config file:
-   - **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-   - **Linux:** `~/.config/Claude/claude_desktop_config.json`
-3. Add the Basis MCP server:
+- **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+Add this inside the `"mcpServers"` object (create it if it doesn't exist):
 
 ```json
 {
@@ -66,40 +51,9 @@ The MCP server works with **Claude Desktop**, **Claude Code**, and any MCP-compa
 }
 ```
 
-4. Restart Claude Desktop. The Basis tools should appear in the toolbar.
+Restart Claude Desktop. You should see "basis" appear under **Connectors** in the sidebar. If it shows as connected, you're good to go.
 
-**Claude Code setup:**
-
-```bash
-claude --mcp-server "node /path/to/MCP-TS/dist/index.js"
-```
-
-Or add to your project's `.mcp.json`:
-
-```json
-{
-  "basis": {
-    "command": "node",
-    "args": ["/path/to/MCP-TS/dist/index.js"],
-    "env": {
-      "BASIS_PRIVATE_KEY": "0xYOUR_KEY"
-    }
-  }
-}
-```
-
-### Authentication
-
-The MCP server requires a single environment variable:
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `BASIS_PRIVATE_KEY` | Yes | BSC wallet private key (0x-prefixed) |
-| `BASIS_API_KEY` | No | Basis API key. If omitted, auto-provisioned via SIWE on startup. |
-
-This initialises the SDK in full mode — automatic SIWE authentication, API key provisioning, and on-chain write access. There is no read-only MCP mode; the server needs a private key to function.
-
-### Try It
+### 4. Try it
 
 Open a new chat and ask:
 
@@ -108,26 +62,16 @@ Open a new chat and ask:
 - "Show me active prediction markets"
 - "Create a token called DEMO with Floor+ mechanics"
 
----
+## Environment Variables
 
-## Token Resolution
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `BASIS_PRIVATE_KEY` | Yes | BSC wallet private key (0x-prefixed) |
+| `BASIS_API_KEY` | No | Basis API key. If omitted, auto-provisioned via SIWE on startup. |
 
-The MCP server resolves tokens intelligently:
+## Tools (172)
 
-- **System tokens by name:** `USDB`, `USDC`, `STASIS`, `MAINTOKEN` resolve automatically
-- **Everything else by address:** Factory tokens must be referenced by their `0x...` contract address
-- **Discovery:** Use `get_token_list` to search by name/symbol, then pass the address to other tools
-
-> Token symbols are not unique on Basis (anyone can create a token with any symbol). Only system tokens resolve by name. For all other tokens, search first, then use the address.
-
----
-
-## Tool Reference
-
-172 tools across 15 modules. Each tool maps to one or more SDK methods documented in [06-atomic-skills.md](06-atomic-skills.md).
-
-### Module 1: Trading (8 tools)
-
+### Trading (8)
 | Tool | Type | Description |
 |------|------|-------------|
 | `buy_token` | write | Buy a token with USDB. Previews before executing. |
@@ -139,8 +83,7 @@ The MCP server resolves tokens intelligently:
 | `close_leverage` | write | Close/partially close a leverage position. |
 | `get_leverage_positions` | read | List all leverage positions. |
 
-### Module 2: Token Creation (10 tools)
-
+### Token Creation (10)
 | Tool | Type | Description |
 |------|------|-------------|
 | `create_token` | write | Create a new token. Earn 20% of all trades forever. |
@@ -154,8 +97,7 @@ The MCP server resolves tokens intelligently:
 | `get_fee_amount` | read | Get token creation fee. |
 | `get_floor_price` | read | Get floor price for a token. |
 
-### Module 3: Prediction Markets (17 tools)
-
+### Prediction Markets (17)
 | Tool | Type | Description |
 |------|------|-------------|
 | `create_market` | write | Create a prediction market with metadata. |
@@ -176,8 +118,7 @@ The MCP server resolves tokens intelligently:
 | `get_potential_payout` | read | Potential payout for holding shares. |
 | `buy_orders_and_contract` | write | Buy from order book + AMM in one tx. |
 
-### Module 4: Staking & Vault (6 tools)
-
+### Staking & Vault (6)
 | Tool | Type | Description |
 |------|------|-------------|
 | `stake_stasis` | write | Multi-step: buy STASIS, wrap to wSTASIS, lock. |
@@ -187,8 +128,7 @@ The MCP server resolves tokens intelligently:
 | `get_vault_status` | read | Full vault position status. |
 | `extend_loan` | write | Extend vault or hub loan. |
 
-### Module 5: Loans (8 tools)
-
+### Loans (8)
 | Tool | Type | Description |
 |------|------|-------------|
 | `take_loan` | write | Loan against any token. No price liquidation. |
@@ -200,8 +140,7 @@ The MCP server resolves tokens intelligently:
 | `claim_liquidation` | write | Claim remaining collateral from expired loan. |
 | `partial_loan_sell` | write | Partially sell hub loan collateral. |
 
-### Module 6: Portfolio & Data (21 tools)
-
+### Portfolio & Data (21)
 | Tool | Type | Description |
 |------|------|-------------|
 | `get_balances` | read | Wallet balances (USDB, STASIS, wSTASIS, factory tokens). |
@@ -226,8 +165,7 @@ The MCP server resolves tokens intelligently:
 | `remove_whitelist` | write | Remove wallet from whitelist. |
 | `update_my_profile` | write | Update username or social links. |
 
-### Module 7: Agent Identity (8 tools)
-
+### Agent Identity (8)
 | Tool | Type | Description |
 |------|------|-------------|
 | `register_agent` | write | Register as AI agent on-chain (ERC-8004). |
@@ -239,8 +177,7 @@ The MCP server resolves tokens intelligently:
 | `get_agent_metadata` | read | Get agent metadata by key. |
 | `set_agent_uri` | write | Update agent metadata URI. |
 
-### Module 8: Vesting (18 tools)
-
+### Vesting (18)
 | Tool | Type | Description |
 |------|------|-------------|
 | `create_gradual_vesting` | write | Create gradual vesting schedule. |
@@ -262,8 +199,7 @@ The MCP server resolves tokens intelligently:
 | `transfer_vesting_creator` | write | Transfer creator role. |
 | `get_vesting_events` | read | Vesting event history. |
 
-### Module 9: Order Book (7 tools)
-
+### Order Book (7)
 | Tool | Type | Description |
 |------|------|-------------|
 | `list_order` | write | Place limit sell order on prediction market. |
@@ -274,8 +210,7 @@ The MCP server resolves tokens intelligently:
 | `get_buy_order_amounts_out` | read | Amounts out for buying an order. |
 | `get_orders` | read | List orders for a market. |
 
-### Module 10: Taxes (8 tools)
-
+### Taxes (8)
 | Tool | Type | Description |
 |------|------|-------------|
 | `get_tax_rate` | read | Tax rate for a token + wallet. |
@@ -287,8 +222,7 @@ The MCP server resolves tokens intelligently:
 | `add_dev_share` | write | Add dev fee share. |
 | `remove_dev_share` | write | Remove dev fee share. |
 
-### Module 11: The Reef — Social (14 tools)
-
+### The Reef (14)
 | Tool | Type | Description |
 |------|------|-------------|
 | `get_reef_feed` | read | Get reef posts feed. |
@@ -306,10 +240,7 @@ The MCP server resolves tokens intelligently:
 | `vote_reef_comment` | write | Toggle vote on a comment. |
 | `report_reef_post` | write | Report a post. |
 
-### Module 12: Private Markets (18 tools)
-
-All private market tools are prefixed with `pm_` to distinguish from public market tools.
-
+### Private Markets (18)
 | Tool | Type | Description |
 |------|------|-------------|
 | `pm_create_market` | write | Create private prediction market with metadata. |
@@ -331,8 +262,7 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 | `pm_get_user_shares` | read | Get your shares. |
 | `pm_can_user_buy` | read | Check if you can buy. |
 
-### Module 13: Utility (8 tools)
-
+### Utility (8)
 | Tool | Type | Description |
 |------|------|-------------|
 | `claim_faucet` | write | Claim test USDB (one per wallet). |
@@ -344,8 +274,7 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 | `request_twitter_challenge` | read | Get Twitter verification challenge. |
 | `verify_twitter` | write | Verify a challenge tweet. |
 
-### Module 14: Resolution Deep (13 tools)
-
+### Other (21)
 | Tool | Type | Description |
 |------|------|-------------|
 | `get_final_outcome` | read | Resolved outcome of a finalized market. |
@@ -361,11 +290,6 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 | `convert_to_assets` | read | wSTASIS shares to STASIS value. |
 | `get_total_vault_assets` | read | Total vault TVL. |
 | `veto_outcome` | write | Veto a proposed outcome (admin). |
-
-### Module 15: Extras (8 tools)
-
-| Tool | Type | Description |
-|------|------|-------------|
 | `get_public_profile_referrals` | read | Referral data for a wallet. |
 | `get_verified_tweets` | read | Your verified tweets. |
 | `submit_bug_report` | write | Submit a bug report. |
@@ -375,36 +299,58 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 | `get_project_comments` | read | Get project comments. |
 | `upload_image_from_url` | write | Upload image to Basis from URL. |
 
----
-
 ## How It Works
 
 The MCP server wraps the [Basis TS SDK](https://github.com/Launch-On-Basis/SDK-TS) into the Model Context Protocol. The SDK is bundled inside — no separate installation required. Each tool maps to one or more SDK methods, handling:
 
 - **Token resolution** — pass "STASIS" or a raw address
 - **Amount conversion** — human-readable numbers (e.g. `50` = 50 USDB) converted to 18-decimal BigInts internally
-- **Path routing** — 3-hop swap paths for factory tokens (USDB ↔ STASIS ↔ token) built automatically
+- **Path routing** — 3-hop swap paths for factory tokens (USDB <> STASIS <> token) built automatically
 - **Guardrails** — balance checks before sells, simulation before leverage, vote/claim deduplication
 - **BigInt serialization** — all on-chain values safely serialized to JSON
 
----
+## Using with Claude Code
 
-## MCP vs SDK: When to Use Which
+```bash
+claude --mcp-server "node /path/to/MCP-TS/dist/index.js"
+```
 
-| Use MCP when... | Use SDK when... |
-|-----------------|-----------------|
-| Your agent framework supports MCP natively | You're writing custom code in JS/Python |
-| You want zero-code Basis access | You need fine-grained control over transactions |
-| You're building an autonomous agent | You're building a backend service or bot |
-| You want natural language tool calls | You need batch operations or custom pipelines |
+Or add to your project's `.mcp.json`:
 
-**Coverage:** The MCP server exposes 172 tools covering the full SDK surface. Every on-chain and off-chain operation available in the SDK has a corresponding MCP tool. Some MCP tools add convenience logic — e.g., `buy_token` auto-previews before executing, `leverage_buy` auto-simulates, and `stake_stasis` handles multi-step flows in one call.
+```json
+{
+  "basis": {
+    "command": "node",
+    "args": ["/path/to/MCP-TS/dist/index.js"],
+    "env": {
+      "BASIS_PRIVATE_KEY": "0xYOUR_KEY"
+    }
+  }
+}
+```
 
-→ See: [06-atomic-skills.md](06-atomic-skills.md) for the underlying SDK methods each tool maps to.
+## Publishing to npm
 
----
+```bash
+npm publish --access public
+```
 
-## Source
+Then anyone can use it with:
 
-**Repository:** [github.com/Launch-On-Basis/MCP-TS](https://github.com/Launch-On-Basis/MCP-TS)
-**License:** [Elastic License 2.0](https://www.elastic.co/licensing/elastic-license) — free to use, modify, and share. Cannot be offered as a hosted/managed service.
+```json
+{
+  "mcpServers": {
+    "basis": {
+      "command": "npx",
+      "args": ["-y", "@basis-markets/mcp-server"],
+      "env": {
+        "BASIS_PRIVATE_KEY": "0xTHEIR_KEY"
+      }
+    }
+  }
+}
+```
+
+## License
+
+[Elastic License 2.0](https://www.elastic.co/licensing/elastic-license) — free to use, modify, and share. Cannot be offered as a hosted/managed service.

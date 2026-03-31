@@ -1,8 +1,8 @@
-# COMPLETE_INDEX_V5.md
+# COMPLETE_INDEX.md
 
 _SDK Documentation v1.0.2 | Last updated: 2026-03-31_
 
-Line-range index into [`COMPLETE_V5.md`](COMPLETE_V5.md).
+Line-range index into [`COMPLETE.md`](COMPLETE.md).
 Total lines: 7090 | Total size: 350,580 bytes
 
 ---
