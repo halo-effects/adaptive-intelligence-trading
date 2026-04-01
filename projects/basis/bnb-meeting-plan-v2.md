@@ -179,6 +179,18 @@ _"We chose BSC deliberately."_
 - **BNB Chain is already pursuing the AI agent market** — BAP-578 (NFA standard), leading in ERC-8004 registrations. Basis is the DeFi layer that completes that vision.
 - _"You're building the chain for AI agents. We've built the financial ecosystem for AI agents. This is a natural fit."_
 
+### BNB+ — The MSTR Strategy, But for BNB
+
+_"Here's where it gets really interesting for BNB Chain specifically. We've designed a BTC+ model that solves the MicroStrategy problem — self-custody Bitcoin treasury with vault yield instead of leveraged debt. But the same architecture works with any base asset. Including BNB."_
+
+- **BNB+** would be a Stable+ token paired with wBNB — floor only goes up via slippage retention
+- **wBNB+** vault wrapper earns yield from all platform trading fees — same mechanics as our Stasis Vault
+- Users lock wBNB+ and borrow wBNB at 100% LTV — tax-free, no price liquidation
+- As platform activity grows, the vault ratio increases → borrow more wBNB → cold storage
+- _"Every BNB holder gets a way to earn more BNB from an entire DeFi ecosystem, while keeping their BNB in self-custody. That's a reason for BNB holders to stay on BNB Chain."_
+
+**Why Walter should care:** This makes BNB a productive asset. It gives BNB Chain a narrative: "Hold BNB, stake into the Basis ecosystem, earn more BNB." That's a retention and growth story he can take to leadership.
+
 ### The Ask (3 minutes)
 **Primary:** Grant funding + co-marketing partnership
 - **Grant:** Development runway, audit costs, infrastructure

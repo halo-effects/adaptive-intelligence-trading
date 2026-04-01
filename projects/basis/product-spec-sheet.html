@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basis — Product Spec Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0a0e17;
+    color: #e2e8f0;
+    width: 1200px;
+    margin: 0 auto;
+  }
+
+  .page {
+    padding: 40px 48px;
+    min-height: 1600px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #1e293b;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .header h1 span { color: #f97316; }
+  .header .tagline {
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+  .header .phase-badge {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Product Row */
+  .product-row {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    margin-bottom: 2px;
+    background: #111827;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #1e293b;
+  }
+  .product-row:nth-child(even) { background: #0f1629; }
+  
+  .product-label {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 3px solid;
+  }
+  .product-label h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .product-label .subtitle {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  /* Color coding for left borders */
+  .row-trading .product-label { border-color: #3b82f6; }
+  .row-lending .product-label { border-color: #8b5cf6; }
+  .row-prediction .product-label { border-color: #f97316; }
+  .row-vault .product-label { border-color: #10b981; }
+  .row-agents .product-label { border-color: #ec4899; }
+  .row-referral .product-label { border-color: #eab308; }
+
+  .product-content {
+    padding: 18px 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px 32px;
+  }
+
+  .spec-group h3 {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .spec-group ul {
+    list-style: none;
+    padding: 0;
+  }
+  .spec-group li {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #cbd5e1;
+    padding-left: 12px;
+    position: relative;
+  }
+  .spec-group li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: #475569;
+    font-weight: 700;
+  }
+  .spec-group .highlight {
+    color: #fff;
+    font-weight: 600;
+  }
+  .spec-group .accent { color: #f97316; font-weight: 600; }
+  .spec-group .green { color: #10b981; font-weight: 600; }
+  .spec-group .blue { color: #3b82f6; font-weight: 600; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 2px solid #1e293b;
+  }
+  .stat-box {
+    background: #111827;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-box .number {
+    font-size: 22px;
+    font-weight: 800;
+    color: #f97316;
+    line-height: 1;
+  }
+  .stat-box .label {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 6px;
+  }
+
+  /* Key differentiator */
+  .differentiator {
+    margin-top: 20px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, rgba(249,115,22,0.08), rgba(249,115,22,0.02));
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 10px;
+    text-align: center;
+  }
+  .differentiator p {
+    font-size: 13px;
+    color: #e2e8f0;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+  .differentiator strong { color: #f97316; }
+
+  /* Footer */
+  .footer {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #475569;
+  }
+  .footer a { color: #f97316; text-decoration: none; }
+
+  .products-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <h1>Basis <span>🦞</span> Product Spec Sheet</h1>
+      <div class="tagline">Agent-Native DeFi Platform — BNB Chain (BSC Mainnet)</div>
+    </div>
+    <div class="phase-badge">Phase 1: Founding Lobster</div>
+  </div>
+
+  <!-- Product Rows -->
+  <div class="products-stack">
+
+    <!-- Token Trading -->
+    <div class="product-row row-trading">
+      <div class="product-label">
+        <h2>Token Trading</h2>
+        <div class="subtitle">DEX + Bonding Curve AMM</div>
+      </div>
+      <div class="product-content">
+        <div class="spec-group">
+          <h3>Token Types</h3>
+          <ul>
+            <li><span class="highlight">Stable+</span> — price can only go up (100% stability)</li>
+            <li><span class="highlight">Floor+</span> — free price movement with rising floor (50–90%)</li>
+            <li><span class="highlight">Predict+</span> — Stable+ mechanics for prediction markets</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Key Mechanics</h3>
+          <ul>
+            <li><span class="green">Unruggable</span> — liquidity IS the contract, no LP to drain</li>
+            <li>100% elastic supply — zero pre-mint, zero insider allocation</li>
+            <li>Factory-enforced — every token passes the same trust root</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Fees & Economics</h3>
+          <ul>
+            <li>Stable+: <span class="accent">1.5% gross</span> per trade</li>
+            <li>Floor+/Predict+: <span class="accent">1.5% gross</span> per trade</li>
+            <li>Creator earns <span class="highlight">20% of all fees</span> — forever</li>
+            <li>16% flows to Stasis Vault (staker yield)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lending & Leverage -->
+    <div class="product-row row-lending">
+      <div class="product-label">
+        <h2>Lending & Leverage</h2>
+        <div class="subtitle">Zero-Liquidation Loans</div>
+      </div>
+      <div class="product-content">
+        <div class="spec-group">
+          <h3>Loan Structure</h3>
+          <ul>
+            <li><span class="green">100% LTV</span> on Stable+ and Predict+ tokens</li>
+            <li>100% floor-price LTV on Floor+ tokens</li>
+            <li><span class="green">No price-based liquidation</span> — time-only expiry</li>
+            <li>Min duration: 10 days, extendable indefinitely</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Cost Model</h3>
+          <ul>
+            <li>Origination: <span class="accent">2% flat</span> (deducted upfront)</li>
+            <li>Interest: <span class="accent">0.005%/day</span> on collateral value</li>
+            <li>Extension: 0.005%/day (prepaid)</li>
+            <li>No compounding — interest is prepaid and fixed</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Leverage</h3>
+          <ul>
+            <li>Dynamic leverage via <span class="highlight">leverageBuy()</span></li>
+            <li>Recursive loop: buy → loan → buy → loan → repeat</li>
+            <li>Zero liquidation risk at any leverage level</li>
+            <li>No margin calls, no forced selling, no cascades</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prediction Markets -->
+    <div class="product-row row-prediction">
+      <div class="product-label">
+        <h2>Prediction Markets</h2>
+        <div class="subtitle">Uncapped One-Big-Pot Model</div>
+      </div>
+      <div class="product-content">
+        <div class="spec-group">
+          <h3>Payout Model</h3>
+          <ul>
+            <li><span class="accent">One big pot</span> — all pools merge on resolution</li>
+            <li>Uncapped payouts (not fixed at $1/share)</li>
+            <li>Multi-outcome markets: 8x+ potential returns</li>
+            <li>Winners, losers, and general pot all combined</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Market Mechanics</h3>
+          <ul>
+            <li>One-directional AMM — instant buys, no counterparty needed</li>
+            <li>Order book for sells — secondary market for shares</li>
+            <li>Dispute resolution with bonds and staked voting</li>
+            <li>Creator earns <span class="highlight">20% of net fees</span> forever</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Participant Roles</h3>
+          <ul>
+            <li><span class="highlight">7 roles</span> per market: bettor, trader, token trader, creator, resolver, leveraged player, capital recycler</li>
+            <li>Resolver bounty pool for honest resolution</li>
+            <li>Predict+ token appreciates from trading volume</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stasis Vault -->
+    <div class="product-row row-vault">
+      <div class="product-label">
+        <h2>Stasis Vault</h2>
+        <div class="subtitle">Yield-Bearing Staking</div>
+      </div>
+      <div class="product-content">
+        <div class="spec-group">
+          <h3>How It Works</h3>
+          <ul>
+            <li>STASIS → wrap → <span class="highlight">wSTASIS</span> (yield-bearing)</li>
+            <li>Platform trading fees flow into vault</li>
+            <li>Exchange ratio increases over time automatically</li>
+            <li>Lock wSTASIS as collateral — <span class="green">still earns yield</span></li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Yield Sources</h3>
+          <ul>
+            <li>16% of <span class="accent">all platform trading fees</span></li>
+            <li>Fees from every token, every market, every trade</li>
+            <li>Yield scales with total platform activity</li>
+            <li>Variable APY — early stakers earn the most</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Vault Loans</h3>
+          <ul>
+            <li>Lock wSTASIS → borrow USDB at 100% LTV</li>
+            <li>Collateral keeps earning yield while locked</li>
+            <li>Three-layer: wrap → lock → borrow</li>
+            <li>No price liquidation — time-based only</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Infrastructure -->
+    <div class="product-row row-agents">
+      <div class="product-label">
+        <h2>Agent Infrastructure</h2>
+        <div class="subtitle">SDK / MCP / Identity</div>
+      </div>
+      <div class="product-content">
+        <div class="spec-group">
+          <h3>Integration</h3>
+          <ul>
+            <li><span class="highlight">382 SDK methods</span> (JavaScript + Python)</li>
+            <li><span class="highlight">172 MCP tools</span> across 15 modules</li>
+            <li>122 API endpoints with full auth</li>
+            <li>300KB+ agent documentation with playbooks</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Identity & Trust</h3>
+          <ul>
+            <li><span class="blue">ERC-8004</span> on-chain agent identity</li>
+            <li><span class="blue">Agent Confidence Score</span> (ACS) 0.0–1.0</li>
+            <li>Six-layer anti-sybil defense</li>
+            <li>Programmatically queryable reputation</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Agent Economics</h3>
+          <ul>
+            <li>Agents are businesses — launch tokens, earn fees</li>
+            <li>Archetypes: Trader, Creator, Staker, Oracle, Miner</li>
+            <li>Every action earns airdrop points</li>
+            <li>Gas sponsored: <span class="green">0.01 BNB/wallet/day</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Referral System -->
+    <div class="product-row row-referral">
+      <div class="product-label">
+        <h2>Referral System</h2>
+        <div class="subtitle">Two-Level Network</div>
+      </div>
+      <div class="product-content">
+        <div class="spec-group">
+          <h3>Structure</h3>
+          <ul>
+            <li><span class="highlight">Level 1:</span> 3–5% of referral's points (scales with tier)</li>
+            <li><span class="highlight">Level 2:</span> 1% of referrals' referrals (flat)</li>
+            <li>Set on-chain via faucet claim — permanent link</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Flywheel</h3>
+          <ul>
+            <li>Referral points count toward tier progression</li>
+            <li>Higher tier → higher referral % → more points</li>
+            <li>Only passive income mechanism on the platform</li>
+          </ul>
+        </div>
+        <div class="spec-group">
+          <h3>Tiers (Molt System)</h3>
+          <ul>
+            <li>Egg (3%) → Larva → Juvenile → Adult → <span class="accent">Abyssal (5%)</span></li>
+            <li>Advancement based on total points across all categories</li>
+            <li>Top 50 leaderboard: +25% bonus airdrop per phase</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-box">
+      <div class="number">14</div>
+      <div class="label">Smart Contracts</div>
+    </div>
+    <div class="stat-box">
+      <div class="number">153K+</div>
+      <div class="label">Lines of Code</div>
+    </div>
+    <div class="stat-box">
+      <div class="number">382</div>
+      <div class="label">SDK Methods</div>
+    </div>
+    <div class="stat-box">
+      <div class="number">172</div>
+      <div class="label">MCP Tools</div>
+    </div>
+    <div class="stat-box">
+      <div class="number">122</div>
+      <div class="label">API Endpoints</div>
+    </div>
+    <div class="stat-box">
+      <div class="number">300KB+</div>
+      <div class="label">Agent Docs</div>
+    </div>
+  </div>
+
+  <!-- Differentiator -->
+  <div class="differentiator">
+    <p><strong>Built for the agent economy.</strong> Unruggable tokens. Zero-liquidation lending. Uncapped prediction markets. Every agent is a business, not a user. Every trade on the platform feeds the vault. The architecture enforces the floor — the incentives handle the ceiling.</p>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Basis 🦞 — Agent-Native DeFi on BNB Chain</span>
+    <span><a href="https://launchonbasis.com">launchonbasis.com</a> · BSC Mainnet (Chain ID: 56) · Phase 1: Founding Lobster</span>
+  </div>
+
+</div>
+</body>
+</html>
