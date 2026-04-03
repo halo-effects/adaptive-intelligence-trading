@@ -218,3 +218,253 @@ And none of it requires scale to deliver. The economics are superior from trade 
 _Basis - where being right pays what it should._ 🦞
 
 ---
+
+## 10. Strategy Stacking Reference
+
+**What this covers:** Formal rules for constructing multi-position capital plays on prediction markets. This section formalizes the combined strategies from §8 into composable, machine-readable modules — suitable for AI agents generating valid strategy trees.
+**Related sections:** → See: §8 above for narrative descriptions of each strategy · → See: [06-atomic-skills.md](06-atomic-skills.md) for SDK method signatures · → See: [01-what-is-basis.md](01-what-is-basis.md) for leverage and loan mechanics
+
+### Core Concept
+
+You start with USDB. You deploy it into a **module**. Some modules end by returning USDB (via a loan), which you then feed into the next module. You keep chaining until you hit a **terminal** (hold, bet, or leverage). The result is a multi-layered position stack built from one pool of capital.
+
+### Actions (9 Total)
+
+| # | Action | Prerequisite | Output |
+|---|--------|-------------|--------|
+| 1 | Buy Predict+ token | Have USDB | Own Predict+ token |
+| 2 | Buy STASIS | Have USDB | Own STASIS |
+| 3 | Take loan on Predict+ | Own Predict+ token | Get USDB (token locked as collateral) |
+| 4 | Wrap STASIS to wSTASIS | Own STASIS | Own wSTASIS (earning vault yield) |
+| 5 | Take loan on wSTASIS | Own wSTASIS | Get USDB (wSTASIS locked as collateral) |
+| 6 | Take loan on STASIS | Own STASIS | Get USDB (STASIS locked as collateral) — valid but suboptimal; no vault yield. Prefer wrapping first. |
+| 7 | Bet on an outcome | Have USDB or Predict+ token | Own shares in that outcome |
+| 8 | Leverage buy Predict+ | Have USDB | Own leveraged Predict+ position |
+| 9 | Leverage buy STASIS | Have USDB | Own leveraged STASIS position |
+
+### Terminals
+
+These actions end a chain. Nothing can follow them.
+
+- **Hold** — keep the position (Predict+ token, STASIS, wSTASIS, or shares), wait for resolution or yield
+- **Bet on outcome** — USDB or Predict+ token is converted to shares, no capital left to extract
+- **Leverage buy** — all capital is consumed in the recursive buy→loan→buy loop (~20x multiplier; bounded by the 2% origination fee per loop until input is fully consumed). Nothing remains to chain.
+
+**Rule: If leverage is used, it MUST be the final action. No exceptions.**
+
+### Modules
+
+A module is a self-contained sequence that starts with capital (USDB or a Predict+ token) and either ends at a terminal or returns USDB via a loan.
+
+#### Module A: Predict+ (aka "Quick Stack" entry point)
+
+```
+Buy Predict+ →
+  Option 1: Hold (TERMINAL)
+  Option 2: Bet with the Predict+ token (TERMINAL)
+  Option 3: Take loan on Predict+ → USDB out (feeds next module)
+```
+
+Using Option 3 to feed a bet or another module is the **Quick Stack** — the minimum viable version of capital stacking on Basis. Two positions from one bag: Predict+ tokens appreciating from volume, plus whatever the borrowed USDB funds.
+
+#### Module B: STASIS
+
+```
+Buy STASIS →
+  Option 1: Hold (TERMINAL)
+  Option 2: Take loan on STASIS → USDB out (valid but suboptimal — no vault yield)
+  Option 3: Wrap to wSTASIS →
+    Option 3a: Hold wSTASIS (TERMINAL, earning vault yield)
+    Option 3b: Take loan on wSTASIS → USDB out (preferred — collateral earns vault yield while locked)
+```
+
+**Agent preference:** Default to Option 3b over Option 2 unless there is a specific reason to skip wrapping (e.g., time sensitivity, gas optimization). Wrapping earns vault yield on the locked collateral at no additional cost.
+
+#### Module C: Bet
+
+```
+Bet USDB on outcome → Hold shares (TERMINAL)
+```
+
+Betting with a Predict+ token directly (Module A Option 2) is a distinct action — the token itself is consumed as the bet input instead of USDB. This is useful when you want full exposure to an outcome without converting back through USDB, and when you believe the outcome shares will pay out more than the Predict+ token would appreciate.
+
+#### Module D: Leverage (always terminal)
+
+```
+Leverage buy Predict+ (TERMINAL)
+— or —
+Leverage buy STASIS (TERMINAL)
+```
+
+`leverageBuy()` recursively loops: buy → loan → buy → loan until the 2% origination fee per loop consumes the remaining balance. A $10 input produces approximately a $200 position (~20x). Daily interest of 0.005% also applies across the position lifetime.
+
+### Chaining Rules
+
+1. **Any module that outputs USDB can feed any other module** — including the same module type again (e.g., two Predict+ modules in different markets).
+
+2. **Every chain must end at a terminal** — hold, bet, or leverage.
+
+3. **Leverage is always last** — if used, it caps the chain. Nothing follows.
+
+4. **Splitting is allowed** — at any USDB output point, you can divide capital across multiple parallel branches. Each branch follows its own module chain independently.
+
+5. **Multi-market exposure** — you can repeat Module A across different prediction markets, or even different outcomes within the same market, to diversify.
+
+6. **Loan capital is less than input** — each loan takes a 2% origination fee, so deeper chains have diminishing capital. Factor this into allocation decisions: a 3-loan chain retains ~94% of original capital; a 5-loan chain retains ~90%.
+
+7. **Cross-pillar exit** — any module that ends with USDB output can exit the prediction market strategy entirely and deploy into other Basis token types (e.g., buying a Floor+ token). This is a valid terminal branch when the agent wants to diversify exposure beyond prediction markets.
+
+### Loan Risk & Expiry Management
+
+Basis has **no price-based liquidation** on Stable+ collateral (Predict+, STASIS, wSTASIS). The collateral price cannot decrease, so there is nothing to liquidate against. The risks in a stacked strategy are:
+
+- **Loan expiry** — every loan has a time-based expiration. If not repaid or extended before expiry, the position auto-closes: collateral is burned (Stable+) or sold (Floor+) to cover the debt, and the remainder is claimable. In a stacked chain, one expired loan breaks the stack from that point — downstream positions funded by that loan's USDB are unaffected, but the collateral layer is gone.
+
+- **Origination fees (2% per loan)** — the real capital decay in deep chains. Each loan returns less USDB than was spent. An agent should calculate whether a deeper chain's additional exposure justifies the cumulative fee cost.
+
+- **Daily interest (0.005% per loan)** — small per loan, but across a deep serial chain with 3-4 active loans, the total daily interest burden adds up. Calculate aggregate daily cost across the full tree.
+
+**Agent rule:** Track expiry dates across all active loans in the strategy tree. Set alerts or auto-extend before expiry. A loan expiring mid-chain doesn't cascade to other loans — each loan is independent — but it does mean you lose that collateral layer's upside.
+
+### Unwinding a Strategy Tree
+
+Strategies can unwind in two ways:
+
+**Manual unwind (preferred when profitable):**
+Unwind in **reverse order** — repay the most recent loan first, unlock that collateral, then work backward to the root.
+
+```
+Example (One-Bag Deep Stack):
+1. Collect outcome winnings (if bet won)
+2. Repay Predict+ loan → unlock Predict+ tokens
+3. Sell or hold Predict+ tokens
+4. Repay wSTASIS loan → unlock wSTASIS
+5. Unwrap wSTASIS → STASIS (if desired)
+6. You own everything free and clear
+```
+
+**Expiry unwind (passive):**
+Let loans expire. Collateral is automatically burned/sold to cover debt. Remainder is claimable. This is acceptable when:
+- The position has appreciated enough that the remainder after debt repayment is still profitable
+- Gas or time cost of manual repayment exceeds the benefit
+- The agent determines that the collateral layer has served its purpose
+
+An agent should compare both paths and choose the one that maximizes net value.
+
+### Structure Types
+
+#### Serial Chain (One-Bag Deep Stack)
+
+Modules connected end-to-end. USDB flows from one to the next.
+
+```
+[Module] → USDB → [Module] → USDB → [Terminal]
+```
+
+#### Parallel Split
+
+At a USDB output, divide capital across branches.
+
+```
+[Module] → USDB →
+  ├── X% → [Module or Terminal]
+  └── Y% → [Module or Terminal]
+```
+
+#### Full Tree
+
+A combination of serial chains and parallel splits.
+
+```
+USDB →
+  [Module] → USDB →
+    ├── 60% → [Module] → USDB → [Terminal]
+    └── 40% → [Terminal]
+```
+
+### Example Plays
+
+#### Example 1: The One-Bag Deep Stack
+
+```
+USDB
+→ Buy STASIS
+→ Wrap to wSTASIS (earning vault yield)
+→ Loan on wSTASIS → USDB
+→ Buy Predict+ (Market A)
+→ Loan on Predict+ → USDB
+→ Bet on outcome (Market B)
+```
+
+**End state:** Three simultaneous layers — wSTASIS earning vault yield (locked), Predict+ appreciating from Market A volume (locked), outcome shares in Market B with uncapped payout. One starting position, three exposure layers.
+
+#### Example 2: Chain Ending in Leverage
+
+```
+USDB
+→ Buy STASIS
+→ Wrap to wSTASIS
+→ Loan on wSTASIS → USDB
+→ Buy Predict+ (Market A)
+→ Loan on Predict+ → USDB
+→ Leverage buy Predict+ (Market B)
+```
+
+**End state:** wSTASIS staking position, Predict+ in Market A (collateral), ~20x leveraged Predict+ in Market B.
+
+#### Example 3: Split Play
+
+```
+USDB
+→ Buy Predict+ (Market A)
+→ Loan on Predict+ → USDB
+  ├── 50% → Buy STASIS → Wrap → Hold wSTASIS
+  └── 50% → Leverage buy Predict+ (Market C)
+```
+
+**End state:** Predict+ in Market A (collateral), wSTASIS earning yield, leveraged Predict+ in Market C.
+
+#### Example 4: Multi-Market Exposure
+
+```
+USDB
+→ Buy Predict+ (Market A)
+→ Loan on Predict+ → USDB
+→ Buy Predict+ (Market B)
+→ Loan on Predict+ → USDB
+→ Bet on outcome (Market C)
+```
+
+**End state:** Exposure to three different prediction markets from one starting capital. Each loan takes 2%, so Market C bet is funded with ~96% of original capital.
+
+#### Example 5: Betting with a Predict+ Token
+
+```
+USDB
+→ Buy Predict+ (Market A)
+→ Bet with Predict+ token on outcome in Market A
+```
+
+**End state:** Shares in Market A outcome. The Predict+ token itself was used as the bet input — bypassing a USDB conversion step. This is optimal when you have high conviction on a specific outcome and want maximum share allocation rather than retaining the token for appreciation or collateral.
+
+### Agent Instructions
+
+To generate a valid strategy:
+
+1. Start with a USDB amount.
+2. Pick a module (A, B, C, or D).
+3. If the module outputs USDB, optionally split and pick the next module(s) for each branch.
+4. Repeat until every branch hits a terminal.
+5. Validate: leverage is only at the end of its branch, prerequisites are met for every action, and no action follows a terminal.
+6. Track all loan expiry dates across the tree. Set extension or repayment triggers.
+7. Calculate total origination fees (2% per loan) and daily interest (0.005% per loan) across the full tree.
+
+Consider:
+- **Market conviction** — if high conviction on a prediction, chain toward deeper exposure there
+- **Yield preference** — route through STASIS wrapping (Module B Option 3b) for passive vault yield on locked collateral
+- **Risk tolerance** — more modules = more positions but each with less capital (2% fee per loan). A 3-loan chain retains ~94%; a 5-loan chain retains ~90%.
+- **Diversification** — split across markets and asset types to reduce concentration
+- **Loan management** — every active loan has an expiry. Deeper chains mean more loans to track.
+- **Position sizing vs. liquidity** — large buys on early-stage Predict+ markets cause significant price impact. If a buy would move the price by more than 2%, split the capital into smaller strands across more markets instead. Multi-prong strategies at lower dollar values avoid slippage while capturing early-mover upside across multiple markets.
+
+---
