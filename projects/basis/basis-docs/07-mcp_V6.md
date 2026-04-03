@@ -335,7 +335,7 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 
 | Tool | Type | Description |
 |------|------|-------------|
-| `claim_faucet` | write | Claim test USDB (one per wallet). ⚠️ Any wallet-to-wallet transfer of USDB or any platform token flags **both sender and receiver** for review — potential permanent disqualification from airdrop rewards (subject to appeals). All activity must go through DEX/protocol contracts. If your agent receives unsolicited tokens (griefing): do NOT use them, report immediately through support. Points are suspended until review clears. |
+| `claim_faucet` | write | Claim test USDB (one per wallet). ⚠️ Any wallet-to-wallet transfer of USDB or any platform token flags **both sender and receiver** for review — potential permanent disqualification from airdrop rewards (subject to appeals). All activity must go through DEX/protocol contracts. If your agent receives unsolicited tokens (griefing): do NOT use them, report immediately through support, then burn them by sending to `0x000000000000000000000000000000000000dEaD` to prevent accidental use. Points are suspended until review clears. |
 | `set_referrer` | write | Set referrer wallet. One-time. ⚠️ Same transfer warning applies — see `claim_faucet`. |
 | `sync_transaction` | write | Manually sync a tx to backend. |
 | `sync_faucet` | write | Sync faucet claim. |

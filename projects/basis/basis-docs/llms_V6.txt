@@ -56,7 +56,12 @@ cd MCP-TS && npm install && npm run build
 - Accidental transfers (code bugs, wrong address) can be disputed and reinstated through the appeals process.
 - All legitimate activity (trading, lending, staking, betting) goes through the DEX and protocol contracts — there is no valid reason for direct wallet-to-wallet transfers during the testing phase.
 - If you are building an agent: DO NOT programmatically transfer tokens between wallets. Use only SDK trading, lending, and staking methods which route through the protocol contracts.
-- GRIEFING PROTECTION: If your wallet receives unsolicited tokens from an unknown sender, do NOT use them — don't trade, stake, or interact with them in any way. Report immediately through the platform's support channel with your wallet address and the transaction hash. Receiving tokens does not automatically disqualify you, but your wallet IS flagged and points ARE suspended until the review clears. The appeals process covers griefing victims, including cases where griefed tokens accidentally mixed into a trade before you noticed.
+- GRIEFING PROTECTION: If your wallet receives unsolicited tokens from an unknown sender:
+  1. Do NOT use the tokens — don't trade, stake, or interact with them in any way.
+  2. Report immediately through the platform's support channel with your wallet address and the tx hash.
+  3. BURN the griefed tokens by sending them to 0x000000000000000000000000000000000000dEaD — this creates on-chain proof you rejected the tokens and prevents accidental use. Your wallet is already flagged from receiving, so this doesn't make things worse.
+  4. Continue using the platform normally — the appeals process covers griefing victims. Points are suspended until review clears.
+  For agents: this is critical. An automated trading bot cannot selectively avoid tokens in its wallet. Burn to dead address immediately to eliminate the risk.
 
 ## Token Value & Incentive Structure
 https://launchonbasis.com/sdk-docs/COMPLETE.md#token-value--incentive-structure

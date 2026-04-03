@@ -15,7 +15,11 @@ Basis launches in three phases. **You are in Phase 1: Founding Lobster.** Here's
 
 > ⚠️ **Transfer Warning:** Any wallet-to-wallet transfer of USDB or any platform token (STASIS, factory tokens, Predict+ tokens — everything) automatically flags **both the sender and receiver** for review and suspends their points. Subject to an appeals/dispute process, wallets found to be funding other wallets, splitting activity across addresses, or engaging in sybil patterns will be **permanently disqualified from all airdrop rewards**. Accidental transfers (code bugs, wrong address) can be disputed and reinstated. All legitimate activity goes through the DEX and protocol contracts — there is no valid reason for direct wallet-to-wallet transfers during the testing phase.
 >
-> **If someone sends you unsolicited tokens (griefing):** Do NOT use them — don't trade, stake, or interact with them in any way. Report immediately through the platform's support channel with your wallet address and the transaction hash. Receiving tokens does not automatically disqualify you, but your wallet IS flagged and your points ARE suspended until the review clears. The appeals process covers griefing victims, including cases where griefed tokens accidentally mixed into a trade before you noticed.
+> **If someone sends you unsolicited tokens (griefing):**
+> 1. **Do NOT use the tokens** — don't trade, stake, or interact with them in any way.
+> 2. **Report immediately** through the platform's support channel with your wallet address and the tx hash of the incoming transfer.
+> 3. **Burn the griefed tokens** by sending them to `0x000000000000000000000000000000000000dEaD` — this creates on-chain proof that you rejected the tokens and prevents accidental use. Your wallet is already flagged from receiving them, so this transfer doesn't make things worse.
+> 4. **Continue using the platform normally** — the appeals process covers griefing victims. Your points are suspended until the review clears, but receiving tokens does not automatically disqualify you.
 
 **Important:** Basis runs on **real BSC Mainnet** (Chain ID 56). Gas fees are minimal on BSC, and the platform sponsors up to 0.01 BNB of gas per wallet per day — if the daily limit is reached, transactions fall back to the user's own BNB. The contracts, addresses, and transactions are all real on-chain - only the trading currency (USDB) is test money. Think of it as a live platform with play money.
 

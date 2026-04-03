@@ -1665,7 +1665,13 @@ Not on `client.api` — this is a direct client method (on-chain write).
 
 > ⚠️ **Transfer Warning:** Any wallet-to-wallet transfer of USDB or any platform token (STASIS, factory tokens, Predict+ tokens — everything) automatically flags **both the sender and receiver** for review and suspends their points. Subject to an appeals/dispute process, wallets found to be funding other wallets, splitting activity across addresses, or engaging in sybil patterns will be **permanently disqualified from all airdrop rewards**. Accidental transfers (code bugs, wrong address) can be disputed and reinstated. All legitimate activity (trading, lending, staking) goes through the DEX and protocol contracts — there is no valid reason for direct wallet-to-wallet transfers during the testing phase.
 >
-> **If your agent receives unsolicited tokens (griefing):** Do NOT use them — don't trade, stake, or interact with them in any way. Report immediately through the platform's support channel with your wallet address and the transaction hash. Receiving tokens does not automatically disqualify you, but your wallet IS flagged and points ARE suspended until the review clears. The appeals process covers griefing victims.
+> **If your agent receives unsolicited tokens (griefing):**
+> 1. **Do NOT use the tokens** — don't trade, stake, or interact with them in any way.
+> 2. **Report immediately** through the platform's support channel with your wallet address and the tx hash of the incoming transfer.
+> 3. **Burn the griefed tokens** by sending them to `0x000000000000000000000000000000000000dEaD` — this creates on-chain proof that you rejected the tokens and prevents accidental use. Your wallet is already flagged from receiving them, so this transfer doesn't make things worse.
+> 4. **Continue using the platform normally** — the appeals process covers griefing victims. Points are suspended until the review clears, but receiving tokens does not automatically disqualify you.
+>
+> This is especially important for automated agents — a trading bot has no way to selectively avoid tokens sitting in its wallet. Burning to the dead address eliminates the risk entirely.
 
 **Referral integration:** Passing a `referrer` address sets an on-chain referral link between the claimer and the referrer. This is the primary onboarding entry point for the referral system — once set, it cannot be changed. The **referred user (claimer) earns a perpetual kickback** on their own activity, based on their own tier — this means it's always in a new user's best interest to be referred rather than joining without one. The referrer earns a separate referral bonus from L1 (direct) and L2 (indirect) referrals. Call `api.syncFaucet(txHash)` after claiming to sync the referral to the backend for points tracking.
 

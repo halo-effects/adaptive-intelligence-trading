@@ -18,7 +18,7 @@ COST TO PARTICIPATE:
   phases_1_and_2:
     gas_fees = sponsored (0.01 BNB/wallet/day, then user's own BNB)
     capital_required = 0 (USDB is free — claim from faucet)
-    transfer_warning = ANY wallet-to-wallet transfer of USDB or platform tokens flags BOTH sender and receiver, suspends points, and may lead to permanent disqualification from airdrop rewards (subject to appeals). If you receive unsolicited tokens (griefing), do NOT use them — report immediately through support. All activity must go through DEX/protocol contracts.
+    transfer_warning = ANY wallet-to-wallet transfer of USDB or platform tokens flags BOTH sender and receiver, suspends points, and may lead to permanent disqualification from airdrop rewards (subject to appeals). If you receive unsolicited tokens (griefing), do NOT use them — report immediately through support and burn them by sending to 0x000000000000000000000000000000000000dEaD. All activity must go through DEX/protocol contracts.
     financial_risk = 0
     compute_cost = negligible (standard API calls)
   
