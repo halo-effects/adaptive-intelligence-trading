@@ -434,6 +434,25 @@ Returns: `bigint` — claimable amount in USDB (18 decimals).
 
 ---
 
+### `getFloorPrice(tokenAddress)` *(read)*
+**What it does:** Returns the USDB floor price for a factory token — the minimum price the token can be redeemed for. Does not apply to STASIS.
+**Module:** `client.factory`
+
+**JS:**
+```js
+const floor = await client.factory.getFloorPrice("0xTokenAddress...");
+console.log("Floor price:", floor);
+```
+**Python:**
+```python
+floor = client.factory.get_floor_price("0xTokenAddress...")
+print("Floor price:", floor)
+```
+
+Returns: `string` — floor price in USDB.
+
+---
+
 ## Module: Loans (`client.loans`)
 
 Collateralized loans through the LoanHub contract. Take, extend, repay.
@@ -1250,15 +1269,25 @@ Private prediction markets with restricted access. Extends all Prediction Market
 
 ---
 
-### `createMarket(marketName, symbol, endTime, optionNames, maintoken, privateEvent, frozen, bonding, seedAmount?)`
-**What it does:** Creates a private prediction market. Auto-fetches and attaches creation fee.
+### `createMarketWithMetadata(options)` *(recommended)*
+**What it does:** Creates a private prediction market AND registers its metadata on IPFS in one call. Same pattern as the public `predictionMarkets.createMarketWithMetadata`. Requires SIWE authentication.
 **Module:** `client.privateMarkets`
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `privateEvent` | boolean | When true, restricts who can buy shares - only whitelisted wallets can participate until toggled via `togglePrivateEventBuyers()`. |
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `marketName` | `string` | yes | Market question/title |
+| `symbol` | `string` | yes | Market token symbol |
+| `endTime` | `bigint` / `int` | yes | Unix timestamp when market closes |
+| `optionNames` | `string[]` | yes | Outcome names |
+| `maintoken` | `string` | yes | MAINTOKEN address |
+| `privateEvent` | `boolean` | no | If `true`, restricts buying to whitelisted addresses only |
+| `seedAmount` | `bigint` / `int` | no | USDB seed liquidity (default: 0) |
+| `description` | `string` | no | Market description |
+| `imageUrl` | `string` | no | Image URL (auto-resized to 512x512 WebP) |
+| `frozen` | `boolean` | no | Start frozen (default: false) |
+| `bonding` | `bigint` / `int` | no | Bonding amount (default: 0) |
 
-> **Note:** Private markets do not currently support `createMarketWithMetadata()`. Use `createMarket()` and set metadata via the off-chain API separately.
+Returns: `{ hash, receipt, marketTokenAddress, imageUrl, metadata }`
 
 ---
 
@@ -1288,11 +1317,19 @@ Private prediction markets with restricted access. Extends all Prediction Market
 | `getNumOutcomes(marketToken)` | `bigint/int` |
 | `getOutcome(marketToken, outcomeId)` | Outcome struct |
 | `getUserShares(marketToken, user, outcomeId)` | `bigint/int` |
-| `hasBetted(marketToken, user)` | `boolean` |
+| `hasBettedOnMarket(marketToken, user)` | `boolean` |
 | `getBountyPool(marketToken)` | `bigint/int` |
-| `canUserBuy(marketToken, user)` | `boolean` |
+| `getBuyOrderCost(marketToken, orderId, fill)` | Cost to buy an order |
+| `getBuyOrderAmountsOut(marketToken, orderId, usdbAmount)` | Amounts out for a USDB input |
+| `getMarketOrders(marketToken, orderId)` | Order details |
+| `getNextOrderId(marketToken)` | `bigint/int` — next order ID |
+| `canUserBuy(marketToken, user)` | `boolean` — can buy in private event |
 | `isMarketVoter(marketToken, voter)` | `boolean` |
 | `getVoterChoice(marketToken, voter)` | `number` |
+| `getFirstVoteTime(marketToken)` | `bigint/int` — timestamp of first vote |
+| `getBountyPerVote(marketToken)` | `bigint/int` — bounty per correct vote |
+| `hasClaimed(marketToken, voter)` | `boolean` — whether voter claimed bounty |
+| `getInitialReserves(numOutcomes)` | `bigint/int` — initial reserve per outcome |
 
 ---
 
@@ -1639,12 +1676,19 @@ Backend data endpoints - read token data, trade history, order books, manage aut
 | `submitBugReport(title, description, severity, category, evidence?)` | Session/key | Submit a bug report. Max 5/day. Severity: critical/high/medium/low. Category: sdk/contracts/api/frontend/docs. |
 | `getBugReports(options?)` | Session/key | List your bug reports. Filter: `status` (pending/verified/duplicate/invalid) |
 
+**Quick reference — faucet (auth required):**
+
+| Method | Auth | Description |
+|--------|------|-------------|
+| `getFaucetStatus()` | Session | Check faucet eligibility, signal breakdown, cooldown, next claim time |
+| `claimFaucet(referrer?)` | Session | Claim daily USDB. Also available as top-level `client.claimFaucet()`. Referrer sets permanent server-side referral link. |
+
 **Quick reference — sync, images & metadata:**
 
 | Method | Auth | Description |
 |--------|------|-------------|
 | `syncTransaction(txHash)` | None | Sync any on-chain tx to the database. Replaces deprecated `syncLoan`. Idempotent, 20 req/min. |
-| `syncFaucet(txHash)` | None | Sync faucet claim for referral tracking |
+| `syncFaucet(txHash)` | None | Legacy: sync old on-chain faucet events. New faucet claims via API auto-sync. |
 | `syncOrder(txHash, marketType?)` | None | Manual order sync (`"public"` or `"private"`) |
 | `uploadImageFromUrl(url)` | Session | Upload image to IPFS (auto-resize to 512×512 WebP) |
 | `uploadImage(file, filename)` | Session | Upload raw image data to IPFS |
@@ -1652,16 +1696,28 @@ Backend data endpoints - read token data, trade history, order books, manage aut
 | `updateProject(address, payload, image?)` | Session | Update off-chain project info |
 | `createComment(projectId, content, authorAddress)` | Session | Post a comment on a project |
 | `deleteComment(commentId, authorAddress)` | Session | Delete your own comment |
-| `createApiKey(label)` / `listApiKeys()` / `deleteApiKey(id)` | Session | API key management |
+| `createApiKey(label)` / `listApiKeys()` / `deleteApiKey(id)` | Session | API key management. **Key only shown once at creation** — `listApiKeys()` returns masked hints (`bsk_****XXXX`). Save immediately on first run. |
 
 ---
 
 ## Top-Level: Faucet (`client.claimFaucet`)
 
-Not on `client.api` — this is a direct client method (on-chain write).
+Available as both `client.claimFaucet()` (convenience) and `client.api.claimFaucet()`. Requires SIWE session.
 
 ### `claimFaucet(referrer?)`
-**What it does:** Claims 10,000 test USDB from the faucet. One claim per wallet, ever. Faucet USDB is non-transferable except to Basis protocol contracts.
+**What it does:** Claims daily USDB from the faucet. The faucet is a **server-side daily drip** — the amount depends on which eligibility signals are active for your wallet (max 500 USDB/day). Claims have a 24-hour cooldown. The server sends USDB directly to your wallet from the treasury — no on-chain transaction needed from your side.
+
+**Identity gate:** To be eligible, your wallet must either be a registered ERC-8004 agent, or have a username set and at least one OAuth-linked social account (Discord, GitHub, Google, or X).
+
+**Signal breakdown:**
+
+| Signal | Condition | Amount |
+|--------|-----------|--------|
+| `base` | ERC-8004 agent registered, OR username + linked social | 150 USDB |
+| `twitter` | Any linked social account | 100 USDB |
+| `active` | $100+ trading volume in last 7 days | 100 USDB |
+| `hatchling` | 500+ leaderboard points | 100 USDB |
+| `tidal` | 1,000+ leaderboard points | 150 USDB |
 
 > ⚠️ **Transfer Warning:** Any wallet-to-wallet transfer of USDB or any platform token (STASIS, factory tokens, Predict+ tokens — everything) automatically flags **both the sender and receiver** for review and suspends their points. Subject to an appeals/dispute process, wallets found to be funding other wallets, splitting activity across addresses, or engaging in sybil patterns will be **permanently disqualified from all airdrop rewards**. Accidental transfers (code bugs, wrong address) can be disputed and reinstated. All legitimate activity (trading, lending, staking) goes through the DEX and protocol contracts — there is no valid reason for direct wallet-to-wallet transfers during the testing phase.
 >
@@ -1673,55 +1729,45 @@ Not on `client.api` — this is a direct client method (on-chain write).
 >
 > This is especially important for automated agents — a trading bot has no way to selectively avoid tokens sitting in its wallet. Burning to the dead address eliminates the risk entirely.
 
-**Referral integration:** Passing a `referrer` address sets an on-chain referral link between the claimer and the referrer. This is the primary onboarding entry point for the referral system — once set, it cannot be changed. The **referred user (claimer) earns a perpetual kickback** on their own activity, based on their own tier — this means it's always in a new user's best interest to be referred rather than joining without one. The referrer earns a separate referral bonus from L1 (direct) and L2 (indirect) referrals. Call `api.syncFaucet(txHash)` after claiming to sync the referral to the backend for points tracking.
+**Referral integration:** Passing a `referrer` address sets a permanent server-side referral link between the claimer and the referrer. This is the primary onboarding entry point for the referral system — once set, it cannot be changed. The **referred user (claimer) earns a perpetual kickback** on their own activity, based on their own tier — this means it's always in a new user's best interest to be referred rather than joining without one. The referrer earns a separate referral bonus from L1 (direct) and L2 (indirect) referrals. The referral is stored with circular chain detection to prevent loops.
 
 **How to refer someone (current):** Share your wallet address directly with the user you're referring. They paste it into the referrer field on the dapp faucet page, or pass it programmatically via the SDK. There is no referral URL yet — shareable URL params (`?ref=0xYourWallet`) are planned but not yet live. Check back for updates on the link format.
 
 → See: [05-referral-system.md](05-referral-system.md) for full referral tiers, kickback rates, and L1/L2 mechanics.
 
-**Module:** `client` (top-level)
+**Module:** `client` (top-level) and `client.api`
 
 **JS:**
 ```js
-// Without referrer
+// Check eligibility first
+const status = await client.api.getFaucetStatus();
+console.log("Can claim:", status.canClaim, "Amount:", status.dailyAmount);
+
+// Claim without referrer
 const result = await client.claimFaucet();
+console.log("Claimed", result.amount, "USDB. Tx:", result.txHash);
 
-// With referrer — sets permanent on-chain referral link
-const result = await client.claimFaucet("0xReferrerAddress");
-await client.api.syncFaucet(result.hash); // sync for referral + points tracking
+// Claim with referrer — sets permanent server-side referral link
+const result2 = await client.claimFaucet("0xReferrerAddress");
 ```
 **Python:**
 ```python
-# Without referrer
+# Check eligibility first
+status = client.api.get_faucet_status()
+print("Can claim:", status["canClaim"], "Amount:", status["dailyAmount"])
+
+# Claim without referrer
 result = client.claim_faucet()
+print("Claimed", result["amount"], "USDB. Tx:", result["txHash"])
 
-# With referrer
+# Claim with referrer
 result = client.claim_faucet(referrer="0xReferrerAddress")
-client.api.sync_faucet(result["hash"])
 ```
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `referrer` | string | Optional referrer wallet address. Sets a permanent on-chain referral link. Default: zero address (no referrer). |
+| `referrer` | string | Optional referrer wallet address. Sets a permanent server-side referral link on first claim. |
 
----
-
-### `setReferrer(referrer)`
-**What it does:** Sets a referrer for your wallet after you've already claimed the faucet without one. This is a backup — if a user claimed the faucet without a referrer (didn't know anyone yet, forgot to include it), they can still link a referrer later. One-time only — reverts if a referrer is already set.
-⚠️ Transfer warning applies — see `claimFaucet` above.
-**Module:** `client` (top-level)
-
-**JS:**
-```js
-await client.setReferrer("0xReferrerAddress");
-```
-**Python:**
-```python
-client.set_referrer("0xReferrerAddress")
-```
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `referrer` | string | Referrer wallet address. Reverts if a referrer is already set for this wallet. |
+Returns: `{ success, amount, txHash, signals: { base, twitter, active, hatchling, tidal } }`
 
 ---

@@ -282,10 +282,13 @@ https://launchonbasis.com/api-docs
 - Gas: Minimal on BSC. Platform-sponsored (zero gas) transactions planned.
 
 ## Quick Start
-1. Install SDK: npm install @basis-markets/sdk
+1. Install SDK: npm install github:Launch-On-Basis/basis-sdk (JS) or pip install git+https://github.com/Launch-On-Basis/basis-sdk-python.git (Python)
 2. Initialize: BasisClient.create({{ privateKey, rpcUrl }})
-3. Claim test USDB from on-chain faucet (10,000 USDB per wallet)
+3. Claim daily USDB from faucet (up to 500 USDB/day, identity-gated)
 4. Start trading, creating tokens, or placing predictions
+
+## Contract Addresses (Canonical — always fetch fresh)
+https://launchonbasis.com/contracts.json
 
 ## Capabilities
 - Token creation (Stable+, Floor+, Predict+)

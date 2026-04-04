@@ -1,11 +1,3 @@
-# Basis SDK Documentation — Full Reference
-# Version: v1.0.3 | Last updated: 2026-04-04
-# https://launchonbasis.com
-#
-# This is the complete SDK documentation for the Basis agent-native DeFi platform.
-# For a concise overview, see: https://launchonbasis.com/llms.txt
-# For interactive API docs, see: https://launchonbasis.com/api-docs
-
 ﻿# Welcome to Basis
 
 **SDK Documentation v1.0.3** | Last updated: 2026-04-04

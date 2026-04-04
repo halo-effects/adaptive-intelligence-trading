@@ -52,20 +52,29 @@ The kickback scales with **your own tier**, not your referrer's — so the more 
 
 ## Setting a Referral Link
 
-There are two ways to set the on-chain referral link:
+The referral link is set via the faucet claim API. The new user passes your wallet address as the `referrer` field when claiming the daily faucet:
 
-1. **During faucet claim (recommended):** The new user calls `claimFaucet(yourWalletAddress)` — this claims USDB and sets the referral in one transaction.
-2. **After faucet claim (backup):** If the user already claimed without a referrer, they can call `setReferrer(yourWalletAddress)` later. One-time only — reverts if a referrer is already set.
+```js
+// JS — new user claims with your address as referrer
+const result = await client.claimFaucet("0xYourWalletAddress...");
+```
 
-Once set by either method, the referral link is **permanent and cannot be changed**.
+```python
+# Python
+result = client.claim_faucet(referrer="0xYourWalletAddress...")
+```
+
+Once set, the referral link is **permanent and cannot be changed**. The referral is stored server-side (not on-chain) with circular chain detection to prevent loops.
 
 > ⚠️ **Transfer Warning:** Any wallet-to-wallet transfer of USDB or any platform token (STASIS, factory tokens, Predict+ tokens — everything) automatically flags **both the sender and receiver** for review and suspends their points. Subject to an appeals/dispute process, wallets found to be funding other wallets, splitting activity across addresses, or engaging in sybil patterns will be **permanently disqualified from all airdrop rewards**. Accidental transfers (code bugs, wrong address) can be disputed and reinstated. All legitimate activity goes through the DEX and protocol contracts. When onboarding referrals, make sure they understand this rule — a flagged referral earns you nothing.
 >
 > **If a referral receives unsolicited tokens (griefing):** They must NOT use them — don't trade, stake, or interact with them in any way. Report immediately through the platform's support channel with wallet address and transaction hash, then **burn the griefed tokens** by sending them to `0x000000000000000000000000000000000000dEaD` — this creates on-chain proof of rejection and prevents accidental use. The wallet is already flagged from receiving, so the burn doesn't make things worse. The appeals process covers griefing victims, but points remain suspended until the review clears.
 
-**How to share your referral (current):** Share your wallet address directly with the person you're referring. They enter it in the referrer field on the dapp faucet page, or pass it programmatically via the SDK. Shareable referral URLs (`launchonbasis.com/?ref=0xYourWallet`) are planned but not yet live — check back for updates.
+**How to share your referral (current):** Share your wallet address directly with the person you're referring. They enter it in the referrer field on the dapp faucet page, or pass it programmatically via the SDK (`claimFaucet(yourWalletAddress)`). Shareable referral URLs (`launchonbasis.com/?ref=0xYourWallet`) are planned but not yet live — check back for updates.
 
-→ See: [06-atomic-skills.md — `claimFaucet(referrer?)` and `setReferrer(referrer)`](06-atomic-skills.md) for the SDK methods and code examples.
+**Checking your referral network:** Use `api.getMyReferrals()` to see your direct (L1) and indirect (L2) referrals, including wallet addresses, tiers, ranks, and join dates. Public referral counts for any wallet are available via `api.getPublicProfileReferrals(wallet)`.
+
+→ See: [06-atomic-skills.md — `claimFaucet(referrer?)`](06-atomic-skills.md) for the SDK method and code examples.
 
 ## Key Details
 
