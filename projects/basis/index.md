@@ -1,6 +1,6 @@
 # Basis Project — Quick Reference Index
 
-_Last updated: 2026-03-20 (v6 — unified docs, contract redeployment, sync API, new SDKs, event system)_
+_Last updated: 2026-04-04 (v7 — SDK+MCP published, Phase 1 pre-launch, smart contract audit underway)_
 
 ## Documents
 
@@ -19,6 +19,8 @@ _Last updated: 2026-03-20 (v6 — unified docs, contract redeployment, sync API,
 | `sdk-docs-2026-03-19.md` | SDK documentation v2 from Alex (2026-03-19) — 18-decimal USDB rework, STASIS naming |
 | `sdk-docs-2026-03-20.md` | **SDK documentation v3 from Alex (2026-03-20)** — full 13-module reference, 3 init modes, all new contract addresses post-redeployment |
 | `sdk-docs-latest.md` | Symlink/latest SDK docs |
+| `sdk-docs-production/` | **⭐ CURRENT** — Production SDK docs v5 (April 1), 24 chapters, COMPLETE.md, llms.txt. Published at launchonbasis.com |
+| `sdk-docs-v5-deploy/` | SDK docs v5 deploy version (March 31) |
 | `points-system-build-spec-v2.md` | Agent Mining system build spec — point values, category diversity multiplier (up to 32x), Molt tiers, anti-sybil |
 | `points-system-master-plan.md` | Points system master plan — strategy + phasing |
 | `standup-2026-03-17.md` | Standup from 2026-03-17 |
@@ -43,6 +45,11 @@ _Last updated: 2026-03-20 (v6 — unified docs, contract redeployment, sync API,
 | `sdk-test-v2.py` | V2 test suite |
 | `sdk-test-metadata-token.py` | Token creation with metadata test (LOBSTR) |
 | `sdk-test-metadata-token2.py` | Token creation with metadata test (SEBASTIAN) |
+
+### BNB Chain BD (`bnb-chain-bd/`)
+| File | Contents |
+|---|---|
+| `tracker.md` | **⭐ Master tracker** — 8 tracks (DappBay, X tweet, Walter's 12 Qs, Yzi Labs fund, CMC Labs, Binance Wallet, Alpha Launchpad, Hackathons). Daily check template included. |
 
 ### Polymarket Scout (`polymarket-scout/`)
 | File | Contents |
@@ -192,8 +199,8 @@ _Last updated: 2026-03-20 (v6 — unified docs, contract redeployment, sync API,
 | getPotentialPayout() | ✅ | Documented in SDK docs & API reference 2026-03-16. On-chain view function confirmed. |
 | Google Slides from v2 deck | ✅ | Completed by Brett 2026-03-18 |
 | Oracle provider for BNB | ✅ | Chainlink for BTC up/down. Creator-managed or Basis oracle for all others. Per-market, not platform-wide. (Alex, 2026-03-18) |
-| Audit timeline | ⏳ | Before TGE, budget from raise — no specifics yet |
-| SDK beta publish (npm/PyPI) | ⏳ | 18-decimal migration + redeployment DONE (2026-03-20). SDKs updated. Decision on public publish vs zip TBD. |
+| Audit timeline | ⏳ → 🔄 | Claude Sonnet 4.6 as preliminary auditor. Alex developing testing methodology based on Hashlock public audits for similar projects. Formal audit still TBD. |
+| SDK beta publish (npm/PyPI) | ✅ | **PUBLISHED** (2026-04-04). SDK-TS on GitHub (Launch-On-Basis/SDK-TS), MCP-TS on GitHub (Launch-On-Basis/MCP-TS — 172 tools). Python SDK available. Docs at launchonbasis.com/llms.txt |
 | USDB faucet URL | ✅ | No standalone URL. Built into dapp: button on `launchonbasis.com/profile` + hovering overlay (if claimable USDB & balance < 2500). Also via SDK. (Alex, 2026-03-18) |
 | Points system ownership | ✅ → ⏳ | **Alex will build it.** Needs phased spec — manageable chunks. GeeGee to deliver phased build plan. (Alex, 2026-03-18) |
 | Alex's preferred API stack | ✅ | Alex building SDK himself — contract reference delivered 2026-03-14, usage docs to follow |
