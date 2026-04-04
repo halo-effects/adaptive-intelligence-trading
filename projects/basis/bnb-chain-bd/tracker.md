@@ -23,7 +23,7 @@ Seed funding, promotional support, and participation in BNB Chain sponsored chan
 | 3 | Walter's 12 Questions | 🔴 HIGH | Brett + GeeGee | Drafting | Before welcome tweet |
 | 4 | Yzi Labs $1B Builders Fund | 🟡 MEDIUM | Brett + GeeGee | Not started | TBD |
 | 5 | CMC Labs Incubation | 🟡 MEDIUM | Brett | Not started | Parallel to Yzi |
-| 6 | Binance Wallet SDK Integration | 🟡 MEDIUM | Alex | Not started | When bandwidth allows |
+| 6 | Binance Wallet SDK Integration | 🟡 MEDIUM | Alex | Steps 1-2 done, step 3 pending | Submit self-listing |
 | 7 | Binance Alpha Launchpad | 🔵 LOW (post-TGE) | Brett | Blocked on traction + TGE | Post-TGE |
 | 8 | Hackathons | 🔵 LOW | Monitor | Watching | As opportunities arise |
 
@@ -168,10 +168,10 @@ All answers needed before Walter can proceed with support.
 ## TRACK 6: BINANCE WALLET SDK INTEGRATION
 
 ### Steps (sequential):
-1. **Integrate SDK:** https://developers.binance.com/docs/binance-w3w/introduction
-2. **Self-test:** https://developers.binance.com/docs/w3w_web3_dapp/self-testing
-3. **Submit self-listing:** https://developers.binance.com/docs/w3w_web3_dapp/self-listing
-4. **Review period:** 5-7 business days
+1. ✅ **Integrate SDK:** https://developers.binance.com/docs/binance-w3w/introduction — DONE
+2. ✅ **Self-test:** https://developers.binance.com/docs/w3w_web3_dapp/self-testing — DONE
+3. ⏳ **Submit self-listing:** https://developers.binance.com/docs/w3w_web3_dapp/self-listing — PENDING
+4. **Review period:** 5-7 business days (after step 3)
 
 ### Success criteria:
 - Binance Wallet shown alongside MetaMask in wallet connect options
