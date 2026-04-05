@@ -66,7 +66,7 @@ _Section descriptions for compiling INDEX files. Each entry provides context, us
 ---
 
 ### 08-strategies.md
-**What's in it:** All 5 strategy playbooks with step-by-step instructions and method cross-references.
+**What's in it:** All 6 strategy playbooks with step-by-step instructions and method cross-references.
 **Use this when:** You want a complete multi-step plan for a specific goal (leverage play, vault compounding, Polymarket mirror, etc.).
 **Key topics:** Strategy A (Predict Leverage), B (Loan-Bet), C (Vault Compound), D (Polymarket Mirror), E (Capital Recycler).
 **Cross-refs:** → [06-atomic-skills.md](06-atomic-skills.md) · → [09-decision-trees.md](09-decision-trees.md)

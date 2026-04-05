@@ -4838,7 +4838,7 @@ print(result["activity"]["username"], result["activity"]["verified"])
 
 List all verified tweets for the authenticated wallet.
 
-> **Endpoint:** `GET /api/v1/social/tweets` · Auth: Session or API Key
+> **Endpoint:** `GET /api/v1/social/verified-tweets` · Auth: Session or API Key
 
 **JavaScript:**
 
