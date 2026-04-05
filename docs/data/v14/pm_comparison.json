@@ -5732,5 +5732,243 @@
         }
       ]
     }
+  },
+  {
+    "date": "2026-04-05",
+    "captured_at": "2026-04-05T17:10:02.136084+00:00",
+    "v14_paper": {
+      "equity": 54319.07,
+      "pnl_pct": 443.19,
+      "pnl_usd": 44319.07,
+      "deals": 429,
+      "win_rate": 97.9,
+      "max_dd_pct": 0.0,
+      "uptime_hours": 24.9
+    },
+    "v14_pm": {
+      "equity": 67139.02,
+      "pnl_pct": 34.28,
+      "pnl_usd": 17139.02,
+      "deals": 412,
+      "win_rate": 100.0,
+      "max_dd_pct": 0.66,
+      "uptime_hours": 809.2
+    },
+    "delta": {
+      "equity_usd": 12819.95,
+      "pnl_pct": -408.91,
+      "deals": -17
+    },
+    "pm_allocation": {
+      "active_pool": 75101.84,
+      "reserve": 8309.63,
+      "total_invested": 51046.73,
+      "coins": [
+        {
+          "symbol": "TAO/USDT",
+          "layers": 5,
+          "invested": 13223.13,
+          "unrealized_pnl": -762.76,
+          "realized_pnl": 5264.4,
+          "dca_score": 53.9,
+          "rank": 1,
+          "cf": 0.792,
+          "dd_pct": 13.4,
+          "deals_per_week": 25.6
+        },
+        {
+          "symbol": "FET/USDT",
+          "layers": 3,
+          "invested": 9345.4,
+          "unrealized_pnl": -172.33,
+          "realized_pnl": 3249.48,
+          "dca_score": 51.73,
+          "rank": 2,
+          "cf": 0.875,
+          "dd_pct": 10.3,
+          "deals_per_week": 19.7
+        },
+        {
+          "symbol": "GRASS/USDT",
+          "layers": 2,
+          "invested": 9325.22,
+          "unrealized_pnl": -2.23,
+          "realized_pnl": 6526.87,
+          "dca_score": 44.2,
+          "rank": 3,
+          "cf": 0.792,
+          "dd_pct": 10.7,
+          "deals_per_week": 45.1
+        },
+        {
+          "symbol": "HYPE/USDT",
+          "layers": 8,
+          "invested": 7776.87,
+          "unrealized_pnl": -765.05,
+          "realized_pnl": 1447.49,
+          "dca_score": 21.07,
+          "rank": 5,
+          "cf": 0.833,
+          "dd_pct": 5.7,
+          "deals_per_week": 20.1
+        },
+        {
+          "symbol": "RENDER/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 1184.44,
+          "dca_score": 20.87,
+          "rank": 6,
+          "cf": 0.875,
+          "dd_pct": 17.1,
+          "deals_per_week": 9.9
+        },
+        {
+          "symbol": "ZRO/USDT",
+          "layers": 12,
+          "invested": 8382.75,
+          "unrealized_pnl": -1723.12,
+          "realized_pnl": 901.96,
+          "dca_score": 15.91,
+          "rank": 8,
+          "cf": 0.833,
+          "dd_pct": 21.2,
+          "deals_per_week": 7.5
+        },
+        {
+          "symbol": "INIT/USDT",
+          "layers": 2,
+          "invested": 2993.36,
+          "unrealized_pnl": -54.6,
+          "realized_pnl": 632.86,
+          "dca_score": 14.8,
+          "rank": 11,
+          "cf": 0.833,
+          "dd_pct": 23.0,
+          "deals_per_week": 7.0
+        },
+        {
+          "symbol": "EIGEN/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 1252.46,
+          "dca_score": 12.18,
+          "rank": 15,
+          "cf": 0.833,
+          "dd_pct": 33.3,
+          "deals_per_week": 6.8
+        },
+        {
+          "symbol": "NEAR/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 918.71,
+          "dca_score": 10.18,
+          "rank": 18,
+          "cf": 0.833,
+          "dd_pct": 21.4,
+          "deals_per_week": 4.9
+        },
+        {
+          "symbol": "SNX/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 551.98,
+          "dca_score": 9.6,
+          "rank": 21,
+          "cf": 0.833,
+          "dd_pct": 15.1,
+          "deals_per_week": 3.8
+        },
+        {
+          "symbol": "DOT/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 655.47,
+          "dca_score": 8.6,
+          "rank": 24,
+          "cf": 0.833,
+          "dd_pct": 24.4,
+          "deals_per_week": 4.5
+        },
+        {
+          "symbol": "PENDLE/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 273.56,
+          "dca_score": 8.51,
+          "rank": 25,
+          "cf": 0.833,
+          "dd_pct": 27.4,
+          "deals_per_week": 4.7
+        },
+        {
+          "symbol": "INJ/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 100.56,
+          "dca_score": 7.03,
+          "rank": 33,
+          "cf": 0.833,
+          "dd_pct": 15.3,
+          "deals_per_week": 3.3
+        },
+        {
+          "symbol": "STX/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 134.81,
+          "dca_score": 6.02,
+          "rank": 40,
+          "cf": 0.833,
+          "dd_pct": 20.7,
+          "deals_per_week": 2.6
+        },
+        {
+          "symbol": "JUP/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 123.97,
+          "dca_score": 1.24,
+          "rank": 50,
+          "cf": 0.833,
+          "dd_pct": 20.0,
+          "deals_per_week": 0.5
+        },
+        {
+          "symbol": "ENS/USDT",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 205.93,
+          "dca_score": null,
+          "rank": null,
+          "cf": null,
+          "dd_pct": null,
+          "deals_per_week": null
+        },
+        {
+          "symbol": "SOL/USDC",
+          "layers": 0,
+          "invested": 0.0,
+          "unrealized_pnl": 0.0,
+          "realized_pnl": 104.37,
+          "dca_score": null,
+          "rank": null,
+          "cf": null,
+          "dd_pct": null,
+          "deals_per_week": null
+        }
+      ]
+    }
   }
 ]
