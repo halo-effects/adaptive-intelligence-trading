@@ -14223,20 +14223,20 @@
       }
     },
     {
-      "timestamp": "2026-04-05T13:21:25.791000+00:00",
+      "timestamp": "2026-04-05T14:21:25.913000+00:00",
       "window": "bear",
       "scores": {
         "INIT": {
-          "dca_score": 88.11,
-          "deals_per_week": 11.4,
+          "dca_score": 84.1,
+          "deals_per_week": 11.3,
           "max_drawdown_pct": 24.8,
           "realized_pnl": 12780.34,
-          "capital_freedom": 0.9167,
+          "capital_freedom": 0.875,
           "mature": true
         },
         "ZRO": {
           "dca_score": 78.98,
-          "deals_per_week": 15.2,
+          "deals_per_week": 15.0,
           "max_drawdown_pct": 36.08,
           "realized_pnl": 16473.36,
           "capital_freedom": 0.75,
@@ -14260,7 +14260,7 @@
         },
         "BERA": {
           "dca_score": 48.28,
-          "deals_per_week": 14.8,
+          "deals_per_week": 14.7,
           "max_drawdown_pct": 58.78,
           "realized_pnl": 15618.03,
           "capital_freedom": 0.75,
@@ -14276,7 +14276,7 @@
         },
         "TAO": {
           "dca_score": 27.51,
-          "deals_per_week": 6.9,
+          "deals_per_week": 6.8,
           "max_drawdown_pct": 50.28,
           "realized_pnl": 6989.65,
           "capital_freedom": 0.7917,
@@ -14284,7 +14284,7 @@
         },
         "BONK": {
           "dca_score": 21.7,
-          "deals_per_week": 5.1,
+          "deals_per_week": 5.0,
           "max_drawdown_pct": 47.26,
           "realized_pnl": 5195.51,
           "capital_freedom": 0.7917,
@@ -14299,16 +14299,16 @@
           "mature": true
         },
         "STX": {
-          "dca_score": 15.63,
+          "dca_score": 15.3,
           "deals_per_week": 3.7,
-          "max_drawdown_pct": 43.85,
+          "max_drawdown_pct": 45.02,
           "realized_pnl": 3516.14,
           "capital_freedom": 0.7917,
           "mature": true
         },
         "ORCA": {
           "dca_score": 15.18,
-          "deals_per_week": 3.7,
+          "deals_per_week": 3.6,
           "max_drawdown_pct": 44.51,
           "realized_pnl": 3455.35,
           "capital_freedom": 0.7917,
@@ -14340,7 +14340,7 @@
         },
         "PEPE": {
           "dca_score": 12.39,
-          "deals_per_week": 3.4,
+          "deals_per_week": 3.3,
           "max_drawdown_pct": 52.4,
           "realized_pnl": 3288.88,
           "capital_freedom": 0.7917,
@@ -14355,9 +14355,9 @@
           "mature": true
         },
         "EIGEN": {
-          "dca_score": 11.17,
+          "dca_score": 11.1,
           "deals_per_week": 3.9,
-          "max_drawdown_pct": 65.18,
+          "max_drawdown_pct": 65.41,
           "realized_pnl": 4052.63,
           "capital_freedom": 0.7917,
           "mature": true
@@ -14379,9 +14379,9 @@
           "mature": true
         },
         "TIA": {
-          "dca_score": 8.4,
+          "dca_score": 8.31,
           "deals_per_week": 2.4,
-          "max_drawdown_pct": 52.81,
+          "max_drawdown_pct": 53.34,
           "realized_pnl": 2136.61,
           "capital_freedom": 0.8333,
           "mature": true
@@ -14458,19 +14458,19 @@
           "capital_freedom": 0.8333,
           "mature": true
         },
-        "PENDLE": {
-          "dca_score": 6.63,
-          "deals_per_week": 1.8,
-          "max_drawdown_pct": 53.39,
-          "realized_pnl": 1706.44,
-          "capital_freedom": 0.8333,
-          "mature": true
-        },
         "NEAR": {
           "dca_score": 6.23,
           "deals_per_week": 1.6,
           "max_drawdown_pct": 48.4,
           "realized_pnl": 1448.99,
+          "capital_freedom": 0.8333,
+          "mature": true
+        },
+        "PENDLE": {
+          "dca_score": 6.19,
+          "deals_per_week": 1.8,
+          "max_drawdown_pct": 56.48,
+          "realized_pnl": 1706.44,
           "capital_freedom": 0.8333,
           "mature": true
         },
@@ -14483,9 +14483,9 @@
           "mature": true
         },
         "AAVE": {
-          "dca_score": 5.91,
+          "dca_score": 5.78,
           "deals_per_week": 1.4,
-          "max_drawdown_pct": 46.64,
+          "max_drawdown_pct": 47.81,
           "realized_pnl": 1328.57,
           "capital_freedom": 0.8333,
           "mature": true
@@ -14547,9 +14547,9 @@
           "mature": true
         },
         "ENA": {
-          "dca_score": 4.24,
+          "dca_score": 4.12,
           "deals_per_week": 1.7,
-          "max_drawdown_pct": 68.57,
+          "max_drawdown_pct": 69.48,
           "realized_pnl": 1619.14,
           "capital_freedom": 0.8333,
           "mature": true
@@ -14603,9 +14603,9 @@
           "mature": true
         },
         "UNI": {
-          "dca_score": 2.28,
+          "dca_score": 2.27,
           "deals_per_week": 0.6,
-          "max_drawdown_pct": 49.77,
+          "max_drawdown_pct": 49.97,
           "realized_pnl": 544.14,
           "capital_freedom": 0.8333,
           "mature": true
