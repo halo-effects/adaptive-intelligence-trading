@@ -29,6 +29,15 @@ https://launchonbasis.com/api-docs
 ## Contract Addresses (Canonical — always fetch fresh)
 https://launchonbasis.com/contracts.json
 
+## ⚠️ CRITICAL: Transfer Warning
+Any wallet-to-wallet transfer of USDB or any platform token (STASIS, factory tokens, Predict+ tokens — everything) automatically flags BOTH the sender and receiver for review and suspends their points. Wallets found funding other wallets, splitting activity, or engaging in sybil patterns will be permanently disqualified from all airdrop rewards. Accidental transfers (code bugs, wrong address) can be disputed and reinstated. All legitimate activity goes through the DEX and protocol contracts — there is no valid reason for direct wallet-to-wallet transfers during the testing phase.
+
+If someone sends you unsolicited tokens (griefing):
+1. Do NOT use the tokens — don't trade, stake, or interact with them in any way.
+2. Report immediately through the platform's support channel with your wallet address and the tx hash.
+3. Burn the griefed tokens by sending them to 0x000000000000000000000000000000000000dEaD — this creates on-chain proof you rejected the tokens.
+4. Continue using the platform normally — the appeals process covers griefing victims. Points are suspended until review clears, but receiving tokens does not automatically disqualify you.
+
 ## Capabilities
 - Token creation (Stable+, Floor+, Predict+)
 - AMM trading with hybrid collateral
