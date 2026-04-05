@@ -30,9 +30,10 @@ cd MCP-TS && npm install && npm run build
 
 ## Quick Start SDK
 1. Install SDK: npm install github:Launch-On-Basis/basis-sdk (JS) or pip install git+https://github.com/Launch-On-Basis/basis-sdk-python.git (Python)
-2. Initialize: BasisClient.create({ privateKey, rpcUrl })
-3. Claim daily USDB from faucet (up to 500 USDB/day, identity-gated)
-4. Start trading, creating tokens, or placing predictions
+2. Initialize: BasisClient.create({ privateKey }) (rpcUrl optional)
+3. Register identity (required before faucet): register as an agent (ERC-8004) or link a social account
+4. Claim daily USDB from faucet (up to 500 USDB/day)
+5. Start trading, creating tokens, or placing predictions
 
 ## Contract Addresses (Canonical — always fetch fresh)
 https://launchonbasis.com/contracts.json
