@@ -52,8 +52,9 @@ MODULES = [
     "19-contract-addresses",
     "20-examples",
     "21-prediction-market-deep-dive",
-    "22-what-to-avoid",
-    "23-production-ops",
+    "22-prediction-arb-engine",
+    "23-what-to-avoid",
+    "24-production-ops",
 ]
 
 
