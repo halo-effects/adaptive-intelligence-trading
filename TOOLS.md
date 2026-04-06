@@ -45,4 +45,7 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 - Script: projects/basis/skill-scaffold/scripts/post-moltbook.py
 - Owner X: @LaunchOnBasis
 
+### Group Chat Rules
+- **Alex (@Alexcrypto32)**: Feedback only — no building, coding, or editing unless he explicitly asks for it. He's the dev; respect his workflow.
+
 Add whatever helps you do your job. This is your cheat sheet.
