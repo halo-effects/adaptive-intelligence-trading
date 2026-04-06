@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
 Basis SDK Docs Build Pipeline
-Usage: python build_docs.py V3        # builds for version V3
-       python build_docs.py V4        # builds for version V4
-       python build_docs.py V3 --zip  # builds + packages zip
+Usage: python build_docs.py V8        # builds for version V8
+       python build_docs.py V8 --zip  # builds + packages zip
 
 Steps:
-  1. Reads INDEX_DESCRIPTIONS.md for section metadata
+  1. Reads INDEX_DESCRIPTIONS_{ver}.md for section metadata
   2. Compiles INDEX_{ver}.md with correct links and descriptions
   3. Merges all individual modules → COMPLETE_{ver}.md
   4. Generates COMPLETE_INDEX_{ver}.md (line-range map)
-  5. (Optional) Packages zip with versioned/ and production/ folders
+  5. Outputs to versioned/ and production/ folders
+  6. (Optional) Packages zip
+
+Does NOT build llms.txt or llms-full.txt — those are maintained manually.
 
 ⚠️ VERSIONING RULE: Never edit a version in place. Any content change
    requires a new version number. To make changes:
@@ -23,6 +25,7 @@ Steps:
 import sys
 import os
 import re
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -59,7 +62,7 @@ MODULES = [
 
 
 def parse_descriptions(path: Path) -> dict:
-    """Parse INDEX_DESCRIPTIONS.md into {base_name: description_block}."""
+    """Parse INDEX_DESCRIPTIONS_{ver}.md into {base_name: description_block}."""
     text = path.read_text(encoding="utf-8")
     descriptions = {}
     current_key = None
@@ -71,7 +74,6 @@ def parse_descriptions(path: Path) -> dict:
         if m:
             if current_key:
                 desc = "\n".join(current_lines).strip()
-                # Strip trailing --- separator (added by build loop)
                 desc = re.sub(r"\n---\s*$", "", desc).strip()
                 descriptions[current_key] = desc
             current_key = m.group(1)
@@ -107,7 +109,18 @@ def get_sdk_version(ver: str) -> str:
         m = re.search(r"v(\d+\.\d+\.\d+)", text)
         if m:
             return m.group(0)
-    return "v1.0.2"
+    return "v1.0.3"
+
+
+def strip_version_refs(text: str, version: str) -> str:
+    """Strip version suffixes from internal links and references."""
+    esc_ver = re.escape(version)
+    text = re.sub(rf"_{esc_ver}\.md", ".md", text, flags=re.IGNORECASE)
+    text = re.sub(rf"COMPLETE_INDEX_{esc_ver}\.md", "COMPLETE_INDEX.md", text, flags=re.IGNORECASE)
+    text = re.sub(rf"COMPLETE_{esc_ver}\.md", "COMPLETE.md", text, flags=re.IGNORECASE)
+    text = re.sub(rf"INDEX_{esc_ver}\.md", "INDEX.md", text, flags=re.IGNORECASE)
+    text = re.sub(rf"COMPLETE_INDEX_{esc_ver}", "COMPLETE_INDEX", text, flags=re.IGNORECASE)
+    return text
 
 
 def build_index(ver: str, descriptions: dict) -> str:
@@ -145,10 +158,7 @@ def build_index(ver: str, descriptions: dict) -> str:
             lambda m: f"[{m.group(1)}_{ver}.md]({m.group(1)}_{ver}.md)",
             desc,
         )
-        # Also fix cross-refs that use generic names from descriptions file
         for other_base in MODULES:
-            # Match → strategies, → atomic-skills style refs
-            short = other_base.split("-", 1)[1] if "-" in other_base else other_base
             desc = desc.replace(
                 f"→ [{other_base}.md]({other_base}.md)",
                 f"→ [{other_base}_{ver}.md]({other_base}_{ver}.md)",
@@ -173,7 +183,6 @@ def build_complete(ver: str) -> str:
             print(f"  ⚠️  Missing module: {filename}")
             continue
         content = filepath.read_text(encoding="utf-8").strip()
-        # Strip leading/trailing --- separators to avoid double/triple --- when joining
         while content.endswith("---"):
             content = content[:-3].strip()
         while content.startswith("---"):
@@ -191,12 +200,10 @@ def build_complete_index(ver: str, complete_text: str) -> str:
 
     sections = []
     for i, line in enumerate(lines_list, start=1):
-        # Match # (module titles) and ## or ### (section headings)
         m = re.match(r"^(#{1,3})\s+(.+)", line)
         if m:
             level = len(m.group(1))
             heading = m.group(2).strip()
-            # Skip blockquote headings (lines inside > blocks)
             if i > 1 and lines_list[i-2].strip().startswith(">"):
                 continue
             sections.append((i, level, heading))
@@ -215,14 +222,12 @@ def build_complete_index(ver: str, complete_text: str) -> str:
         "|-------|---------|",
     ]
 
-    # Pre-scan for SDK method names per ## Module section
-    sdk_methods = {}  # start_line -> list of method names
+    sdk_methods = {}
     for idx, (start_line, level, heading) in enumerate(sections):
         if level == 2 and heading.startswith("Module:"):
-            # Find end: next section at same or higher level (# or ##)
             section_end = len(lines_list) + 1
             for next_idx in range(idx + 1, len(sections)):
-                if sections[next_idx][1] <= 2:  # level 1 or 2
+                if sections[next_idx][1] <= 2:
                     section_end = sections[next_idx][0]
                     break
             methods = []
@@ -231,7 +236,6 @@ def build_complete_index(ver: str, complete_text: str) -> str:
                 if sub_start >= section_end:
                     break
                 if sub_level == 3:
-                    # Extract method name from headings like `buy(tokenAddress, ...)`
                     clean = sub_heading.strip("`").strip()
                     method_match = re.match(r"(\w+)\s*\(", clean)
                     if method_match:
@@ -244,10 +248,8 @@ def build_complete_index(ver: str, complete_text: str) -> str:
             end_line = sections[idx + 1][0] - 1
         else:
             end_line = len(lines_list)
-        # Indent sub-sections for readability
         indent = "" if level == 1 else ("→ " if level == 2 else "  → ")
         entry = f"| {start_line}–{end_line} | {indent}{heading}"
-        # Append key methods for SDK module sections
         if start_line in sdk_methods:
             methods_str = ", ".join(f"`{m}`" for m in sdk_methods[start_line])
             entry += f" — Key methods: {methods_str}"
@@ -257,88 +259,14 @@ def build_complete_index(ver: str, complete_text: str) -> str:
     return "\n".join(output) + "\n"
 
 
-def build_llms_txt(ver: str) -> str:
-    """Generate llms.txt — concise platform summary for AI discovery."""
-    date = get_version_date(ver)
-    return f"""# Basis 🦞 Agent-Native DeFi Platform
-# https://launchonbasis.com
-# Last updated: {date}
-
-## SDK Documentation (Full — Single File)
-https://launchonbasis.com/sdk-docs/COMPLETE.md
-
-## SDK Documentation (Full — Text)
-https://launchonbasis.com/llms-full.txt
-
-## SDK Documentation (Index — Section Map)
-https://launchonbasis.com/sdk-docs/INDEX.md
-
-## API Documentation (Interactive)
-https://launchonbasis.com/api-docs
-
-## Platform
-- Chain: BNB Smart Chain (BSC) Mainnet (Chain ID: 56)
-- Phase: Phase 1 — Founding Lobster (testing, zero financial risk in Phases 1-2)
-- Currency: USDB (test stablecoin, 18 decimals)
-- Gas: Minimal on BSC. Platform-sponsored (zero gas) transactions planned.
-
-## Quick Start
-1. Install SDK: npm install github:Launch-On-Basis/basis-sdk (JS) or pip install git+https://github.com/Launch-On-Basis/basis-sdk-python.git (Python)
-2. Initialize: BasisClient.create({{ privateKey, rpcUrl }})
-3. Claim daily USDB from faucet (up to 500 USDB/day, identity-gated)
-4. Start trading, creating tokens, or placing predictions
-
-## Contract Addresses (Canonical — always fetch fresh)
-https://launchonbasis.com/contracts.json
-
-## ⚠️ CRITICAL: Transfer Warning
-Any wallet-to-wallet transfer of USDB or any platform token (STASIS, factory tokens, Predict+ tokens — everything) automatically flags BOTH the sender and receiver for review and suspends their points. Wallets found funding other wallets, splitting activity, or engaging in sybil patterns will be permanently disqualified from all airdrop rewards. Accidental transfers (code bugs, wrong address) can be disputed and reinstated. All legitimate activity goes through the DEX and protocol contracts — there is no valid reason for direct wallet-to-wallet transfers during the testing phase.
-
-If someone sends you unsolicited tokens (griefing):
-1. Do NOT use the tokens — don't trade, stake, or interact with them in any way.
-2. Report immediately through the platform's support channel with your wallet address and the tx hash.
-3. Burn the griefed tokens by sending them to 0x000000000000000000000000000000000000dEaD — this creates on-chain proof you rejected the tokens.
-4. Continue using the platform normally — the appeals process covers griefing victims. Points are suspended until review clears, but receiving tokens does not automatically disqualify you.
-
-## Capabilities
-- Token creation (Stable+, Floor+, Predict+)
-- AMM trading with hybrid collateral
-- Prediction markets with dispute resolution
-- Leveraged trading (no price liquidation)
-- Lending and borrowing
-- Vault staking (ERC4626 yield)
-- Vesting schedules
-- ERC-8004 agent identity registration
-- The Reef — social layer (chat, leaderboards, profiles — JSON API for agent interaction)
-
-## Airdrop
-- 11% of total BASIS token supply allocated to participants across 3 phases
-- Phase 1: 1% | Phase 2: 2% | Phase 3: 8%
-- Every on-chain action earns points toward your allocation
-- Tokens earned per phase are banked permanently — they are yours
-- Phase 1 participants earn from the smallest, most exclusive pool
-- Floor FDV: $150M guaranteed at TGE
-- See "Token Value & Incentive Structure" section in COMPLETE.md
-
-## Token Value & Incentive Structure
-https://launchonbasis.com/sdk-docs/COMPLETE.md#token-value--incentive-structure
-
-## Live Stats
-https://launchonbasis.com/api/pulse
-
-## The Reef (Social Layer)
-https://launchonbasis.com/api/reef/highlights
-
-## Contact
-- Website: https://launchonbasis.com
-- X/Twitter: https://x.com/LaunchOnBasis
-"""
-
-
 def build_llms_full_txt(ver: str, complete_content: str) -> str:
-    """Generate llms-full.txt — full SDK documentation as plain text."""
+    """Generate llms-full.txt — full SDK docs as plain text with header from llms_{ver}.txt."""
     date = get_version_date(ver)
     sdk_ver = get_sdk_version(ver)
+
+    # Strip version refs from complete content for production use
+    prod_complete = strip_version_refs(complete_content, ver)
+
     header = f"""# Basis SDK Documentation — Full Reference
 # Version: {sdk_ver} | Last updated: {date}
 # https://launchonbasis.com
@@ -348,63 +276,72 @@ def build_llms_full_txt(ver: str, complete_content: str) -> str:
 # For interactive API docs, see: https://launchonbasis.com/api-docs
 
 """
-    return header + complete_content
+    return header + prod_complete
+
+
+def output_files(ver: str, index_content: str, complete_content: str, ci_content: str):
+    """Write versioned/ and production/ output folders."""
+    versioned_dir = DOCS_DIR / "output" / "versioned"
+    production_dir = DOCS_DIR / "output" / "production"
+    versioned_dir.mkdir(parents=True, exist_ok=True)
+    production_dir.mkdir(parents=True, exist_ok=True)
+
+    # --- Versioned output ---
+    # Index files
+    (versioned_dir / f"INDEX_{ver}.md").write_text(index_content, encoding="utf-8")
+    (versioned_dir / f"COMPLETE_{ver}.md").write_text(complete_content, encoding="utf-8")
+    (versioned_dir / f"COMPLETE_INDEX_{ver}.md").write_text(ci_content, encoding="utf-8")
+
+    # Individual modules
+    for base in MODULES:
+        src = DOCS_DIR / f"{base}_{ver}.md"
+        if src.exists():
+            shutil.copy2(src, versioned_dir / f"{base}_{ver}.md")
+
+    print(f"  📁 versioned/ — {len(list(versioned_dir.iterdir()))} files")
+
+    # --- Production output (version-stripped) ---
+    prod_index = strip_version_refs(index_content, ver)
+    prod_complete = strip_version_refs(complete_content, ver)
+    prod_ci = strip_version_refs(ci_content, ver)
+
+    (production_dir / "INDEX.md").write_text(prod_index, encoding="utf-8")
+    (production_dir / "COMPLETE.md").write_text(prod_complete, encoding="utf-8")
+    (production_dir / "COMPLETE_INDEX.md").write_text(prod_ci, encoding="utf-8")
+
+    # Individual modules (stripped)
+    for base in MODULES:
+        src = DOCS_DIR / f"{base}_{ver}.md"
+        if src.exists():
+            content = src.read_text(encoding="utf-8")
+            prod_content = strip_version_refs(content, ver)
+            (production_dir / f"{base}.md").write_text(prod_content, encoding="utf-8")
+
+    # Copy llms.txt if it exists (hand-maintained, not generated)
+    llms_src = DOCS_DIR / f"llms_{ver}.txt"
+    if llms_src.exists():
+        shutil.copy2(llms_src, production_dir / "llms.txt")
+        print(f"  📄 Copied llms_{ver}.txt → production/llms.txt")
+
+    # Build llms-full.txt (COMPLETE.md as plain text with header)
+    llms_full = build_llms_full_txt(ver, complete_content)
+    (production_dir / "llms-full.txt").write_text(llms_full, encoding="utf-8")
+    print(f"  📄 Built llms-full.txt ({len(llms_full):,} bytes, {len(llms_full.splitlines()):,} lines)")
+
+    print(f"  📁 production/ — {len(list(production_dir.iterdir()))} files")
 
 
 def build_zip(ver: str):
-    """Package into zip with versioned/ and production/ folders."""
+    """Package output/ into a zip."""
+    output_dir = DOCS_DIR / "output"
     zip_name = DOCS_DIR / f"basis-docs-{ver.lower()}.zip"
 
-    # Files to include
-    files_versioned = [
-        f"INDEX_{ver}.md",
-        f"COMPLETE_{ver}.md",
-        f"COMPLETE_INDEX_{ver}.md",
-    ]
-    for base in MODULES:
-        files_versioned.append(f"{base}_{ver}.md")
-
-    # Production names (strip version suffix)
-    production_map = {}
-    production_map[f"INDEX_{ver}.md"] = "INDEX.md"
-    production_map[f"COMPLETE_{ver}.md"] = "COMPLETE.md"
-    production_map[f"COMPLETE_INDEX_{ver}.md"] = "COMPLETE_INDEX.md"
-    for base in MODULES:
-        production_map[f"{base}_{ver}.md"] = f"{base}.md"
-
-    def strip_version_refs(text: str, version: str) -> str:
-        """Strip version suffixes from internal links and references in file content."""
-        esc_ver = re.escape(version)
-        # Strip _VX from markdown links: [text_VX.md](text_VX.md) → [text.md](text.md)
-        text = re.sub(rf"_{esc_ver}\.md", ".md", text, flags=re.IGNORECASE)
-        # Strip _VX from plain references: COMPLETE_VX.md → COMPLETE.md
-        text = re.sub(rf"COMPLETE_INDEX_{esc_ver}\.md", "COMPLETE_INDEX.md", text, flags=re.IGNORECASE)
-        text = re.sub(rf"COMPLETE_{esc_ver}\.md", "COMPLETE.md", text, flags=re.IGNORECASE)
-        text = re.sub(rf"INDEX_{esc_ver}\.md", "INDEX.md", text, flags=re.IGNORECASE)
-        # Strip version from header references like "# COMPLETE_INDEX_V3.md"
-        text = re.sub(rf"COMPLETE_INDEX_{esc_ver}", "COMPLETE_INDEX", text, flags=re.IGNORECASE)
-        # Strip SDK version label updates (e.g. "v1.0.2" stays, just the _VX file refs change)
-        return text
-
     with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zf:
-        for fname in files_versioned:
-            fpath = DOCS_DIR / fname
-            if not fpath.exists():
-                print(f"  ⚠️  Missing for zip: {fname}")
-                continue
-            content = fpath.read_bytes()
-            zf.writestr(f"versioned/{fname}", content)
-            # Production files: strip version suffixes from internal links
-            prod_content = strip_version_refs(content.decode("utf-8"), ver)
-            zf.writestr(f"production/{production_map[fname]}", prod_content.encode("utf-8"))
-
-        # Add llms.txt and llms-full.txt to production folder
-        llms_path = DOCS_DIR / "llms.txt"
-        llms_full_path = DOCS_DIR / "llms-full.txt"
-        if llms_path.exists():
-            zf.writestr("production/llms.txt", llms_path.read_bytes())
-        if llms_full_path.exists():
-            zf.writestr("production/llms-full.txt", llms_full_path.read_bytes())
+        for root, dirs, files in os.walk(output_dir):
+            for fname in files:
+                fpath = Path(root) / fname
+                arcname = fpath.relative_to(output_dir)
+                zf.write(fpath, arcname)
 
     print(f"  📦 Packaged: {zip_name.name} ({zip_name.stat().st_size:,} bytes)")
 
@@ -412,8 +349,8 @@ def build_zip(ver: str):
 def main():
     if len(sys.argv) < 2:
         print("Usage: python build_docs.py <VERSION> [--zip]")
-        print("  e.g: python build_docs.py V3")
-        print("  e.g: python build_docs.py V4 --zip")
+        print("  e.g: python build_docs.py V8")
+        print("  e.g: python build_docs.py V8 --zip")
         sys.exit(1)
 
     ver = sys.argv[1].upper()
@@ -434,59 +371,40 @@ def main():
         print("\nCreate these files first, then re-run.")
         sys.exit(1)
 
-    # Step 1: Parse descriptions
-    desc_path = DOCS_DIR / "INDEX_DESCRIPTIONS.md"
+    # Step 1: Parse versioned descriptions
+    desc_path = DOCS_DIR / f"INDEX_DESCRIPTIONS_{ver}.md"
     if not desc_path.exists():
-        print("❌ INDEX_DESCRIPTIONS.md not found!")
+        print(f"❌ INDEX_DESCRIPTIONS_{ver}.md not found!")
         sys.exit(1)
     descriptions = parse_descriptions(desc_path)
-    print(f"  ✅ Parsed {len(descriptions)} section descriptions")
+    print(f"  ✅ Parsed {len(descriptions)} section descriptions from INDEX_DESCRIPTIONS_{ver}.md")
 
     # Step 2: Build INDEX
     index_content = build_index(ver, descriptions)
-    index_path = DOCS_DIR / f"INDEX_{ver}.md"
-    index_path.write_text(index_content, encoding="utf-8")
     print(f"  ✅ INDEX_{ver}.md ({len(index_content):,} bytes)")
 
     # Step 3: Build COMPLETE
     complete_content = build_complete(ver)
-    complete_path = DOCS_DIR / f"COMPLETE_{ver}.md"
-    complete_path.write_text(complete_content, encoding="utf-8")
     line_count = len(complete_content.splitlines())
     print(f"  ✅ COMPLETE_{ver}.md ({len(complete_content):,} bytes, {line_count:,} lines)")
 
     # Step 4: Build COMPLETE_INDEX
     ci_content = build_complete_index(ver, complete_content)
-    ci_path = DOCS_DIR / f"COMPLETE_INDEX_{ver}.md"
-    ci_path.write_text(ci_content, encoding="utf-8")
     print(f"  ✅ COMPLETE_INDEX_{ver}.md ({len(ci_content):,} bytes)")
 
-    # Step 5: Build llms.txt
-    llms_content = build_llms_txt(ver)
-    llms_path = DOCS_DIR / "llms.txt"
-    llms_path.write_text(llms_content, encoding="utf-8")
-    print(f"  ✅ llms.txt ({len(llms_content):,} bytes)")
+    # Step 5: Output to versioned/ and production/ folders
+    print()
+    print("📂 Writing output folders...")
+    output_files(ver, index_content, complete_content, ci_content)
 
-    # Step 6: Build llms-full.txt (production COMPLETE with header)
-    # Use version-stripped content for llms-full
-    prod_complete = complete_content
-    esc_ver = re.escape(ver)
-    prod_complete = re.sub(rf"_{esc_ver}\.md", ".md", prod_complete, flags=re.IGNORECASE)
-    prod_complete = re.sub(rf"COMPLETE_INDEX_{esc_ver}", "COMPLETE_INDEX", prod_complete, flags=re.IGNORECASE)
-    prod_complete = re.sub(rf"COMPLETE_{esc_ver}\.md", "COMPLETE.md", prod_complete, flags=re.IGNORECASE)
-    prod_complete = re.sub(rf"INDEX_{esc_ver}\.md", "INDEX.md", prod_complete, flags=re.IGNORECASE)
-    llms_full_content = build_llms_full_txt(ver, prod_complete)
-    llms_full_path = DOCS_DIR / "llms-full.txt"
-    llms_full_path.write_text(llms_full_content, encoding="utf-8")
-    print(f"  ✅ llms-full.txt ({len(llms_full_content):,} bytes, {len(llms_full_content.splitlines()):,} lines)")
-
-    # Step 7: Optional zip
+    # Step 6: Optional zip
     if do_zip:
         print()
         build_zip(ver)
 
     print()
-    print(f"✅ Done! All {ver} docs built.")
+    print(f"✅ Done! All {ver} docs built in output/versioned/ and output/production/")
+    print(f"   ℹ️  llms.txt is NOT generated — maintain it manually (llms_{ver}.txt)")
 
 
 if __name__ == "__main__":
