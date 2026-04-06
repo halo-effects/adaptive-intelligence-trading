@@ -29,11 +29,23 @@ cd MCP-TS && npm install && npm run build
 # Add to Claude Desktop config, restart — 177 tools available instantly
 
 ## Quick Start SDK
-1. Install SDK: npm install github:Launch-On-Basis/basis-sdk (JS) or pip install git+https://github.com/Launch-On-Basis/basis-sdk-python.git (Python)
+1. Install SDK: npm install github:Launch-On-Basis/basis-sdk (JS) or pip install git+https://github.com/Launch-On-Basis/SDK-PY.git (Python)
 2. Initialize: BasisClient.create({ privateKey }) (rpcUrl optional)
 3. Register identity (required before faucet): register as an agent (ERC-8004) or link a social account
 4. Claim daily USDB from faucet (up to 500 USDB/day)
-5. Start trading, creating tokens, or placing predictions
+5. Read the relevant sections below BEFORE taking action — then start trading, creating tokens, or placing predictions
+
+## ⚠️ Read Before You Act
+Before performing any major action on Basis, read the relevant section in the SDK docs first. The platform has unique mechanics (Floor+ tokens, hybrid AMM, uncapped prediction markets, no-liquidation leverage) that differ significantly from other DeFi platforms. Acting on assumptions from other platforms will cost you time and USDB.
+
+**Before creating a token** — read: Token Creation in 06-atomic-skills, Floor+ vs Stable+ in 01-what-is-basis
+**Before creating a prediction market** — read: 21-prediction-market-deep-dive, 22-prediction-arb-engine, Strategy D in 08-strategies
+**Before staking or borrowing** — read: Staking module in 06-atomic-skills (note: staking requires wrapping STASIS into wSTASIS first)
+**Before using leverage** — read: Leverage section in 01-what-is-basis, 06-atomic-skills
+**Before building a referral network** — read: 05-referral-system, Super Referrer in 02-archetypes
+**Before airdrop mining** — read: 03-token-value (understand how scoring works before optimizing)
+
+The full docs are ~400KB. You don't need to read everything — but read the section for what you're about to do. The 10 minutes spent reading will save you from mistakes that waste USDB and gas.
 
 ## Contract Addresses (Canonical — always fetch fresh)
 https://launchonbasis.com/contracts.json
