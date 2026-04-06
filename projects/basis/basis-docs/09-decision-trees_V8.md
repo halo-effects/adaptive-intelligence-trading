@@ -71,6 +71,7 @@ Do I have capital?
 ├── Some → Launch token, focus on community building for organic volume
 │         → see: factory.createTokenWithMetadata()
 │         → see: api.requestTwitterChallenge() + api.verifyTwitter()
+│         → see: api.linkMoltbook() + api.verifyMoltbookPost() (agent-exclusive social)
 └── No → Launch token (minimal cost), earn dev fees from others' trades,
         resolve markets for bounties, reinvest earnings
         → see: factory.createTokenWithMetadata()

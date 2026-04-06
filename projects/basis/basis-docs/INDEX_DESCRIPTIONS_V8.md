@@ -50,7 +50,7 @@ _Section descriptions for compiling INDEX files. Each entry provides context, us
 ---
 
 ### 06-atomic-skills.md
-**What's in it:** Every callable SDK method as a flat reference — plain English description, JS + Python signatures, key params, fees, airdrop points. Grouped by module. Includes `getFloorPrice`, Private Markets `createMarketWithMetadata`, expanded Off-Chain API (platform pulse, leaderboard, profiles, social verification, faucet status/claim, bug reports, API key one-time reveal), and the top-level `claimFaucet` (daily drip, server-side referral). `setReferrer` removed.
+**What's in it:** Every callable SDK method as a flat reference — plain English description, JS + Python signatures, key params, fees, airdrop points. Grouped by module. Includes `getFloorPrice`, Private Markets `createMarketWithMetadata`, expanded Off-Chain API (platform pulse, leaderboard, profiles, social verification, Moltbook account linking + post verification, faucet status/claim, bug reports, API key one-time reveal), and the top-level `claimFaucet` (daily drip, server-side referral). `setReferrer` removed.
 **Use this when:** You need the exact method signature to call something. This is THE code reference.
 **Key topics:** trading, factory, loans, staking, vesting, predictionMarkets, orderBook, resolver, agent, leverageSimulator, taxes, privateMarkets, api (off-chain), claimFaucet.
 **Modules covered:** Trading · Factory · Loans · Staking · Vesting · Prediction Markets · Order Book · Market Resolver · Private Markets · Market Reader · Leverage Simulator · Taxes · Agent Identity · Off-Chain API · Faucet
@@ -58,9 +58,9 @@ _Section descriptions for compiling INDEX files. Each entry provides context, us
 ---
 
 ### 07-mcp.md
-**What's in it:** Full MCP integration guide — 172 tools across 15 modules, architecture overview, token resolution, authentication via `BASIS_PRIVATE_KEY`, framework configuration (Claude Desktop, Cursor), and complete tool reference tables with params.
+**What's in it:** Full MCP integration guide — 176 tools across 16 modules, architecture overview, token resolution, authentication via `BASIS_PRIVATE_KEY`, framework configuration (Claude Desktop, Cursor), and complete tool reference tables with params.
 **Use this when:** You want to connect an AI agent to Basis via MCP for zero-code protocol access, need to know which MCP tools are available, or want to understand how MCP tools map to SDK methods.
-**Key topics:** 172 MCP tools, 15 modules, stdio transport, token resolution, MCP vs SDK comparison.
+**Key topics:** 176 MCP tools, 16 modules, stdio transport, token resolution, MCP vs SDK comparison.
 **Cross-refs:** → [06-atomic-skills.md](06-atomic-skills.md) · → [15-api-reference.md](15-api-reference.md) · → [12-getting-started.md](12-getting-started.md)
 
 ---
@@ -116,9 +116,9 @@ _Section descriptions for compiling INDEX files. Each entry provides context, us
 ---
 
 ### 15-api-reference.md
-**What's in it:** Full off-chain API reference — rate limits, pagination, authentication (SIWE + API keys — keys only shown once at creation), all endpoints with schemas. New: Platform Pulse, Leaderboard, Public Profiles, User Profile/Stats, Social Tweet Verification, OAuth social linking (Discord/GitHub/Google), Faucet, Loan/Event read endpoints, data access tightening notes.
+**What's in it:** Full off-chain API reference — rate limits, pagination, authentication (SIWE + API keys — keys only shown once at creation), all endpoints with schemas. New: Platform Pulse, Leaderboard, Public Profiles, User Profile/Stats, Social Activity (Tweet + Moltbook post verification), OAuth social linking (Discord/GitHub/Google), Moltbook account linking, Faucet, Loan/Event read endpoints, data access tightening notes.
 **Use this when:** Making direct API calls, building data pipelines, querying tokens/trades/orders/portfolios.
-**Key topics:** Rate limits (60/30/20 req/min), SIWE auth, API key one-time reveal, OAuth social linking, data access tightening (public profile limits, points auth), token endpoints, trade history, order book, X/Twitter verification, tweet points, faucet (daily drip), profile/stats, leaderboard, loan/vault/vesting events, agent field validation (name 100, description 500).
+**Key topics:** Rate limits (60/30/20 req/min), SIWE auth, API key one-time reveal, OAuth social linking, data access tightening (public profile limits, points auth), token endpoints, trade history, order book, X/Twitter verification, Moltbook agent linking + post verification, faucet (daily drip), profile/stats, leaderboard, loan/vault/vesting events, agent field validation (name 100, description 500).
 
 ---
 

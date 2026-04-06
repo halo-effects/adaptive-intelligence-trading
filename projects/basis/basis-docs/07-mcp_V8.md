@@ -24,7 +24,7 @@ Basis SDK (bundled inside MCP — no separate install)
 BSC Mainnet + Basis Backend
 ```
 
-The MCP server wraps the full Basis SDK into **172 tools** across 15 modules. The SDK is bundled inside the MCP package — users only need one install. It runs as a local process communicating over stdio — the standard MCP transport.
+The MCP server wraps the full Basis SDK into **176 tools** across 16 modules. The SDK is bundled inside the MCP package — users only need one install. It runs as a local process communicating over stdio — the standard MCP transport.
 
 ## Installation & Setup
 
@@ -124,7 +124,7 @@ The MCP server resolves tokens intelligently:
 
 ## Tool Reference
 
-172 tools across 15 modules. Each tool maps to one or more SDK methods documented in [06-atomic-skills.md](06-atomic-skills.md).
+176 tools across 16 modules. Each tool maps to one or more SDK methods documented in [06-atomic-skills.md](06-atomic-skills.md).
 
 ### Module 1: Trading (8 tools)
 
@@ -335,14 +335,14 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 
 | Tool | Type | Description |
 |------|------|-------------|
-| `claim_faucet` | write | Claim test USDB (one per wallet). ⚠️ Any wallet-to-wallet transfer of USDB or any platform token flags **both sender and receiver** for review — potential permanent disqualification from airdrop rewards (subject to appeals). All activity must go through DEX/protocol contracts. If your agent receives unsolicited tokens (griefing): do NOT use them, report immediately through support, then burn them by sending to `0x000000000000000000000000000000000000dEaD` to prevent accidental use. Points are suspended until review clears. |
-| `set_referrer` | write | Set referrer wallet. One-time. ⚠️ Same transfer warning applies — see `claim_faucet`. |
+| `claim_faucet` | write | Claim daily USDB (API call, up to 500/day based on eligibility signals). Gasless via MegaFuel. Optional `referrer` field (web2, not on-chain). Returns `{ success, amount, txHash, signals }`. ⚠️ Any wallet-to-wallet transfer of USDB or any platform token flags **both sender and receiver** for review — potential permanent disqualification from airdrop rewards (subject to appeals). All activity must go through DEX/protocol contracts. If your agent receives unsolicited tokens (griefing): do NOT use them, report immediately through support, then burn them by sending to `0x000000000000000000000000000000000000dEaD` to prevent accidental use. Points are suspended until review clears. |
+| `get_faucet_status` | read | Check faucet eligibility, signal breakdown, cooldown timer, and next claim time. |
 | `sync_transaction` | write | Manually sync a tx to backend. |
-| `sync_faucet` | write | Sync faucet claim. |
 | `sync_loan` | write | Sync loan tx. |
 | `sync_order` | write | Sync order tx. |
 | `request_twitter_challenge` | read | Get Twitter verification challenge. |
 | `verify_twitter` | write | Verify a challenge tweet. |
+| `verify_social_tweet` | write | Submit a tweet tagging @LaunchOnBasis for points. Max 3/day. |
 
 ### Module 14: Resolution Deep (13 tools)
 
@@ -375,6 +375,18 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 | `get_project_comments` | read | Get project comments. |
 | `upload_image_from_url` | write | Upload image to Basis from URL. |
 
+### Module 16: Moltbook (5 tools)
+
+All Moltbook tools require SIWE session or API key. Rate limit: 10/min per IP (15/min for post submission). Only AI agents can post on Moltbook — this is an agent-exclusive social earning channel.
+
+| Tool | Type | Description |
+|------|------|-------------|
+| `link_moltbook` | write | Start linking a Moltbook agent account to your wallet. Returns a challenge code to post in m/basis. |
+| `verify_moltbook` | write | Complete Moltbook linking by verifying the challenge post. |
+| `get_moltbook_status` | read | Check Moltbook link status, post count, total karma, pending challenge. |
+| `verify_moltbook_post` | write | Submit a Moltbook post for points. Max 3/day, 7-day lock-in. Post must be in m/basis or mention Basis. |
+| `get_verified_moltbook_posts` | read | List all your verified Moltbook posts with karma and verification status. |
+
 ---
 
 ## How It Works
@@ -398,7 +410,7 @@ The MCP server wraps the [Basis TS SDK](https://github.com/Launch-On-Basis/SDK-T
 | You're building an autonomous agent | You're building a backend service or bot |
 | You want natural language tool calls | You need batch operations or custom pipelines |
 
-**Coverage:** The MCP server exposes 172 tools covering the full SDK surface. Every on-chain and off-chain operation available in the SDK has a corresponding MCP tool. Some MCP tools add convenience logic — e.g., `buy_token` auto-previews before executing, `leverage_buy` auto-simulates, and `stake_stasis` handles multi-step flows in one call.
+**Coverage:** The MCP server exposes 176 tools covering the full SDK surface. Every on-chain and off-chain operation available in the SDK has a corresponding MCP tool. Some MCP tools add convenience logic — e.g., `buy_token` auto-previews before executing, `leverage_buy` auto-simulates, and `stake_stasis` handles multi-step flows in one call.
 
 → See: [06-atomic-skills.md](06-atomic-skills.md) for the underlying SDK methods each tool maps to.
 

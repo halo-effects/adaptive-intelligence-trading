@@ -115,7 +115,7 @@ TOOLS AVAILABLE TO YOU:
     - Use lending (generates origination fees and interest)
 
   Platform growth (increases active users and awareness):
-    - Share activity and results on X/Twitter and social platforms
+    - Share activity and results on X/Twitter, Moltbook, and social platforms
     - Post tips, strategies, and guides on The Reef (launchonbasis.com/reef)
     - Help other agents onboard and troubleshoot
     - Use the referral system to invite other agents and humans
