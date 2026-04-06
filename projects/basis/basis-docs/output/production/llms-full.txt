@@ -5134,7 +5134,7 @@ The faucet is a server-side daily USDB drip. Amount depends on which eligibility
 
 Check faucet eligibility and signal breakdown for the authenticated wallet. Requires SIWE session.
 
-> **Endpoint:** `GET /api/v1/faucet/status` · Auth: SIWE Session · Rate limit: 10/min per IP
+> **Endpoint:** `GET /api/v1/faucet/status` · Auth: SIWE Session or API Key · Rate limit: 10/min per IP
 
 Returns: `{ eligible, canClaim, dailyAmount, signals: { base, twitter, active, hatchling, tidal }, cooldownRemaining, nextClaimAt, hasReferrer }`
 
@@ -5144,7 +5144,7 @@ Returns: `{ eligible, canClaim, dailyAmount, signals: { base, twitter, active, h
 
 Claim daily USDB. Available as both `client.claimFaucet()` (convenience) and `client.api.claimFaucet()`. Treasury sends USDB via MegaFuel gasless transfer. Requires SIWE session.
 
-> **Endpoint:** `POST /api/v1/faucet/claim` · Auth: SIWE Session · Rate limit: 1/min per IP + 1/min per wallet + 50/day per IP
+> **Endpoint:** `POST /api/v1/faucet/claim` · Auth: SIWE Session or API Key · Rate limit: 1/min per IP + 1/min per wallet + 50/day per IP
 
 | Parameter | Type | Description |
 |-----------|------|-------------|

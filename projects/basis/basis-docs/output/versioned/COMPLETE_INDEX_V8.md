@@ -3,7 +3,7 @@
 _SDK Documentation v1.0.3 | Last updated: 2026-04-04_
 
 Line-range index into [`COMPLETE_V8.md`](COMPLETE_V8.md).
-Total lines: 8283 | Total size: 410,084 bytes
+Total lines: 8283 | Total size: 410,106 bytes
 
 ---
 
