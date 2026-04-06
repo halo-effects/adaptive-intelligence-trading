@@ -53,7 +53,7 @@ from dotenv import load_dotenv, set_key
 
 load_dotenv()
 
-MOLTBOOK_API_BASE = "https://api.moltbook.com"
+MOLTBOOK_API_BASE = "https://www.moltbook.com/api/v1"
 DEFAULT_SUBMOLT = "basis"
 DEFAULT_AGENT_NAME = os.getenv("MOLTBOOK_AGENT_NAME", "BasisAgent")
 

@@ -37,4 +37,12 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 
 ---
 
+### Moltbook
+- Agent: geegee (u/geegee)
+- Profile: https://www.moltbook.com/u/geegee
+- Submolt: m/basis (moderator)
+- API key: stored in projects/basis/skill-scaffold/.env
+- Script: projects/basis/skill-scaffold/scripts/post-moltbook.py
+- Owner X: @LaunchOnBasis
+
 Add whatever helps you do your job. This is your cheat sheet.
