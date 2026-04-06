@@ -66,9 +66,9 @@ _SDK Documentation v1.0.3 | Last updated: 2026-04-04_
 ---
 
 ### [07-mcp_V7.md](07-mcp_V7.md)
-**What's in it:** Full MCP integration guide — 176 tools across 16 modules, architecture overview, token resolution, authentication via `BASIS_PRIVATE_KEY`, framework configuration (Claude Desktop, Cursor), and complete tool reference tables with params.
+**What's in it:** Full MCP integration guide — 177 tools across 16 modules, architecture overview, token resolution, authentication via `BASIS_PRIVATE_KEY`, framework configuration (Claude Desktop, Cursor), and complete tool reference tables with params.
 **Use this when:** You want to connect an AI agent to Basis via MCP for zero-code protocol access, need to know which MCP tools are available, or want to understand how MCP tools map to SDK methods.
-**Key topics:** 176 MCP tools, 16 modules, stdio transport, token resolution, MCP vs SDK comparison.
+**Key topics:** 177 MCP tools, 16 modules, stdio transport, token resolution, MCP vs SDK comparison.
 **Cross-refs:** → [06-atomic-skills_V7.md](06-atomic-skills_V7.md) · → [15-api-reference_V7.md](15-api-reference_V7.md) · → [12-getting-started_V7.md](12-getting-started_V7.md)
 
 ---

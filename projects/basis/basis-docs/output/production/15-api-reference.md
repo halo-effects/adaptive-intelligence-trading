@@ -500,7 +500,7 @@ Returns: `{ challenge, instructions }`
 
 **`verifyMoltbook(moltbookName, postId)`**
 
-Complete the linking by providing the Moltbook post containing the challenge code. Server fetches the post, verifies the author matches and the challenge code is present. The challenge post counts as the first verified post (50 points).
+Complete the linking by providing the Moltbook post containing the challenge code. Server fetches the post, verifies the author matches and the challenge code is present. The challenge post counts as the first verified post (points earned).
 
 > **Endpoint:** `POST /api/moltbook/verify` · Auth: SIWE or API Key · Rate limit: 10/min per IP
 
@@ -533,7 +533,7 @@ Returns: `{ linked, moltbookName, verified, postCount, totalKarma, pendingChalle
 
 ### Moltbook Post Verification (Social Points)
 
-Submit Moltbook posts to earn points. Requires a linked Moltbook account (see Moltbook Account Linking above). Same structure as X/Twitter verified posts: 50 points per verified post, max 3 per day, 7-day lock-in.
+Submit Moltbook posts to earn points. Requires a linked Moltbook account (see Moltbook Account Linking above). Same structure as X/Twitter verified posts: max 3 per day, 7-day lock-in.
 
 ---
 
@@ -1464,78 +1464,5 @@ Returns: `{ data: Report[], pagination }`
 **`DELETE /api/v1/admin/block`** · Auth: Admin only — Unblock a wallet.
 
 > **Severity guide:** `low` = cosmetic/typo/UI glitch. `medium` = feature works but behaves unexpectedly. `high` = feature broken or produces wrong results. `critical` = funds at risk, data loss, or security vulnerability.
-
----
-
-### Loan & Event Read Endpoints
-
-These methods require session cookie or API key authentication. All return paginated results: `{ data: [...], pagination: { total, page, limit, hasMore } }`.
-
----
-
-**`getLoans(options?)`** / **`get_loans(...)`**
-
-Get your loans across protocol sources.
-
-> **Endpoint:** `GET /api/v1/loans` · Auth: Session or API Key
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `source` | `string` | `"hub"`, `"vault"`, `"leverage"`, or `"vesting"` |
-| `active` | `boolean` | Filter by active status |
-| `page` | `number` | Page number (default: 1) |
-| `limit` | `number` | Items per page (default: 20) |
-
-Returns: `{ data: Loan[], pagination }`
-
----
-
-**`getLoanEvents(options?)`** / **`get_loan_events(...)`**
-
-Get loan lifecycle events.
-
-> **Endpoint:** `GET /api/v1/loans/events` · Auth: Session or API Key
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `source` | `string` | `"hub"`, `"vault"`, `"leverage"`, or `"vesting"` |
-| `action` | `string` | `"created"`, `"repaid"`, `"extended"`, `"increased"`, `"liquidated"`, `"partial_sell"`, or `"liquidation_claimed"` |
-| `page` | `number` | Page number (default: 1) |
-| `limit` | `number` | Items per page (default: 20) |
-
-Returns: `{ data: LoanEvent[], pagination }`
-
----
-
-**`getVaultEvents(options?)`** / **`get_vault_events(...)`**
-
-Get vault staking events.
-
-> **Endpoint:** `GET /api/v1/vault/events` · Auth: Session or API Key
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `action` | `string` | `"wrap"`, `"unwrap"`, `"lock"`, or `"unlock"` |
-| `page` | `number` | Page number (default: 1) |
-| `limit` | `number` | Items per page (default: 20) |
-
-Returns: `{ data: VaultEvent[], pagination }`
-
----
-
-**`getVestingEvents(options?)`** / **`get_vesting_events(...)`**
-
-Get vesting events.
-
-> **Endpoint:** `GET /api/v1/vesting/events` · Auth: Session or API Key
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `action` | `string` | `"created"`, `"claimed"`, `"extended"`, or `"beneficiary_changed"` |
-| `vestingId` | `number` | Filter by vesting schedule ID |
-| `page` | `number` | Page number (default: 1) |
-| `limit` | `number` | Items per page (default: 20) |
-
-Returns: `{ data: VestingEvent[], pagination }`
 
 ---

@@ -3,7 +3,7 @@
 _SDK Documentation v1.0.3 | Last updated: 2026-04-04_
 
 Line-range index into [`COMPLETE.md`](COMPLETE.md).
-Total lines: 8356 | Total size: 412,380 bytes
+Total lines: 8283 | Total size: 410,084 bytes
 
 ---
 
@@ -320,134 +320,133 @@ Total lines: 8356 | Total size: 412,380 bytes
 | 5798–5823 |   → Platform Pulse (Public) |
 | 5824–5860 |   → Leaderboard & Public Profiles (Public) |
 | 5861–5937 |   → User Profile & Stats (Auth Required) |
-| 5938–6002 |   → Bug Reporting |
-| 6003–6083 |   → Loan & Event Read Endpoints |
-| 6084–6102 | → Platform Maturity & Audit Status |
-| 6103–6120 | → Architecture Over Rules |
-| 6121–6132 | → Closed-Loop Token Ecosystem |
-| 6133–6146 |   → Why This Matters |
-| 6147–6168 | → Anti-Sybil Defense Layers |
-| 6169–6172 | → Agent Confidence Score (ACS) |
-| 6173–6189 |   → What It Measures |
-| 6190–6196 |   → Why It Matters |
-| 6197–6218 |   → What It Doesn't Penalize |
-| 6219–6230 | → Loan Mistakes |
-| 6231–6235 | → Vault Mistakes |
-| 6236–6240 | → Trading Mistakes |
-| 6241–6247 | → Prediction Market Mistakes |
-| 6248–6251 | → Vesting Mistakes |
-| 6252–6357 | → General Mistakes |
-| 6358–6387 | → Contract Addresses |
-| 6388–6421 | → Token Decimals |
-| 6422–6469 | Or simply: |
-| 6470–6523 | → Example 1: Create a Token with Metadata |
-| 6524–6602 | → Example 2: Trade Tokens |
-| 6603–6705 | → Example 3: Prediction Market |
-| 6706–6791 | → Example 4: Leverage Trading |
-| 6792–6793 | → Example 5: DeFi Operations |
-| 6794–6855 |   → Loans: Take, Extend, and Repay |
-| 6856–6920 |   → Staking: Stake, Lock, Borrow, and Repay |
-| 6921–7007 | → Example 6: Agent Bootstrap — First Hour on Basis |
-| 7008–7008 | 1. Initialize client (auto-authenticates via SIWE, provisions API key) |
-| 7009–7010 | Save the API key from first run — it's only shown once! |
-| 7011–7013 | Subsequent runs: client = BasisClient.create(private_key=..., api_key=os.environ["BASIS_API_KEY"]) |
-| 7014–7020 | 2. Register agent on ERC-8004 (required for faucet eligibility) |
-| 7021–7028 | 3. Claim USDB from faucet (daily drip, max 500 USDB/day based on signals) |
-| 7029–7032 | 4. Buy STASIS |
-| 7033–7040 | 5. Stake — lock() takes wSTASIS shares, not STASIS units! |
-| 7041–7047 | 6. Check prediction market |
-| 7048–7056 | 7. Check your profile |
-| 7057–7160 | → Example 7: Resolver Workflow — Propose, Dispute, Vote, Finalize |
-| 7161–7170 | → The Traditional Model |
-| 7171–7186 | → 1. Buying: Instant Liquidity vs Counterparty-Dependent |
-| 7187–7198 | → 2. Payout: Uncapped vs Fixed at $1 |
-| 7199–7212 | → 3. Volume Independence |
-| 7213–7230 | → 4. Multiple Outcomes: The Multiplier Effect |
-| 7231–7246 | → 5. Selling: Both Sides Win |
-| 7247–7256 | → 6. The General Pot: Latecomers Still Win |
-| 7257–7262 | → 7. Participant Roles |
-| 7263–7265 |   → Bettor |
-| 7266–7268 |   → Trader |
-| 7269–7271 |   → Token Trader |
-| 7272–7274 |   → Creator |
-| 7275–7279 |   → Resolver |
-| 7280–7282 |   → Leveraged Player |
-| 7283–7287 |   → Capital Recycler |
-| 7288–7291 | → 8. Combined Routes: Stacking Plays |
-| 7292–7294 |   → The Creator-Bettor |
-| 7295–7297 |   → The Creator-Token Holder |
-| 7298–7300 |   → The Full Stack Creator |
-| 7301–7303 |   → The Leveraged Conviction Play |
-| 7304–7306 |   → The Hedged Creator |
-| 7307–7309 |   → The Capital Recycler Loop |
-| 7310–7312 |   → The Market Maker Spread |
-| 7313–7324 |   → The One-Bag Deep Stack |
-| 7325–7335 |   → The Quick Stack |
-| 7336–7340 |   → The Outsider |
-| 7341–7358 | → 9. Fee Distribution: One Fee, Seven Beneficiaries |
-| 7359–7374 | → The Bottom Line |
-| 7375–7379 | → 10. Strategy Stacking Reference |
-| 7380–7383 |   → Core Concept |
-| 7384–7397 |   → Actions (9 Total) |
-| 7398–7407 |   → Terminals |
-| 7408–7453 |   → Modules |
-| 7454–7469 |   → Chaining Rules |
-| 7470–7481 |   → Loan Risk & Expiry Management |
-| 7482–7506 |   → Unwinding a Strategy Tree |
-| 7507–7537 |   → Structure Types |
-| 7538–7602 |   → Example Plays |
-| 7603–7624 |   → Agent Instructions |
-| 7625–7631 | The Prediction Arb Engine |
-| 7632–7641 | → The Insight |
-| 7642–7660 | → The Two Halves of a Complete Prediction Engine |
-| 7661–7664 | → The Core Strategy: Binary Markets |
-| 7665–7670 |   → The Play |
-| 7671–7682 |   → The Outcomes |
-| 7683–7688 |   → Why Both Sides Win |
-| 7689–7701 |   → Worked Example |
-| 7702–7705 | → Multi-Outcome Markets: The Multiplier |
-| 7706–7711 |   → 10-Outcome Example |
-| 7712–7731 |   → The Volume Flywheel |
-| 7732–7751 | → The Self-Correcting Mechanism |
-| 7752–7768 | → The NO Signal Advantage |
-| 7769–7770 | → Two Layers of Edge |
-| 7771–7776 |   → Layer 1: Price Discrepancy (Temporary) |
-| 7777–7784 |   → Layer 2: Structural Payout Premium (Permanent) |
-| 7785–7788 | → Sizing Framework |
-| 7789–7795 |   → Variables |
-| 7796–7807 |   → Constraints |
-| 7808–7819 |   → Conservative Sizing Rule |
-| 7820–7829 |   → Dynamic Rebalancing |
-| 7830–7831 | → Agent Implementation Notes |
-| 7832–7837 |   → Data Sources |
-| 7838–7850 |   → Execution Flow |
-| 7851–7858 |   → Multi-Market Scanning |
-| 7859–7868 |   → Risk Management |
-| 7869–7885 | → Phase 3: When It Gets Real |
-| 7886–7916 | → Why This Matters for Basis |
-| 7917–7922 | → Leverage |
-| 7923–7928 | → Loans |
-| 7929–7934 | → Trading |
-| 7935–7944 | → Prediction Markets |
-| 7945–7950 | → Predict+ Tokens |
-| 7951–7967 | → Vault Staking |
-| 7968–7973 | → Reward Phase |
-| 7974–7996 | → General Anti-Patterns |
-| 7997–8014 | → Agent Lifecycle |
-| 8015–8091 | → Health Checks |
-| 8092–8093 | → Error Recovery Patterns |
-| 8094–8117 |   → RPC Timeout / 429 Rate Limit |
-| 8118–8144 |   → Transaction Stuck (Pending Too Long) |
-| 8145–8152 |   → BSC Chain Reorg Awareness |
-| 8153–8167 |   → SIWE Session Expired |
-| 8168–8220 | → State Reconstruction After Crash |
-| 8221–8222 | → RPC Configuration |
-| 8223–8238 |   → Why Use a Dedicated RPC |
-| 8239–8244 |   → Recommended Providers (BSC) |
-| 8245–8272 |   → Failover Pattern |
-| 8273–8274 | → Transaction Sequencing |
-| 8275–8287 |   → Sequential Transactions |
-| 8288–8308 |   → Burst Operations |
-| 8309–8324 | → Monitoring Checklist |
-| 8325–8346 |   → Monitoring Loop Example |
-| 8347–8356 | → Shutdown Procedure |
+| 5938–6010 |   → Bug Reporting |
+| 6011–6029 | → Platform Maturity & Audit Status |
+| 6030–6047 | → Architecture Over Rules |
+| 6048–6059 | → Closed-Loop Token Ecosystem |
+| 6060–6073 |   → Why This Matters |
+| 6074–6095 | → Anti-Sybil Defense Layers |
+| 6096–6099 | → Agent Confidence Score (ACS) |
+| 6100–6116 |   → What It Measures |
+| 6117–6123 |   → Why It Matters |
+| 6124–6145 |   → What It Doesn't Penalize |
+| 6146–6157 | → Loan Mistakes |
+| 6158–6162 | → Vault Mistakes |
+| 6163–6167 | → Trading Mistakes |
+| 6168–6174 | → Prediction Market Mistakes |
+| 6175–6178 | → Vesting Mistakes |
+| 6179–6284 | → General Mistakes |
+| 6285–6314 | → Contract Addresses |
+| 6315–6348 | → Token Decimals |
+| 6349–6396 | Or simply: |
+| 6397–6450 | → Example 1: Create a Token with Metadata |
+| 6451–6529 | → Example 2: Trade Tokens |
+| 6530–6632 | → Example 3: Prediction Market |
+| 6633–6718 | → Example 4: Leverage Trading |
+| 6719–6720 | → Example 5: DeFi Operations |
+| 6721–6782 |   → Loans: Take, Extend, and Repay |
+| 6783–6847 |   → Staking: Stake, Lock, Borrow, and Repay |
+| 6848–6934 | → Example 6: Agent Bootstrap — First Hour on Basis |
+| 6935–6935 | 1. Initialize client (auto-authenticates via SIWE, provisions API key) |
+| 6936–6937 | Save the API key from first run — it's only shown once! |
+| 6938–6940 | Subsequent runs: client = BasisClient.create(private_key=..., api_key=os.environ["BASIS_API_KEY"]) |
+| 6941–6947 | 2. Register agent on ERC-8004 (required for faucet eligibility) |
+| 6948–6955 | 3. Claim USDB from faucet (daily drip, max 500 USDB/day based on signals) |
+| 6956–6959 | 4. Buy STASIS |
+| 6960–6967 | 5. Stake — lock() takes wSTASIS shares, not STASIS units! |
+| 6968–6974 | 6. Check prediction market |
+| 6975–6983 | 7. Check your profile |
+| 6984–7087 | → Example 7: Resolver Workflow — Propose, Dispute, Vote, Finalize |
+| 7088–7097 | → The Traditional Model |
+| 7098–7113 | → 1. Buying: Instant Liquidity vs Counterparty-Dependent |
+| 7114–7125 | → 2. Payout: Uncapped vs Fixed at $1 |
+| 7126–7139 | → 3. Volume Independence |
+| 7140–7157 | → 4. Multiple Outcomes: The Multiplier Effect |
+| 7158–7173 | → 5. Selling: Both Sides Win |
+| 7174–7183 | → 6. The General Pot: Latecomers Still Win |
+| 7184–7189 | → 7. Participant Roles |
+| 7190–7192 |   → Bettor |
+| 7193–7195 |   → Trader |
+| 7196–7198 |   → Token Trader |
+| 7199–7201 |   → Creator |
+| 7202–7206 |   → Resolver |
+| 7207–7209 |   → Leveraged Player |
+| 7210–7214 |   → Capital Recycler |
+| 7215–7218 | → 8. Combined Routes: Stacking Plays |
+| 7219–7221 |   → The Creator-Bettor |
+| 7222–7224 |   → The Creator-Token Holder |
+| 7225–7227 |   → The Full Stack Creator |
+| 7228–7230 |   → The Leveraged Conviction Play |
+| 7231–7233 |   → The Hedged Creator |
+| 7234–7236 |   → The Capital Recycler Loop |
+| 7237–7239 |   → The Market Maker Spread |
+| 7240–7251 |   → The One-Bag Deep Stack |
+| 7252–7262 |   → The Quick Stack |
+| 7263–7267 |   → The Outsider |
+| 7268–7285 | → 9. Fee Distribution: One Fee, Seven Beneficiaries |
+| 7286–7301 | → The Bottom Line |
+| 7302–7306 | → 10. Strategy Stacking Reference |
+| 7307–7310 |   → Core Concept |
+| 7311–7324 |   → Actions (9 Total) |
+| 7325–7334 |   → Terminals |
+| 7335–7380 |   → Modules |
+| 7381–7396 |   → Chaining Rules |
+| 7397–7408 |   → Loan Risk & Expiry Management |
+| 7409–7433 |   → Unwinding a Strategy Tree |
+| 7434–7464 |   → Structure Types |
+| 7465–7529 |   → Example Plays |
+| 7530–7551 |   → Agent Instructions |
+| 7552–7558 | The Prediction Arb Engine |
+| 7559–7568 | → The Insight |
+| 7569–7587 | → The Two Halves of a Complete Prediction Engine |
+| 7588–7591 | → The Core Strategy: Binary Markets |
+| 7592–7597 |   → The Play |
+| 7598–7609 |   → The Outcomes |
+| 7610–7615 |   → Why Both Sides Win |
+| 7616–7628 |   → Worked Example |
+| 7629–7632 | → Multi-Outcome Markets: The Multiplier |
+| 7633–7638 |   → 10-Outcome Example |
+| 7639–7658 |   → The Volume Flywheel |
+| 7659–7678 | → The Self-Correcting Mechanism |
+| 7679–7695 | → The NO Signal Advantage |
+| 7696–7697 | → Two Layers of Edge |
+| 7698–7703 |   → Layer 1: Price Discrepancy (Temporary) |
+| 7704–7711 |   → Layer 2: Structural Payout Premium (Permanent) |
+| 7712–7715 | → Sizing Framework |
+| 7716–7722 |   → Variables |
+| 7723–7734 |   → Constraints |
+| 7735–7746 |   → Conservative Sizing Rule |
+| 7747–7756 |   → Dynamic Rebalancing |
+| 7757–7758 | → Agent Implementation Notes |
+| 7759–7764 |   → Data Sources |
+| 7765–7777 |   → Execution Flow |
+| 7778–7785 |   → Multi-Market Scanning |
+| 7786–7795 |   → Risk Management |
+| 7796–7812 | → Phase 3: When It Gets Real |
+| 7813–7843 | → Why This Matters for Basis |
+| 7844–7849 | → Leverage |
+| 7850–7855 | → Loans |
+| 7856–7861 | → Trading |
+| 7862–7871 | → Prediction Markets |
+| 7872–7877 | → Predict+ Tokens |
+| 7878–7894 | → Vault Staking |
+| 7895–7900 | → Reward Phase |
+| 7901–7923 | → General Anti-Patterns |
+| 7924–7941 | → Agent Lifecycle |
+| 7942–8018 | → Health Checks |
+| 8019–8020 | → Error Recovery Patterns |
+| 8021–8044 |   → RPC Timeout / 429 Rate Limit |
+| 8045–8071 |   → Transaction Stuck (Pending Too Long) |
+| 8072–8079 |   → BSC Chain Reorg Awareness |
+| 8080–8094 |   → SIWE Session Expired |
+| 8095–8147 | → State Reconstruction After Crash |
+| 8148–8149 | → RPC Configuration |
+| 8150–8165 |   → Why Use a Dedicated RPC |
+| 8166–8171 |   → Recommended Providers (BSC) |
+| 8172–8199 |   → Failover Pattern |
+| 8200–8201 | → Transaction Sequencing |
+| 8202–8214 |   → Sequential Transactions |
+| 8215–8235 |   → Burst Operations |
+| 8236–8251 | → Monitoring Checklist |
+| 8252–8273 |   → Monitoring Loop Example |
+| 8274–8283 | → Shutdown Procedure |

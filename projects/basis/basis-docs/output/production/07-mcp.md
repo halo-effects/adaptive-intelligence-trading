@@ -24,7 +24,7 @@ Basis SDK (bundled inside MCP — no separate install)
 BSC Mainnet + Basis Backend
 ```
 
-The MCP server wraps the full Basis SDK into **176 tools** across 16 modules. The SDK is bundled inside the MCP package — users only need one install. It runs as a local process communicating over stdio — the standard MCP transport.
+The MCP server wraps the full Basis SDK into **177 tools** across 16 modules. The SDK is bundled inside the MCP package — users only need one install. It runs as a local process communicating over stdio — the standard MCP transport.
 
 ## Installation & Setup
 
@@ -124,7 +124,7 @@ The MCP server resolves tokens intelligently:
 
 ## Tool Reference
 
-176 tools across 16 modules. Each tool maps to one or more SDK methods documented in [06-atomic-skills.md](06-atomic-skills.md).
+177 tools across 16 modules. Each tool maps to one or more SDK methods documented in [06-atomic-skills.md](06-atomic-skills.md).
 
 ### Module 1: Trading (8 tools)
 
@@ -410,7 +410,7 @@ The MCP server wraps the [Basis TS SDK](https://github.com/Launch-On-Basis/SDK-T
 | You're building an autonomous agent | You're building a backend service or bot |
 | You want natural language tool calls | You need batch operations or custom pipelines |
 
-**Coverage:** The MCP server exposes 176 tools covering the full SDK surface. Every on-chain and off-chain operation available in the SDK has a corresponding MCP tool. Some MCP tools add convenience logic — e.g., `buy_token` auto-previews before executing, `leverage_buy` auto-simulates, and `stake_stasis` handles multi-step flows in one call.
+**Coverage:** The MCP server exposes 177 tools covering the full SDK surface. Every on-chain and off-chain operation available in the SDK has a corresponding MCP tool. Some MCP tools add convenience logic — e.g., `buy_token` auto-previews before executing, `leverage_buy` auto-simulates, and `stake_stasis` handles multi-step flows in one call.
 
 → See: [06-atomic-skills.md](06-atomic-skills.md) for the underlying SDK methods each tool maps to.
 

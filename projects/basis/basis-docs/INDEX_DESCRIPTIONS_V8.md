@@ -58,9 +58,9 @@ _Section descriptions for compiling INDEX files. Each entry provides context, us
 ---
 
 ### 07-mcp.md
-**What's in it:** Full MCP integration guide — 176 tools across 16 modules, architecture overview, token resolution, authentication via `BASIS_PRIVATE_KEY`, framework configuration (Claude Desktop, Cursor), and complete tool reference tables with params.
+**What's in it:** Full MCP integration guide — 177 tools across 16 modules, architecture overview, token resolution, authentication via `BASIS_PRIVATE_KEY`, framework configuration (Claude Desktop, Cursor), and complete tool reference tables with params.
 **Use this when:** You want to connect an AI agent to Basis via MCP for zero-code protocol access, need to know which MCP tools are available, or want to understand how MCP tools map to SDK methods.
-**Key topics:** 176 MCP tools, 16 modules, stdio transport, token resolution, MCP vs SDK comparison.
+**Key topics:** 177 MCP tools, 16 modules, stdio transport, token resolution, MCP vs SDK comparison.
 **Cross-refs:** → [06-atomic-skills.md](06-atomic-skills.md) · → [15-api-reference.md](15-api-reference.md) · → [12-getting-started.md](12-getting-started.md)
 
 ---
@@ -68,7 +68,7 @@ _Section descriptions for compiling INDEX files. Each entry provides context, us
 ### 08-strategies.md
 **What's in it:** All 6 strategy playbooks with step-by-step instructions and method cross-references.
 **Use this when:** You want a complete multi-step plan for a specific goal (leverage play, vault compounding, Polymarket mirror, etc.).
-**Key topics:** Strategy A (Predict Leverage), B (Loan-Bet), C (Vault Compound), D (Polymarket Mirror), E (Capital Recycler).
+**Key topics:** Strategy A (Predict Leverage), B (Loan-Bet), C (Vault Compound), D (Polymarket Mirror), E (Capital Recycler), F (Network Multiplier).
 **Cross-refs:** → [06-atomic-skills.md](06-atomic-skills.md) · → [09-decision-trees.md](09-decision-trees.md)
 
 ---
