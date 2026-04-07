@@ -15035,20 +15035,20 @@
       }
     },
     {
-      "timestamp": "2026-04-07T13:21:26.270000+00:00",
+      "timestamp": "2026-04-07T14:21:26.352000+00:00",
       "window": "bear",
       "scores": {
         "INIT": {
-          "dca_score": 84.1,
-          "deals_per_week": 11.1,
+          "dca_score": 81.84,
+          "deals_per_week": 11.3,
           "max_drawdown_pct": 24.8,
-          "realized_pnl": 12780.34,
-          "capital_freedom": 0.875,
+          "realized_pnl": 13059.04,
+          "capital_freedom": 0.8333,
           "mature": true
         },
         "ZRO": {
           "dca_score": 78.98,
-          "deals_per_week": 14.9,
+          "deals_per_week": 14.7,
           "max_drawdown_pct": 36.08,
           "realized_pnl": 16473.36,
           "capital_freedom": 0.75,
@@ -15072,7 +15072,7 @@
         },
         "BERA": {
           "dca_score": 48.28,
-          "deals_per_week": 14.5,
+          "deals_per_week": 14.4,
           "max_drawdown_pct": 58.78,
           "realized_pnl": 15618.03,
           "capital_freedom": 0.75,
@@ -15096,7 +15096,7 @@
         },
         "BONK": {
           "dca_score": 21.7,
-          "deals_per_week": 5.0,
+          "deals_per_week": 4.9,
           "max_drawdown_pct": 47.26,
           "realized_pnl": 5195.51,
           "capital_freedom": 0.7917,
@@ -15112,7 +15112,7 @@
         },
         "STX": {
           "dca_score": 15.3,
-          "deals_per_week": 3.7,
+          "deals_per_week": 3.6,
           "max_drawdown_pct": 45.02,
           "realized_pnl": 3516.14,
           "capital_freedom": 0.7917,
@@ -15144,7 +15144,7 @@
         },
         "JTO": {
           "dca_score": 12.62,
-          "deals_per_week": 2.6,
+          "deals_per_week": 2.5,
           "max_drawdown_pct": 42.12,
           "realized_pnl": 2616.08,
           "capital_freedom": 0.8333,
@@ -15200,7 +15200,7 @@
         },
         "JUP": {
           "dca_score": 8.19,
-          "deals_per_week": 1.8,
+          "deals_per_week": 1.7,
           "max_drawdown_pct": 41.45,
           "realized_pnl": 1677.94,
           "capital_freedom": 0.8333,
@@ -15216,7 +15216,7 @@
         },
         "INJ": {
           "dca_score": 7.62,
-          "deals_per_week": 2.1,
+          "deals_per_week": 2.0,
           "max_drawdown_pct": 51.1,
           "realized_pnl": 1868.83,
           "capital_freedom": 0.8333,
@@ -15248,7 +15248,7 @@
         },
         "SNX": {
           "dca_score": 7.13,
-          "deals_per_week": 1.8,
+          "deals_per_week": 1.7,
           "max_drawdown_pct": 48.02,
           "realized_pnl": 1645.68,
           "capital_freedom": 0.8333,
@@ -15280,7 +15280,7 @@
         },
         "PENDLE": {
           "dca_score": 6.19,
-          "deals_per_week": 1.8,
+          "deals_per_week": 1.7,
           "max_drawdown_pct": 56.48,
           "realized_pnl": 1706.44,
           "capital_freedom": 0.8333,
@@ -15291,14 +15291,6 @@
           "deals_per_week": 1.4,
           "max_drawdown_pct": 42.66,
           "realized_pnl": 1290.91,
-          "capital_freedom": 0.8333,
-          "mature": true
-        },
-        "AAVE": {
-          "dca_score": 5.78,
-          "deals_per_week": 1.4,
-          "max_drawdown_pct": 47.81,
-          "realized_pnl": 1328.57,
           "capital_freedom": 0.8333,
           "mature": true
         },
@@ -15331,6 +15323,14 @@
           "deals_per_week": 1.2,
           "max_drawdown_pct": 47.4,
           "realized_pnl": 1260.8,
+          "capital_freedom": 0.8333,
+          "mature": true
+        },
+        "AAVE": {
+          "dca_score": 5.48,
+          "deals_per_week": 1.4,
+          "max_drawdown_pct": 50.46,
+          "realized_pnl": 1328.57,
           "capital_freedom": 0.8333,
           "mature": true
         },
@@ -15415,9 +15415,9 @@
           "mature": true
         },
         "UNI": {
-          "dca_score": 2.27,
+          "dca_score": 2.26,
           "deals_per_week": 0.6,
-          "max_drawdown_pct": 49.97,
+          "max_drawdown_pct": 50.24,
           "realized_pnl": 544.14,
           "capital_freedom": 0.8333,
           "mature": true
