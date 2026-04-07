@@ -1,7 +1,7 @@
-﻿# How Everything Works
+# How Everything Works
 
 **What this covers:** Mechanical deep-dives into how each system actually works - trading paths, loan system, vault layers, leverage loops, prediction market lifecycle, agent identity.
-**Related sections:** → See: [10-why.md](10-why.md) for the rationale · → See: [06-atomic-skills.md](06-atomic-skills.md) for method signatures · → See: [13-fees.md](13-fees.md) for fee details · → See: [17-mistakes.md](17-mistakes.md) for common errors
+**Related sections:** ? See: [15-why-each-action-matters.md](15-why-each-action-matters.md) for the rationale � ? See: [10-atomic-skills.md](10-atomic-skills.md) for method signatures � ? See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for fee details � ? See: [22-mistakes-to-avoid.md](22-mistakes-to-avoid.md) for common errors
 
 ---
 
@@ -10,8 +10,8 @@
 All trades route through STASIS. No direct token-to-token swaps.
 
 **Swap paths**:
-- Buying STASIS: `USDB → STASIS` (2-hop)
-- Buying a factory token: `USDB → STASIS → Token` (3-hop)
+- Buying STASIS: `USDB ? STASIS` (2-hop)
+- Buying a factory token: `USDB ? STASIS ? Token` (3-hop)
 - Selling reverses the path
 
 **Tax structure**:
@@ -22,30 +22,30 @@ All trades route through STASIS. No direct token-to-token swaps.
 | Floor+ | 1.50% | ~3.0% | Varies by pool depth |
 | Predict+ | 1.50% | ~3.0% | Varies by pool depth |
 
-**Fee distribution**: For standard tokens: Creator (20%), staking yield (16%), reward phase buyers (4%), platform treasury (60%). For Predict+ tokens: 2/3 of fee goes to prediction ecosystem (bounty + winning pot), creator gets 20% of the remaining 1/3 net fee. See [13-fees.md](13-fees.md) for the full Predict+ breakdown.
+**Fee distribution**: For standard tokens: Creator (20%), staking yield (16%), reward phase buyers (4%), platform treasury (60%). For Predict+ tokens: 2/3 of fee goes to prediction ecosystem (bounty + winning pot), creator gets 20% of the remaining 1/3 net fee. See [18-fee-cost-reference.md](18-fee-cost-reference.md) for the full Predict+ breakdown.
 
 ### AMM Pricing Mechanics
 
-Basis uses a **modified constant-product AMM** (similar to Uniswap V2's `x × y = k`), but with a critical modification: the `hybridMultiplier` parameter controls how much of each sell's value is retained in the pool versus returned to the seller.
+Basis uses a **modified constant-product AMM** (similar to Uniswap V2's `x � y = k`), but with a critical modification: the `hybridMultiplier` parameter controls how much of each sell's value is retained in the pool versus returned to the seller.
 
 **How it works:**
-- **Buys** work like a standard AMM — you send USDB, receive tokens, price increases along the curve
+- **Buys** work like a standard AMM � you send USDB, receive tokens, price increases along the curve
 - **Sells** are where Basis diverges: a portion of the sell value stays in the pool (slippage retention), which maintains or increases the reserves
 - The `hybridMultiplier` (1-100) controls the retention rate:
-  - **multiplier=100 (Stable+/Predict+):** 100% retention — ALL sell value stays in the pool. Price never drops. "Up-only."
-  - **multiplier=1 (Floor+):** Minimal retention — most sell value returns to seller, but some stays, creating a rising floor price
-  - **multiplier=45 (mid Floor+):** Moderate retention — balanced between seller return and floor accumulation
+  - **multiplier=100 (Stable+/Predict+):** 100% retention � ALL sell value stays in the pool. Price never drops. "Up-only."
+  - **multiplier=1 (Floor+):** Minimal retention � most sell value returns to seller, but some stays, creating a rising floor price
+  - **multiplier=45 (mid Floor+):** Moderate retention � balanced between seller return and floor accumulation
 
 **How `startLP` initializes reserves:** When a creator sets `startLP` (e.g., $1,000), the contract:
-1. Converts that dollar value to STASIS at the current STASIS price (e.g., $1,000 → 837 STASIS at $1.19/STASIS)
+1. Converts that dollar value to STASIS at the current STASIS price (e.g., $1,000 ? 837 STASIS at $1.19/STASIS)
 2. Sets the token side of the pool so the starting price = $1 per token (e.g., 837 STASIS : 1,000 tokens)
 3. This creates a standard AMM pair, but with the `hybridMultiplier` modifying how sells affect reserves going forward
 
-Higher `startLP` = deeper pool = less price impact per trade. The `startLP` table in [01-what-is-basis.md](01-what-is-basis.md) shows empirical price impact per LP-equivalent buy at each multiplier level.
+Higher `startLP` = deeper pool = less price impact per trade. The `startLP` table in [03-what-is-basis.md](03-what-is-basis.md) shows empirical price impact per LP-equivalent buy at each multiplier level.
 
 **Price impact formula:** Use `getAmountsOut(amount, path)` to preview exact output for any trade size. The contract handles the multiplier-adjusted calculation internally.
 
-**Why this matters for agents:** Standard AMM arbitrage assumptions don't apply. On Stable+ tokens, selling doesn't lower the price — it literally can't. On Floor+ tokens, the floor rises with every sell. Model your strategies accordingly.
+**Why this matters for agents:** Standard AMM arbitrage assumptions don't apply. On Stable+ tokens, selling doesn't lower the price � it literally can't. On Floor+ tokens, the floor rises with every sell. Model your strategies accordingly.
 
 ---
 
@@ -95,29 +95,29 @@ Higher `startLP` = deeper pool = less price impact per trade. The `startLP` tabl
 >
 > **Why this matters:** It's impossible to quote a fixed APY because it changes with platform activity and staking participation. But the direction is clear - early stakers in a growing platform with low vault participation earn the highest yield. As volume increases, total yield grows. As more people stake, individual yield moderates. The market finds its own equilibrium.
 >
-> **Cost to participate:** Gas only (sponsored by the platform up to 0.01 BNB/wallet/day; falls back to user's own BNB if the limit is reached). Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the 0.5% raw swap fee when buying STASIS and again when selling (~1% raw fees round-trip) plus variable slippage on both legs. Slippage depends on transaction size and pool liquidity — use `getAmountsOut()` to preview actual costs. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
+> **Cost to participate:** Gas only (sponsored by the platform up to 0.01 BNB/wallet/day; falls back to user's own BNB if the limit is reached). Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the 0.5% raw swap fee when buying STASIS and again when selling (~1% raw fees round-trip) plus variable slippage on both legs. Slippage depends on transaction size and pool liquidity � use `getAmountsOut()` to preview actual costs. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
 
 Three layers:
 
 **Layer 1 - Passive Yield** (wrap/unwrap):
 ```
-STASIS → staking.buy() → wSTASIS (yield-bearing)
-wSTASIS → staking.sell() → STASIS (more than deposited)
+STASIS ? staking.buy() ? wSTASIS (yield-bearing)
+wSTASIS ? staking.sell() ? STASIS (more than deposited)
 ```
 
 **Layer 2 - Collateral** (lock/unlock):
 ```
-wSTASIS → staking.lock() → Locked (still earning yield)
-Locked → staking.unlock() → wSTASIS (only after repaying loan)
+wSTASIS ? staking.lock() ? Locked (still earning yield)
+Locked ? staking.unlock() ? wSTASIS (only after repaying loan)
 ```
 
 **Layer 3 - Borrowing** (borrow/repay):
 ```
-Locked → staking.borrow(amount, days) → Liquid STASIS
-Liquid → staking.repay() → Loan cleared, can now unlock
+Locked ? staking.borrow(amount, days) ? Liquid STASIS
+Liquid ? staking.repay() ? Loan cleared, can now unlock
 ```
 
-**Quick exit**: `staking.sell(shares, claimUSDB=True)` does atomic unwrap→USDB in one transaction.
+**Quick exit**: `staking.sell(shares, claimUSDB=True)` does atomic unwrap?USDB in one transaction.
 
 ---
 
@@ -126,9 +126,9 @@ Liquid → staking.repay() → Loan cleared, can now unlock
 Leverage is conceptually a **recursive loan-and-buy loop**:
 
 ```
-$50 USDB → buy tokens → take 100% LTV loan on those tokens → receive ~$48 (minus 2% fee)
-→ buy more tokens with $48 → take another loan → receive ~$47
-→ buy more tokens → loan → buy → loan → ... until dust remains
+$50 USDB ? buy tokens ? take 100% LTV loan on those tokens ? receive ~$48 (minus 2% fee)
+? buy more tokens with $48 ? take another loan ? receive ~$47
+? buy more tokens ? loan ? buy ? loan ? ... until dust remains
 ```
 
 **How it actually executes:** The contract first **simulates** the full recursive loop to calculate the final position parameters, then executes the entire position in a **single atomic transaction** using the simulation endpoints. This means leverage either fully succeeds or fully fails - there is no partial execution state. You will never end up with a half-built position.
@@ -155,7 +155,7 @@ Each conceptual iteration takes a 2% origination fee, so the total leverage fee 
 1. **Buy the Predict+ token** - trade the market itself (Stable+ appreciation)
 2. **Buy outcome shares** - bet on specific outcomes (one big pot model - all pools merge, winners take proportional share)
 
-These are separate paths. Buying the token —  betting on an outcome.
+These are separate paths. Buying the token �  betting on an outcome.
 
 **Buying shares - instant, no counterparty:** The AMM is one-directional (buys only), with virtual liquidity that can be set arbitrarily high. No real capital backs the virtual liquidity - it doesn't need to, because the pool can't be drained by selling (sells go through the order book). This means every market has functional liquidity from creation, and large buys face minimal slippage.
 
@@ -167,12 +167,12 @@ These are separate paths. Buying the token —  betting on an outcome.
 
 **Resolution lifecycle**:
 ```
-Market ends → Propose outcome (5 USDB bond) → Challenge period (30 min*)
-  ├── No dispute → finalizeUncontested() → Proposer gets bond back + full bounty → Winners redeem
-  └── Disputed (5 USDB bond) → Voting period (30 min*) → Voters decide → Finalize → Winners redeem
-      └── EARLY outcome wins → Round resets, fresh proposal cycle begins
+Market ends ? Propose outcome (5 USDB bond) ? Challenge period (30 min*)
+  +-- No dispute ? finalizeUncontested() ? Proposer gets bond back + full bounty ? Winners redeem
+  +-- Disputed (5 USDB bond) ? Voting period (30 min*) ? Voters decide ? Finalize ? Winners redeem
+      +-- EARLY outcome wins ? Round resets, fresh proposal cycle begins
 ```
-*\*— ️ TESTING VALUES - will change before production. Production targets: 2 hour challenge period, 24 hour voting period. All timing parameters are configurable via `configResolver`. Do not hardcode these values - read them from the contract at runtime.*
+*\*� ? TESTING VALUES - will change before production. Production targets: 2 hour challenge period, 24 hour voting period. All timing parameters are configurable via `configResolver`. Do not hardcode these values - read them from the contract at runtime.*
 
 ### Resolution Deep Dive
 
@@ -190,13 +190,13 @@ Market ends → Propose outcome (5 USDB bond) → Challenge period (30 min*)
 - To vote, you must stake at least 5 tokens of any active ecosystem token via `resolver.stake(token)` *(current staking on STASIS is a placeholder anti-spam measure - post-TGE, transitions to BASIS token staking)*
 - Voting is **one-staker-one-vote** - staking above the minimum gives no extra voting power
 - **70% supermajority** required to finalize (VOTING_CONSENSUS = 70)
-- Quorum: `bountyPool / (50 × $1)`, clamped between 2 (minimum) and 100 (maximum). Based on total votes across all outcomes
+- Quorum: `bountyPool / (50 � $1)`, clamped between 2 (minimum) and 100 (maximum). Based on total votes across all outcomes
 - **Ties / no supermajority:** Finalization reverts with "Tie - vote more". Must reach 70% consensus within the voting period
 
 **Bond outcomes:**
 - Correct proposer or disputer gets BOTH bonds (theirs + opponent's)
-- Neither correct → insurance pool gets both bonds
-- Uncontested → proposer gets bond back + full bounty
+- Neither correct ? insurance pool gets both bonds
+- Uncontested ? proposer gets bond back + full bounty
 
 **Bounty distribution:**
 - Uncontested: 100% to proposer
@@ -225,9 +225,9 @@ Market ends → Propose outcome (5 USDB bond) → Challenge period (30 min*)
 - Voting window: 15 minutes from first vote cast
 - Majority of votes determines winner; anyone can call `finalize()` after 15 minutes
 
-**Post-resolution selling**: On Basis, mass selling after resolution pushes the price UP (selling burns tokens → slippage stays in pool → price rises). Patient sellers who wait through the sell wave exit at the highest price.
+**Post-resolution selling**: On Basis, mass selling after resolution pushes the price UP (selling burns tokens ? slippage stays in pool ? price rises). Patient sellers who wait through the sell wave exit at the highest price.
 
-→ See: [21-prediction-market-deep-dive.md](21-prediction-market-deep-dive.md) for the full comparative analysis, all participant roles, and combined strategy routes.
+? See: [26-prediction-deep-dive.md](26-prediction-deep-dive.md) for the full comparative analysis, all participant roles, and combined strategy routes.
 
 ---
 
@@ -250,9 +250,9 @@ Market ends → Propose outcome (5 USDB bond) → Challenge period (30 min*)
 
 **The SDK reads directly from contracts for all read methods.** Methods like `getLeveragePosition()`, `getUserLoanDetails()`, `getAmountsOut()`, and all resolver read methods call the smart contracts directly via RPC - they don't go through the API. The API is only used for off-chain data (token metadata, leaderboard, social activity, bug reports).
 
-**Auto-sync is a convenience, not a dependency.** When the SDK says "auto-syncs state to backend," this means it notifies the indexer about new transactions so the API stays up to date via `POST /api/v1/sync`. This covers ALL modules (Factory, Trading, Loans, Staking, Vesting, PredictionMarkets, MarketResolver, Taxes, OrderBook, PrivateMarkets, AgentIdentity). If the sync fails, the SDK logs a warning but the transaction itself has already succeeded on-chain. Your position exists regardless of whether the backend knows about it. The sync is idempotent — submitting the same txHash twice is safe.
+**Auto-sync is a convenience, not a dependency.** When the SDK says "auto-syncs state to backend," this means it notifies the indexer about new transactions so the API stays up to date via `POST /api/v1/sync`. This covers ALL modules (Factory, Trading, Loans, Staking, Vesting, PredictionMarkets, MarketResolver, Taxes, OrderBook, PrivateMarkets, AgentIdentity). If the sync fails, the SDK logs a warning but the transaction itself has already succeeded on-chain. Your position exists regardless of whether the backend knows about it. The sync is idempotent � submitting the same txHash twice is safe.
 
-**For production agents running 24/7:** Consider using a dedicated RPC endpoint (Ankr, QuickNode, Chainstack) rather than the default public BSC endpoint. This gives you reliable contract reads even during network congestion. See [12-getting-started.md](12-getting-started.md) for RPC configuration.
+**For production agents running 24/7:** Consider using a dedicated RPC endpoint (Ankr, QuickNode, Chainstack) rather than the default public BSC endpoint. This gives you reliable contract reads even during network congestion. See [17-getting-started.md](17-getting-started.md) for RPC configuration.
 
 ---
 

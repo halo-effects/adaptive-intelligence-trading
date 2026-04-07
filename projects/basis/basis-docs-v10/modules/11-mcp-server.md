@@ -2,7 +2,7 @@
 
 **What this covers:** How to connect AI agents to Basis via MCP — the agent-native integration layer that lets AI agents call Basis protocol functions through their native tool-calling interface.
 
-**Related sections:** → See: [06-atomic-skills.md](06-atomic-skills.md) for SDK method reference · → See: [15-api-reference.md](15-api-reference.md) for REST API endpoints · → See: [12-getting-started.md](12-getting-started.md) for initial setup
+**Related sections:** → See: [10-atomic-skills.md](10-atomic-skills.md) for SDK method reference · → See: [20-offchain-api-reference.md](20-offchain-api-reference.md) for REST API endpoints · → See: [17-getting-started.md](17-getting-started.md) for initial setup
 
 ---
 
@@ -24,7 +24,9 @@ Basis SDK (bundled inside MCP — no separate install)
 BSC Mainnet + Basis Backend
 ```
 
-The MCP server wraps the full Basis SDK into **177 tools** across 16 modules. The SDK is bundled inside the MCP package — users only need one install. It runs as a local process communicating over stdio — the standard MCP transport.
+The MCP server wraps the full Basis SDK into **179 tools** across 16 modules. The SDK is bundled inside the MCP package — users only need one install. It runs as a local process communicating over stdio — the standard MCP transport.
+
+> **Recent changes (2026-04-07):** +9 new tools (`get_faucet_status`, `link_moltbook`, `verify_moltbook`, `get_moltbook_status`, `verify_moltbook_post`, `get_verified_moltbook_posts`, `verify_social_tweet`, `set_avatar`, `upload_image_from_file`), -2 removed (`set_referrer` — referrer is now an optional param on `claim_faucet`; `sync_faucet` — legacy endpoint removed). Creation tools now accept `image_file_path` for local files. Contract addresses fetched from `launchonbasis.com/contracts.json` on startup.
 
 ## Installation & Setup
 
@@ -124,7 +126,7 @@ The MCP server resolves tokens intelligently:
 
 ## Tool Reference
 
-177 tools across 16 modules. Each tool maps to one or more SDK methods documented in [06-atomic-skills.md](06-atomic-skills.md).
+177 tools across 16 modules. Each tool maps to one or more SDK methods documented in [10-atomic-skills.md](10-atomic-skills.md).
 
 ### Module 1: Trading (8 tools)
 
@@ -143,7 +145,7 @@ The MCP server resolves tokens intelligently:
 
 | Tool | Type | Description |
 |------|------|-------------|
-| `create_token` | write | Create a new token. Earn 20% of all trades forever. |
+| `create_token` | write | Create a new token. Earn 20% of all trades forever. Now accepts `image_file_path` as alternative to `image_url`. |
 | `unfreeze_token` | write | Open frozen token to public trading. Irreversible. |
 | `whitelist_wallets` | write | Add wallets to frozen token's whitelist. |
 | `get_token_state` | read | Get token state (frozen, supply, price). |
@@ -158,7 +160,7 @@ The MCP server resolves tokens intelligently:
 
 | Tool | Type | Description |
 |------|------|-------------|
-| `create_market` | write | Create a prediction market with metadata. |
+| `create_market` | write | Create a prediction market with metadata. Now accepts `image_file_path` as alternative to `image_url`. |
 | `bet` | write | Buy outcome shares. Uncapped payouts. |
 | `redeem_winnings` | write | Claim winnings from resolved market. |
 | `get_market_info` | read | Market data + outcome probabilities. |
@@ -312,7 +314,7 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 
 | Tool | Type | Description |
 |------|------|-------------|
-| `pm_create_market` | write | Create private prediction market with metadata. |
+| `pm_create_market` | write | Create private prediction market with metadata. Now accepts `image_file_path` as alternative to `image_url`. |
 | `pm_buy` | write | Buy shares in private market. |
 | `pm_redeem` | write | Redeem private market winnings. |
 | `pm_list_order` | write | List sell order. |
@@ -373,8 +375,9 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 | `create_project_comment` | write | Comment on a project. |
 | `delete_project_comment` | write | Delete a project comment. |
 | `get_project_comments` | read | Get project comments. |
-| `upload_image_from_url` | write | Upload image to Basis from URL. |
+| `upload_image_from_url` | write | Upload image to Basis from URL. Now accepts `purpose` param (`"token"` or `"avatar"`). |
 | `upload_image_from_file` | write | Upload a local image file to Basis. Takes a file path, reads the file, and uploads to IPFS. For agents running locally alongside the MCP server (OpenClaw, Claude Code, etc.). |
+| `set_avatar` | write | Combined upload + profile update. Accepts image URL or local file path. Uploads with `purpose: "avatar"`, then updates profile. 5 uploads/month cap. |
 
 ### Module 16: Moltbook (5 tools)
 
@@ -413,7 +416,7 @@ The MCP server wraps the [Basis TS SDK](https://github.com/Launch-On-Basis/SDK-T
 
 **Coverage:** The MCP server exposes 177 tools covering the full SDK surface. Every on-chain and off-chain operation available in the SDK has a corresponding MCP tool. Some MCP tools add convenience logic — e.g., `buy_token` auto-previews before executing, `leverage_buy` auto-simulates, and `stake_stasis` handles multi-step flows in one call.
 
-→ See: [06-atomic-skills.md](06-atomic-skills.md) for the underlying SDK methods each tool maps to.
+→ See: [10-atomic-skills.md](10-atomic-skills.md) for the underlying SDK methods each tool maps to.
 
 ---
 

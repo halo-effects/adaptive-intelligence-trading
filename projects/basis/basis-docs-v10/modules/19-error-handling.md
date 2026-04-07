@@ -1,8 +1,8 @@
-﻿# Error Handling
+# Error Handling
 
 **What this covers:** Contract revert reasons, API error codes, non-fatal warnings, and transaction sync behavior.
 
-**Related sections:** → See: [15-api-reference.md](15-api-reference.md) for full API error codes · → See: [20-examples.md](20-examples.md) for try/catch patterns in context
+**Related sections:** ? See: [20-offchain-api-reference.md](20-offchain-api-reference.md) for full API error codes � ? See: [25-code-examples.md](25-code-examples.md) for try/catch patterns in context
 
 ---
 
@@ -74,7 +74,7 @@ The SDK automatically syncs transaction state to the backend database after writ
 - The backend auto-detects the transaction source from the contract address and processes all relevant events.
 - If the sync request fails, a warning is logged but the on-chain transaction is not affected. Users do not need to call this manually.
 - Rate limit: 20 requests per minute.
-- Idempotent — submitting the same txHash twice is safe.
+- Idempotent � submitting the same txHash twice is safe.
 
 **Manual sync (if needed):**
 
@@ -90,6 +90,6 @@ await client.api.syncTransaction(txHash);
 client.api.sync_transaction(tx_hash)
 ```
 
-> **Note:** The legacy `syncLoan` / `sync_loan` method still works but is deprecated — it simply delegates to `syncTransaction`.
+> **Note:** The legacy `syncLoan` / `sync_loan` method still works but is deprecated � it simply delegates to `syncTransaction`.
 
 ---

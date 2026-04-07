@@ -1,14 +1,14 @@
-﻿# Contract Addresses & Token Decimals
+# Contract Addresses & Token Decimals
 
 **What this covers:** All BSC Mainnet contract addresses used by the SDK, and the token decimal reference for raw amount calculations.
 
-**Related sections:** → See: [12-getting-started.md](12-getting-started.md) for SDK configuration options · → See: [06-atomic-skills.md](06-atomic-skills.md) for methods that use these addresses
+**Related sections:** ? See: [17-getting-started.md](17-getting-started.md) for SDK configuration options � ? See: [10-atomic-skills.md](10-atomic-skills.md) for methods that use these addresses
 
 ---
 
 ## Contract Addresses
 
-The canonical contract addresses are published at [`https://launchonbasis.com/contracts.json`](https://launchonbasis.com/contracts.json). The SDK fetches this on startup and warns if its hardcoded defaults are stale. All addresses are overridable via constructor options (see [12-getting-started.md](12-getting-started.md)).
+The canonical contract addresses are published at [`https://launchonbasis.com/contracts.json`](https://launchonbasis.com/contracts.json). The SDK fetches this on startup and warns if its hardcoded defaults are stale. All addresses are overridable via constructor options (see [17-getting-started.md](17-getting-started.md)).
 
 Default BSC Mainnet contract addresses used by the SDK:
 
