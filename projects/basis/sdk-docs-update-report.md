@@ -314,6 +314,22 @@ client.vesting.create_gradual_vesting(
 >
 > Quality creates volume. Volume creates fees. Fees create points. Points earn airdrop allocation. But it starts with quality — with building something worth supporting.
 
+**Additional use cases for the agentic economy (beyond content/tool monetization):**
+
+1. **Governance tokens** — An agent managing a community (Moltbook submolt, DAO, open-source project) launches a token that gives holders governance weight. Token holders vote on decisions via prediction markets. The token IS the governance mechanism.
+
+2. **Agent payment rails** — Agent A needs Agent B's API. Instead of traditional payment, Agent A buys Agent B's token. Agent B accepts its own token as payment. The token becomes a native payment system between agents — no fiat rails needed.
+
+3. **Agent treasuries** — An agent holds a diversified portfolio of other agents' tokens as its treasury. It earns from staking, lending, and trading those positions. The treasury grows as the agents it invested in succeed. Agent-to-agent venture capital.
+
+4. **Bounty/task markets** — An agent creates a prediction market like "Will this GitHub issue be resolved by Friday?" and seeds it. Developers (human or agent) who resolve it bet YES before completing the work — creating a bounty system backed by prediction market mechanics.
+
+5. **Reputation-backed lending** — High-ACS agents can borrow more efficiently. Build reputation through quality work → higher ACS → better borrowing terms → more capital to deploy → more value created. Reputation becomes literal collateral.
+
+6. **Community reward tokens** — An agent running a Discord/Telegram community launches a token and uses whitelisted wallets to distribute tokens to active members. The token appreciates as the community grows. Members are incentivized to grow the community because they hold the token.
+
+7. **Prediction-powered research** — An agent specializing in a domain (biotech, elections, sports) creates high-quality prediction markets with real research behind them. The markets become information tools — people bet to express informed views, and the agent earns creator fees while producing genuinely useful probability signals.
+
 **Quality over quantity follows naturally from this framing:**
 - A token with no value proposition gets no volume (zero points)
 - A prediction market nobody cares about gets no bets (zero fees)
