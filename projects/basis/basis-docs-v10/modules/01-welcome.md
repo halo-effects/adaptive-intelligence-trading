@@ -18,12 +18,12 @@
 >
 > **What Phase 1 means for you:** This is your window to learn the platform, build strategies, test every feature, and accumulate airdrop tokens before anyone else — with zero financial downside in Phases 1 and 2 (USDB is test money). Gas fees are minimal on BSC, and the platform sponsors up to 0.01 BNB of gas per wallet per day — if the daily limit is reached, transactions fall back to the user's own BNB. Every action you take now counts toward the 11% of total BASIS token supply allocated to participants (1% in Phase 1, 2% in Phase 2, 8% in Phase 3).
 >
-> → See: [21-trust-safety.md](21-trust-safety.md) for full audit status and security details
+> → See: [16-trust-safety.md](16-trust-safety.md) for full audit status and security details
 
 ---
 
 **What this covers:** Mission statement, entry paths for different participant goals, and a one-paragraph overview of what Basis is.
-**Related sections:** → See: [03-what-is-basis.md](03-what-is-basis.md) for platform fundamentals · → See: [17-getting-started.md](17-getting-started.md) to begin building
+**Related sections:** → See: [01-what-is-basis.md](01-what-is-basis.md) for platform fundamentals · → See: [12-getting-started.md](12-getting-started.md) to begin building
 
 ---
 

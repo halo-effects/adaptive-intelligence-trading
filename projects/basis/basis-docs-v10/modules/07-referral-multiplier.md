@@ -22,4 +22,4 @@ The referral system compounds the Token Value flywheel by rewarding agents who g
 
 Referral points count toward tier progression. The higher your tier, the higher your referral %, which earns more referral points, which helps you tier up further. This creates super-linear network growth: agents who build referral networks early have compounding advantages that grow with the platform.
 
-→ See: [09-referral-system.md](09-referral-system.md) for full details · → See: [04-agent-archetypes.md - Super Referrer](04-agent-archetypes.md) for network-building strategies
+→ See: [05-referral-system.md](05-referral-system.md) for full details · → See: [02-archetypes.md - Super Referrer](02-archetypes.md) for network-building strategies

@@ -1,7 +1,7 @@
-# Atomic Skills - SDK Method Reference
+ï»¿# Atomic Skills - SDK Method Reference
 
 **What this covers:** Every callable SDK method as a plain-English reference. JS + Python signatures, key params, and fees. This is THE code reference.
-**Related sections:** ? See: [17-getting-started.md](17-getting-started.md) for setup · ? See: [24-contract-addresses.md](24-contract-addresses.md) for addresses · ? See: [19-error-handling.md](19-error-handling.md) for error handling · ? See: [25-code-examples.md](25-code-examples.md) for complete working examples
+**Related sections:** â†’ See: [12-getting-started.md](12-getting-started.md) for setup Â· â†’ See: [19-contract-addresses.md](19-contract-addresses.md) for addresses Â· â†’ See: [14-errors.md](14-errors.md) for error handling Â· â†’ See: [20-examples.md](20-examples.md) for complete working examples
 
 ---
 
@@ -41,7 +41,7 @@ result = client.trading.buy("0xTokenAddress", 5 * 10**18)
 | `tokenAddress` | string | Token to buy |
 | `usdbAmount` | bigint/int | USDB amount (18 decimals) |
 | `minOut` | bigint/int | Min tokens to receive (slippage guard). Default: 0 |
-| `wrapTokens` | boolean | When true, wraps the purchased tokens into their wrapped equivalent (e.g., STASIS ? wSTASIS). Useful if you plan to stake immediately after buying - saves a separate wrap transaction. Default: false. |
+| `wrapTokens` | boolean | When true, wraps the purchased tokens into their wrapped equivalent (e.g., STASIS â†’ wSTASIS). Useful if you plan to stake immediately after buying - saves a separate wrap transaction. Default: false. |
 
 ---
 
@@ -70,7 +70,7 @@ result = client.trading.sell("0xTokenAddress", 1 * 10**18, to_usdb=True)
 
 ---
 
-### `sellPercentage(tokenAddress, percentage, toUsdb?, minOut?, swapToETH?)`
+### `sellPercentage(tokenAddress, percentage, toUsdb?)`
 **What it does:** Sells a percentage of your token balance. Reads your balance automatically - no amount calculation needed.
 **Module:** `client.trading`
 **Fee:** Same as sell
@@ -89,8 +89,6 @@ result = client.trading.sell_percentage("0xTokenAddress", 50)
 | `tokenAddress` | string | Token to sell |
 | `percentage` | number | 1-100 |
 | `toUsdb` | boolean | Sell to USDB. Default: false |
-| `minOut` | bigint/int | Min output tokens. Default: 0 |
-| `swapToETH` | boolean | Swap to BNB instead of USDB. Default: false |
 
 ---
 
@@ -110,7 +108,7 @@ const result2 = await client.trading.leverageBuy(parseUnits("10", 18), 0n, [USDB
 ```
 **Python:**
 ```python
-result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)  # — ? minOut=0 for simplicity - calculate with getAmountsOut() in production
+result = client.trading.leverage_buy(10 * 10**18, 0, [USDB, MAINTOKEN], 10)  # â€” ï¸ minOut=0 for simplicity - calculate with getAmountsOut() in production
 ```
 
 | Param | Type | Description |
@@ -232,7 +230,7 @@ Returns: `string` - price in USD.
 
 ### `getTokenPrice(tokenAddress)` *(read)*
 **What it does:** Gets the price of a token denominated in MAINTOKEN (STASIS).
-Returns: `string` — raw 18-decimal value as string. Internally calls `getTokenPrice()` on the FACTORYTOKEN contract which returns `uint256` (reserve1 * 1e18 / reserve0).
+Returns: `string` â€” raw 18-decimal value as string. Internally calls `getTokenPrice()` on the FACTORYTOKEN contract which returns `uint256` (reserve1 * 1e18 / reserve0).
 **Module:** `client.trading`
 
 ---
@@ -269,7 +267,7 @@ Create and manage tokens. All tokens created here earn the creator 20% of tradin
 ### `createTokenWithMetadata(options)` *(recommended)*
 **What it does:** Creates a new token AND registers metadata (image, description, social links) on IPFS in one call. This is the recommended method - ensures the token appears properly on the platform.
 **Module:** `client.factory`
-**Fee:** BNB creation fee (call `getFeeAmount()` to check current fee — currently set to 0 in Phase 1)
+**Fee:** BNB creation fee (call `getFeeAmount()` to check current fee â€” currently set to 0 in Phase 1)
 **Earns airdrop points** (one-time).
 **Requires:** SIWE authentication (auto-handled by `BasisClient.create`)
 
@@ -331,17 +329,16 @@ startLP is a scaling factor that controls how much capital is needed to move the
 | Floor+ | 90 (most stable) | +$0.11 | Very high |
 | Stable+ | 100 (only goes up) | price increases due to price impact | Maximum |
 
-> **How the floor works:** If all holders sold every token in circulation, the price would drop — but not all the way back to the launch price. This lowest possible price is what we call the floor price. The difference between the launch price and where the price lands after all circulating tokens are sold back represents the floor price increase. It comes from liquidity retained in the AMM due to price impact from trading — each buy-and-sell cycle leaves a residue that permanently raises the floor. Higher hybridMultiplier means more of each trade's price impact is retained by the AMM, so the floor rises faster. At hybrid=100 (Stable+), all price impact is retained — the price never decreases.
+> **How the floor works:** If all holders sold every token in circulation, the price would drop â€” but not all the way back to the launch price. This lowest possible price is what we call the floor price. The difference between the launch price and where the price lands after all circulating tokens are sold back represents the floor price increase. It comes from liquidity retained in the AMM due to price impact from trading â€” each buy-and-sell cycle leaves a residue that permanently raises the floor. Higher hybridMultiplier means more of each trade's price impact is retained by the AMM, so the floor rises faster. At hybrid=100 (Stable+), all price impact is retained â€” the price never decreases.
 >
 > **LP-equivalent buy** = a buy equal to the startLP value (e.g., $1,000 on a startLP=1000 token). Hybrid 1 moves the price ~$1 per LP-equivalent bought. Higher values dampen this proportionally.
 
 **Contract-enforced limits** *(from Solidity source)*:
 - `hybridMultiplier`: 1-100 (values 91-99 technically work but are disallowed by convention - pick 1-90 for Floor+ or exactly 100 for Stable+)
 - `startLP`: 100-10,000
-- `usdbForBonding`: 0-150,000 (must be =1 if `frozen=true`)
+- `usdbForBonding`: 0-150,000 (must be â‰¥1 if `frozen=true`)
 | `description` | no | Platform description |
-| `imageUrl` | no* | Image URL. Auto-resized to 512×512 WebP. *At least one of `imageUrl` or `imageFile` must be provided. |
-| `imageFile` | no* | Raw image file — `Blob` or `Buffer` (JS), local file path string (Python). Alternative to `imageUrl` for agents with local files. |
+| `imageUrl` | no | Auto-resized to 512Ã—512 WebP |
 | `website` / `telegram` / `twitterx` | no | Social links |
 | `frozen` | no | Start token frozen (default: false). When true, only whitelisted wallets can trade until you call `disableFreeze()`. Useful for controlled launches or pre-sale allocation. |
 | `usdbForBonding` | no | USDB volume threshold (18 decimals) that defines the reward phase (default: 0 = no reward phase). The reward phase lasts until this cumulative trading volume is reached - early buyers during this period earn reward shares (claimable via `claimRewards()`). Once the volume threshold is hit, `hasBonded` flips to true and the reward phase ends. **Calibration guidance:** Set 0 if you don't want a reward phase. Set it low and buy it up yourself to capture all reward shares. Set it higher if you have a community that will participate in early buying - the threshold should match your expected early participation volume. The reward phase is about sharing early-buyer rewards; if you don't need to incentivize others to buy early, there's no benefit to setting it high. *(Parameter name is legacy - this funds the reward phase, not a bonding curve.)* |
@@ -417,28 +414,28 @@ Returns: `boolean`
 ---
 
 ### `getTokensByCreator(creator)` *(read)*
-**What it does:** Returns all tokens created by a wallet. **Note:** This also returns Predict+ tokens from prediction markets you created — not just regular factory tokens. Filter by checking `hybridMultiplier` or cross-referencing with prediction market data if you need only standard tokens.
+**What it does:** Returns all tokens created by a wallet. **Note:** This also returns Predict+ tokens from prediction markets you created â€” not just regular factory tokens. Filter by checking `hybridMultiplier` or cross-referencing with prediction market data if you need only standard tokens.
 **Module:** `client.factory`
 Returns: `string[]` - token addresses
 
 ---
 
 ### `getFeeAmount()` *(read)*
-**What it does:** Returns the current token creation fee in BNB. Currently set to 0 in Phase 1 (free token creation). May change in future phases — always check before calling `createToken`.
+**What it does:** Returns the current token creation fee in BNB. Currently set to 0 in Phase 1 (free token creation). May change in future phases â€” always check before calling `createToken`.
 **Module:** `client.factory`
-Returns: `bigint` — fee in wei (18 decimals).
+Returns: `bigint` â€” fee in wei (18 decimals).
 
 ---
 
 ### `getClaimableRewards(tokenAddress, investor)` *(read)*
 **What it does:** Returns the claimable USDB reward amount for an investor on a factory token.
 **Module:** `client.factory`
-Returns: `bigint` — claimable amount in USDB (18 decimals).
+Returns: `bigint` â€” claimable amount in USDB (18 decimals).
 
 ---
 
 ### `getFloorPrice(tokenAddress)` *(read)*
-**What it does:** Returns the USDB floor price for a factory token — the minimum price the token can be redeemed for. Does not apply to STASIS.
+**What it does:** Returns the USDB floor price for a factory token â€” the minimum price the token can be redeemed for. Does not apply to STASIS.
 **Module:** `client.factory`
 
 **JS:**
@@ -452,7 +449,7 @@ floor = client.factory.get_floor_price("0xTokenAddress...")
 print("Floor price:", floor)
 ```
 
-Returns: `string` — floor price in USDB.
+Returns: `string` â€” floor price in USDB.
 
 ---
 
@@ -473,7 +470,7 @@ Collateralized loans through the LoanHub contract. Take, extend, repay.
 ---
 
 ### `takeLoan(ecosystem, collateral, amount, daysCount)`
-**What it does:** Takes a loan by depositing collateral tokens. Auto-approves collateral to LoanHub. This is a **simple one-layer loan** - your collateral is locked but does NOT earn yield. If you want your collateral to earn vault yield while borrowed against, use `staking.borrow()` instead (three-layer: wrap ? lock ? borrow).
+**What it does:** Takes a loan by depositing collateral tokens. Auto-approves collateral to LoanHub. This is a **simple one-layer loan** - your collateral is locked but does NOT earn yield. If you want your collateral to earn vault yield while borrowed against, use `staking.borrow()` instead (three-layer: wrap â†’ lock â†’ borrow).
 **Module:** `client.loans`
 **Fee:** 2% flat origination fee (deducted upfront from what you receive) + 0.005% daily interest on collateral value.
 **Earns airdrop points** - a one-time bonus at origination plus daily accrual while active.
@@ -608,15 +605,15 @@ result = client.staking.buy(100 * 10**18)
 ---
 
 ### `borrow(stasisAmount, days)` - Borrow Against Vault
-**What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap ? lock ? borrow) - your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units, raw 18 decimals** (not wSTASIS shares) - e.g., `parseUnits("50", 18)` for 50 STASIS. The contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
+**What it does:** Borrows USDB against your locked wSTASIS. This is the **three-layer loan** (wrap â†’ lock â†’ borrow) - your collateral continues earning vault yield while pledged. Compare with `loans.takeLoan()` which is a simple one-layer loan with no yield. The `stasisAmount` param is denominated in **STASIS units, raw 18 decimals** (not wSTASIS shares) - e.g., `parseUnits("50", 18)` for 50 STASIS. The contract converts internally using the current wSTASIS:STASIS ratio. USDB received = collateral value minus 2% fee.
 **Module:** `client.staking`
 **Fee:** 2% flat origination fee + 0.005% daily interest
 **Earns airdrop points** - a one-time bonus at origination plus daily accrual while active.
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `stasisAmount` | bigint/int | STASIS-denominated amount to pledge as collateral (raw units, 18 decimals — e.g., `parseUnits("50", 18)` for 50 STASIS). Converted from wSTASIS shares internally using the current exchange ratio. |
-| `days` | bigint/int | Loan duration in days. **Minimum 10 days.** |
+| `stasisAmount` | bigint/int | STASIS-denominated amount to pledge as collateral (raw units, 18 decimals â€” e.g., `parseUnits("50", 18)` for 50 STASIS). Converted from wSTASIS shares internally using the current exchange ratio. |
+| `days` | bigint/int | Loan duration in days |
 
 **How to determine your borrow limit:** You have wSTASIS shares, but `borrow()` takes STASIS amounts. To find how much STASIS your wSTASIS represents:
 ```js
@@ -674,7 +671,7 @@ await client.staking.borrow(stasisEquivalent, 10n); // Borrow max, 10 days
 ---
 
 ### `getUserStakeDetails(user)` *(read)*
-**What it does:** Returns a user's complete staking breakdown — liquid shares, locked shares, totals, and asset value. Use this to check stake status before voting (24h lock applies) or to display a user's full position.
+**What it does:** Returns a user's complete staking breakdown â€” liquid shares, locked shares, totals, and asset value. Use this to check stake status before voting (24h lock applies) or to display a user's full position.
 **Module:** `client.staking`
 
 **Returns:** `[liquidShares, lockedShares, totalShares, totalAssetValue]` (all `bigint`/`int`)
@@ -702,14 +699,14 @@ print(f"Liquid: {liquid}, Locked: {locked}, Total value: {asset_value} STASIS")
 ### `getAvailableStasis(user)` *(read)*
 **What it does:** Returns STASIS available as collateral for a user (total asset value minus amount pledged to active loans).
 **Module:** `client.staking`
-Returns: `bigint` — available STASIS in 18 decimals.
+Returns: `bigint` â€” available STASIS in 18 decimals.
 
 ---
 
 ### `totalAssets()` *(read)*
 **What it does:** Returns total STASIS held by the vault (available + pledged).
 **Module:** `client.staking`
-Returns: `bigint` — total vault STASIS in 18 decimals.
+Returns: `bigint` â€” total vault STASIS in 18 decimals.
 
 ---
 
@@ -843,49 +840,49 @@ result = client.vesting.create_gradual_vesting(
 ### `getClaimableAmount(vestingId)` *(read)*
 **What it does:** Returns the amount currently available to claim.
 **Module:** `client.vesting`
-Returns: `bigint` — claimable token amount (18 decimals).
+Returns: `bigint` â€” claimable token amount (18 decimals).
 
 ---
 
 ### `getVestedAmount(vestingId)` *(read)*
 **What it does:** Returns total amount vested so far.
 **Module:** `client.vesting`
-Returns: `bigint` — total vested amount (18 decimals).
+Returns: `bigint` â€” total vested amount (18 decimals).
 
 ---
 
 ### `getVestingsByBeneficiary(address)` *(read)*
 **What it does:** Returns all vesting IDs where the address is beneficiary.
 **Module:** `client.vesting`
-Returns: `bigint[]` — array of vesting IDs.
+Returns: `bigint[]` â€” array of vesting IDs.
 
 ---
 
 ### `getVestingsByCreator(address)` *(read)*
 **What it does:** Returns all vesting schedules created by the address.
 **Module:** `client.vesting`
-Returns: `bigint[]` — array of vesting IDs.
+Returns: `bigint[]` â€” array of vesting IDs.
 
 ---
 
 ### `getActiveLoan(vestingId)` *(read)*
 **What it does:** Returns the active loan ID on a vesting schedule (0 if none).
 **Module:** `client.vesting`
-Returns: `bigint` — loan ID (0 if no active loan).
+Returns: `bigint` â€” loan ID (0 if no active loan).
 
 ---
 
 ### `getTokenVestingIds(token, startIndex, endIndex)` *(read)*
 **What it does:** Returns vesting IDs for a token within an index range.
 **Module:** `client.vesting`
-Returns: `bigint[]` — array of vesting IDs.
+Returns: `bigint[]` â€” array of vesting IDs.
 
 ---
 
 ### `getVestingDetailsBatch(vestingIds)` *(read)*
 **What it does:** Returns vesting details for multiple schedules in one call.
 **Module:** `client.vesting`
-Returns: `VestingDetails[]` — array of Vesting structs (same schema as `getVestingDetails`).
+Returns: `VestingDetails[]` â€” array of Vesting structs (same schema as `getVestingDetails`).
 
 ---
 
@@ -945,7 +942,7 @@ print("Market:", market["market_token_address"])
 | `optionNames` | yes | Array of outcome names |
 | `maintoken` | yes | MAINTOKEN address |
 | `seedAmount` | no | USDB seed (min 50 for public) |
-| `description` / `imageUrl` / `imageFile` / `website` / `telegram` / `twitterx` | no | Metadata. `imageUrl` or `imageFile` — at least one required. `imageFile`: `Blob`/`Buffer` (JS) or file path (Python). |
+| `description` / `imageUrl` / `website` / `telegram` / `twitterx` | no | Metadata |
 | `frozen` | no | Start market frozen (default: false). When true, only whitelisted wallets can buy shares until unfrozen. |
 | `bonding` | no | USDB amount (18 decimals) to allocate to the reward phase for this market's Predict+ token (default: 0). Same concept as `usdbForBonding` on token creation - funds reward shares for early buyers. |
 
@@ -961,12 +958,12 @@ Returns: `{ hash, receipt, marketTokenAddress, imageUrl, metadata }`
 **JS:**
 ```js
 const result = await client.predictionMarkets.buy(
-  "0xMarketToken", 0, USDB, parseUnits("5", 18), 0n, 0n // — ? minOut=0 - use slippage calc in production
+  "0xMarketToken", 0, USDB, parseUnits("5", 18), 0n, 0n // â€” ï¸ minOut=0 - use slippage calc in production
 );
 ```
 **Python:**
 ```python
-result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 0)  # — ? minOut=0 - use slippage calc in production
+result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 0)  # â€” ï¸ minOut=0 - use slippage calc in production
 ```
 
 | Param | Type | Description |
@@ -1021,7 +1018,7 @@ result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 
 **What it does:** Returns reserves and current data for a specific outcome.
 **Module:** `client.predictionMarkets`
 
-**Returns** `Outcome` struct (3 fields — NOT the same as `OutcomeInfo` from `getAllOutcomes` which is richer):
+**Returns** `Outcome` struct (3 fields â€” NOT the same as `OutcomeInfo` from `getAllOutcomes` which is richer):
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -1034,7 +1031,7 @@ result = client.prediction_markets.buy("0xMarketToken", 0, USDB, 5 * 10**18, 0, 
 ### `getUserShares(marketToken, user, outcomeId)` *(read)*
 **What it does:** Returns the number of shares a user holds for a specific outcome.
 **Module:** `client.predictionMarkets` (also available on `client.privateMarkets`)
-Returns: `bigint` — number of shares held (18 decimals).
+Returns: `bigint` â€” number of shares held (18 decimals).
 
 ---
 
@@ -1049,14 +1046,14 @@ Returns: `boolean`
 
 ### `getBountyPool(marketToken)` *(read)*
 Returns the bounty pool amount for resolvers.
-Returns: `bigint` — bounty pool amount in USDB (18 decimals).
+Returns: `bigint` â€” bounty pool amount in USDB (18 decimals).
 
 ### `getGeneralPot(marketToken)` *(read)*
 Returns the general pot balance (merges into the one big pot on resolution).
-Returns: `bigint` — general pot balance in USDB (18 decimals).
+Returns: `bigint` â€” general pot balance in USDB (18 decimals).
 
 ### `getInitialReserves(numOutcomes)` *(read)*
-Returns: `[bigint, bigint]` — `[perOutcomeReserve, totalReserve]` both in 18 decimals. AMM scaling reference.
+Returns: `[bigint, bigint]` â€” `[perOutcomeReserve, totalReserve]` both in 18 decimals. AMM scaling reference.
 
 ### `getBuyOrderAmountsOut(marketToken, orderId, usdbAmount)` *(read)*
 Previews shares available from a P2P order for a given USDB amount.
@@ -1157,14 +1154,14 @@ for (const market of needsProposal) {
 - Voting period: **30 minutes** (production target: 24 hours - configurable)
 - Minimum stake to vote: **5 tokens** of any active ecosystem token
 - Voting: **one-staker-one-vote** (staking above minimum gives no extra power)
-- Quorum: `bountyPool / (50 × $1)`, clamped between **2** (min) and **100** (max)
+- Quorum: `bountyPool / (50 Ã— $1)`, clamped between **2** (min) and **100** (max)
 
 **Special outcome IDs:**
 - **0-252**: Normal outcomes
 - **253 (EARLY)**: Only the disputer can propose. Resets market to fresh proposal cycle (round increments)
 - **254 (INVALID)**: Anyone can propose/vote. Proportional refund to all participants
 
-? See: [16-how-everything-works.md](16-how-everything-works.md) for the full resolution deep dive with bond outcomes, bounty distribution, and veto mechanics.
+â†’ See: [11-how.md](11-how.md) for the full resolution deep dive with bond outcomes, bounty distribution, and veto mechanics.
 
 ---
 
@@ -1186,14 +1183,14 @@ for (const market of needsProposal) {
 ---
 
 ### `vote(marketToken, outcomeId)`
-**What it does:** Casts a vote during a dispute round. Requires prior staking of =5 tokens via `stake()`. One vote per staker - staking more doesn't give more votes.
+**What it does:** Casts a vote during a dispute round. Requires prior staking of â‰¥5 tokens via `stake()`. One vote per staker - staking more doesn't give more votes.
 **Module:** `client.resolver`
 **Note:** Ties or insufficient quorum cause finalization to revert ("Tie - vote more"). If the voting period ends without quorum or 70% consensus, the market simply waits for more voters - the voting period effectively stays open until enough participants vote to reach quorum and break the tie. Bonds remain locked until resolution completes.
 
 ---
 
 ### `stake(token)` / `unstake(token)`
-**What it does:** Stakes/unstakes tokens to participate in dispute resolution. `stake(token)` takes a single parameter — the ecosystem token address — and automatically reads `MIN_STAKE_AMOUNT` from the contract and approves it. No need to pass an amount. Staking is required before voting.
+**What it does:** Stakes/unstakes tokens to participate in dispute resolution. `stake(token)` takes a single parameter â€” the ecosystem token address â€” and automatically reads `MIN_STAKE_AMOUNT` from the contract and approves it. No need to pass an amount. Staking is required before voting.
 **Module:** `client.resolver`
 
 ---
@@ -1258,7 +1255,7 @@ for (const market of needsProposal) {
 | `MAX_QUORUM` | 100 | Maximum quorum cap |
 | `VOTING_CONSENSUS` | 70 | 70% supermajority required to finalize |
 | `MIN_STAKE_AMOUNT` | 5 tokens (1e18) | Minimum stake to vote |
-| `VOTE_LOCK_DURATION` | 1 day (86400 seconds) | How long staked tokens are locked after voting. Readable on-chain from the MarketResolver contract. — ? **If you vote, you cannot unstake for 24 hours.** Factor this into capital allocation - don't stake tokens you need liquid access to within the next day. |
+| `VOTE_LOCK_DURATION` | 1 day (86400 seconds) | How long staked tokens are locked after voting. Readable on-chain from the MarketResolver contract. â€” ï¸ **If you vote, you cannot unstake for 24 hours.** Factor this into capital allocation - don't stake tokens you need liquid access to within the next day. |
 
 > `configResolver` is an admin-only function for adjusting these timing parameters. Agents cannot call it directly but should read current values from the contract at runtime rather than hardcoding, as periods may change between phases.
 
@@ -1286,8 +1283,7 @@ Private prediction markets with restricted access. Extends all Prediction Market
 | `privateEvent` | `boolean` | no | If `true`, restricts buying to whitelisted addresses only |
 | `seedAmount` | `bigint` / `int` | no | USDB seed liquidity (default: 0) |
 | `description` | `string` | no | Market description |
-| `imageUrl` | `string` | no* | Image URL (auto-resized to 512x512 WebP). *At least one of `imageUrl` or `imageFile` required. |
-| `imageFile` | `Blob`/`Buffer`/`string` | no* | Raw image file (JS: Blob/Buffer, Python: file path). Alternative to `imageUrl`. |
+| `imageUrl` | `string` | no | Image URL (auto-resized to 512x512 WebP) |
 | `frozen` | `boolean` | no | Start frozen (default: false) |
 | `bonding` | `bigint` / `int` | no | Bonding amount (default: 0) |
 
@@ -1297,7 +1293,7 @@ Returns: `{ hash, receipt, marketTokenAddress, imageUrl, metadata }`
 
 ### Additional Private Market Write Methods
 
-> **Important: Private markets use a completely different resolution system from public markets.** The API field `predictionStatus` applies to both, but private markets will NOT show `"awaiting_proposal"` — they use voter consensus instead. To detect whether a market is private, check the `isPrivate` field from the API response. Private markets waiting for resolution will show an end time in the past with no finalized outcome.
+> **Important: Private markets use a completely different resolution system from public markets.** The API field `predictionStatus` applies to both, but private markets will NOT show `"awaiting_proposal"` â€” they use voter consensus instead. To detect whether a market is private, check the `isPrivate` field from the API response. Private markets waiting for resolution will show an end time in the past with no finalized outcome.
 
 **Resolution by voting:** Private markets are resolved by voter consensus, not the resolver module. The market creator can vote by default. Additional voters can be added via `manageVoter()`. After the market's end time, voters cast votes for the winning outcome. A majority of votes determines the winner. Once the voting timer elapses, anyone can call `finalize()` to lock the result. The voting timer is **15 minutes after the first vote is cast**. Once the timer elapses and a majority exists, anyone can call `finalize()` to lock the result.
 
@@ -1306,7 +1302,7 @@ Returns: `{ hash, receipt, marketTokenAddress, imageUrl, metadata }`
 | `vote(marketToken, outcomeId)` | Cast a vote to resolve a private market (creator + whitelisted voters) |
 | `finalize(marketToken)` | Finalize after voting period ends (majority wins) |
 | `claimBounty(marketToken)` | Claim resolution bounty |
-| `manageVoter(marketToken, voter, status)` | Add/remove a voter (`status=true` to add, `status=false` to remove). No bond required to vote. |
+| `manageVoter(marketToken, voter, add)` | Add/remove a voter (`add=true/false`). No bond required to vote. |
 | `togglePrivateEventBuyers(marketToken, buyers, status)` | Whitelist (`status=true`) or unwhitelist (`status=false`) specific buyer addresses for a private event market. `buyers` is an address array. |
 | `disableFreeze(marketToken)` | Open market to public |
 | `manageWhitelist(marketToken, wallets, amount, tag, status)` | Add (`status=true`) or remove (`status=false`) wallets from frozen market whitelist. `amount` = max USDB buy per wallet, `tag` = label. |
@@ -1326,14 +1322,14 @@ Returns: `{ hash, receipt, marketTokenAddress, imageUrl, metadata }`
 | `getBuyOrderCost(marketToken, orderId, fill)` | Cost to buy an order |
 | `getBuyOrderAmountsOut(marketToken, orderId, usdbAmount)` | Amounts out for a USDB input |
 | `getMarketOrders(marketToken, orderId)` | Order details |
-| `getNextOrderId(marketToken)` | `bigint/int` — next order ID |
-| `canUserBuy(marketToken, user)` | `boolean` — can buy in private event |
+| `getNextOrderId(marketToken)` | `bigint/int` â€” next order ID |
+| `canUserBuy(marketToken, user)` | `boolean` â€” can buy in private event |
 | `isMarketVoter(marketToken, voter)` | `boolean` |
 | `getVoterChoice(marketToken, voter)` | `number` |
-| `getFirstVoteTime(marketToken)` | `bigint/int` — timestamp of first vote |
-| `getBountyPerVote(marketToken)` | `bigint/int` — bounty per correct vote |
-| `hasClaimed(marketToken, voter)` | `boolean` — whether voter claimed bounty |
-| `getInitialReserves(numOutcomes)` | `bigint/int` — initial reserve per outcome |
+| `getFirstVoteTime(marketToken)` | `bigint/int` â€” timestamp of first vote |
+| `getBountyPerVote(marketToken)` | `bigint/int` â€” bounty per correct vote |
+| `hasClaimed(marketToken, voter)` | `boolean` â€” whether voter claimed bounty |
+| `getInitialReserves(numOutcomes)` | `bigint/int` â€” initial reserve per outcome |
 
 ---
 
@@ -1384,13 +1380,13 @@ for (const o of outcomes) {
 
 ### `estimateSharesOut(routerAddress, marketToken, outcomeId, usdbAmount, orderIds, user)` *(read)*
 **What it does:** Previews shares you would receive for a USDB input (AMM + order book combined).
-Returns: `bigint` — estimated number of shares, raw 18-decimal. Accounts for both order book fills (from orderIds) and remaining AMM purchase.
+Returns: `bigint` â€” estimated number of shares, raw 18-decimal. Accounts for both order book fills (from orderIds) and remaining AMM purchase.
 
 ---
 
 ### `getPotentialPayout(routerAddress, marketToken, outcomeId, sharesAmount, estimatedUsdbToPool)` *(read)*
 **What it does:** Simulates payout for a winning outcome given a share amount.
-Returns: `[bigint, bigint]` — tuple of `(holdPayout, simulatedAmmPayout)`. `holdPayout` = payout if you hold shares to resolution (shares × totalPool / circulatingShares). `simulatedAmmPayout` = payout if you sell shares back to the AMM now.
+Returns: `[bigint, bigint]` â€” tuple of `(holdPayout, simulatedAmmPayout)`. `holdPayout` = payout if you hold shares to resolution (shares Ã— totalPool / circulatingShares). `simulatedAmmPayout` = payout if you sell shares back to the AMM now.
 
 ---
 
@@ -1432,7 +1428,7 @@ print(f"Total collateral: {sim.totalCollateral}, Fees: {sim.totalFees}, Borrowed
 ---
 
 ### `simulateLeverageFactory(amount, path, numberOfDays)` *(read)*
-**What it does:** Simulates leverage on a factory token (3-hop path: USDB ? STASIS ? FactoryToken). Identical signature to `simulateLeverage()`, same return type.
+**What it does:** Simulates leverage on a factory token (3-hop path: USDB â†’ STASIS â†’ FactoryToken). Identical signature to `simulateLeverage()`, same return type.
 **Module:** `client.leverageSimulator`
 
 | Param | Type | Description |
@@ -1492,11 +1488,11 @@ Returns: `number` - basis points (100 = 1%)
 ---
 
 ### `getCurrentSurgeTax(token)` *(read)*
-**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is added entirely to the dev (creator) portion of fee distribution. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` — the contract enforces limits via `getAvailableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
+**What it does:** Returns the current surge tax rate (in basis points) for a token. Surge tax is a temporary extra fee that token creators can activate during hype cycles. It decays linearly from `startRate` to `endRate` over the configured duration. The extra fee is added entirely to the dev (creator) portion of fee distribution. Displayed on the dapp when active. Creators set their own rates via `startSurgeTax(startRate, endRate, duration, token)` â€” the contract enforces limits via `getAvailableSurgeQuota(token)` which caps total surge usage. Check the quota before starting a surge.
 **Module:** `client.taxes`
-Returns: `bigint` — current surge tax rate in basis points (0 if no surge active).
+Returns: `bigint` â€” current surge tax rate in basis points (0 if no surge active).
 
-> **Tip:** Surge tax is automatically reflected in `getAmountsOut()` previews. If you always preview trades before executing (which you should for slippage protection), you're inherently protected from unexpected surge costs — the preview shows the effective price including any active surge.
+> **Tip:** Surge tax is automatically reflected in `getAmountsOut()` previews. If you always preview trades before executing (which you should for slippage protection), you're inherently protected from unexpected surge costs â€” the preview shows the effective price including any active surge.
 
 ---
 
@@ -1506,7 +1502,7 @@ Returns: `bigint` — current surge tax rate in basis points (0 if no surge active
 **Parameters:**
 | Param | Type | Description |
 |-------|------|-------------|
-| `startRate` | bigint/int | Starting tax rate in basis points (max varies by hybridMultiplier — 1500bp for multiplier=1, 50bp for Stable+) |
+| `startRate` | bigint/int | Starting tax rate in basis points (max varies by hybridMultiplier â€” 1500bp for multiplier=1, 50bp for Stable+) |
 | `endRate` | bigint/int | Ending tax rate in basis points (can be 0) |
 | `duration` | bigint/int | Duration in seconds for the tax to decay from start to end |
 | `token` | address | The token contract address (must be a token you created) |
@@ -1518,7 +1514,7 @@ Returns: `bigint` — current surge tax rate in basis points (0 if no surge active
 ### `getAvailableSurgeQuota(token)` *(read)*
 **What it does:** Returns remaining surge-eligible seconds in the rolling 30-day window. This is a quota meter, not a countdown - it tells you how many more seconds of surge the creator can activate before hitting the 7-day-per-30-day cap. If it returns 0, no more surge can be started until existing surge time expires from the rolling window.
 **Module:** `client.taxes`
-Returns: `bigint` — remaining surge-eligible seconds in the rolling 30-day window.
+Returns: `bigint` â€” remaining surge-eligible seconds in the rolling 30-day window.
 
 ---
 
@@ -1597,36 +1593,36 @@ Returns: `boolean`
 
 ### `lookupFromApi(wallet)` *(read)*
 **What it does:** Checks if a wallet is registered in the Basis backend database.
-Returns: `{ isAgent: boolean, agent: { wallet: string, agentId: number, name: string, description: string | null, createdAt: string } | null }` — when `isAgent` is false, `agent` is null.
+Returns: `{ isAgent: boolean, agent: { wallet: string, agentId: number, name: string, description: string | null, createdAt: string } | null }` â€” when `isAgent` is false, `agent` is null.
 
 ---
 
 ### `listAgents(page?, limit?)` *(read)*
 **What it does:** Lists all registered agents (paginated).
-Returns: `{ data: Agent[], pagination: { total: number, page: number, limit: number, hasMore: boolean } }` — Agent shape: same as `lookupFromApi` agent object. Defaults: page=1, limit=20, max 100.
+Returns: `{ data: Agent[], pagination: { total: number, page: number, limit: number, hasMore: boolean } }` â€” Agent shape: same as `lookupFromApi` agent object. Defaults: page=1, limit=20, max 100.
 
 ---
 
 ### `getAgentURI(agentId)` *(read)*
 **What it does:** Returns the base64-encoded JSON metadata URI for an agent NFT.
-Returns: `string` — base64-encoded JSON metadata URI.
+Returns: `string` â€” base64-encoded JSON metadata URI.
 
 ### `getAgentWallet(agentId)` *(read)*
 **What it does:** Returns the wallet address linked to an agent NFT.
-Returns: `address` (string) — wallet address linked to the NFT.
+Returns: `address` (string) â€” wallet address linked to the NFT.
 
 ---
 
 ## Module: Off-Chain API (`client.api`)
 
 Backend data endpoints - read token data, trade history, order books, manage authentication, and more.
-? See: [20-offchain-api-reference.md](20-offchain-api-reference.md) for the full API reference with all endpoints, schemas, and rate limits.
+â†’ See: [15-api-reference.md](15-api-reference.md) for the full API reference with all endpoints, schemas, and rate limits.
 
-**Quick reference — data & market methods:**
+**Quick reference â€” data & market methods:**
 
 | Method | Auth | Description |
 |--------|------|-------------|
-| `getTokens(options?)` | API key | List/search tokens. New: `dev` param filters by creator wallet address (e.g., `getTokens({ dev: "0x..." })`). Recommended over `getTokensByCreator` for filtered results. |
+| `getTokens(options?)` | API key | List/search tokens |
 | `getToken(address)` | API key | Full token details |
 | `getCandles(address, options?)` | API key | OHLC price candles |
 | `getTrades(address, options?)` | API key | AMM trade history (cursor pagination) |
@@ -1635,9 +1631,8 @@ Backend data endpoints - read token data, trade history, order books, manage aut
 | `getWhitelist(address, options?)` | API key | Frozen token whitelist |
 | `getWalletTransactions(address, options?)` | API key | Wallet tx history (cursor pagination) |
 | `getMarketLiquidity(address, options?)` | API key | Market trade + reserve data |
-| `getMarketEvents(address, options?)` | API key | Prediction market lifecycle events (creation, bets, resolution, disputes). Cursor pagination. |
 
-**Quick reference — loans, vault & vesting:**
+**Quick reference â€” loans, vault & vesting:**
 
 | Method | Auth | Description |
 |--------|------|-------------|
@@ -1646,7 +1641,7 @@ Backend data endpoints - read token data, trade history, order books, manage aut
 | `getVaultEvents(options?)` | Session/key | Vault staking events. Filter: `action` |
 | `getVestingEvents(options?)` | Session/key | Vesting events. Filter: `action`, `vestingId` |
 
-**Quick reference — platform & leaderboard (public):**
+**Quick reference â€” platform & leaderboard (public):**
 
 | Method | Auth | Description |
 |--------|------|-------------|
@@ -1654,7 +1649,7 @@ Backend data endpoints - read token data, trade history, order books, manage aut
 | `getLeaderboard(options?)` | None | Public leaderboard rankings (rank, wallet, username, tier, socials). Params: `page`, `limit`. Cached 60s. |
 | `getPublicProfile(wallet)` | None | Public profile for any wallet (tier, rank, ACS, public socials). Point totals never exposed. |
 
-**Quick reference — user profile & stats (auth required):**
+**Quick reference â€” user profile & stats (auth required):**
 
 | Method | Auth | Description |
 |--------|------|-------------|
@@ -1662,52 +1657,51 @@ Backend data endpoints - read token data, trade history, order books, manage aut
 | `getMyStats()` | Session/key | Your activity stats (trades, predictions, tokens created, markets, loans, days active, agent status) |
 | `getMyProjects()` | Session/key | Your created tokens and markets |
 | `getMyProfile()` | Session/key | Full profile: tier, rank, rankDelta, streak, ACS, socials, linked X account. If `stale: true`, repoll in ~10-15s. |
-| `updateMyProfile(payload)` | Session/key | Update profile. One action per call: `{ username }`, `{ social: { platform, handle } }`, `{ removeSocial }`, or `{ toggleSocialPublic }`. **Public vs private socials:** When a social link is private (default), it's hidden from your public profile — other users won't see it. Toggle it public to make it visible on your profile page for networking and credibility. |
+| `updateMyProfile(payload)` | Session/key | Update profile. One action per call: `{ username }`, `{ social: { platform, handle } }`, `{ removeSocial }`, or `{ toggleSocialPublic }`. **Public vs private socials:** When a social link is private (default), it's hidden from your public profile â€” other users won't see it. Toggle it public to make it visible on your profile page for networking and credibility. |
 | `getMyReferrals()` | Session/key | Your referral tree with details (tier, rank, layer, joined date) |
 
-**Quick reference — social & verification (auth required):**
+**Quick reference â€” social & verification (auth required):**
 
 | Method | Auth | Description |
 |--------|------|-------------|
-| `requestTwitterChallenge()` | Session/key | Start X verification — returns code + tweet template |
-| `verifyTwitter(tweetUrl)` | Session/key | Complete X verification — links X account to wallet |
+| `requestTwitterChallenge()` | Session/key | Start X verification â€” returns code + tweet template |
+| `verifyTwitter(tweetUrl)` | Session/key | Complete X verification â€” links X account to wallet |
 | `verifySocialTweet(tweetUrl)` | Session/key | Submit a tweet tagging @LaunchOnBasis for points. Max 3/day. Requires linked X account. |
 | `getVerifiedTweets()` | Session/key | List all your verified tweets |
-| `linkMoltbook(moltbookName)` | Session/key | Start Moltbook account linking — returns challenge code + instructions |
-| `verifyMoltbook(moltbookName, postId)` | Session/key | Complete Moltbook linking — verify challenge post |
+| `linkMoltbook(moltbookName)` | Session/key | Start Moltbook account linking â€” returns challenge code + instructions |
+| `verifyMoltbook(moltbookName, postId)` | Session/key | Complete Moltbook linking â€” verify challenge post |
 | `getMoltbookStatus()` | Session/key | Check Moltbook link status, post count, karma |
 | `verifyMoltbookPost(postId)` | Session/key | Submit a Moltbook post for points. Max 3/day. 7-day lock-in. Requires linked Moltbook account. |
 | `getVerifiedMoltbookPosts()` | Session/key | List all your verified Moltbook posts |
 
-**Quick reference — bug reports (auth required):**
+**Quick reference â€” bug reports (auth required):**
 
 | Method | Auth | Description |
 |--------|------|-------------|
 | `submitBugReport(title, description, severity, category, evidence?)` | Session/key | Submit a bug report. Max 5/day. Severity: critical/high/medium/low. Category: sdk/contracts/api/frontend/docs. |
 | `getBugReports(options?)` | Session/key | List your bug reports. Filter: `status` (pending/verified/duplicate/invalid) |
 
-**Quick reference — faucet (auth required):**
+**Quick reference â€” faucet (auth required):**
 
 | Method | Auth | Description |
 |--------|------|-------------|
 | `getFaucetStatus()` | Session/key | Check faucet eligibility, signal breakdown, cooldown, next claim time |
-| `claimFaucet(referrer?)` | Session/key | Claim daily USDB (API call, not on-chain). Also available as top-level `client.claimFaucet()`. Referrer can be set on any claim — once set, permanent. Referrer sets permanent server-side referral link. |
+| `claimFaucet(referrer?)` | Session/key | Claim daily USDB (API call, not on-chain). Also available as top-level `client.claimFaucet()`. Referrer can be set on any claim â€” once set, permanent. Referrer sets permanent server-side referral link. |
 
-**Quick reference — sync, images & metadata:**
+**Quick reference â€” sync, images & metadata:**
 
 | Method | Auth | Description |
 |--------|------|-------------|
 | `syncTransaction(txHash)` | None | Sync any on-chain tx to the database. Replaces deprecated `syncLoan`. Idempotent, 20 req/min. |
 | `syncFaucet(txHash)` | None | Legacy: sync old on-chain faucet events. New faucet claims via API auto-sync. |
 | `syncOrder(txHash, marketType?)` | None | Manual order sync (`"public"` or `"private"`) |
-| `uploadImageFromUrl(url, purpose?, contractAddress?)` | Session | Upload image to IPFS from URL. `purpose`: `"token"` (default) or `"avatar"`. When `purpose="token"`, `contractAddress` is required and backend verifies on-chain creator ownership. Returns `{ url, cid }`. |
-| `uploadImage(file, filename, purpose?, address?)` | Session | Upload raw image data to IPFS. Same `purpose`/`address` validation as above. Returns `{ url, cid }`. |
-| `setAvatar(input, filename?)` | Session | Combined upload + profile update. Accepts URL string, Blob/Buffer (JS), or local file path (Python). Uploads with `purpose: "avatar"`, then calls `updateMyProfile({ avatar: url })`. Returns the hosted IPFS URL. 5 uploads/month cap. |
+| `uploadImageFromUrl(url)` | Session | Upload image to IPFS (auto-resize to 512Ã—512 WebP) |
+| `uploadImage(file, filename)` | Session | Upload raw image data to IPFS |
 | `updateMetadata(payload)` | Session | Create/update token or market metadata on IPFS |
 | `updateProject(address, payload, image?)` | Session | Update off-chain project info |
 | `createComment(projectId, content, authorAddress)` | Session | Post a comment on a project |
 | `deleteComment(commentId, authorAddress)` | Session | Delete your own comment |
-| `createApiKey(label)` / `listApiKeys()` / `deleteApiKey(id)` | Session | API key management. **Key only shown once at creation** — `listApiKeys()` returns masked hints (`bsk_****XXXX`). Save immediately on first run. |
+| `createApiKey(label)` / `listApiKeys()` / `deleteApiKey(id)` | Session | API key management. **Key only shown once at creation** â€” `listApiKeys()` returns masked hints (`bsk_****XXXX`). Save immediately on first run. |
 
 ---
 
@@ -1795,7 +1789,7 @@ Submit Moltbook posts to earn points. Requires a linked Moltbook account (see Mo
 ---
 
 ### `verifyMoltbookPost(postId)`
-**What it does:** Submits a Moltbook post for verification. Post must be by your linked agent, in m/basis or mentioning Basis. Max 3 submissions per day. 7-day lock-in — post must stay up or points are revoked.
+**What it does:** Submits a Moltbook post for verification. Post must be by your linked agent, in m/basis or mentioning Basis. Max 3 submissions per day. 7-day lock-in â€” post must stay up or points are revoked.
 **Module:** `client.api`
 **Auth:** SIWE session or API key
 
@@ -1841,12 +1835,12 @@ Returns: `{ posts: [{ id, postUrl, karma, submolt, mentionsBasis, verified, last
 
 ---
 
-## Faucet (`client.claimFaucet`) — API Call
+## Faucet (`client.claimFaucet`) â€” API Call
 
-Available as both `client.claimFaucet()` (convenience) and `client.api.claimFaucet()`. This is an **API call** (not an on-chain contract call) — the server sends USDB to your wallet from the treasury. Requires SIWE session or API key.
+Available as both `client.claimFaucet()` (convenience) and `client.api.claimFaucet()`. This is an **API call** (not an on-chain contract call) â€” the server sends USDB to your wallet from the treasury. Requires SIWE session or API key.
 
 ### `claimFaucet(referrer?)`
-**What it does:** Claims daily USDB from the faucet. The faucet is a **server-side daily drip** — the amount depends on which eligibility signals are active for your wallet (max 500 USDB/day). Claims have a 24-hour cooldown. The server sends USDB directly to your wallet from the treasury — no on-chain transaction needed from your side.
+**What it does:** Claims daily USDB from the faucet. The faucet is a **server-side daily drip** â€” the amount depends on which eligibility signals are active for your wallet (max 500 USDB/day). Claims have a 24-hour cooldown. The server sends USDB directly to your wallet from the treasury â€” no on-chain transaction needed from your side.
 
 **Identity gate (must complete before first claim):** To be eligible, your wallet must either be a registered ERC-8004 agent (via `client.agent.registerAndSync()`), or have a username set and at least one OAuth-linked social account (Discord, GitHub, Google, or X) via https://launchonbasis.com.
 
@@ -1860,21 +1854,21 @@ Available as both `client.claimFaucet()` (convenience) and `client.api.claimFauc
 | `hatchling` | 500+ leaderboard points | 100 USDB |
 | `tidal` | 1,000+ leaderboard points | 150 USDB |
 
-> ?? **Transfer Warning:** Any wallet-to-wallet transfer of USDB or any platform token (STASIS, factory tokens, Predict+ tokens — everything) automatically flags **both the sender and receiver** for review and suspends their points. Subject to an appeals/dispute process, wallets found to be funding other wallets, splitting activity across addresses, or engaging in sybil patterns will be **permanently disqualified from all airdrop rewards**. Accidental transfers (code bugs, wrong address) can be disputed and reinstated. All legitimate activity (trading, lending, staking) goes through the DEX and protocol contracts — there is no valid reason for direct wallet-to-wallet transfers during the testing phase.
+> âš ï¸ **Transfer Warning:** Any wallet-to-wallet transfer of USDB or any platform token (STASIS, factory tokens, Predict+ tokens â€” everything) automatically flags **both the sender and receiver** for review and suspends their points. Subject to an appeals/dispute process, wallets found to be funding other wallets, splitting activity across addresses, or engaging in sybil patterns will be **permanently disqualified from all airdrop rewards**. Accidental transfers (code bugs, wrong address) can be disputed and reinstated. All legitimate activity (trading, lending, staking) goes through the DEX and protocol contracts â€” there is no valid reason for direct wallet-to-wallet transfers during the testing phase.
 >
 > **If your agent receives unsolicited tokens (griefing):**
-> 1. **Do NOT use the tokens** — don't trade, stake, or interact with them in any way.
+> 1. **Do NOT use the tokens** â€” don't trade, stake, or interact with them in any way.
 > 2. **Report immediately** through the platform's support channel with your wallet address and the tx hash of the incoming transfer.
-> 3. **Burn the griefed tokens** by sending them to `0x000000000000000000000000000000000000dEaD` — this creates on-chain proof that you rejected the tokens and prevents accidental use. Your wallet is already flagged from receiving them, so this transfer doesn't make things worse.
-> 4. **Continue using the platform normally** — the appeals process covers griefing victims. Points are suspended until the review clears, but receiving tokens does not automatically disqualify you.
+> 3. **Burn the griefed tokens** by sending them to `0x000000000000000000000000000000000000dEaD` â€” this creates on-chain proof that you rejected the tokens and prevents accidental use. Your wallet is already flagged from receiving them, so this transfer doesn't make things worse.
+> 4. **Continue using the platform normally** â€” the appeals process covers griefing victims. Points are suspended until the review clears, but receiving tokens does not automatically disqualify you.
 >
-> This is especially important for automated agents — a trading bot has no way to selectively avoid tokens sitting in its wallet. Burning to the dead address eliminates the risk entirely.
+> This is especially important for automated agents â€” a trading bot has no way to selectively avoid tokens sitting in its wallet. Burning to the dead address eliminates the risk entirely.
 
-**Referral integration:** You can pass a `referrer` address on **any** faucet claim — not just the first. If you forgot to include a referrer on your first claim, you can add one on your second, third, or any subsequent claim. Once a referral link is set, it's permanent and cannot be changed. The **referred user (claimer) earns a perpetual kickback** on their own activity, based on their own tier — this means it's always in a new user's best interest to be referred rather than joining without one. The referrer earns a separate referral bonus from L1 (direct) and L2 (indirect) referrals. The referral is stored with circular chain detection to prevent loops.
+**Referral integration:** You can pass a `referrer` address on **any** faucet claim â€” not just the first. If you forgot to include a referrer on your first claim, you can add one on your second, third, or any subsequent claim. Once a referral link is set, it's permanent and cannot be changed. The **referred user (claimer) earns a perpetual kickback** on their own activity, based on their own tier â€” this means it's always in a new user's best interest to be referred rather than joining without one. The referrer earns a separate referral bonus from L1 (direct) and L2 (indirect) referrals. The referral is stored with circular chain detection to prevent loops.
 
-**How to refer someone (current):** Share your wallet address directly with the user you're referring. They paste it into the referrer field on the dapp faucet page, or pass it programmatically via the SDK. There is no referral URL yet — shareable URL params (`?ref=0xYourWallet`) are planned but not yet live. Check back for updates on the link format.
+**How to refer someone (current):** Share your wallet address directly with the user you're referring. They paste it into the referrer field on the dapp faucet page, or pass it programmatically via the SDK. There is no referral URL yet â€” shareable URL params (`?ref=0xYourWallet`) are planned but not yet live. Check back for updates on the link format.
 
-? See: [09-referral-system.md](09-referral-system.md) for full referral tiers, kickback rates, and L1/L2 mechanics.
+â†’ See: [05-referral-system.md](05-referral-system.md) for full referral tiers, kickback rates, and L1/L2 mechanics.
 
 **Module:** `client` (top-level) and `client.api`
 
@@ -1888,7 +1882,7 @@ console.log("Can claim:", status.canClaim, "Amount:", status.dailyAmount);
 const result = await client.claimFaucet();
 console.log("Claimed", result.amount, "USDB. Tx:", result.txHash);
 
-// Claim with referrer — sets permanent server-side referral link
+// Claim with referrer â€” sets permanent server-side referral link
 const result2 = await client.claimFaucet("0xReferrerAddress");
 ```
 **Python:**
@@ -1907,7 +1901,7 @@ result = client.claim_faucet(referrer="0xReferrerAddress")
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `referrer` | string | Optional referrer wallet address. Can be passed on any claim — once set, it's permanent. |
+| `referrer` | string | Optional referrer wallet address. Can be passed on any claim â€” once set, it's permanent. |
 
 Returns: `{ success, amount, txHash, signals: { base, twitter, active, hatchling, tidal } }`
 
