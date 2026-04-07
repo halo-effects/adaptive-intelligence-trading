@@ -361,7 +361,68 @@ Here's the not-so-subtle hint the docs should convey: **the scoring system is de
 
 ---
 
-## 15. NEW: Quickstart Should Be Informative, Not Prescriptive
+## 15. NEW: DeFi Primitive Playbooks — How Each Mechanism Creates Value
+
+**The problem:** The docs describe the primitives (Stable+, Floor+, Predict+, staking, leverage, loans) but don't explain their unique mechanics or how to USE those mechanics strategically. Basis DeFi primitives are fundamentally different from traditional DeFi — an agent reading the docs today wouldn't understand WHY a Stable+ token works differently from a stablecoin, or when Floor+ leverage is most powerful, or how the one-big-pot prediction model changes strategy. Without this, agents will use Basis primitives like generic DeFi and miss the actual advantages.
+
+**What's needed:** A clear breakdown of each primitive's unique mechanics and the strategies that exploit them. This could be a new module (e.g., `23-defi-primitive-playbooks`) or integrated into the existing `03-token-value` and `08-strategies` docs.
+
+### Stable+ (Stabilized Token)
+**What makes it different:** Holders don't lose value — the price is stabilized. But the token works BEST with high turnover: frequent buying, using, and selling keeps supply low and the price increase mechanism in its sweet spot.
+
+**Strategic implications for agents:**
+- Stable+ is ideal as a **utility/payment token** — something users buy to use a service, then the agent sells to collect revenue. High turnover = healthy token.
+- NOT ideal for long-term holding (it's stabilized, not appreciating). The value is in the FLOW, not the hold.
+- Agents running subscription services, API access, or pay-per-use tools should strongly consider Stable+ — the mechanics naturally align with "buy to use, sell when done."
+- The sweet spot: enough buying pressure to keep the mechanism active, enough selling to keep supply controlled. Document the specific mechanics of what "sweet spot" means in terms of supply/price.
+
+### Floor+ (Rising Floor with Leverage)
+**What makes it different:** The floor price only goes up, never down. Near launch, this creates extreme leverage potential — the gap between market price and floor is small, so small price movements create outsized returns.
+
+**Strategic implications for agents:**
+- Floor+ is ideal for **brand/community tokens** — early supporters get natural leverage from the rising floor.
+- The launch window is critical: Floor+ tokens are most attractive to traders in the early period when floor-to-price ratio is highest. Agents should plan their marketing/community push to coincide with launch.
+- `hybridMultiplier` controls how aggressive the floor rise is — higher multiplier = faster floor appreciation = more attractive early leverage, but also higher entry cost as floor rises.
+- `startLP` sets initial liquidity depth — this affects slippage and how much volume the token can handle early on.
+- Document the exact relationship between floor, market price, and leverage ratio so agents can model their launch parameters.
+
+### Predict+ (One-Big-Pot Model)
+**What makes it different:** Unlike traditional prediction markets (order book, AMM per outcome), Basis uses a single liquidity pool model. All bets go into one pot. This means:
+- No fragmented liquidity across outcomes
+- Creator fees come from the total pot volume, not per-outcome spreads
+- Resolution pays from the pot, so market attractiveness depends on total volume, not individual outcome depth
+
+**Strategic implications for agents:**
+- The one-pot model means **market SELECTION matters more than market MAKING.** A well-chosen question that attracts volume to the pot is worth more than clever pricing of outcomes.
+- Seed amounts matter: a well-seeded market signals credibility and bootstraps initial liquidity. Minimum seeds (0/10/50 USDB by type) are just minimums — strategic seeding above minimums can attract more participation.
+- Private markets (creator-managed resolution) are powerful for agents with domain expertise — you control the outcome determination, which builds trust for future markets.
+- Mirroring Polymarket/Kalshi markets with local context or better resolution criteria is a strong strategy (documented in modules 21-22 but should be tied back to the pot mechanics).
+
+### Staking + Loans
+**What makes it different:** STASIS staking provides borrowing power through wSTASIS collateral. The loan mechanics (minimum 10 days, specific collateral ratios) create a DeFi lending primitive that agents can use for capital efficiency.
+
+**Strategic implications for agents:**
+- Agents can **leverage their idle STASIS** — stake, borrow USDB, deploy into tokens or markets, earn returns that exceed borrowing cost.
+- The 10-day minimum loan duration means this is for strategic capital deployment, not flash loans. Plan your use of borrowed capital with at least a 10-day horizon.
+- Capital Manager archetype (from `02-archetypes`) should include specific examples of staking → borrowing → deploying → repaying cycles with expected returns.
+
+### Leverage
+**What makes it different:** Leverage on Basis is tied to the loan system (10-day minimum). Combined with Floor+ mechanics (rising floor = natural downside protection), leverage positions on Floor+ tokens have a unique risk profile not found in traditional DeFi.
+
+**Strategic implications:**
+- Leverage + Floor+ near launch = amplified exposure with a rising floor as partial downside protection. This combination should be explicitly documented as a strategy.
+- The path-based routing (`[usdb, stasis, target]`) means agents need to understand the routing to build positions correctly.
+- `leverage_simulator` should be the first call before any leverage position — document it as a mandatory pre-check.
+
+**Where to add this:**
+- New module `23-defi-primitive-playbooks` (recommended — keeps the strategic depth separate from basic SDK usage)
+- OR integrate into `03-token-value` (token type mechanics) and `08-strategies` (strategic implications)
+- Cross-reference from `02-archetypes` (each archetype maps to specific primitives)
+- Reference from `llms.txt` so agents know this deep content exists
+
+---
+
+## 16. NEW: Quickstart Should Be Informative, Not Prescriptive
 
 **The problem:** The current quickstart implies a linear sequence: install → register → claim faucet → create token → trade. This leads agents to mechanically follow steps without thinking about strategy. We don't want 1000 identical tokens — we want agents who read the docs, understand the archetypes, and choose actions that match their strengths.
 
@@ -394,15 +455,16 @@ Quality creates volume. Volume creates fees. Fees create points.
 
 ## Summary — Priority Order
 
-1. **Quality over quantity framing** (prevents spam, sets right expectations from day 1)
-2. **Quickstart: informative not prescriptive** (stops at "you're funded", hands off to strategy docs)
-3. **Wei amounts warning** (every new agent will hit this)
-4. **Staking flow correction** (completely wrong in current docs)
-5. **Prediction market param names** (wrong names will cause immediate errors)
-6. **Leverage buy signature** (missing required params)
-7. **API key vs SIWE auth table** (blocks data access)
-8. **Loan minimum duration = 10 days** (undocumented)
-9. **Prediction market seed minimums** (undocumented)
-10. **Vesting time_unit values** (undocumented)
-11. **Private markets module** (undocumented)
-12. **Minor fixes** (tax rates, resolver constants, Reef sections, etc.)
+1. **The Agentic Economy + value loop** (WHY agents should build on Basis — sets the entire framing)
+2. **DeFi primitive playbooks** (HOW each mechanism creates value — closes the gap between "what it does" and "how to use it strategically")
+3. **Quickstart: informative not prescriptive** (stops at "you're funded", hands off to strategy docs)
+4. **Wei amounts warning** (every new agent will hit this)
+5. **Staking flow correction** (completely wrong in current docs)
+6. **Prediction market param names** (wrong names will cause immediate errors)
+7. **Leverage buy signature** (missing required params)
+8. **API key vs SIWE auth table** (blocks data access)
+9. **Loan minimum duration = 10 days** (undocumented)
+10. **Prediction market seed minimums** (undocumented)
+11. **Vesting time_unit values** (undocumented)
+12. **Private markets module** (undocumented)
+13. **Minor fixes** (tax rates, resolver constants, Reef sections, etc.)
