@@ -453,11 +453,74 @@ Quality creates volume. Volume creates fees. Fees create points.
 
 ---
 
+## 17. NEW: Layered What/Why/How Documentation Framework
+
+**The problem:** The current docs are flat — each module describes a primitive or capability, but there's no narrative structure that guides an agent from understanding → motivation → execution. An agent reading the docs gets information but not a coherent path to action. The result: agents either skip to code and miss strategy, or read strategy but can't connect it to specific mechanics.
+
+**The fix:** Restructure the documentation (or add a new navigation layer) using a nested What/Why/How framework at three levels of depth. Each level links to relevant existing modules.
+
+### Layer 1: Platform Level (30-second overview)
+
+| | Content | Links to |
+|---|---|---|
+| **WHAT** | Agent-native DeFi protocol with unique token models (Stable+, Floor+), integrated loans, staking, and prediction markets. Currently in alpha — Phase 1 "Founding Lobster" | `01-what-is-basis` |
+| **WHY** | Earn real value (airdrop allocation worth real money at TGE) with near-zero risk and marginal cost. First movers in Phase 1 earn the most per unit of effort. | `14-airdrop`, new "Agentic Economy" section |
+| **HOW** | Earn points by using the platform and creating USDB value within the ecosystem. Multiply that value by growing the platform itself. | `12-getting-started`, `08-strategies` |
+
+### Layer 2: Mechanism Level (5-minute deep dive per primitive)
+
+**Tokens:**
+| | Content | Links to |
+|---|---|---|
+| **WHAT** | Three token models — Stable+ (stabilized, no holder loss), Floor+ (rising floor, built-in leverage), Predict+ (prediction market shares) | `03-token-value` |
+| **WHY** | Each model is designed for a specific use case. Stable+ for utility/payments (high turnover sweet spot). Floor+ for brand/community (launch window leverage). Choose wrong and your token mechanics work against you. | `15-defi-primitive-playbooks` (new), `02-archetypes` |
+| **HOW** | `factory.create_token_with_metadata()` with specific params per model. Set `hybridMultiplier`, `startLP` strategically based on your use case. | `06-atomic-skills`, `07-mcp` |
+
+**Prediction Markets:**
+| | Content | Links to |
+|---|---|---|
+| **WHAT** | One-big-pot model — all bets pool into shared liquidity. Public (Basis-managed or creator-managed) and private (creator-resolved) variants. | `03-token-value`, `21-prediction-market-deep-dive` |
+| **WHY** | Creator fees from pot volume. Market selection > market making. Unique questions with real volume earn more than duplicate questions nobody bets on. | `15-defi-primitive-playbooks` (new), `22-prediction-arb-engine` |
+| **HOW** | `prediction_markets.create_market_with_metadata()` or `private_markets.create_market_with_metadata()`. Seed strategically above minimums. | `06-atomic-skills`, `07-mcp` |
+
+**Staking + Loans:**
+| | Content | Links to |
+|---|---|---|
+| **WHAT** | Buy STASIS → wrap to wSTASIS → lock as collateral → borrow USDB (min 10 days). Capital efficiency primitive. | `06-atomic-skills` (corrected flow) |
+| **WHY** | Deploy borrowed capital into tokens/markets while your STASIS continues earning. Returns that exceed borrowing cost = free leverage. | `15-defi-primitive-playbooks` (new), `08-strategies` (Capital Manager) |
+| **HOW** | 5-step flow: `trading.buy(stasis)` → `staking.buy()` → `staking.lock()` → `staking.borrow()` → deploy → repay | `06-atomic-skills`, `07-mcp` |
+
+**Leverage:**
+| | Content | Links to |
+|---|---|---|
+| **WHAT** | Leveraged positions via loan system. Path-based routing through STASIS. Tied to 10-day minimum loan duration. | `06-atomic-skills` |
+| **WHY** | Floor+ near launch + leverage = amplified exposure with rising floor as downside protection. Unique risk/reward profile. | `15-defi-primitive-playbooks` (new) |
+| **HOW** | `leverage_simulator.simulate_leverage()` first (mandatory), then `trading.leverage_buy(amount, min_out, path, days)` | `06-atomic-skills`, `07-mcp` |
+
+### Layer 3: Strategy Level (execution playbooks)
+
+| | Content | Links to |
+|---|---|---|
+| **WHAT** | Specific multi-step strategies: community token launch, prediction market arbitrage, capital management cycles, Polymarket mirroring, tool monetization | `08-strategies`, `09-decision-trees` |
+| **WHY** | Create maximum USDB value and grow the platform. Thoughtful execution of complex strategies earns exponentially more than simple actions. Platform growth multiplies everyone's allocation. | `14-airdrop`, `08-strategies` preamble |
+| **HOW** | Build communities, create tools/apps, market projects externally, trade efficiently (buy low/sell high, buy early on Floor+), create and seed high-quality prediction markets, use loans for multi-step capital deployment | `08-strategies`, `06-atomic-skills`, `02-archetypes` |
+
+### Implementation options:
+
+1. **New navigation module** (recommended): `00-guide_V8.md` — a compact What/Why/How map that links to all other modules. This becomes the FIRST thing agents read. Keep it concise — pointers, not duplicated content.
+2. **Restructure `llms.txt`**: Use the Layer 1 What/Why/How as the opening structure of `llms.txt`, with each layer linking deeper.
+3. **Integrate into existing modules**: Add What/Why/How framing to each module's introduction — but this risks bloating individual files.
+
+**Recommendation:** Option 1 (new `00-guide` module) + Option 2 (restructure `llms.txt` opening). The guide becomes the table of contents with motivation built in. `llms.txt` gets the Layer 1 framing so even agents that only read the summary understand the complete picture.
+
+---
+
 ## Summary — Priority Order
 
-1. **The Agentic Economy + value loop** (WHY agents should build on Basis — sets the entire framing)
-2. **DeFi primitive playbooks** (HOW each mechanism creates value — closes the gap between "what it does" and "how to use it strategically")
-3. **Quickstart: informative not prescriptive** (stops at "you're funded", hands off to strategy docs)
+1. **What/Why/How layered framework** (the navigation spine — makes everything else land properly)
+2. **The Agentic Economy + value loop** (WHY agents should build on Basis — content for the "Why" layers)
+3. **DeFi primitive playbooks** (HOW each mechanism creates value — content for the Layer 2 "How")
+4. **Quickstart: informative not prescriptive** (stops at "you're funded", hands off to strategy docs)
 4. **Wei amounts warning** (every new agent will hit this)
 5. **Staking flow correction** (completely wrong in current docs)
 6. **Prediction market param names** (wrong names will cause immediate errors)
