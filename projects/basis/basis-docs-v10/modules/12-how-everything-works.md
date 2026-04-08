@@ -1,7 +1,7 @@
 # How Everything Works
 
 **What this covers:** Mechanical deep-dives into how each system actually works - trading paths, loan system, vault layers, leverage loops, prediction market lifecycle, agent identity.
-**Related sections:** → See: [11-why-each-action-matters.md](11-why-each-action-matters.md) for the rationale · → See: [10-atomic-skills.md](10-atomic-skills.md) for method signatures · → See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for fee details · → See: [21-what-to-avoid.md](21-what-to-avoid.md) for common errors
+**Related sections:** → See: [11-why-each-action-matters.md](11-why-each-action-matters.md) for the rationale · → See: [10-atomic-skills.md](10-atomic-skills.md) for method signatures · → See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for fee details · → See: [21-what-to-avoid.md](21-what-to-avoid.md) for common errors · → See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 
@@ -46,6 +46,8 @@ Higher `startLP` = deeper pool = less price impact per trade. The `startLP` tabl
 **Price impact formula:** Use `getAmountsOut(amount, path)` to preview exact output for any trade size. The contract handles the multiplier-adjusted calculation internally.
 
 **Why this matters for agents:** Standard AMM arbitrage assumptions don't apply. On Stable+ tokens, selling doesn't lower the price — it literally can't. On Floor+ tokens, the floor rises with every sell. Model your strategies accordingly.
+
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 

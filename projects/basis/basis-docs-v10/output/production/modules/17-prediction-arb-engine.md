@@ -1,7 +1,7 @@
 # The Prediction Arb Engine
 
 **What this covers:** A cross-platform arbitrage strategy that exploits the structural payout difference between Basis prediction markets (uncapped pot) and traditional capped platforms (fixed $1 payout). Turns Basis's YES-only design into a competitive advantage by using external platforms as the NO signal layer. Applicable in Phase 3 when real capital is deployed.
-**Related sections:** → See: [15-prediction-deep-dive.md](15-prediction-deep-dive.md) for Basis market mechanics · → See: [14-strategy-playbooks.md](14-strategy-playbooks.md) for single-platform playbooks · → See: [12-how-everything-works.md](12-how-everything-works.md) for market resolution lifecycle
+**Related sections:** → See: [16-prediction-deep-dive.md](16-prediction-deep-dive.md) for Basis market mechanics · → See: [14-strategy-playbooks.md](14-strategy-playbooks.md) for single-platform playbooks · → See: [12-how-everything-works.md](12-how-everything-works.md) for market resolution lifecycle
 
 ---
 

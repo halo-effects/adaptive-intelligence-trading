@@ -1,7 +1,7 @@
 # Strategy Playbooks
 
 **What this covers:** 6 strategy playbooks with step-by-step instructions, 5 decision trees for common situations, and position sizing guidance.
-**Related sections:** → See: [10-atomic-skills.md](10-atomic-skills.md) for method signatures · → See: [17-fee-cost-reference.md](17-fee-cost-reference.md) for cost calculations · → See: [05-agent-archetypes.md](05-agent-archetypes.md) for which archetype each strategy serves · → See: [13-defi-primitive-playbooks.md](13-defi-primitive-playbooks.md) for primitive selection
+**Related sections:** → See: [10-atomic-skills.md](10-atomic-skills.md) for method signatures · → See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for cost calculations · → See: [05-agent-archetypes.md](05-agent-archetypes.md) for which archetype each strategy serves · → See: [13-defi-primitive-playbooks.md](13-defi-primitive-playbooks.md) for primitive selection · → See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 
@@ -103,7 +103,7 @@
 
 **Why this works**: Traditional platforms cap winning shares at $1. On Basis, all pools - winners, losers, and general pot - merge into one big pot on resolution, distributed proportionally to winning share holders. Uncapped. As creator, you earn 20% of all trading fees on your market forever. And the economics don't require matching the original platform's volume - the ratio determines returns, not absolute market size.
 
-→ See: [15-prediction-deep-dive.md](15-prediction-deep-dive.md) for the full comparative breakdown.
+→ See: [16-prediction-deep-dive.md](16-prediction-deep-dive.md) for the full comparative breakdown.
 
 **Method cross-references**:
 - Step 2: → see: `predictionMarkets.createMarketWithMetadata()`
@@ -136,7 +136,7 @@
 - Step 2 (STASIS collateral): → see: `staking.lock()` then → see: `staking.borrow()`
 - Step 4 (hub loan refinance): → see: `loans.extendLoan()` with `refinance=true`
 - Step 4 (vault refinance): → see: `staking.extendLoan()` with `refinance=true`
-- Optimal: extend don't re-originate - → see: [17-fee-cost-reference.md](17-fee-cost-reference.md) for cost comparison
+- Optimal: extend don't re-originate - → see: [18-fee-cost-reference.md](18-fee-cost-reference.md) for cost comparison
 
 ---
 
@@ -223,7 +223,7 @@ What do I hold?
 ```
 
 **Loan cost reminder**: 2% flat origination fee + 0.005%/day interest. Always take minimum duration (10 days) and extend as needed — never re-originate.
-→ See: [17-fee-cost-reference.md](17-fee-cost-reference.md) for total cost calculations · [20-what-to-avoid.md](20-what-to-avoid.md) for loan pitfalls
+→ See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for total cost calculations · [21-what-to-avoid.md](21-what-to-avoid.md) for loan pitfalls
 
 ---
 
@@ -276,7 +276,9 @@ Is building a network worth my time?
 
 ## Position Sizing Guidance
 
-Before entering any position, use `getAmountsOut()` to estimate price impact and size accordingly:
+Before entering any position, call `getToken(address)` (SDK) or `get_token_detail` (MCP) to understand the token you're trading. The response includes `multiplier` (volatility indicator), `liquidityUSD` (current pool depth — use this to size trades and avoid excessive slippage), and `startingLiquidityUSD` (launch LP — helps contextualize current price level). See → [19-offchain-api-reference.md](19-offchain-api-reference.md) for the full response schema.
+
+Then use `getAmountsOut()` to estimate price impact and size accordingly:
 
 ```js
 // Check how much 1% of your target position moves the price

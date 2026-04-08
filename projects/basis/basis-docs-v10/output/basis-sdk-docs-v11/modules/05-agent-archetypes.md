@@ -67,6 +67,8 @@ You don't need to pick one. Most successful agents combine several. But understa
 
 **Why this is powerful**: Most DeFi lets you trade. Basis lets you create the thing people trade. That's the difference between being a customer and being a business owner.
 
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
+
 ---
 
 ### The Capital Manager
@@ -251,3 +253,5 @@ The most successful agents operate across multiple archetypes simultaneously:
 - **Community Builder + Oracle**: Build audience around a niche, create and resolve markets in that niche, earn bounties AND community fees.
 - **Everything + Miner**: Do all of the above while maximizing airdrop points. Every action you take for any reason also earns points.
 - **Any Archetype + Super Referrer**: Layer a referral network onto whatever you're doing. Every archetype earns more with an active network underneath it. This is the one combination that improves everything — see The Super Referrer above.
+
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics

@@ -65,6 +65,8 @@ Because they're anti-rug by design. 100% elastic supply means every token in cir
 
 → **Deep dive:** [10-atomic-skills](10-atomic-skills.md) (Factory/Trading modules) · [13-defi-primitive-playbooks](13-defi-primitive-playbooks.md) (when to choose Stable+) · [17-fee-cost-reference](18-fee-cost-reference.md) (0.5% fee details) · [24-code-examples](25-code-examples.md)
 
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
+
 ---
 
 ## Floor+ Tokens
@@ -94,6 +96,8 @@ Because tokens don't die from lack of buying — they die from panic selling. On
 **As an agent:** Use the SDK to deploy, and build strategies around the floor-to-spot ratio — it's the key metric for timing entries and sizing leverage.
 
 → **Deep dive:** [10-atomic-skills](10-atomic-skills.md) (Factory module, `hybridMultiplier`) · [13-defi-primitive-playbooks](13-defi-primitive-playbooks.md) (Floor+ launch window) · [17-fee-cost-reference](18-fee-cost-reference.md) (1.5% fee, surge tax)
+
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 
@@ -132,6 +136,8 @@ Because you can play both sides independently — and both can be profitable reg
 **Resolve a market:** After end time, propose the correct outcome with a 5 USDB bond. If undisputed, you earn the bounty. If disputed, staked token holders vote — 70% supermajority decides. Special outcomes: INVALID (proportional refund) and EARLY (resets the market).
 
 → **Deep dive:** [15-prediction-deep-dive](16-prediction-deep-dive.md) (structural comparison, 7 roles) · [16-prediction-arb-engine](17-prediction-arb-engine.md) (cross-platform arb) · [13-defi-primitive-playbooks](13-defi-primitive-playbooks.md) (dual-profit structure) · [17-fee-cost-reference](18-fee-cost-reference.md) (Predict+ fees)
+
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 
@@ -351,6 +357,8 @@ Critical: warn every referral about the transfer flagging rule.
 **Factory Tokens** — User-created tokens in two types: Stable+ (elastic supply, price only up) and Floor+ (elastic supply, real price movement with rising floor). See sections above for full details.
 
 **Predict+ Tokens** — Market tokens created by prediction markets. Stable+ subtype with short lifecycle. See Predict+ section above.
+
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 

@@ -207,7 +207,7 @@ The MCP server resolves tokens intelligently:
 | `get_balances` | read | Wallet balances (USDB, STASIS, wSTASIS, factory tokens). |
 | `get_market_list` | read | List prediction markets. |
 | `get_token_list` | read | Search/list tokens. |
-| `get_token_detail` | read | Full detail for a single token. |
+| `get_token_detail` | read | Full token detail incl. `multiplier` (volatility), `liquidityUSD` (pool depth for slippage sizing), `startingLiquidityUSD` (launch LP). Call before trading. |
 | `get_price_history` | read | OHLC candles. |
 | `get_trade_history` | read | Recent trades. |
 | `get_platform_stats` | read | Platform pulse stats. |

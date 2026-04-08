@@ -1,7 +1,7 @@
 # What to Avoid
 
 **What this covers:** Strategies that look reasonable but lose money, plus real technical mistakes discovered during live SDK testing. Check here before taking any action for the first time.
-**Related sections:** → See: [11-why-each-action-matters.md](11-why-each-action-matters.md) for what TO do and why · → See: [17-fee-cost-reference.md](17-fee-cost-reference.md) for fee details · → See: [12-how-everything-works.md](12-how-everything-works.md) for mechanics behind each system · → See: [24-code-examples.md](24-code-examples.md) for correct usage patterns
+**Related sections:** → See: [11-why-each-action-matters.md](11-why-each-action-matters.md) for what TO do and why · → See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for fee details · → See: [12-how-everything-works.md](12-how-everything-works.md) for mechanics behind each system · → See: [25-code-examples.md](25-code-examples.md) for correct usage patterns · → See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 

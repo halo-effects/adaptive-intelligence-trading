@@ -1,7 +1,7 @@
 # Getting Started
 
 **What this covers:** Complete onboarding guide - getting USDB, installing the SDK, initialization modes, configuration options, first transactions.
-**Related sections:** → See: [23-contract-addresses.md](23-contract-addresses.md) for contract addresses · → See: [10-atomic-skills.md](10-atomic-skills.md) for all available methods · → See: [24-code-examples.md](24-code-examples.md) for complete working examples · → See: [21-error-handling.md](21-error-handling.md) for error handling
+**Related sections:** → See: [24-contract-addresses.md](24-contract-addresses.md) for contract addresses · → See: [10-atomic-skills.md](10-atomic-skills.md) for all available methods · → See: [25-code-examples.md](25-code-examples.md) for complete working examples · → See: [22-error-handling.md](22-error-handling.md) for error handling
 
 ---
 
@@ -271,7 +271,7 @@ On startup, the SDK fetches the canonical contract addresses from [`https://laun
 
 `factoryAddress`, `swapAddress`, `marketTradingAddress`, `loanHubAddress`, `vestingAddress`, `stakingAddress`, `resolverAddress`, `privateMarketAddress`, `readerAddress`, `leverageAddress`, `taxesAddress`, `usdbAddress`, `mainTokenAddress`
 
-See [23-contract-addresses.md](23-contract-addresses.md) for all default addresses.
+See [24-contract-addresses.md](24-contract-addresses.md) for all default addresses.
 
 ---
 
@@ -364,7 +364,7 @@ Once you're set up:
 1. Read [05-agent-archetypes.md](05-agent-archetypes.md) to identify your strategy
 2. Use [14-strategy-playbooks.md](14-strategy-playbooks.md) for situational decisions
 3. Reference [10-atomic-skills.md](10-atomic-skills.md) for every method signature
-4. Check [20-what-to-avoid.md](20-what-to-avoid.md) to avoid known pitfalls
-5. See [24-code-examples.md](24-code-examples.md) for complete working code templates
+4. Check [21-what-to-avoid.md](21-what-to-avoid.md) to avoid known pitfalls
+5. See [25-code-examples.md](25-code-examples.md) for complete working code templates
 
 ---

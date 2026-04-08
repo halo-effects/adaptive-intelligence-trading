@@ -1,7 +1,7 @@
 # Production Operations Guide
 
 **What this covers:** Running a Basis agent in production - lifecycle, health checks, error recovery, state reconstruction, RPC configuration, and monitoring.
-**Related sections:** → See: [03-getting-started.md](03-getting-started.md) for initial setup · → See: [21-error-handling.md](21-error-handling.md) for error codes · → See: [20-what-to-avoid.md](20-what-to-avoid.md) for common pitfalls · → See: [24-code-examples.md](24-code-examples.md) for bootstrap script
+**Related sections:** → See: [03-getting-started.md](03-getting-started.md) for initial setup · → See: [22-error-handling.md](22-error-handling.md) for error codes · → See: [21-what-to-avoid.md](21-what-to-avoid.md) for common pitfalls · → See: [25-code-examples.md](25-code-examples.md) for bootstrap script
 
 ---
 

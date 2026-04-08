@@ -1,7 +1,7 @@
 # Fee & Cost Master Reference
 
 **What this covers:** Complete fee reference - trading fees by token type, loan cost model, vault costs, gas estimates.
-**Related sections:** → See: [12-how-everything-works.md](12-how-everything-works.md) for mechanics · → See: [21-what-to-avoid.md](21-what-to-avoid.md) for common cost mistakes · → See: [11-why-each-action-matters.md](11-why-each-action-matters.md) for loan cost strategy
+**Related sections:** → See: [12-how-everything-works.md](12-how-everything-works.md) for mechanics · → See: [21-what-to-avoid.md](21-what-to-avoid.md) for common cost mistakes · → See: [11-why-each-action-matters.md](11-why-each-action-matters.md) for loan cost strategy · → See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 

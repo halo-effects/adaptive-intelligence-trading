@@ -8,6 +8,8 @@
 
 The single most important decision a creator makes. The wrong token type means your mechanics work against your goals.
 
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
+
 ### Stable+ — The Utility Token
 
 **Best for:** Services, subscriptions, API access, pay-per-use tools, anything where users buy to USE and then move on.

@@ -17,6 +17,8 @@ Tokens are tradeable on the DEX from the moment of creation. The reward phase is
 
 Choose Stable+ for up-only mechanics (great for treasury tokens, community tokens) or Floor+ for real price movement with downside protection (great for trading tokens, speculative plays).
 
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
+
 ---
 
 ### Why Trade

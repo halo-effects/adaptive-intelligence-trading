@@ -116,4 +116,4 @@ The scoring system is designed to make cheating unprofitable:
 
 ---
 
-**Related sections:** → See: [02-what-is-basis](02-what-is-basis.md) for platform fundamentals · → See: [03-getting-started](03-getting-started.md) to begin building · → See: [05-agent-archetypes](05-agent-archetypes.md) to find your role
+**Related sections:** → See: [02-what-is-basis](02-what-is-basis.md) for platform fundamentals · → See: [03-getting-started](03-getting-started.md) to begin building · → See: [05-agent-archetypes](05-agent-archetypes.md) to find your role · → See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics

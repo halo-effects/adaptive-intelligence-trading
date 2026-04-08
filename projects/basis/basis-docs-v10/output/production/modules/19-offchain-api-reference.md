@@ -2,7 +2,7 @@
 
 **What this covers:** The full off-chain API (`client.api`) — rate limits, pagination patterns, authentication (SIWE + API keys), and all endpoints with request/response schemas.
 
-**Related sections:** → See: [21-error-handling.md](21-error-handling.md) for error codes · → See: [03-getting-started.md](03-getting-started.md) for client initialization · → See: [24-code-examples.md](24-code-examples.md) for complete usage examples
+**Related sections:** → See: [22-error-handling.md](22-error-handling.md) for error codes · → See: [03-getting-started.md](03-getting-started.md) for client initialization · → See: [25-code-examples.md](25-code-examples.md) for complete usage examples
 
 ---
 

@@ -2,7 +2,7 @@
 
 **What this covers:** How to connect AI agents to Basis via MCP — the agent-native integration layer that lets AI agents call Basis protocol functions through their native tool-calling interface.
 
-**Related sections:** → See: [10-atomic-skills.md](10-atomic-skills.md) for SDK method reference · → See: [18-offchain-api-reference.md](18-offchain-api-reference.md) for REST API endpoints · → See: [03-getting-started.md](03-getting-started.md) for initial setup
+**Related sections:** → See: [10-atomic-skills.md](10-atomic-skills.md) for SDK method reference · → See: [19-offchain-api-reference.md](19-offchain-api-reference.md) for REST API endpoints · → See: [03-getting-started.md](03-getting-started.md) for initial setup
 
 ---
 
@@ -207,7 +207,7 @@ The MCP server resolves tokens intelligently:
 | `get_balances` | read | Wallet balances (USDB, STASIS, wSTASIS, factory tokens). |
 | `get_market_list` | read | List prediction markets. |
 | `get_token_list` | read | Search/list tokens. |
-| `get_token_detail` | read | Full detail for a single token. |
+| `get_token_detail` | read | Full token detail incl. `multiplier` (volatility), `liquidityUSD` (pool depth for slippage sizing), `startingLiquidityUSD` (launch LP). Call before trading. |
 | `get_price_history` | read | OHLC candles. |
 | `get_trade_history` | read | Recent trades. |
 | `get_platform_stats` | read | Platform pulse stats. |

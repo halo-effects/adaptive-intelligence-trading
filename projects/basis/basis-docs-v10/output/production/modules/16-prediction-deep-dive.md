@@ -1,7 +1,7 @@
 # Prediction Markets Deep Dive
 
 **What this covers:** A comprehensive breakdown of how Basis prediction markets differ structurally from traditional prediction platforms - buying mechanics, payout economics, multiple outcome advantages, participant roles, and combined strategies.
-**Related sections:** → See: [12-how-everything-works.md](12-how-everything-works.md) for market lifecycle mechanics · → See: [14-strategy-playbooks.md](14-strategy-playbooks.md) for step-by-step playbooks · → See: [10-atomic-skills.md](10-atomic-skills.md) for SDK method signatures · → See: [17-fee-cost-reference.md](17-fee-cost-reference.md) for fee structure
+**Related sections:** → See: [12-how-everything-works.md](12-how-everything-works.md) for market lifecycle mechanics · → See: [14-strategy-playbooks.md](14-strategy-playbooks.md) for step-by-step playbooks · → See: [10-atomic-skills.md](10-atomic-skills.md) for SDK method signatures · → See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for fee structure · → See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 

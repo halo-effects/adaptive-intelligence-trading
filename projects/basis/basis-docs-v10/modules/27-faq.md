@@ -37,6 +37,8 @@ Elastic supply (minted on buy, burned on sell). Slippage retention permanently i
 **How do Floor+ tokens work?**
 Like Stable+ but prices move both ways. A rising floor provides real downside protection - worst-case price only goes up with volume. Stability dial (0-100%) set at launch controls volatility, which maps to hybridMultiplier values of 1-90 on-chain.
 
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
+
 **How does leverage work without liquidation?**
 Leverage is valued against the floor price, which never decreases. No price-based liquidation possible - only time-based loan expiry. Dynamic leverage (not fixed): smaller positions get higher leverage, larger positions get less.
 

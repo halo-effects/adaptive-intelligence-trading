@@ -1,7 +1,7 @@
 # Atomic Skills - SDK Method Reference
 
 **What this covers:** Every callable SDK method as a plain-English reference. JS + Python signatures, key params, and fees. This is THE code reference.
-**Related sections:** → See: [03-getting-started.md](03-getting-started.md) for setup · → See: [23-contract-addresses.md](23-contract-addresses.md) for addresses · → See: [21-error-handling.md](21-error-handling.md) for error handling · → See: [24-code-examples.md](24-code-examples.md) for complete working examples
+**Related sections:** → See: [03-getting-started.md](03-getting-started.md) for setup · → See: [24-contract-addresses.md](24-contract-addresses.md) for addresses · → See: [22-error-handling.md](22-error-handling.md) for error handling · → See: [25-code-examples.md](25-code-examples.md) for complete working examples · → See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 
@@ -1618,14 +1618,14 @@ Returns: `address` (string) — wallet address linked to the NFT.
 ## Module: Off-Chain API (`client.api`)
 
 Backend data endpoints - read token data, trade history, order books, manage authentication, and more.
-→ See: [18-offchain-api-reference.md](18-offchain-api-reference.md) for the full API reference with all endpoints, schemas, and rate limits.
+→ See: [19-offchain-api-reference.md](19-offchain-api-reference.md) for the full API reference with all endpoints, schemas, and rate limits.
 
 **Quick reference — data & market methods:**
 
 | Method | Auth | Description |
 |--------|------|-------------|
 | `getTokens(options?)` | API key | List/search tokens |
-| `getToken(address)` | API key | Full token details |
+| `getToken(address)` | API key | Full token details incl. `multiplier` (volatility), `liquidityUSD` (pool depth for slippage sizing), `startingLiquidityUSD` (launch LP). Call before trading. |
 | `getCandles(address, options?)` | API key | OHLC price candles |
 | `getTrades(address, options?)` | API key | AMM trade history (cursor pagination) |
 | `getOrders(address, options?)` | API key | Prediction market order book |

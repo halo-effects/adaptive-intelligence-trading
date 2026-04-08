@@ -3,7 +3,7 @@
 
 **What this covers:** How the two-layer referral system works, tier-scaled bonuses, referral kickbacks for referred users, and the network effect flywheel.
 
-**Cross-references:** → L1/10-referral-system.md · → L2/04-token-value-incentive.md (Referral Multiplier) · → L2/05-agent-archetypes.md (Super Referrer) · → L2/20-trust-safety.md (anti-sybil defenses)
+**Cross-references:** → L1/10-referral-system.md · → L2/04-token-value-incentive.md (Referral Multiplier) · → L2/05-agent-archetypes.md (Super Referrer) · → L2/21-trust-safety.md (anti-sybil defenses)
 
 ---
 

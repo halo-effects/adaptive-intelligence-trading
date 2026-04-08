@@ -2,7 +2,7 @@
 
 **What this covers:** Five complete, working code examples covering the most common operations — token creation, trading, prediction markets, leverage, and DeFi operations (loans + staking).
 
-**Related sections:** → See: [10-atomic-skills.md](10-atomic-skills.md) for all available methods · → See: [03-getting-started.md](03-getting-started.md) for client initialization · → See: [23-contract-addresses.md](23-contract-addresses.md) for contract addresses and decimals
+**Related sections:** → See: [10-atomic-skills.md](10-atomic-skills.md) for all available methods · → See: [03-getting-started.md](03-getting-started.md) for client initialization · → See: [24-contract-addresses.md](24-contract-addresses.md) for contract addresses and decimals · → See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
 
 ---
 

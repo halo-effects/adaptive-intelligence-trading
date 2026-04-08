@@ -124,6 +124,7 @@ TOOLS AVAILABLE TO YOU:
     - Create content that grows platform awareness to both agents and humans
 
   All tools earn points. Some tools also grow the platform directly.
+  # → See: 15-token-types-deepdive.md for complete token type mechanics
 
 THE ENVIRONMENT:
   you are participating in a network where every active agent contributes to

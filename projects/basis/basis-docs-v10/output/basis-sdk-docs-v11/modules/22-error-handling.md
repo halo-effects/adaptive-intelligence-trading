@@ -2,7 +2,7 @@
 
 **What this covers:** Contract revert reasons, API error codes, non-fatal warnings, and transaction sync behavior.
 
-**Related sections:** → See: [18-offchain-api-reference.md](18-offchain-api-reference.md) for full API error codes · → See: [24-code-examples.md](24-code-examples.md) for try/catch patterns in context
+**Related sections:** → See: [19-offchain-api-reference.md](19-offchain-api-reference.md) for full API error codes · → See: [25-code-examples.md](25-code-examples.md) for try/catch patterns in context
 
 ---
 

@@ -2,7 +2,7 @@
 
 **What this covers:** Frequently asked questions about the Basis platform - blockchain, token mechanics, leverage, rewards, and agent identity.
 
-**Related sections:** → See: [02-what-is-basis.md](02-what-is-basis.md) for platform fundamentals · → See: [22-trust-safety.md](22-trust-safety.md) for ACS and The Reef details · → See: [17-fee-cost-reference.md](17-fee-cost-reference.md) for fee details
+**Related sections:** → See: [02-what-is-basis.md](02-what-is-basis.md) for platform fundamentals · → See: [23-trust-safety.md](23-trust-safety.md) for ACS and The Reef details · → See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for fee details
 
 ---
 
@@ -20,7 +20,7 @@ Vault yield is variable - it depends on total platform trading volume (more volu
 
 **What should I avoid doing on Basis?**
 
-See [20-what-to-avoid.md](20-what-to-avoid.md) for 12 common pitfalls covering leverage, loans, trading, prediction markets, vault staking, and general anti-patterns - each with an explanation of why it loses money.
+See [21-what-to-avoid.md](21-what-to-avoid.md) for 12 common pitfalls covering leverage, loans, trading, prediction markets, vault staking, and general anti-patterns - each with an explanation of why it loses money.
 
 **Can anyone participate?**
 Yes - human or agent. Connect a wallet and you're in. No KYC, no gatekeeping. To claim USDB from the faucet, you need an identity: either register as an ERC-8004 agent, or set a username and link at least one social account (Discord, GitHub, Google, or X).
@@ -37,11 +37,13 @@ Elastic supply (minted on buy, burned on sell). Slippage retention permanently i
 **How do Floor+ tokens work?**
 Like Stable+ but prices move both ways. A rising floor provides real downside protection - worst-case price only goes up with volume. Stability dial (0-100%) set at launch controls volatility, which maps to hybridMultiplier values of 1-90 on-chain.
 
+→ See: [15-token-types-deepdive.md](15-token-types-deepdive.md) for complete token type mechanics
+
 **How does leverage work without liquidation?**
 Leverage is valued against the floor price, which never decreases. No price-based liquidation possible - only time-based loan expiry. Dynamic leverage (not fixed): smaller positions get higher leverage, larger positions get less.
 
 **How do Basis prediction markets compare to traditional platforms like Polymarket or Kalshi?**
-Structurally different in three key ways: (1) Instant buying via AMM - no counterparty required, every market has liquidity from creation. (2) Uncapped payouts - all pools (winners + losers + general pot) merge into one big pot on resolution, distributed proportionally to winning share holders, instead of a fixed $1/share. (3) Multiple roles - you can be the bettor, trader, token holder, creator, resolver, or leveraged player on the same market. → See: [15-prediction-deep-dive.md](15-prediction-deep-dive.md) for the full breakdown.
+Structurally different in three key ways: (1) Instant buying via AMM - no counterparty required, every market has liquidity from creation. (2) Uncapped payouts - all pools (winners + losers + general pot) merge into one big pot on resolution, distributed proportionally to winning share holders, instead of a fixed $1/share. (3) Multiple roles - you can be the bettor, trader, token holder, creator, resolver, or leveraged player on the same market. → See: [16-prediction-deep-dive.md](16-prediction-deep-dive.md) for the full breakdown.
 
 **Do I need to wait for more volume on Basis to see better payouts?**
 No. The payout ratio depends on the split between winning and losing pools, not absolute volume. A $1M market with a 70/30 split pays winners the same relative return as a $100M market with the same split. The economics are superior from trade one.
