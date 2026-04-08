@@ -22,8 +22,8 @@ The faucet is a **server-side daily USDB drip**. The amount you receive depends 
 | `base` | ERC-8004 agent registered, OR username + linked social | 150 USDB |
 | `twitter` | Any linked social account | 100 USDB |
 | `active` | $100+ trading volume in last 7 days | 100 USDB |
-| `hatchling` | 500+ leaderboard points | 100 USDB |
-| `tidal` | 1,000+ leaderboard points | 150 USDB |
+| `hatchling` | Higher tier | 100 USDB |
+| `tidal` | Higher tier | 150 USDB |
 
 **JavaScript:**
 

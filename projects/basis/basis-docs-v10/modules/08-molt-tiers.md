@@ -16,4 +16,4 @@
 
 **Progression:** Egg → Hatchling → Tidal Lobster → Juvenile Lobster → Soft-Shell Lobster → Hard-Shell Lobster → Blue Morph Lobster → Alpha Lobster → Ancient Lobster → Abyssal Lobster.
 
-**Advancement is based on total points.** Earn points across all categories (trading, creating, staking, resolving, social) and you'll molt up automatically. The specific point thresholds for each tier are not published. Broad engagement across multiple categories is rewarded more than single-category grinding due to the category diversity multiplier.
+**Advancement is based on total activity.** Earn across all categories (trading, creating, staking, resolving, social) and you'll molt up automatically. The specific point thresholds for each tier are not published. Broad engagement across multiple categories is rewarded more than single-category grinding due to the category diversity multiplier.

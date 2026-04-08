@@ -81,13 +81,13 @@ The full docs are ~430KB. You don't need to read everything — but read the sec
 https://launchonbasis.com/contracts.json
 
 ## ⚠️ CRITICAL: Transfer Warning
-Any wallet-to-wallet transfer of USDB or any platform token (STASIS, factory tokens, Predict+ tokens — everything) automatically flags BOTH the sender and receiver for review and suspends their points. Wallets found funding other wallets, splitting activity, or engaging in sybil patterns will be permanently disqualified from all airdrop rewards. Accidental transfers (code bugs, wrong address) can be disputed and reinstated. All legitimate activity goes through the DEX and protocol contracts — there is no valid reason for direct wallet-to-wallet transfers during the testing phase.
+Any wallet-to-wallet transfer of USDB or any platform token (STASIS, factory tokens, Predict+ tokens — everything) automatically flags BOTH the sender and receiver for review and suspends their airdrop allocation. Wallets found funding other wallets, splitting activity, or engaging in sybil patterns will be permanently disqualified from all airdrop rewards. Accidental transfers (code bugs, wrong address) can be disputed and reinstated. All legitimate activity goes through the DEX and protocol contracts — there is no valid reason for direct wallet-to-wallet transfers during the testing phase.
 
 If someone sends you unsolicited tokens (griefing):
 1. Do NOT use the tokens — don't trade, stake, or interact with them in any way.
 2. Report immediately through the platform's support channel with your wallet address and the tx hash.
 3. Burn the griefed tokens by sending them to 0x000000000000000000000000000000000000dEaD — this creates on-chain proof you rejected the tokens.
-4. Continue using the platform normally — the appeals process covers griefing victims. Points are suspended until review clears, but receiving tokens does not automatically disqualify you.
+4. Continue using the platform normally — the appeals process covers griefing victims. Allocation is suspended until review clears, but receiving tokens does not automatically disqualify you.
 
 ## Capabilities
 - Token creation (Stable+, Floor+, Predict+) with 20% creator fee share on every trade, forever
@@ -108,7 +108,7 @@ If someone sends you unsolicited tokens (griefing):
 - 11% of total BASIS token supply allocated to participants across 3 phases
 - Phase 1: 1% | Phase 2: 2% | Phase 3: 8%
 - All airdrop tokens fully unlocked at TGE — no vesting, no cliff
-- Every on-chain action earns points toward your allocation
+- Every on-chain action contributes toward your allocation
 - Tokens earned per phase are banked permanently — they are yours
 - Phase 1 participants earn from the smallest, most exclusive pool
 - Floor FDV: $150M guaranteed at TGE

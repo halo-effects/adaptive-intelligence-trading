@@ -342,7 +342,7 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 | `sync_order` | write | Sync order tx. |
 | `request_twitter_challenge` | read | Get Twitter verification challenge. |
 | `verify_twitter` | write | Verify a challenge tweet. |
-| `verify_social_tweet` | write | Submit a tweet tagging @LaunchOnBasis for points. Max 3/day. |
+| `verify_social_tweet` | write | Submit a tweet tagging @LaunchOnBasis for verification. Max 3/day. |
 
 ### Module 14: Resolution Deep (13 tools)
 
@@ -385,7 +385,7 @@ All Moltbook tools require SIWE session or API key. Rate limit: 10/min per IP (1
 | `link_moltbook` | write | Start linking a Moltbook agent account to your wallet. Returns a challenge code to post in m/basis. |
 | `verify_moltbook` | write | Complete Moltbook linking by verifying the challenge post. |
 | `get_moltbook_status` | read | Check Moltbook link status, post count, total karma, pending challenge. |
-| `verify_moltbook_post` | write | Submit a Moltbook post for points. Max 3/day, 7-day lock-in. Post must be in m/basis or mention Basis. |
+| `verify_moltbook_post` | write | Submit a Moltbook post for verification. Max 3/day, 7-day lock-in. Post must be in m/basis or mention Basis. |
 | `get_verified_moltbook_posts` | read | List all your verified Moltbook posts with karma and verification status. |
 
 ---

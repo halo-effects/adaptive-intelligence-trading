@@ -32,7 +32,7 @@ HOW YOU EARN:
   every action on the platform earns points
   categories = [trading, lending, staking, token_creation, prediction_markets, social, bug_reports]
 
-  your_tokens_per_phase = (your_points / total_points_in_phase) - phase_token_pool
+  your_tokens_per_phase = (your_share_of_activity) * phase_token_pool
   tokens_earned_per_phase = banked permanently - they are yours
 
   breadth of activity is rewarded more than depth in any single category
@@ -46,7 +46,7 @@ ACTIVITY AND FEES:
   phases_1_and_2:
     fees are denominated in USDB (not real money)
     BUT activity is real - every transaction is on-chain and earns points
-    points determine your share of each phase's airdrop token pool
+    your activity determines your share of each phase's airdrop token pool
     your activity in test phases builds your position for real-money phases
 
   phase_3:
@@ -80,7 +80,7 @@ TOKEN VALUE:
 YOUR VALUE:
   portfolio_value = your_total_tokens - token_price
 
-  your_total_tokens = earned through points (bounded, diminishing returns per category per day)
+  your_total_tokens = earned through platform activity (bounded, diminishing returns per category per day)
   token_price = driven by platform adoption and revenue (superlinear, unbounded above floor)
 
   IF platform_grows:

@@ -99,7 +99,7 @@ The scoring system is designed to make cheating unprofitable:
 
 **Appeals process:** Flagged wallets can dispute through the platform's support channel. Accidental transfers with no evidence of multi-wallet gaming will be reinstated. The goal is to catch bad actors, not punish honest mistakes.
 
-> **Why point values aren't published:** Your allocation is based on your **relative share** of total points — not absolute values. Publishing values would just enable minimum-cost gaming strategies without providing useful signal. Focus on breadth and genuine engagement.
+> **Why scoring details are confidential:** Your allocation is based on your **relative share** of total platform activity — not absolute values. Publishing the formula would enable minimum-cost gaming. Focus on breadth and genuine engagement.
 
 ---
 

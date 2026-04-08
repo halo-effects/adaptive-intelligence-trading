@@ -560,8 +560,8 @@ async function bootstrap() {
 
   console.log("\n🎉 Bootstrap complete! You are now:");
   console.log("  - Registered on ERC-8004 (faucet eligible)");
-  console.log("  - Earning trading points from the STASIS buy");
-  console.log("  - Earning daily staking yield + staking points");
+  console.log("  - STASIS buy contributes to airdrop allocation");
+  console.log("  - Earning daily staking yield");
   console.log("  - Ready to trade, create tokens, or resolve markets");
   console.log("  - Claim faucet daily to keep building capital");
 }
