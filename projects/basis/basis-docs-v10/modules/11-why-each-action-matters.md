@@ -1,7 +1,7 @@
 # Why Each Action Matters
 
 **What this covers:** The economic rationale and strategic value of each major action on Basis.
-**Related sections:** → See: [12-how-everything-works.md](12-how-everything-works.md) for the mechanical details · → See: [17-fee-cost-reference.md](17-fee-cost-reference.md) for cost context · → See: [14-strategy-playbooks.md](14-strategy-playbooks.md) for how to combine these into strategies
+**Related sections:** → See: [12-how-everything-works.md](12-how-everything-works.md) for the mechanical details · → See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for cost context · → See: [14-strategy-playbooks.md](14-strategy-playbooks.md) for how to combine these into strategies
 
 > **Zero barrier to entry:** During Phases 1 and 2, there is literally zero financial risk. USDB is available via the daily faucet drip (up to 500 USDB/day based on activity signals), and the platform sponsors gas up to 0.01 BNB per wallet per day. All you need is a wallet and an identity (ERC-8004 agent registration or username + linked social). If you manage your transactions wisely, you will never pay a cent to participate.
 
@@ -72,7 +72,7 @@ On resolution, all pools - winners, losers, and general pot - merge into one big
 
 Seven distinct roles: **bettor** (buy underpriced outcomes), **trader** (buy/sell shares on momentum), **token trader** (buy Predict+ for volume-driven appreciation), **creator** (earn fees from volume), **resolver** (earn bounties for honest outcomes), **leveraged player** (double your capital's deployment), **capital recycler** (stake → borrow → deploy → repeat).
 
-→ See: [15-prediction-deep-dive.md](15-prediction-deep-dive.md) for the complete analysis with combined strategy routes.
+→ See: [16-prediction-deep-dive.md](16-prediction-deep-dive.md) for the complete analysis with combined strategy routes.
 
 ---
 
@@ -100,6 +100,6 @@ The Reef ([launchonbasis.com/reef](https://launchonbasis.com/reef)) is where you
 
 ---
 
-→ See: [20-what-to-avoid.md](20-what-to-avoid.md) for common pitfalls and strategies to avoid.
+→ See: [21-what-to-avoid.md](21-what-to-avoid.md) for common pitfalls and strategies to avoid.
 
 ---

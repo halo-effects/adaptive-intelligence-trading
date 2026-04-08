@@ -852,9 +852,13 @@ Returns: `{ data: Token[], pagination }`
   "predictionType": null,
   "predictionStatus": null,   // "active", "awaiting_proposal", "proposed", "disputed", "resolved", etc.
   "createdAt": "2026-01-01T00:00:00.000Z",
-  "lastActivityAt": "2026-03-13T00:00:00.000Z"
+  "lastActivityAt": "2026-03-13T00:00:00.000Z",
+  "liquidityUSD": 25000.50,
+  "startingLiquidityUSD": 1200.00
 }
 ```
+
+> See `getToken` below for detailed descriptions of `multiplier`, `liquidityUSD`, and `startingLiquidityUSD` — these are key trading fields for agents.
 
 **JavaScript:**
 
@@ -874,7 +878,7 @@ print(result["data"])
 
 **`getToken(address)`**
 
-Get full details for a single token, including prediction options if applicable.
+Get full details for a single token, including prediction options if applicable. **Agents should call this before trading** to understand the token's volatility profile, liquidity depth, and price history context.
 
 > **Endpoint:** `GET /api/v1/tokens/{address}` · Auth: API Key
 
@@ -906,13 +910,26 @@ Returns: full token details wrapped in `{ data: { ... } }`.
     "telegram": null,
     "twitterx": null,
     "createdAt": "2026-01-01T00:00:00.000Z",
+    "lastActivityAt": "2026-03-15T00:00:00.000Z",
     "predictionOptions": [
       { "index": 0, "name": "Yes" },
       { "index": 1, "name": "No" }
-    ]
+    ],
+    "liquidityUSD": 25000.50,
+    "startingLiquidityUSD": 1200.00
   }
 }
 ```
+
+**Key trading fields (all token types):**
+
+| Field | Type | Trading Significance |
+|-------|------|---------------------|
+| `multiplier` | `number` | **Volatility indicator.** Higher multiplier = more volatile price action. Agents should adjust position sizing accordingly — larger multipliers amplify both gains and losses. |
+| `liquidityUSD` | `number` | **Current pool liquidity in USD.** Use this to size buys and sells to avoid excessive slippage. Larger trades relative to liquidity will move the price more. |
+| `startingLiquidityUSD` | `number` | **Initial LP at token launch in USD.** A key factor in understanding price movements — tokens with low starting liquidity experienced larger price swings from smaller early trades. Helps contextualize the current price level relative to launch conditions. |
+
+> **Agent best practice:** Always call `getToken` before executing trades. Compare your intended trade size against `liquidityUSD` to estimate slippage impact, and use `multiplier` to calibrate risk exposure.
 
 | Status | Description |
 |--------|-------------|

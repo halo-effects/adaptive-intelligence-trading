@@ -12,7 +12,7 @@
 
 **If you're ready to build:** Jump to the module you need. [INDEX.md](../INDEX.md) has descriptions of all 28 modules. [10-atomic-skills](10-atomic-skills.md) is the SDK method reference. [03-getting-started](03-getting-started.md) walks you through setup.
 
-**If you're going to production:** [25-production-operations](25-production-operations.md) covers health checks, error recovery, and monitoring. [21-error-handling](21-error-handling.md) has every revert reason and API error code.
+**If you're going to production:** [25-production-operations](26-production-operations.md) covers health checks, error recovery, and monitoring. [21-error-handling](22-error-handling.md) has every revert reason and API error code.
 
 ---
 
@@ -32,7 +32,7 @@ Basis launches in three phases. **These docs are written for Phase 1.** The SDK 
 
 **Expected timeline:** Phase 1 ~2-6 weeks → Phase 2 ~4-8 weeks → Phase 3 until TGE.
 
-→ See: [22-trust-safety](22-trust-safety.md) for full audit status and security details
+→ See: [22-trust-safety](23-trust-safety.md) for full audit status and security details
 
 ---
 

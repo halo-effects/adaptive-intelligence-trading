@@ -20,7 +20,8 @@ Write-Host "=== Basis SDK Docs Build ($Version) ===" -ForegroundColor Cyan
 Write-Host "[1/4] Building INDEX.md..."
 
 $indexDesc = [System.IO.File]::ReadAllText((Join-Path $root "INDEX_DESCRIPTIONS.md"), [System.Text.Encoding]::UTF8)
-$indexContent = $indexDesc -replace "^# INDEX_DESCRIPTIONS.*$", "# INDEX — Basis SDK Documentation" -split "`n" -join "`n"
+$emDash = [char]0x2014
+$indexContent = $indexDesc -replace "^# INDEX_DESCRIPTIONS.*$", "# INDEX $emDash Basis SDK Documentation" -split "`n" -join "`n"
 # Replace the description line
 $indexLines = $indexContent -split "`n"
 for ($i = 0; $i -lt $indexLines.Count; $i++) {
@@ -47,7 +48,7 @@ $modules = Get-ChildItem $modulesDir -Filter "*.md" |
     Sort-Object Name
 
 $sb = New-Object System.Text.StringBuilder
-[void]$sb.AppendLine("# Basis SDK Documentation — COMPLETE")
+[void]$sb.AppendLine("# Basis SDK Documentation $emDash COMPLETE")
 [void]$sb.AppendLine()
 $dateStr = Get-Date -Format "yyyy-MM-dd HH:mm"
 [void]$sb.AppendLine("_All $($modules.Count) modules concatenated. Generated $dateStr._")
@@ -77,34 +78,56 @@ Write-Host "[3/4] Building COMPLETE_INDEX.md..."
 
 $lines = $completeText -split "`n"
 $ci = New-Object System.Text.StringBuilder
-[void]$ci.AppendLine("# COMPLETE_INDEX — Line References")
+[void]$ci.AppendLine("# COMPLETE_INDEX $emDash Line References")
 [void]$ci.AppendLine()
-[void]$ci.AppendLine("_Jump to any module section within [COMPLETE.md](COMPLETE.md) by line number._")
+[void]$ci.AppendLine("_Comprehensive index of all modules, sections, and sub-sections within [COMPLETE.md](COMPLETE.md) by line number._")
 [void]$ci.AppendLine()
-[void]$ci.AppendLine("| Module | Line | Description |")
-[void]$ci.AppendLine("|--------|------|-------------|")
 
-$moduleDescriptions = @{}
-foreach ($mod in $modules) {
-    $modContent = [System.IO.File]::ReadAllText($mod.FullName, [System.Text.Encoding]::UTF8)
-    $firstHeading = ($modContent -split "`n" | Where-Object { $_ -match "^#\s" } | Select-Object -First 1)
-    if ($firstHeading) {
-        $moduleDescriptions[$mod.BaseName] = ($firstHeading -replace "^#+\s*", "").Trim()
-    } else {
-        $moduleDescriptions[$mod.BaseName] = $mod.BaseName
-    }
-}
+$currentModule = $null
+$inCodeBlock = $false
 
 for ($i = 0; $i -lt $lines.Count; $i++) {
-    if ($lines[$i] -match "^<!-- section:(.+?) -->") {
-        $modName = $matches[1]
-        $lineNum = $i + 1
-        $desc = $moduleDescriptions[$modName]
-        if (-not $desc) { $desc = $modName }
-        [void]$ci.AppendLine("| ``$modName`` | $lineNum | $desc |")
+    $line = $lines[$i].TrimEnd()
+    $lineNum = $i + 1
+
+    # Track code blocks to avoid indexing headings inside backtick fences
+    if ($line -match '^```') {
+        $inCodeBlock = -not $inCodeBlock
+        continue
+    }
+    if ($inCodeBlock) { continue }
+
+    # Module section marker
+    if ($line -match '^<!-- section:(.+?) -->') {
+        $currentModule = $matches[1]
+        [void]$ci.AppendLine()
+        [void]$ci.AppendLine("---")
+        [void]$ci.AppendLine()
+        [void]$ci.AppendLine("### ``$currentModule``")
+        [void]$ci.AppendLine()
+        $tblHeader = '| Line | Heading |'
+        $tblSep    = '|------|---------|'
+        [void]$ci.AppendLine($tblHeader)
+        [void]$ci.AppendLine($tblSep)
+        continue
+    }
+
+    # Capture all markdown headings (#, ##, ###, ####, etc.)
+    if ($currentModule -and $line -match '^(#{1,6})\s+(.+)') {
+        $depth = $matches[1].Length
+        $heading = $matches[2].Trim()
+        # Indent sub-headings for visual hierarchy
+        $indent = ""
+        if ($depth -ge 2) {
+            $indent = ("  " * ($depth - 1))
+        }
+        $row = "| " + $lineNum + " | " + $indent + $heading + " |"
+        [void]$ci.AppendLine($row)
     }
 }
 
+[void]$ci.AppendLine()
+[void]$ci.AppendLine("---")
 [void]$ci.AppendLine()
 [void]$ci.AppendLine("_Total: $totalLines lines across $($modules.Count) modules._")
 
@@ -116,7 +139,7 @@ Write-Host "  COMPLETE_INDEX.md written." -ForegroundColor Green
 Write-Host "[4/4] Building llms-full.txt..."
 
 $llms = New-Object System.Text.StringBuilder
-[void]$llms.AppendLine("# Basis SDK Documentation — Full Reference")
+[void]$llms.AppendLine("# Basis SDK Documentation $emDash Full Reference")
 [void]$llms.AppendLine("# https://launchonbasis.com/sdk-docs")
 [void]$llms.AppendLine()
 [void]$llms.AppendLine("# This file contains the complete Basis SDK documentation for LLM consumption.")

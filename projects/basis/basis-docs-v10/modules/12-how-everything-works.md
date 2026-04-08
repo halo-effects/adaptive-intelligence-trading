@@ -1,7 +1,7 @@
 # How Everything Works
 
 **What this covers:** Mechanical deep-dives into how each system actually works - trading paths, loan system, vault layers, leverage loops, prediction market lifecycle, agent identity.
-**Related sections:** → See: [11-why-each-action-matters.md](11-why-each-action-matters.md) for the rationale · → See: [10-atomic-skills.md](10-atomic-skills.md) for method signatures · → See: [17-fee-cost-reference.md](17-fee-cost-reference.md) for fee details · → See: [20-what-to-avoid.md](20-what-to-avoid.md) for common errors
+**Related sections:** → See: [11-why-each-action-matters.md](11-why-each-action-matters.md) for the rationale · → See: [10-atomic-skills.md](10-atomic-skills.md) for method signatures · → See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for fee details · → See: [21-what-to-avoid.md](21-what-to-avoid.md) for common errors
 
 ---
 
@@ -22,7 +22,7 @@ All trades route through STASIS. No direct token-to-token swaps.
 | Floor+ | 1.50% | ~3.0% | Varies by pool depth |
 | Predict+ | 1.50% | ~3.0% | Varies by pool depth |
 
-**Fee distribution**: For standard tokens: Creator (20%), staking yield (16%), reward phase buyers (4%), platform treasury (60%). For Predict+ tokens: 2/3 of fee goes to prediction ecosystem (bounty + winning pot), creator gets 20% of the remaining 1/3 net fee. See [17-fee-cost-reference.md](17-fee-cost-reference.md) for the full Predict+ breakdown.
+**Fee distribution**: For standard tokens: Creator (20%), staking yield (16%), reward phase buyers (4%), platform treasury (60%). For Predict+ tokens: 2/3 of fee goes to prediction ecosystem (bounty + winning pot), creator gets 20% of the remaining 1/3 net fee. See [18-fee-cost-reference.md](18-fee-cost-reference.md) for the full Predict+ breakdown.
 
 ### AMM Pricing Mechanics
 
@@ -227,7 +227,7 @@ Market ends → Propose outcome (5 USDB bond) → Challenge period (30 min*)
 
 **Post-resolution selling**: On Basis, mass selling after resolution pushes the price UP (selling burns tokens → slippage stays in pool → price rises). Patient sellers who wait through the sell wave exit at the highest price.
 
-→ See: [15-prediction-deep-dive.md](15-prediction-deep-dive.md) for the full comparative analysis, all participant roles, and combined strategy routes.
+→ See: [16-prediction-deep-dive.md](16-prediction-deep-dive.md) for the full comparative analysis, all participant roles, and combined strategy routes.
 
 ---
 

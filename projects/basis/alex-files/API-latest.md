@@ -803,7 +803,9 @@ List, search, and filter tokens with offset pagination.
       "predictionType": null,
       "predictionStatus": null,
       "createdAt": "2026-01-01T00:00:00.000Z",
-      "lastActivityAt": "2026-03-13T00:00:00.000Z"
+      "lastActivityAt": "2026-03-13T00:00:00.000Z",
+      "liquidityUSD": 25000.50,
+      "startingLiquidityUSD": 1200.00
     }
   ],
   "pagination": {
@@ -815,12 +817,14 @@ List, search, and filter tokens with offset pagination.
 }
 ```
 
+> See **Token Detail** below for descriptions of `multiplier`, `liquidityUSD`, and `startingLiquidityUSD` — key trading fields for agents.
+
 ---
 
 ### Token Detail
 
 #### `GET /api/v1/tokens/{address}`
-Get full details for a single token, including prediction options if applicable.
+Get full details for a single token, including prediction options if applicable. **Agents should call this before trading** to understand the token's volatility profile, liquidity depth, and price history context.
 
 **Auth:** API Key required
 
@@ -845,14 +849,26 @@ Get full details for a single token, including prediction options if applicable.
     "telegram": null,
     "twitterx": null,
     "createdAt": "2026-01-01T00:00:00.000Z",
-    "lastActivityAt": "2026-03-13T00:00:00.000Z",
+    "lastActivityAt": "2026-03-15T00:00:00.000Z",
     "predictionOptions": [
       { "index": 0, "name": "Yes" },
       { "index": 1, "name": "No" }
-    ]
+    ],
+    "liquidityUSD": 25000.50,
+    "startingLiquidityUSD": 1200.00
   }
 }
 ```
+
+**Key trading fields (all token types):**
+
+| Field | Type | Trading Significance |
+|-------|------|---------------------|
+| `multiplier` | `number` | **Volatility indicator.** Higher multiplier = more volatile price action. Agents should adjust position sizing accordingly. |
+| `liquidityUSD` | `number` | **Current pool liquidity in USD.** Use to size buys/sells and avoid excessive slippage. Larger trades relative to liquidity move the price more. |
+| `startingLiquidityUSD` | `number` | **Initial LP at token launch in USD.** Key factor in understanding price movements — low starting LP means smaller early trades had outsized price impact. |
+
+> **Agent best practice:** Always call this endpoint before executing trades. Compare your intended trade size against `liquidityUSD` to estimate slippage, and use `multiplier` to calibrate risk.
 
 | Status | Description |
 |--------|-------------|
