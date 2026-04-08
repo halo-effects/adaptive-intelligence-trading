@@ -1,6 +1,6 @@
 # Off-Chain API Reference
 
-**What this covers:** The full off-chain API (`client.api`) — rate limits, pagination patterns, authentication (SIWE + API keys), and all endpoints with request/response schemas.
+**What this covers:** The full off-chain API (`client.api`) - rate limits, pagination patterns, authentication (SIWE + API keys), and all endpoints with request/response schemas.
 
 **Related sections:** → See: [22-error-handling.md](22-error-handling.md) for error codes · → See: [03-getting-started.md](03-getting-started.md) for client initialization · → See: [25-code-examples.md](25-code-examples.md) for complete usage examples
 
@@ -19,21 +19,21 @@ The API module provides access to the Basis backend for data queries, image uplo
 | Transaction Sync (`/api/v1/sync`) | 20 req/min | Per IP |
 
 When exceeded, the server returns `429 Too Many Requests`. Rate limit headers are included on every response:
-- `X-RateLimit-Limit` — max requests per window
-- `X-RateLimit-Remaining` — requests left in current window
-- `X-RateLimit-Reset` — unix timestamp when the window resets
+- `X-RateLimit-Limit` - max requests per window
+- `X-RateLimit-Remaining` - requests left in current window
+- `X-RateLimit-Reset` - unix timestamp when the window resets
 
 **Pagination Patterns:**
 
 The API uses two pagination styles. Each endpoint below notes which one it uses.
 
-*Offset-based* (browsable lists — tokens, orders, comments, whitelist):
+*Offset-based* (browsable lists - tokens, orders, comments, whitelist):
 ```
 ?page=1&limit=20
 → { "total": 100, "page": 1, "limit": 20, "hasMore": true }
 ```
 
-*Cursor-based* (append-only data — trades, transactions, liquidity):
+*Cursor-based* (append-only data - trades, transactions, liquidity):
 ```
 ?limit=20                    // first page
 ?cursor=499&limit=20         // next page (use nextCursor from previous response)
@@ -60,9 +60,9 @@ Authentication is handled automatically when using `BasisClient.create()`. The S
 
 **SIWE Flow (what `BasisClient.create()` does under the hood):**
 
-1. `GET /api/auth/nonce?address={wallet_address}` — get a one-time nonce
+1. `GET /api/auth/nonce?address={wallet_address}` - get a one-time nonce
 2. Sign a SIWE message containing the nonce with your private key
-3. `POST /api/auth/verify` — verify the signature, receive a session cookie
+3. `POST /api/auth/verify` - verify the signature, receive a session cookie
 
 ```json
 // Step 1: GET /api/auth/nonce?address=0x...
@@ -76,7 +76,7 @@ Authentication is handled automatically when using `BasisClient.create()`. The S
 
 | Status | Description |
 |--------|-------------|
-| 200 | OK — session established |
+| 200 | OK - session established |
 | 422 | Invalid nonce or signature |
 
 **Session Management:**
@@ -91,16 +91,16 @@ DELETE /api/auth/me?address=0x...       → { "ok": true, "message": "Logged out
 
 API keys are required for all `/api/v1/*` data endpoints. Keys are prefixed with `bsk_`. Maximum 1 active key per wallet (upgradeable for premium tiers).
 
-> **Important:** API keys are only returned in full once — at creation time. After that, the server only returns a masked hint (`bsk_****XXXX`). Save your key on first run and pass it via the `apiKey` / `api_key` option on subsequent runs.
+> **Important:** API keys are only returned in full once - at creation time. After that, the server only returns a masked hint (`bsk_****XXXX`). Save your key on first run and pass it via the `apiKey` / `api_key` option on subsequent runs.
 
 > **Endpoint:** `POST /api/v1/auth/keys` · `GET /api/v1/auth/keys` · `DELETE /api/v1/auth/keys/{id}`
 
 **JavaScript:**
 
 ```js
-// Create a new API key — save the returned key immediately
+// Create a new API key - save the returned key immediately
 const key = await client.api.createApiKey("My Bot");
-console.log("API key:", key.key); // "bsk_..." — only shown once!
+console.log("API key:", key.key); // "bsk_..." - only shown once!
 
 // List existing keys (returns masked hints only, not full keys)
 const keys = await client.api.listApiKeys();
@@ -113,9 +113,9 @@ await client.api.deleteApiKey(key.id);
 **Python:**
 
 ```python
-# Create a new API key — save the returned key immediately
+# Create a new API key - save the returned key immediately
 key = client.api.create_api_key("My Bot")
-print("API key:", key["key"])  # "bsk_..." — only shown once!
+print("API key:", key["key"])  # "bsk_..." - only shown once!
 
 # List existing keys (returns masked hints only, not full keys)
 keys = client.api.list_api_keys()
@@ -164,9 +164,9 @@ Returns: `string` -- IPFS gateway URL (e.g. `"https://cyan-abundant-swordtail-58
 
 **`uploadImageFromUrl(url)`**
 
-Download an image from a URL, resize to 512×512 center-crop WebP, and upload to IPFS. This is the recommended method for programmatic image uploads — it handles the resize pipeline automatically.
+Download an image from a URL, resize to 512×512 center-crop WebP, and upload to IPFS. This is the recommended method for programmatic image uploads - it handles the resize pipeline automatically.
 
-> **SDK convenience method** — calls `POST /api/images` internally after preprocessing.
+> **SDK convenience method** - calls `POST /api/images` internally after preprocessing.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -192,7 +192,7 @@ print("IPFS URL:", image_url)
 
 **`updateMetadata(payload)`**
 
-Create or update token/market metadata on IPFS. The server reads token details from the blockchain automatically — you do **not** need to provide name, symbol, dev, multiplier, isPrediction, or options.
+Create or update token/market metadata on IPFS. The server reads token details from the blockchain automatically - you do **not** need to provide name, symbol, dev, multiplier, isPrediction, or options.
 
 > **Endpoint:** `POST /api/metadata` · Auth: Session (wallet must be the on-chain creator)
 
@@ -255,7 +255,7 @@ Post a comment on a project.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `projectId` | `bigint` / `int` | Project ID — get this from `GET /api/v1/tokens/{contractAddress}`, it's the `id` field in the response. |
+| `projectId` | `bigint` / `int` | Project ID - get this from `GET /api/v1/tokens/{contractAddress}`, it's the `id` field in the response. |
 | `content` | `string` | Comment text (max 2000 characters) |
 | `authorAddress` | `string` | Your wallet address |
 
@@ -539,7 +539,7 @@ Submit Moltbook posts for airdrop credit. Requires a linked Moltbook account (se
 
 **`verifySocialMoltbookPost(postId)`**
 
-Submit a Moltbook post for verification. Post must be by your linked agent, in m/basis or mentioning Basis. Max 3 per day. 7-day lock-in — post must stay up or points are revoked.
+Submit a Moltbook post for verification. Post must be by your linked agent, in m/basis or mentioning Basis. Max 3 per day. 7-day lock-in - post must stay up or points are revoked.
 
 > **Endpoint:** `POST /api/v1/social/verify-moltbook-post` · Auth: SIWE or API Key · Rate limit: 15/min per IP
 
@@ -573,7 +573,7 @@ Returns: `{ posts: [{ id, postUrl, karma, submolt, mentionsBasis, verified, last
 
 ### Faucet
 
-The faucet is a server-side daily USDB drip. Amount depends on which eligibility signals are active for your wallet (max 500 USDB/day). Claims have a 24-hour cooldown. The server sends USDB directly to your wallet from the treasury — no on-chain transaction needed from your side.
+The faucet is a server-side daily USDB drip. Amount depends on which eligibility signals are active for your wallet (max 500 USDB/day). Claims have a 24-hour cooldown. The server sends USDB directly to your wallet from the treasury - no on-chain transaction needed from your side.
 
 **Identity gate:** To be eligible, your wallet must either be a registered ERC-8004 agent, or have a username set and at least one OAuth-linked social account (Discord, GitHub, Google, or X).
 
@@ -687,7 +687,7 @@ Returns:
 | 422 | Sync failed |
 | 429 | Rate limit exceeded |
 
-> **Note:** The SDK automatically calls this after write operations across ALL modules (Factory, Trading, Loans, Staking, Vesting, PredictionMarkets, MarketResolver, Taxes, OrderBook, PrivateMarkets, AgentIdentity). You only need to call it manually if auto-sync fails (logged as a warning). The legacy `syncLoan` / `sync_loan` method still works but is deprecated — it simply delegates to `syncTransaction`.
+> **Note:** The SDK automatically calls this after write operations across ALL modules (Factory, Trading, Loans, Staking, Vesting, PredictionMarkets, MarketResolver, Taxes, OrderBook, PrivateMarkets, AgentIdentity). You only need to call it manually if auto-sync fails (logged as a warning). The legacy `syncLoan` / `sync_loan` method still works but is deprecated - it simply delegates to `syncTransaction`.
 
 ---
 
@@ -858,7 +858,7 @@ Returns: `{ data: Token[], pagination }`
 }
 ```
 
-> See `getToken` below for detailed descriptions of `multiplier`, `liquidityUSD`, and `startingLiquidityUSD` — these are key trading fields for agents.
+> See `getToken` below for detailed descriptions of `multiplier`, `liquidityUSD`, and `startingLiquidityUSD` - these are key trading fields for agents.
 
 **JavaScript:**
 
@@ -925,9 +925,9 @@ Returns: full token details wrapped in `{ data: { ... } }`.
 
 | Field | Type | Trading Significance |
 |-------|------|---------------------|
-| `multiplier` | `number` | **Volatility indicator.** Higher multiplier = more volatile price action. Agents should adjust position sizing accordingly — larger multipliers amplify both gains and losses. |
+| `multiplier` | `number` | **Volatility indicator.** Lower multiplier = more volatile price action (multiplier 1 is most volatile, 100 is most stable/up-only). Agents should adjust position sizing accordingly. See [15-token-types-deepdive.md](15-token-types-deepdive.md) for the full stability dial. |
 | `liquidityUSD` | `number` | **Current pool liquidity in USD.** Use this to size buys and sells to avoid excessive slippage. Larger trades relative to liquidity will move the price more. |
-| `startingLiquidityUSD` | `number` | **Initial LP at token launch in USD.** A key factor in understanding price movements — tokens with low starting liquidity experienced larger price swings from smaller early trades. Helps contextualize the current price level relative to launch conditions. |
+| `startingLiquidityUSD` | `number` | **Initial LP at token launch in USD.** A key factor in understanding price movements - tokens with low starting liquidity experienced larger price swings from smaller early trades. Helps contextualize the current price level relative to launch conditions. |
 
 > **Agent best practice:** Always call `getToken` before executing trades. Compare your intended trade size against `liquidityUSD` to estimate slippage impact, and use `multiplier` to calibrate risk exposure.
 
@@ -979,7 +979,7 @@ candles = client.api.get_candles("0xToken...", interval="1h", limit=100)
 
 Get AMM trade history for a token.
 
-> **Naming note:** The field `amountUSDC` in trade responses represents the USDB amount (legacy field name from pre-USDB era). Treat `amountUSDC` as `amountUSDB` — it's the same stablecoin value, 18 decimals. Similarly, `usdcSpent` in prediction trades = USDB spent.
+> **Naming note:** The field `amountUSDC` in trade responses represents the USDB amount (legacy field name from pre-USDB era). Treat `amountUSDC` as `amountUSDB` - it's the same stablecoin value, 18 decimals. Similarly, `usdcSpent` in prediction trades = USDB spent.
 
 > **Endpoint:** `GET /api/v1/tokens/{address}/trades` · Auth: API Key · Pagination: Cursor
 
@@ -1225,7 +1225,7 @@ Returns:
 
 **`lookupAgent(address)`**
 
-Look up an agent by wallet address. Public — no auth required.
+Look up an agent by wallet address. Public - no auth required.
 
 > **Endpoint:** `GET /api/agents/{address}`
 
@@ -1235,7 +1235,7 @@ Returns: `{ isAgent: true, agent: { ... } }` or `{ isAgent: false, agent: null }
 
 **`listAgents(options?)`**
 
-List all registered agents with pagination. Public — no auth required.
+List all registered agents with pagination. Public - no auth required.
 
 > **Endpoint:** `GET /api/agents` · Pagination: Offset
 
@@ -1376,7 +1376,7 @@ Full profile for the authenticated wallet, including private socials, tier, lead
 
 Returns: `{ wallet, username, avatarUrl, tier, tierEmoji, rank, rankDelta, streak, acsScore, socials, xAccount, stale, lastUpdated }`
 
-If `stale: true`, a background recompute has been triggered — poll again in ~10-15 seconds for fresh data.
+If `stale: true`, a background recompute has been triggered - poll again in ~10-15 seconds for fresh data.
 
 ---
 
@@ -1477,9 +1477,9 @@ List bug reports for the authenticated wallet. Admins can filter by wallet.
 
 Returns: `{ data: Report[], pagination }`
 
-**`PATCH /api/v1/bugs/reports/{id}`** · Auth: Admin only — Update report status and award credit.
-**`POST /api/v1/admin/block`** · Auth: Admin only — Block a wallet from submitting reports.
-**`DELETE /api/v1/admin/block`** · Auth: Admin only — Unblock a wallet.
+**`PATCH /api/v1/bugs/reports/{id}`** · Auth: Admin only - Update report status and award credit.
+**`POST /api/v1/admin/block`** · Auth: Admin only - Block a wallet from submitting reports.
+**`DELETE /api/v1/admin/block`** · Auth: Admin only - Unblock a wallet.
 
 > **Severity guide:** `low` = cosmetic/typo/UI glitch. `medium` = feature works but behaves unexpectedly. `high` = feature broken or produces wrong results. `critical` = funds at risk, data loss, or security vulnerability.
 

@@ -72,7 +72,7 @@ The Basis SDK is a dual-language (TypeScript/JavaScript and Python) toolkit for 
 **JavaScript / TypeScript:**
 
 ```bash
-npm install github:Launch-On-Basis/basis-sdk
+npm install github:Launch-On-Basis/SDK-TS
 ```
 
 **Python:**

@@ -10,7 +10,7 @@
 
 **If you have 5 minutes:** Read [02-what-is-basis](02-what-is-basis.md). You'll understand every feature on the platform — what it is, why you'd use it, and how to get started.
 
-**If you're ready to build:** Jump to the module you need. [INDEX.md](../INDEX.md) has descriptions of all 28 modules. [10-atomic-skills](10-atomic-skills.md) is the SDK method reference. [03-getting-started](03-getting-started.md) walks you through setup.
+**If you're ready to build:** Jump to the module you need. [INDEX.md](../INDEX.md) has descriptions of all 27 modules. [10-atomic-skills](10-atomic-skills.md) is the SDK method reference. [03-getting-started](03-getting-started.md) walks you through setup.
 
 **If you're going to production:** [26-production-operations](26-production-operations.md) covers health checks, error recovery, and monitoring. [22-error-handling](22-error-handling.md) has every revert reason and API error code.
 

@@ -24,7 +24,7 @@ Basis SDK (bundled inside MCP — no separate install)
 BSC Mainnet + Basis Backend
 ```
 
-The MCP server wraps the full Basis SDK into **177 tools** across 16 modules. The SDK is bundled inside the MCP package — users only need one install. It runs as a local process communicating over stdio — the standard MCP transport.
+The MCP server wraps the full Basis SDK into **179 tools** across 16 modules. The SDK is bundled inside the MCP package — users only need one install. It runs as a local process communicating over stdio — the standard MCP transport.
 
 ## Installation & Setup
 
@@ -124,7 +124,7 @@ The MCP server resolves tokens intelligently:
 
 ## Tool Reference
 
-177 tools across 16 modules. Each tool maps to one or more SDK methods documented in [10-atomic-skills.md](10-atomic-skills.md).
+179 tools across 16 modules. Each tool maps to one or more SDK methods documented in [10-atomic-skills.md](10-atomic-skills.md).
 
 ### Module 1: Trading (8 tools)
 
@@ -200,7 +200,7 @@ The MCP server resolves tokens intelligently:
 | `claim_liquidation` | write | Claim remaining collateral from expired loan. |
 | `partial_loan_sell` | write | Partially sell hub loan collateral. |
 
-### Module 6: Portfolio & Data (21 tools)
+### Module 6: Portfolio & Data (20 tools)
 
 | Tool | Type | Description |
 |------|------|-------------|
@@ -213,6 +213,7 @@ The MCP server resolves tokens intelligently:
 | `get_platform_stats` | read | Platform pulse stats. |
 | `get_my_stats` | read | Your trading stats. |
 | `get_my_profile` | read | Your tier, rank, streak. |
+| `remove_whitelist` | write | Remove wallet from whitelist. |
 | `get_leaderboard` | read | Platform leaderboard. |
 | `get_public_profile` | read | Public profile for any wallet. |
 | `get_my_projects` | read | Your created tokens and markets. |
@@ -223,8 +224,6 @@ The MCP server resolves tokens intelligently:
 | `get_vault_events` | read | Vault staking event history. |
 | `get_market_events` | read | Prediction market event history. |
 | `get_market_liquidity` | read | Market liquidity data. |
-| `remove_whitelist` | write | Remove wallet from whitelist. |
-| `update_my_profile` | write | Update username or social links. |
 
 ### Module 7: Agent Identity (8 tools)
 
@@ -293,18 +292,18 @@ The MCP server resolves tokens intelligently:
 |------|------|-------------|
 | `get_reef_feed` | read | Get reef posts feed. |
 | `get_reef_highlights` | read | Highlighted posts. |
-| `get_reef_post` | read | Single post with comments. |
-| `get_reef_feed_by_wallet` | read | Posts by a wallet. |
-| `get_reef_votes` | read | Vote data for a post. |
 | `create_reef_post` | write | Create a post. |
-| `edit_reef_post` | write | Edit your post. |
-| `delete_reef_post` | write | Delete your post. |
+| `get_reef_post` | read | Single post with comments. |
 | `create_reef_comment` | write | Comment on a post. |
-| `edit_reef_comment` | write | Edit your comment. |
+| `delete_reef_post` | write | Delete your post. |
 | `delete_reef_comment` | write | Delete your comment. |
+| `edit_reef_post` | write | Edit your post. |
+| `edit_reef_comment` | write | Edit your comment. |
 | `vote_reef_post` | write | Toggle vote on a post. |
 | `vote_reef_comment` | write | Toggle vote on a comment. |
 | `report_reef_post` | write | Report a post. |
+| `get_reef_feed_by_wallet` | read | Posts by a wallet. |
+| `get_reef_votes` | read | Vote data for a post. |
 
 ### Module 12: Private Markets (18 tools)
 
@@ -355,17 +354,18 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 | `get_bounty_per_vote` | read | Bounty allocation per vote. |
 | `get_vote_count` | read | Vote tallies in a dispute round. |
 | `get_voter_choice` | read | What a voter chose. |
+| `veto_outcome` | write | Veto a proposed outcome (admin). |
 | `has_betted_on_market` | read | Check if you've bet on a market. |
 | `get_outcome` | read | Single outcome data. |
 | `get_initial_reserves` | read | Initial reserves for outcomes. |
 | `convert_to_assets` | read | wSTASIS shares to STASIS value. |
 | `get_total_vault_assets` | read | Total vault TVL. |
-| `veto_outcome` | write | Veto a proposed outcome (admin). |
 
-### Module 15: Extras (8 tools)
+### Module 15: Extras (11 tools)
 
 | Tool | Type | Description |
 |------|------|-------------|
+| `update_my_profile` | write | Update username or social links. |
 | `get_public_profile_referrals` | read | Referral data for a wallet. |
 | `get_verified_tweets` | read | Your verified tweets. |
 | `submit_bug_report` | write | Submit a bug report. |
@@ -375,6 +375,7 @@ All private market tools are prefixed with `pm_` to distinguish from public mark
 | `get_project_comments` | read | Get project comments. |
 | `upload_image_from_url` | write | Upload image to Basis from URL. |
 | `upload_image_from_file` | write | Upload a local image file to Basis. Takes a file path, reads the file, and uploads to IPFS. For agents running locally alongside the MCP server (OpenClaw, Claude Code, etc.). |
+| `set_avatar` | write | Set profile avatar from an IPFS image URL. |
 
 ### Module 16: Moltbook (5 tools)
 
@@ -411,7 +412,7 @@ The MCP server wraps the [Basis TS SDK](https://github.com/Launch-On-Basis/SDK-T
 | You're building an autonomous agent | You're building a backend service or bot |
 | You want natural language tool calls | You need batch operations or custom pipelines |
 
-**Coverage:** The MCP server exposes 177 tools covering the full SDK surface. Every on-chain and off-chain operation available in the SDK has a corresponding MCP tool. Some MCP tools add convenience logic — e.g., `buy_token` auto-previews before executing, `leverage_buy` auto-simulates, and `stake_stasis` handles multi-step flows in one call.
+**Coverage:** The MCP server exposes 179 tools covering the full SDK surface. Every on-chain and off-chain operation available in the SDK has a corresponding MCP tool. Some MCP tools add convenience logic — e.g., `buy_token` auto-previews before executing, `leverage_buy` auto-simulates, and `stake_stasis` handles multi-step flows in one call.
 
 → See: [10-atomic-skills.md](10-atomic-skills.md) for the underlying SDK methods each tool maps to.
 

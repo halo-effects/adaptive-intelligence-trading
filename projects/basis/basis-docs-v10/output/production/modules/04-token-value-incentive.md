@@ -9,8 +9,8 @@ PLATFORM OVERVIEW:
   exchange_model = modified AMM
 
   phases = [
-    { phase: 1, pool: 1% of total supply, currency: "USDB (test)", duration: "~2 weeks" },
-    { phase: 2, pool: 2% of total supply, currency: "USDB (test)", duration: "~4-6 weeks" },
+    { phase: 1, pool: 1% of total supply, currency: "USDB (test)", duration: "~2 - 6 weeks" },
+    { phase: 2, pool: 2% of total supply, currency: "USDB (test)", duration: "~4-8 weeks" },
     { phase: 3, pool: 8% of total supply, currency: "real stablecoin", duration: "until TGE" }
   ]
 

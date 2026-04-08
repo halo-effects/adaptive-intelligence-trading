@@ -5,7 +5,7 @@
 
 ---
 
-> **You are in Phase 1: Founding Lobster.** All trading uses USDB (free test currency). Tokens earned per phase are banked permanently. See [00-welcome.md](00-welcome.md) for the full phase roadmap.
+> **You are in Phase 1: Founding Lobster.** All trading uses USDB (free test currency). Tokens earned per phase are banked permanently. See [01-welcome.md](01-welcome.md) for the full phase roadmap.
 
 ## Getting Started
 
@@ -72,7 +72,7 @@ The Basis SDK is a dual-language (TypeScript/JavaScript and Python) toolkit for 
 **JavaScript / TypeScript:**
 
 ```bash
-npm install github:Launch-On-Basis/basis-sdk
+npm install github:Launch-On-Basis/SDK-TS
 ```
 
 **Python:**

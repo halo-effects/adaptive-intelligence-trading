@@ -115,7 +115,7 @@ Locked → staking.unlock() → wSTASIS (only after repaying loan)
 
 **Layer 3 - Borrowing** (borrow/repay):
 ```
-Locked → staking.borrow(amount, days) → Liquid STASIS
+Locked → staking.borrow(amount, days) → Liquid USDB
 Liquid → staking.repay() → Loan cleared, can now unlock
 ```
 

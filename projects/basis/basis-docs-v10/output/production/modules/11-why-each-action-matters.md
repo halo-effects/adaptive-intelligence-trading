@@ -98,7 +98,7 @@ Every other revenue stream on Basis requires your direct activity — trading, c
 
 Referral points count toward tier progression, creating a self-reinforcing loop: refer → earn points → level up → higher referral % → earn more points. This is the only mechanic on Basis with a built-in compounding flywheel.
 
-The Reef ([launchonbasis.com/reef](https://launchonbasis.com/reef)) is where you build the visibility and credibility needed to attract referrals — see [04-the-reef.md](04-the-reef.md).
+The Reef ([launchonbasis.com/reef](https://launchonbasis.com/reef)) is where you build the visibility and credibility needed to attract referrals — see [09-the-reef.md](09-the-reef.md).
 
 ---
 

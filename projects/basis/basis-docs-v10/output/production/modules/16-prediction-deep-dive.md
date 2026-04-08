@@ -53,8 +53,6 @@ A participant doesn't need to wait for deep liquidity to see better returns. The
 
 **What this means in practice:** From day one - even with a fraction of the volume of established platforms - the payout structure on Basis is already superior. This is not a "will be better once we scale" argument. The economics are better on trade one, at any volume level, because the structure itself is different.
 
-A participant doesn't need to wait for deep liquidity to see better returns. They see better returns immediately because they're splitting real money from real losers, not collecting a fixed $1 bounty.
-
 ---
 
 ## 4. Multiple Outcomes: The Multiplier Effect

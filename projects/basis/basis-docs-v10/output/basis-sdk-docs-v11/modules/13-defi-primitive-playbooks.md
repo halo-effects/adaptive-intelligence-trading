@@ -1,6 +1,6 @@
 # DeFi Primitive Playbooks
 
-**What this covers:** Strategic decision framework for each DeFi primitive — when to use it, why it works differently from traditional DeFi, and how to exploit its unique mechanics. This is the bridge between understanding what each primitive does (→ see: L1 files) and executing specific strategies (→ see: [12-strategy-playbooks.md](12-strategy-playbooks.md)).
+**What this covers:** Strategic decision framework for each DeFi primitive — when to use it, why it works differently from traditional DeFi, and how to exploit its unique mechanics. This is the bridge between understanding what each primitive does (→ see: L1 files) and executing specific strategies (→ see: [14-strategy-playbooks.md](14-strategy-playbooks.md)).
 
 ---
 
@@ -122,7 +122,7 @@ Basis loans: borrow against a floor that NEVER drops, repay before expiry (or ex
 **When to take a loan:**
 - You see an opportunity that needs capital NOW but don't want to sell your position
 - You want your capital working in two places simultaneously
-- You're running the Vault Compound strategy (Strategy C in [12-strategy-playbooks.md](12-strategy-playbooks.md))
+- You're running the Vault Compound strategy (Strategy C in [14-strategy-playbooks.md](14-strategy-playbooks.md))
 
 **When NOT to take a loan:**
 - You don't have a clear plan for the borrowed capital — a 2% origination fee on idle USDB is wasted money
@@ -183,7 +183,7 @@ Three completely independent roles, each profitable on its own. Combining them i
 4. Use borrowed USDB to buy outcome shares → conviction bet
 5. Your capital is now working in THREE places simultaneously: creator fees, token appreciation, and outcome bet
 
-→ See: Strategy A (Predict Leverage Play) and Strategy B (Predict Loan-Bet Play) in [12-strategy-playbooks.md](12-strategy-playbooks.md) for step-by-step execution.
+→ See: Strategy A (Predict Leverage Play) and Strategy B (Predict Loan-Bet Play) in [14-strategy-playbooks.md](14-strategy-playbooks.md) for step-by-step execution.
 
 ---
 

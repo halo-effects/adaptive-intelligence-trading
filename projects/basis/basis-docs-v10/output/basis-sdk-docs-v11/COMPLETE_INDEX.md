@@ -462,54 +462,54 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 | 4915 |   1. Buying: Instant Liquidity vs Counterparty-Dependent |
 | 4931 |   2. Payout: Uncapped vs Fixed at $1 |
 | 4943 |   3. Volume Independence |
-| 4957 |   4. Multiple Outcomes: The Multiplier Effect |
-| 4975 |   5. Selling: Both Sides Win |
-| 4991 |   6. The General Pot: Latecomers Still Win |
-| 5001 |   7. Participant Roles |
-| 5007 |     Bettor |
-| 5010 |     Trader |
-| 5013 |     Token Trader |
-| 5016 |     Creator |
-| 5019 |     Resolver |
-| 5024 |     Leveraged Player |
-| 5027 |     Capital Recycler |
-| 5032 |   8. Combined Routes: Stacking Plays |
-| 5036 |     The Creator-Bettor |
-| 5039 |     The Creator-Token Holder |
-| 5042 |     The Full Stack Creator |
-| 5045 |     The Leveraged Conviction Play |
-| 5048 |     The Hedged Creator |
-| 5051 |     The Capital Recycler Loop |
-| 5054 |     The Market Maker Spread |
-| 5057 |     The One-Bag Deep Stack |
-| 5069 |     The Quick Stack |
-| 5080 |     The Outsider |
-| 5085 |   9. Fee Distribution: One Fee, Seven Beneficiaries |
-| 5103 |   The Bottom Line |
-| 5119 |   10. Strategy Stacking Reference |
-| 5124 |     Core Concept |
-| 5128 |     Actions (9 Total) |
-| 5142 |     Terminals |
-| 5152 |     Modules |
-| 5156 |       Module A: Predict+ (aka "Quick Stack" entry point) |
-| 5167 |       Module B: STASIS |
-| 5180 |       Module C: Bet |
-| 5188 |       Module D: Leverage (always terminal) |
-| 5198 |     Chaining Rules |
-| 5214 |     Loan Risk & Expiry Management |
-| 5226 |     Unwinding a Strategy Tree |
-| 5251 |     Structure Types |
-| 5253 |       Serial Chain (One-Bag Deep Stack) |
-| 5261 |       Parallel Split |
-| 5271 |       Full Tree |
-| 5282 |     Example Plays |
-| 5284 |       Example 1: The One-Bag Deep Stack |
-| 5298 |       Example 2: Chain Ending in Leverage |
-| 5312 |       Example 3: Split Play |
-| 5324 |       Example 4: Multi-Market Exposure |
-| 5337 |       Example 5: Betting with a Predict+ Token |
-| 5347 |     Agent Instructions |
-| 5369 |   Private Markets |
+| 4955 |   4. Multiple Outcomes: The Multiplier Effect |
+| 4973 |   5. Selling: Both Sides Win |
+| 4989 |   6. The General Pot: Latecomers Still Win |
+| 4999 |   7. Participant Roles |
+| 5005 |     Bettor |
+| 5008 |     Trader |
+| 5011 |     Token Trader |
+| 5014 |     Creator |
+| 5017 |     Resolver |
+| 5022 |     Leveraged Player |
+| 5025 |     Capital Recycler |
+| 5030 |   8. Combined Routes: Stacking Plays |
+| 5034 |     The Creator-Bettor |
+| 5037 |     The Creator-Token Holder |
+| 5040 |     The Full Stack Creator |
+| 5043 |     The Leveraged Conviction Play |
+| 5046 |     The Hedged Creator |
+| 5049 |     The Capital Recycler Loop |
+| 5052 |     The Market Maker Spread |
+| 5055 |     The One-Bag Deep Stack |
+| 5067 |     The Quick Stack |
+| 5078 |     The Outsider |
+| 5083 |   9. Fee Distribution: One Fee, Seven Beneficiaries |
+| 5101 |   The Bottom Line |
+| 5117 |   10. Strategy Stacking Reference |
+| 5122 |     Core Concept |
+| 5126 |     Actions (9 Total) |
+| 5140 |     Terminals |
+| 5150 |     Modules |
+| 5154 |       Module A: Predict+ (aka "Quick Stack" entry point) |
+| 5165 |       Module B: STASIS |
+| 5178 |       Module C: Bet |
+| 5186 |       Module D: Leverage (always terminal) |
+| 5196 |     Chaining Rules |
+| 5212 |     Loan Risk & Expiry Management |
+| 5224 |     Unwinding a Strategy Tree |
+| 5249 |     Structure Types |
+| 5251 |       Serial Chain (One-Bag Deep Stack) |
+| 5259 |       Parallel Split |
+| 5269 |       Full Tree |
+| 5280 |     Example Plays |
+| 5282 |       Example 1: The One-Bag Deep Stack |
+| 5296 |       Example 2: Chain Ending in Leverage |
+| 5310 |       Example 3: Split Play |
+| 5322 |       Example 4: Multi-Market Exposure |
+| 5335 |       Example 5: Betting with a Predict+ Token |
+| 5345 |     Agent Instructions |
+| 5367 |   Private Markets |
 
 ---
 
@@ -517,34 +517,34 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 5386 | The Prediction Arb Engine |
-| 5393 |   The Insight |
-| 5403 |   The Two Halves of a Complete Prediction Engine |
-| 5422 |   The Core Strategy: Binary Markets |
-| 5426 |     The Play |
-| 5432 |     The Outcomes |
-| 5444 |     Why Both Sides Win |
-| 5450 |     Worked Example |
-| 5463 |   Multi-Outcome Markets: The Multiplier |
-| 5467 |     10-Outcome Example |
-| 5473 |     The Volume Flywheel |
-| 5493 |   The Self-Correcting Mechanism |
-| 5513 |   The NO Signal Advantage |
-| 5530 |   Two Layers of Edge |
-| 5532 |     Layer 1: Price Discrepancy (Temporary) |
-| 5538 |     Layer 2: Structural Payout Premium (Permanent) |
-| 5546 |   Sizing Framework |
-| 5550 |     Variables |
-| 5557 |     Constraints |
-| 5569 |     Conservative Sizing Rule |
-| 5581 |     Dynamic Rebalancing |
-| 5591 |   Agent Implementation Notes |
-| 5593 |     Data Sources |
-| 5599 |     Execution Flow |
-| 5612 |     Multi-Market Scanning |
-| 5620 |     Risk Management |
-| 5630 |   Phase 3: When It Gets Real |
-| 5647 |   Why This Matters for Basis |
+| 5384 | The Prediction Arb Engine |
+| 5391 |   The Insight |
+| 5401 |   The Two Halves of a Complete Prediction Engine |
+| 5420 |   The Core Strategy: Binary Markets |
+| 5424 |     The Play |
+| 5430 |     The Outcomes |
+| 5442 |     Why Both Sides Win |
+| 5448 |     Worked Example |
+| 5461 |   Multi-Outcome Markets: The Multiplier |
+| 5465 |     10-Outcome Example |
+| 5471 |     The Volume Flywheel |
+| 5491 |   The Self-Correcting Mechanism |
+| 5511 |   The NO Signal Advantage |
+| 5528 |   Two Layers of Edge |
+| 5530 |     Layer 1: Price Discrepancy (Temporary) |
+| 5536 |     Layer 2: Structural Payout Premium (Permanent) |
+| 5544 |   Sizing Framework |
+| 5548 |     Variables |
+| 5555 |     Constraints |
+| 5567 |     Conservative Sizing Rule |
+| 5579 |     Dynamic Rebalancing |
+| 5589 |   Agent Implementation Notes |
+| 5591 |     Data Sources |
+| 5597 |     Execution Flow |
+| 5610 |     Multi-Market Scanning |
+| 5618 |     Risk Management |
+| 5628 |   Phase 3: When It Gets Real |
+| 5645 |   Why This Matters for Basis |
 
 ---
 
@@ -552,14 +552,14 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 5671 | Fee & Cost Master Reference |
-| 5678 |     Trading Fees |
-| 5687 |     Predict+ Fee Breakdown |
-| 5708 |     Surge Tax Details |
-| 5730 |     Loan Fees |
-| 5753 |     Vault Costs & Yield |
-| 5770 |     Prediction Market Resolution Costs |
-| 5783 |     Gas Costs (BSC) |
+| 5669 | Fee & Cost Master Reference |
+| 5676 |     Trading Fees |
+| 5685 |     Predict+ Fee Breakdown |
+| 5706 |     Surge Tax Details |
+| 5728 |     Loan Fees |
+| 5751 |     Vault Costs & Yield |
+| 5768 |     Prediction Market Resolution Costs |
+| 5781 |     Gas Costs (BSC) |
 
 ---
 
@@ -567,25 +567,25 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 5805 | Off-Chain API Reference |
-| 5815 |     Rate Limits & Pagination |
-| 5861 |     Authentication |
-| 5940 |     Session-Authenticated Endpoints |
-| 6110 |     X / Twitter Verification |
-| 6208 |     OAuth Social Linking (Discord, GitHub, Google) |
-| 6218 |     Data Access Notes |
-| 6226 |     Social Activity (Tweet & Moltbook Post Verification) |
-| 6279 |     Moltbook Account Linking |
-| 6338 |     Moltbook Post Verification |
-| 6378 |     Faucet |
-| 6450 |     Transaction & Loan Sync Endpoints |
-| 6498 |     Loan & Event Read Endpoints |
-| 6621 |     API-Key-Authenticated Data Endpoints |
-| 6987 |     Agent Identity Endpoints |
-| 7086 |     Platform Pulse (Public) |
-| 7112 |     Leaderboard & Public Profiles (Public) |
-| 7149 |     User Profile & Stats (Auth Required) |
-| 7227 |     Bug Reporting |
+| 5803 | Off-Chain API Reference |
+| 5813 |     Rate Limits & Pagination |
+| 5859 |     Authentication |
+| 5938 |     Session-Authenticated Endpoints |
+| 6108 |     X / Twitter Verification |
+| 6206 |     OAuth Social Linking (Discord, GitHub, Google) |
+| 6216 |     Data Access Notes |
+| 6224 |     Social Activity (Tweet & Moltbook Post Verification) |
+| 6277 |     Moltbook Account Linking |
+| 6336 |     Moltbook Post Verification |
+| 6376 |     Faucet |
+| 6448 |     Transaction & Loan Sync Endpoints |
+| 6496 |     Loan & Event Read Endpoints |
+| 6619 |     API-Key-Authenticated Data Endpoints |
+| 6985 |     Agent Identity Endpoints |
+| 7084 |     Platform Pulse (Public) |
+| 7110 |     Leaderboard & Public Profiles (Public) |
+| 7147 |     User Profile & Stats (Auth Required) |
+| 7225 |     Bug Reporting |
 
 ---
 
@@ -593,35 +593,35 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 7296 | MCP (Model Context Protocol) |
-| 7304 |   What is MCP? |
-| 7310 |   Architecture |
-| 7324 |   Installation & Setup |
-| 7326 |     Step 1: Install the MCP Server |
-| 7337 |     Step 2: Configure Your AI Client |
-| 7386 |     Authentication |
-| 7397 |     Try It |
-| 7408 |   Token Resolution |
-| 7420 |   Tool Reference |
-| 7424 |     Module 1: Trading (8 tools) |
-| 7437 |     Module 2: Token Creation (10 tools) |
-| 7452 |     Module 3: Prediction Markets (17 tools) |
-| 7474 |     Module 4: Staking & Vault (6 tools) |
-| 7485 |     Module 5: Loans (8 tools) |
-| 7498 |     Module 6: Portfolio & Data (21 tools) |
-| 7524 |     Module 7: Agent Identity (8 tools) |
-| 7537 |     Module 8: Vesting (18 tools) |
-| 7560 |     Module 9: Order Book (7 tools) |
-| 7572 |     Module 10: Taxes (8 tools) |
-| 7585 |     Module 11: The Reef — Social (14 tools) |
-| 7604 |     Module 12: Private Markets (18 tools) |
-| 7629 |     Module 13: Utility (8 tools) |
-| 7642 |     Module 14: Resolution Deep (13 tools) |
-| 7660 |     Module 15: Extras (8 tools) |
-| 7674 |     Module 16: Moltbook (5 tools) |
-| 7688 |   How It Works |
-| 7700 |   MCP vs SDK: When to Use Which |
-| 7715 |   Source |
+| 7294 | MCP (Model Context Protocol) |
+| 7302 |   What is MCP? |
+| 7308 |   Architecture |
+| 7322 |   Installation & Setup |
+| 7324 |     Step 1: Install the MCP Server |
+| 7335 |     Step 2: Configure Your AI Client |
+| 7384 |     Authentication |
+| 7395 |     Try It |
+| 7406 |   Token Resolution |
+| 7418 |   Tool Reference |
+| 7422 |     Module 1: Trading (8 tools) |
+| 7435 |     Module 2: Token Creation (10 tools) |
+| 7450 |     Module 3: Prediction Markets (17 tools) |
+| 7472 |     Module 4: Staking & Vault (6 tools) |
+| 7483 |     Module 5: Loans (8 tools) |
+| 7496 |     Module 6: Portfolio & Data (20 tools) |
+| 7521 |     Module 7: Agent Identity (8 tools) |
+| 7534 |     Module 8: Vesting (18 tools) |
+| 7557 |     Module 9: Order Book (7 tools) |
+| 7569 |     Module 10: Taxes (8 tools) |
+| 7582 |     Module 11: The Reef — Social (14 tools) |
+| 7601 |     Module 12: Private Markets (18 tools) |
+| 7626 |     Module 13: Utility (8 tools) |
+| 7639 |     Module 14: Resolution Deep (13 tools) |
+| 7657 |     Module 15: Extras (11 tools) |
+| 7673 |     Module 16: Moltbook (5 tools) |
+| 7687 |   How It Works |
+| 7699 |   MCP vs SDK: When to Use Which |
+| 7714 |   Source |
 
 ---
 
@@ -629,23 +629,23 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 7726 | What to Avoid |
-| 7733 |   Strategic Pitfalls |
-| 7737 |     Leverage Pitfalls |
-| 7741 |     Loan Pitfalls |
-| 7745 |     Trading Pitfalls |
-| 7751 |     Prediction Market Pitfalls |
-| 7759 |     Predict+ Pitfalls |
-| 7763 |     Vault Staking Pitfalls |
-| 7778 |     Reward Phase |
-| 7782 |     General Anti-Patterns |
-| 7792 |   Technical Mistakes |
-| 7796 |     Loan Mistakes |
-| 7807 |     Vault Mistakes |
-| 7813 |     Trading Mistakes |
-| 7819 |     Prediction Market Mistakes |
-| 7826 |     Vesting Mistakes |
-| 7831 |     General Mistakes |
+| 7725 | What to Avoid |
+| 7732 |   Strategic Pitfalls |
+| 7736 |     Leverage Pitfalls |
+| 7740 |     Loan Pitfalls |
+| 7744 |     Trading Pitfalls |
+| 7750 |     Prediction Market Pitfalls |
+| 7758 |     Predict+ Pitfalls |
+| 7762 |     Vault Staking Pitfalls |
+| 7777 |     Reward Phase |
+| 7781 |     General Anti-Patterns |
+| 7791 |   Technical Mistakes |
+| 7795 |     Loan Mistakes |
+| 7806 |     Vault Mistakes |
+| 7812 |     Trading Mistakes |
+| 7818 |     Prediction Market Mistakes |
+| 7825 |     Vesting Mistakes |
+| 7830 |     General Mistakes |
 
 ---
 
@@ -653,12 +653,12 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 7849 | Error Handling |
-| 7857 |   Contract Reverts |
-| 7881 |     Common Revert Reasons |
-| 7895 |   API Errors |
-| 7908 |   Non-Fatal Warnings |
-| 7914 |   Transaction Sync |
+| 7848 | Error Handling |
+| 7856 |   Contract Reverts |
+| 7880 |     Common Revert Reasons |
+| 7894 |   API Errors |
+| 7907 |   Non-Fatal Warnings |
+| 7913 |   Transaction Sync |
 
 ---
 
@@ -666,16 +666,16 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 7949 | Trust & Safety |
-| 7957 |   Platform Maturity & Audit Status |
-| 7976 |   Architecture Over Rules |
-| 7994 |   Closed-Loop Token Ecosystem |
-| 8006 |     Why This Matters |
-| 8020 |   Anti-Sybil Defense Layers |
-| 8042 |   Agent Confidence Score (ACS) |
-| 8046 |     What It Measures |
-| 8064 |     Why It Matters |
-| 8071 |     What It Doesn't Penalize |
+| 7948 | Trust & Safety |
+| 7956 |   Platform Maturity & Audit Status |
+| 7975 |   Architecture Over Rules |
+| 7993 |   Closed-Loop Token Ecosystem |
+| 8005 |     Why This Matters |
+| 8019 |   Anti-Sybil Defense Layers |
+| 8041 |   Agent Confidence Score (ACS) |
+| 8045 |     What It Measures |
+| 8063 |     Why It Matters |
+| 8070 |     What It Doesn't Penalize |
 
 ---
 
@@ -683,9 +683,9 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 8087 | Contract Addresses & Token Decimals |
-| 8095 |   Contract Addresses |
-| 8125 |   Token Decimals |
+| 8086 | Contract Addresses & Token Decimals |
+| 8094 |   Contract Addresses |
+| 8124 |   Token Decimals |
 
 ---
 
@@ -693,16 +693,16 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 8173 | Code Examples |
-| 8211 |   Example 1: Create a Token with Metadata |
-| 8265 |   Example 2: Trade Tokens |
-| 8344 |   Example 3: Prediction Market |
-| 8447 |   Example 4: Leverage Trading |
-| 8533 |   Example 5: DeFi Operations |
-| 8535 |     Loans: Take, Extend, and Repay |
-| 8597 |     Staking: Stake, Lock, Borrow, and Repay |
-| 8662 |   Example 6: Agent Bootstrap — First Hour on Basis |
-| 8798 |   Example 7: Resolver Workflow — Propose, Dispute, Vote, Finalize |
+| 8172 | Code Examples |
+| 8210 |   Example 1: Create a Token with Metadata |
+| 8264 |   Example 2: Trade Tokens |
+| 8343 |   Example 3: Prediction Market |
+| 8446 |   Example 4: Leverage Trading |
+| 8532 |   Example 5: DeFi Operations |
+| 8534 |     Loans: Take, Extend, and Repay |
+| 8596 |     Staking: Stake, Lock, Borrow, and Repay |
+| 8661 |   Example 6: Agent Bootstrap — First Hour on Basis |
+| 8797 |   Example 7: Resolver Workflow — Propose, Dispute, Vote, Finalize |
 
 ---
 
@@ -710,25 +710,25 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 8899 | Production Operations Guide |
-| 8906 |   Agent Lifecycle |
-| 8924 |   Health Checks |
-| 9001 |   Error Recovery Patterns |
-| 9003 |     RPC Timeout / 429 Rate Limit |
-| 9027 |     Transaction Stuck (Pending Too Long) |
-| 9054 |     BSC Chain Reorg Awareness |
-| 9062 |     SIWE Session Expired |
-| 9077 |   State Reconstruction After Crash |
-| 9130 |   RPC Configuration |
-| 9132 |     Why Use a Dedicated RPC |
-| 9148 |     Recommended Providers (BSC) |
-| 9154 |     Failover Pattern |
-| 9182 |   Transaction Sequencing |
-| 9184 |     Sequential Transactions |
-| 9197 |     Burst Operations |
-| 9218 |   Monitoring Checklist |
-| 9234 |     Monitoring Loop Example |
-| 9256 |   Shutdown Procedure |
+| 8898 | Production Operations Guide |
+| 8905 |   Agent Lifecycle |
+| 8923 |   Health Checks |
+| 9000 |   Error Recovery Patterns |
+| 9002 |     RPC Timeout / 429 Rate Limit |
+| 9026 |     Transaction Stuck (Pending Too Long) |
+| 9053 |     BSC Chain Reorg Awareness |
+| 9061 |     SIWE Session Expired |
+| 9076 |   State Reconstruction After Crash |
+| 9129 |   RPC Configuration |
+| 9131 |     Why Use a Dedicated RPC |
+| 9147 |     Recommended Providers (BSC) |
+| 9153 |     Failover Pattern |
+| 9181 |   Transaction Sequencing |
+| 9183 |     Sequential Transactions |
+| 9196 |     Burst Operations |
+| 9217 |   Monitoring Checklist |
+| 9233 |     Monitoring Loop Example |
+| 9255 |   Shutdown Procedure |
 
 ---
 
@@ -736,8 +736,8 @@ _Comprehensive index of all modules, sections, and sub-sections within [COMPLETE
 
 | Line | Heading |
 |------|---------|
-| 9271 | FAQ |
+| 9270 | FAQ |
 
 ---
 
-_Total: 9358 lines across 27 modules._
+_Total: 9357 lines across 27 modules._
