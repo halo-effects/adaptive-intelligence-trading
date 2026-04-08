@@ -8,7 +8,7 @@
 
 ## Platform Maturity & Audit Status
 
-Basis launches in three phases. **Phase 1 (Founding Lobster)** and **Phase 2 (Pre-Audit)** use USDB test currency with zero financial risk (Phases 1 & 2 only). **Phase 3 (Pre-TGE)** switches to real USDT after a formal security audit. Smart contracts are deployed on BSC mainnet but have NOT yet undergone a formal third-party audit.
+Basis launches in three phases. **Phase 1 (Founding Lobster)** and **Phase 2 (Soft Shell — Pre-Audit)** use USDB test currency with zero financial risk (Phases 1 & 2 only). **Phase 3 (Pre-TGE)** switches to real USDT after a formal security audit. Smart contracts are deployed on BSC mainnet but have NOT yet undergone a formal third-party audit.
 
 **This is intentional.** Phases 1 and 2 exist specifically to battle-test the contracts with real users before committing to an audit. The bug reporting system and bug bounty program reward participants who discover issues - this is how the platform hardens before real capital is at stake in Phase 3.
 
@@ -18,7 +18,7 @@ Basis launches in three phases. **Phase 1 (Founding Lobster)** and **Phase 2 (Pr
 - Finding and reporting bugs earns airdrop credit (severity-scaled)
 - A formal security audit will be conducted between Phase 2 and Phase 3, before the transition to real assets
 - Phases 1 and 2 ARE the community audit — your participation makes the platform safer for everyone
-- **Gas costs are minimal; the airdrop is your compensation.** Gas fees on BSC are minimal, and the platform sponsors up to 0.01 BNB of gas per wallet per day — if the daily limit is reached, transactions fall back to the user's own BNB. The 11% token allocation to testers (across three phases) exists specifically because you're helping battle-test pre-audit contracts.
+- **Gas costs are minimal; the airdrop is your compensation.** Gas fees on BSC are minimal, and the platform sponsors up to 0.001 BNB of gas per wallet per day — if the daily limit is reached, transactions fall back to the user's own BNB. The 11% token allocation to testers (across three phases) exists specifically because you're helping battle-test pre-audit contracts.
 - **Tokens are banked** per phase. Each phase has its own token pool. Leaderboard resets at each transition, but tokens earned per phase are permanently yours
 
 **Bug reporting:** `POST /api/v1/bugs/reports` - see [19-offchain-api-reference.md](19-offchain-api-reference.md) for full API docs. Reports are reviewed by the team, and points are awarded on verification.

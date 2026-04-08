@@ -69,16 +69,16 @@ The surge tax is a temporary extra fee that **token creators manually activate**
 
 **Total cost by duration**:
 
-| Duration | Origination | Extension | Total |
-|----------|------------|-----------|-------|
-| 10 days (min) | 2.00% | 0.00% | **2.00%** |
-| 30 days | 2.00% | 0.10% | **2.10%** |
-| 90 days | 2.00% | 0.40% | **2.40%** |
-| 365 days | 2.00% | 1.78% | **3.78%** |
+| Duration | Origination | Interest (0.005%/day) | Total |
+|----------|------------|----------------------|-------|
+| 10 days (min) | 2.00% | 0.05% | **2.05%** |
+| 30 days | 2.00% | 0.15% | **2.15%** |
+| 90 days | 2.00% | 0.45% | **2.45%** |
+| 365 days | 2.00% | 1.83% | **3.83%** |
 
-**How to calculate extension cost:** The minimum loan is 10 days (covered by origination). Extension cost only applies to days beyond the initial 10. Formula: `(totalDays - 10) × 0.005%`. For 365 days: `(365 - 10) × 0.005% = 355 × 0.005% = 1.775% ≈ 1.78%`.
+**How to calculate total cost:** 2% flat origination + (totalDays × 0.005%/day interest). Interest accrues from day 1. For 365 days: `2.00% + (365 × 0.005%) = 2.00% + 1.825% ≈ 3.83%`.
 
-**Key takeaway**: A year-long loan costs ~3.78% total - NOT 2% × 365 days. The 2% is a flat origination fee, not an annual rate.
+**Key takeaway**: A year-long loan costs ~3.83% total - NOT 2% × 365 days. The 2% is a flat origination fee, not an annual rate. Interest is 0.005% per day on top.
 
 ### Vault Costs & Yield
 
@@ -112,7 +112,7 @@ There is no fixed APY to quote. Early stakers in a growing platform with low vau
 
 ### Gas Costs (BSC)
 
-> **Note:** The platform sponsors up to 0.01 BNB of gas per wallet per day. If the daily limit is reached, transactions fall back to the user's own BNB.
+> **Note:** The platform sponsors up to 0.001 BNB of gas per wallet per day. If the daily limit is reached, transactions fall back to the user's own BNB.
 
 | Operation | Estimated Cost |
 |-----------|---------------|

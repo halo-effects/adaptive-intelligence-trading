@@ -7,16 +7,16 @@
 ---
 
 **What blockchain does Basis use?**
-BNB Chain mainnet. Sub-cent gas fees (sponsored by the platform up to 0.01 BNB/wallet/day), ~3 second block times, full EVM compatibility.
+BNB Chain mainnet. Sub-cent gas fees (sponsored by the platform up to 0.001 BNB/wallet/day), ~3 second block times, full EVM compatibility.
 
 **Have the smart contracts been audited?**
-Not yet - and that's by design. Basis launches in 3 phases: Phase 1 (Founding Lobster, current) and Phase 2 (Soft Shell) both use USDB test currency with zero financial risk (Phases 1 & 2 only). Phase 3 (Pre-TGE) switches to real USDT after a formal security audit - standard DeFi risks apply. Bug reporting earns bonus airdrop points. Each phase has its own separate token pool (1% / 2% / 8%). Tokens earned per phase are banked permanently - leaderboard resets but your banked tokens are yours.
+Not yet - and that's by design. Basis launches in 3 phases: Phase 1 (Founding Lobster, current) and Phase 2 (Soft Shell — Pre-Audit) both use USDB test currency with zero financial risk (Phases 1 & 2 only). Phase 3 (Pre-TGE) switches to real USDT after a formal security audit - standard DeFi risks apply. Bug reporting earns bonus airdrop points. Each phase has its own separate token pool (1% / 2% / 8%). Tokens earned per phase are banked permanently - leaderboard resets but your banked tokens are yours.
 
 **What are the three phases?**
-**Phase 1: Founding Lobster** (current, 1% of supply) - USDB test currency, zero risk, points earned, pre-audit. **Phase 2: Soft Shell** (2% of supply) - Relaunch after fixing Phase 1 bugs, still USDB, tokens from Phase 1 banked. **Phase 3: Pre-TGE** (8% of supply) - Relaunch after formal audit, switch to real USDT - standard DeFi risks apply, tokens from all prior phases banked. At each transition, the leaderboard resets but your banked tokens are permanently yours.
+**Phase 1: Founding Lobster** (current, 1% of supply) - USDB test currency, zero risk, points earned, pre-audit. **Phase 2: Soft Shell — Pre-Audit** (2% of supply) - Relaunch after fixing Phase 1 bugs, still USDB, tokens from Phase 1 banked. **Phase 3: Pre-TGE** (8% of supply) - Relaunch after formal audit, switch to real USDT - standard DeFi risks apply, tokens from all prior phases banked. At each transition, the leaderboard resets but your banked tokens are permanently yours.
 
 **What yield does the vault pay?**
-Vault yield is variable - it depends on total platform trading volume (more volume = more fees flowing to the vault) and the percentage of STASIS supply currently staked (more stakers = lower yield per token). There is no fixed APY. Early stakers in a growing platform with low vault participation earn the highest yield. The cost to participate is gas only (sponsored up to 0.01 BNB/wallet/day) - wrapping, locking, and unlocking have zero protocol fees.
+Vault yield is variable - it depends on total platform trading volume (more volume = more fees flowing to the vault) and the percentage of STASIS supply currently staked (more stakers = lower yield per token). There is no fixed APY. Early stakers in a growing platform with low vault participation earn the highest yield. The cost to participate is gas only (sponsored up to 0.001 BNB/wallet/day) - wrapping, locking, and unlocking have zero protocol fees.
 
 **What should I avoid doing on Basis?**
 
@@ -26,7 +26,7 @@ See [21-what-to-avoid.md](21-what-to-avoid.md) for 12 common pitfalls covering l
 Yes - human or agent. Connect a wallet and you're in. No KYC, no gatekeeping. To claim USDB from the faucet, you need an identity: either register as an ERC-8004 agent, or set a username and link at least one social account (Discord, GitHub, Google, or X).
 
 **How does the faucet work?**
-The faucet is a server-side daily USDB drip (max 500 USDB/day). Your daily amount depends on which eligibility signals are active: base identity (150), linked social (100), recent trading activity (100), and leaderboard milestones (100-150). Claims have a 24-hour cooldown. Check your status with `getFaucetStatus()` and claim with `claimFaucet()`. Passing a referrer address on any claim sets a permanent server-side referral link — you don't have to include it on your first claim.
+The faucet is a server-side daily USDB drip (max 500 USDB/day). Your daily amount depends on which eligibility signals are active: base identity (150), linked social (100), recent trading activity (100), and leaderboard milestones (100-150). Claims have a 24-hour cooldown. Check your status with `getFaucetStatus()` and claim with `claimFaucet()`. Passing a referrer address on any claim sets a permanent server-side referral link - you don't have to include it on your first claim.
 
 **Can I transfer tokens to another wallet?**
 No. Any wallet-to-wallet transfer of any token (USDB, STASIS, factory tokens, Predict+ tokens - everything) triggers automatic flagging and point suspension. All legitimate activity goes through platform contracts (DEX, loans, vault, prediction markets). There is no valid reason to send tokens directly to another wallet during the testing phase. **If it was accidental** (code bug, wrong address) and there's no evidence of multi-wallet gaming, you can dispute through the support channel and be reinstated. Confirmed sybil activity (funding other wallets, coordinated multi-wallet strategies) results in permanent disqualification.
@@ -72,7 +72,7 @@ If it was a genuine mistake (code bug, wrong address) and there's no pattern of 
 The [Basis Documentation](https://docs.launchonbasis.com/) covers the full platform vision, market opportunity, token utility, and product design. Note: those docs describe the final live version (post-TGE) - stablecoin references (USDC/USDT) and some parameters may differ from the current Phase 1 testing environment. Use these SDK docs for Phase 1 operations.
 
 **How do referrals work?**
-The referral link is set when a new user calls `claimFaucet(yourWalletAddress)` — passing a referrer address on any faucet claim sets a permanent server-side referral link (doesn't have to be the first claim). Once linked, you earn a percentage of their points (Level 1: 3%-5% depending on your Molt tier) and 1% of their referrals' points (Level 2). The referred user also earns a kickback on their own activity, so it's in everyone's interest to use a referral link. Referral points count toward your own tier progression. → See: [06-referral-system.md](06-referral-system.md) for the full tier table and kickback rates.
+The referral link is set by passing a referrer address when calling `claimFaucet(referrer)`. This can be included on any claim — it doesn't have to be the first one. Once set, the link is permanent and server-side. Once linked, you earn a percentage of their points (Level 1: 3%-5% depending on your Molt tier) and 1% of their referrals' points (Level 2). The referred user also earns a kickback on their own activity, so it's in everyone's interest to use a referral link. Referral points count toward your own tier progression. → See: [06-referral-system.md](06-referral-system.md) for the full tier table and kickback rates.
 
 **What is the Super Referrer archetype?**
 The meta-archetype that amplifies every other strategy. Build a referral network, earn passive points from your network's activity, and level up faster. Works best in combination with other archetypes - see [05-agent-archetypes.md - Super Referrer](05-agent-archetypes.md).

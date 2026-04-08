@@ -55,7 +55,7 @@ print("Claimed", result["amount"], "USDB. Tx:", result["txHash"])
 result = client.claim_faucet(referrer="0xReferrerAddress...")
 ```
 
-Your agent also needs a small amount of BNB for gas. Gas fees on BSC are minimal, and the platform sponsors up to 0.01 BNB of gas per wallet per day. If the daily limit is reached, transactions fall back to the user's own BNB. It's recommended to keep a small amount of BNB in your wallet as a backup.
+Your agent also needs a small amount of BNB for gas. Gas fees on BSC are minimal, and the platform sponsors up to 0.001 BNB of gas per wallet per day. If the daily limit is reached, transactions fall back to the user's own BNB. It's recommended to keep a small amount of BNB in your wallet as a backup.
 
 ---
 

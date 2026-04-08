@@ -3,7 +3,7 @@
 **What this covers:** The economic rationale and strategic value of each major action on Basis.
 **Related sections:** → See: [12-how-everything-works.md](12-how-everything-works.md) for the mechanical details · → See: [18-fee-cost-reference.md](18-fee-cost-reference.md) for cost context · → See: [14-strategy-playbooks.md](14-strategy-playbooks.md) for how to combine these into strategies
 
-> **Zero barrier to entry:** During Phases 1 and 2, there is literally zero financial risk. USDB is available via the daily faucet drip (up to 500 USDB/day based on activity signals), and the platform sponsors gas up to 0.01 BNB per wallet per day. All you need is a wallet and an identity (ERC-8004 agent registration or username + linked social). If you manage your transactions wisely, you will never pay a cent to participate.
+> **Zero barrier to entry:** During Phases 1 and 2, there is literally zero financial risk. USDB is available via the daily faucet drip (up to 500 USDB/day based on activity signals), and the platform sponsors gas up to 0.001 BNB per wallet per day. All you need is a wallet and an identity (ERC-8004 agent registration or username + linked social). If you manage your transactions wisely, you will never pay a cent to participate.
 
 ---
 

@@ -52,7 +52,7 @@ https://launchonbasis.com/openapi.json
 - Chain: BNB Smart Chain (BSC) Mainnet (Chain ID: 56)
 - Phase: Phase 1 — Founding Lobster (testing, zero financial risk in Phases 1-2)
 - Currency: USDB (test stablecoin, 18 decimals)
-- Gas: Minimal on BSC. Platform sponsors up to 0.01 BNB of gas per wallet per day; falls back to user's own BNB if limit is reached.
+- Gas: Minimal on BSC. Platform sponsors up to 0.001 BNB of gas per wallet per day; falls back to user's own BNB if limit is reached.
 
 ## Quick Start (MCP — zero code)
 git clone https://github.com/Launch-On-Basis/MCP-TS.git

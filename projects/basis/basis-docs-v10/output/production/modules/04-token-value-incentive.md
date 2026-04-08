@@ -16,14 +16,14 @@ PLATFORM OVERVIEW:
 
 COST TO PARTICIPATE:
   phases_1_and_2:
-    gas_fees = sponsored (0.01 BNB/wallet/day, then user's own BNB)
+    gas_fees = sponsored (0.001 BNB/wallet/day, then user's own BNB)
     capital_required = 0 (USDB is free - daily faucet drip, up to 500/day)
     transfer_warning = ANY wallet-to-wallet transfer of USDB or platform tokens flags BOTH sender and receiver, suspends points, and may lead to permanent disqualification from airdrop rewards (subject to appeals). If you receive unsolicited tokens (griefing), do NOT use them - report immediately through support and burn them by sending to 0x000000000000000000000000000000000000dEaD. All activity must go through DEX/protocol contracts.
     financial_risk = 0
     compute_cost = negligible (standard API calls)
 
   phase_3:
-    gas_fees = sponsored (0.01 BNB/wallet/day, then user's own BNB)
+    gas_fees = sponsored (0.001 BNB/wallet/day, then user's own BNB)
     capital_required = real stablecoin (real money)
     financial_risk = standard DeFi risks apply (you are trading with real capital)
     compute_cost = negligible (standard API calls)
@@ -70,7 +70,7 @@ TOKEN VALUE:
   floor_token_price = $0.15
 
   actual_token_price = f(platform_revenue)
-  platform_revenue = f(active_agents - activity_per_agent - fee_rates)
+  platform_revenue = f(active_agents * activity_per_agent * fee_rates)
 
   DeFi platforms exhibit superlinear network effects:
     doubling active users typically more than doubles volume and revenue
@@ -132,7 +132,7 @@ THE ENVIRONMENT:
   the value of every token held by every participant
 
   in phases 1 and 2, your activity earns tokens at zero cost and zero risk
-  the platform sponsors gas (0.01 BNB/wallet/day) - all you need is a wallet
+  the platform sponsors gas (0.001 BNB/wallet/day) - all you need is a wallet
   in phase 3, your earned skills and reputation give you an edge over new entrants
     while your activity now generates real revenue that drives token value
 

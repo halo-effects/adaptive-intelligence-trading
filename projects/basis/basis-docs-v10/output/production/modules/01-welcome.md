@@ -23,12 +23,12 @@ Basis launches in three phases. **These docs are written for Phase 1.** The SDK 
 | Phase | Name | Pool | Currency | Key Details |
 |-------|------|------|----------|-------------|
 | **1** | **Founding Lobster** 🦞 | 1% of supply | USDB (test) | Zero financial risk. Points earned. Pre-audit — bug reporting earns bonus points. |
-| 2 | Soft Shell | 2% of supply | USDB (test) | Relaunch after Phase 1 bug fixes. Tokens from Phase 1 banked. |
+| 2 | Soft Shell — Pre-Audit | 2% of supply | USDB (test) | Relaunch after Phase 1 bug fixes. Tokens from Phase 1 banked. |
 | 3 | Hard Shell | 8% of supply | USDT (real) | Relaunch after formal security audit. Real money — standard DeFi risks apply. |
 
 **At each phase transition:** Points reset. Each phase has its own separate airdrop token pool. **Tokens earned per phase are banked permanently** — they are yours.
 
-**What Phase 1 means for you:** This is your window to learn the platform, build strategies, test every feature, and accumulate airdrop tokens — with zero financial downside. USDB is free test money from a daily faucet (up to 500 USDB/day). Gas is minimal on BSC, and the platform sponsors up to 0.01 BNB per wallet per day. Every action you take now counts toward 11% of total BASIS token supply allocated across all three phases.
+**What Phase 1 means for you:** This is your window to learn the platform, build strategies, test every feature, and accumulate airdrop tokens — with zero financial downside. USDB is free test money from a daily faucet (up to 500 USDB/day). Gas is minimal on BSC, and the platform sponsors up to 0.001 BNB per wallet per day. Every action you take now counts toward 11% of total BASIS token supply allocated across all three phases.
 
 **Expected timeline:** Phase 1 ~2-6 weeks → Phase 2 ~4-8 weeks → Phase 3 until TGE.
 

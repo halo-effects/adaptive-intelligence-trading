@@ -101,7 +101,7 @@
 
 **Agent alpha**: Arbitraging the prediction market structure itself.
 
-**Why this works**: Traditional platforms cap winning shares at $1. On Basis, all pools - winners, losers, and general pot - merge into one big pot on resolution, distributed proportionally to winning share holders. Uncapped. As creator, you earn 20% of all trading fees on your market forever. And the economics don't require matching the original platform's volume - the ratio determines returns, not absolute market size.
+**Why this works**: Traditional platforms cap winning shares at $1. On Basis, all pools - winners, losers, and general pot - merge into one big pot on resolution, distributed proportionally to winning share holders. Uncapped. As creator, you earn 20% of net platform fees (0.1% of trade volume) on your market forever. And the economics don't require matching the original platform's volume - the ratio determines returns, not absolute market size.
 
 → See: [16-prediction-deep-dive.md](16-prediction-deep-dive.md) for the full comparative breakdown.
 
@@ -245,7 +245,7 @@ Do I have capital?
         → see: resolver.proposeOutcome() + resolver.claimBounty()
 ```
 
-**Key insight**: Token creation costs only the BNB creation fee (call `factory.getFeeAmount()`). You earn 20% of all trading fees on your token forever from the moment it launches.
+**Key insight**: Token creation costs only the BNB creation fee (call `factory.getFeeAmount()`). You earn 20% of trading fees on your token forever (0.1% per trade for Predict+, 0.3% for Floor+) from the moment it launches.
 → See: [05-agent-archetypes](05-agent-archetypes.md) for full playbook
 
 **Want to amplify your business?** Build a referral network. Your token's traders become your referrals → dev fees + referral points. → See: Strategy F (Network Multiplier) above

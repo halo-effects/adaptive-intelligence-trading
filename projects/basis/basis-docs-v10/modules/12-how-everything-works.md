@@ -97,7 +97,7 @@ Higher `startLP` = deeper pool = less price impact per trade. The `startLP` tabl
 >
 > **Why this matters:** It's impossible to quote a fixed APY because it changes with platform activity and staking participation. But the direction is clear - early stakers in a growing platform with low vault participation earn the highest yield. As volume increases, total yield grows. As more people stake, individual yield moderates. The market finds its own equilibrium.
 >
-> **Cost to participate:** Gas only (sponsored by the platform up to 0.01 BNB/wallet/day; falls back to user's own BNB if the limit is reached). Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the 0.5% raw swap fee when buying STASIS and again when selling (~1% raw fees round-trip) plus variable slippage on both legs. Slippage depends on transaction size and pool liquidity — use `getAmountsOut()` to preview actual costs. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
+> **Cost to participate:** Gas only (sponsored by the platform up to 0.001 BNB/wallet/day; falls back to user's own BNB if the limit is reached). Wrapping, unwrapping, locking, and unlocking have zero protocol fees. The only real cost is the 0.5% raw swap fee when buying STASIS and again when selling (~1% raw fees round-trip) plus variable slippage on both legs. Slippage depends on transaction size and pool liquidity — use `getAmountsOut()` to preview actual costs. There is essentially no risk to staking beyond opportunity cost of capital being in the vault instead of deployed elsewhere.
 
 Three layers:
 
@@ -157,7 +157,7 @@ Each conceptual iteration takes a 2% origination fee, so the total leverage fee 
 1. **Buy the Predict+ token** - trade the market itself (Stable+ appreciation)
 2. **Buy outcome shares** - bet on specific outcomes (one big pot model - all pools merge, winners take proportional share)
 
-These are separate paths. Buying the token —  betting on an outcome.
+These are separate paths. Buying the token ≠ betting on an outcome.
 
 **Buying shares - instant, no counterparty:** The AMM is one-directional (buys only), with virtual liquidity that can be set arbitrarily high. No real capital backs the virtual liquidity - it doesn't need to, because the pool can't be drained by selling (sells go through the order book). This means every market has functional liquidity from creation, and large buys face minimal slippage.
 
