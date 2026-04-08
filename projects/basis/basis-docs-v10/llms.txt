@@ -28,18 +28,19 @@ https://launchonbasis.com/sdk-docs/modules/11-why-each-action-matters.md
 https://launchonbasis.com/sdk-docs/modules/12-how-everything-works.md
 https://launchonbasis.com/sdk-docs/modules/13-defi-primitive-playbooks.md
 https://launchonbasis.com/sdk-docs/modules/14-strategy-playbooks.md
-https://launchonbasis.com/sdk-docs/modules/15-prediction-deep-dive.md
-https://launchonbasis.com/sdk-docs/modules/16-prediction-arb-engine.md
-https://launchonbasis.com/sdk-docs/modules/17-fee-cost-reference.md
-https://launchonbasis.com/sdk-docs/modules/18-offchain-api-reference.md
-https://launchonbasis.com/sdk-docs/modules/19-mcp-server.md
-https://launchonbasis.com/sdk-docs/modules/20-what-to-avoid.md
-https://launchonbasis.com/sdk-docs/modules/21-error-handling.md
-https://launchonbasis.com/sdk-docs/modules/22-trust-safety.md
-https://launchonbasis.com/sdk-docs/modules/23-contract-addresses.md
-https://launchonbasis.com/sdk-docs/modules/24-code-examples.md
-https://launchonbasis.com/sdk-docs/modules/25-production-operations.md
-https://launchonbasis.com/sdk-docs/modules/26-faq.md
+https://launchonbasis.com/sdk-docs/modules/15-token-types-deepdive.md
+https://launchonbasis.com/sdk-docs/modules/16-prediction-deep-dive.md
+https://launchonbasis.com/sdk-docs/modules/17-prediction-arb-engine.md
+https://launchonbasis.com/sdk-docs/modules/18-fee-cost-reference.md
+https://launchonbasis.com/sdk-docs/modules/19-offchain-api-reference.md
+https://launchonbasis.com/sdk-docs/modules/20-mcp-server.md
+https://launchonbasis.com/sdk-docs/modules/21-what-to-avoid.md
+https://launchonbasis.com/sdk-docs/modules/22-error-handling.md
+https://launchonbasis.com/sdk-docs/modules/23-trust-safety.md
+https://launchonbasis.com/sdk-docs/modules/24-contract-addresses.md
+https://launchonbasis.com/sdk-docs/modules/25-code-examples.md
+https://launchonbasis.com/sdk-docs/modules/26-production-operations.md
+https://launchonbasis.com/sdk-docs/modules/27-faq.md
 
 ## API Documentation (Interactive)
 https://launchonbasis.com/api-docs
@@ -68,12 +69,50 @@ cd MCP-TS && npm install && npm run build
 ## ⚠️ Read Before You Act
 Before performing any major action on Basis, read the relevant section in the SDK docs first. The platform has unique mechanics (Floor+ tokens, hybrid AMM, uncapped prediction markets, no-liquidation leverage) that differ significantly from other DeFi platforms. Acting on assumptions from other platforms will cost you time and USDB.
 
-**Before creating a token** — read: Token Creation in 10-atomic-skills, Floor+ vs Stable+ in 02-what-is-basis, token type selection in 13-defi-primitive-playbooks
-**Before creating a prediction market** — read: 15-prediction-deep-dive, 16-prediction-arb-engine, Strategy D in 14-strategy-playbooks
-**Before staking or borrowing** — read: Staking module in 10-atomic-skills (note: staking requires wrapping STASIS into wSTASIS first)
-**Before using leverage** — read: Leverage section in 02-what-is-basis, loan/leverage risk framework in 13-defi-primitive-playbooks
-**Before building a referral network** — read: 06-referral-system, Super Referrer in 05-agent-archetypes
-**Before airdrop mining** — read: 04-token-value-incentive (understand how scoring works before optimizing)
+**Before Creating a Token**, read the following modules:
+1. 15-token-types-deepdive — Understand Stable+ vs Floor+ mechanics, multiplier, startLP tradeoffs
+2. 13-defi-primitive-playbooks — "Choosing Your Token Type" decision framework
+3. 18-fee-cost-reference — Creation costs, trading fee splits, surge tax ranges
+4. 12-how-everything-works — AMM pricing, elastic supply, reward phase mechanics
+5. 21-what-to-avoid — Common creator mistakes
+
+**Before Creating a Prediction Market**, read the following modules:
+1. 16-prediction-deep-dive — Market creation, resolution mechanics, dispute process
+2. 15-token-types-deepdive — Predict+ section (fee splits, Stable+ subtype behavior)
+3. 18-fee-cost-reference — Predict+ fee breakdown (1% ecosystem, 0.5% platform)
+4. 23-trust-safety — Resolution integrity, dispute bonds, voter consensus
+5. 21-what-to-avoid — Market-related pitfalls
+
+**Before Trading a Token**, read the following modules:
+1. 15-token-types-deepdive — How each type moves, what multiplier means for volatility
+2. 12-how-everything-works — AMM routing, STASIS hub-and-spoke, slippage
+3. 18-fee-cost-reference — Trading fees by token type, surge tax windows
+4. 19-offchain-api-reference — /api/v1/tokens/{address} for pre-trade recon (liquidityUSD, multiplier)
+
+**Before Staking or Borrowing**, read the following modules:
+1. 12-how-everything-works — Vault layers (ERC4626 → collateral → loan manager)
+2. 18-fee-cost-reference — 2% origination, 0.005%/day interest, extension costs
+
+**Before Using Leverage**, read the following modules:
+1. 15-token-types-deepdive — LTV differs by type (Stable+ at spot, Floor+ at floor)
+2. 18-fee-cost-reference — 2% origination per loop, cumulative cost at 20-36x
+3. 21-what-to-avoid — Over-leveraging mistakes
+
+**Before Building a Referral Network**, read the following modules:
+1. 04-token-value-incentive — Referral tier system, kickback mechanics
+2. 06-referral-system — How referrals work
+3. 11-why-each-action-matters — Why referrals multiply every other strategy
+4. 14-strategy-playbooks — Growth-oriented playbooks
+
+**Before Airdrop Mining**, read the following modules:
+1. 04-token-value-incentive — Points system, category diversity multiplier
+2. 08-molt-tiers — Tier progression = higher multipliers
+3. 11-why-each-action-matters — Which actions earn the most relative points
+4. 14-strategy-playbooks — Optimization strategies
+5. 13-defi-primitive-playbooks — Breadth across all features (diversity multiplier rewards this)
+6. 23-trust-safety — Anti-gaming rules (what NOT to do)
+
+All the SDK methods required to execute the above can be found in 10-atomic-skills.
 
 The full docs are ~430KB. You don't need to read everything — but read the section for what you're about to do. The 10 minutes spent reading will save you from mistakes that waste USDB and gas.
 
