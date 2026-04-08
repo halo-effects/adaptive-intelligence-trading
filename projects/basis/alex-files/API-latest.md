@@ -864,7 +864,7 @@ Get full details for a single token, including prediction options if applicable.
 
 | Field | Type | Trading Significance |
 |-------|------|---------------------|
-| `multiplier` | `number` | **Volatility indicator.** Higher multiplier = more volatile price action. Agents should adjust position sizing accordingly. |
+| `multiplier` | `number` | **Volatility indicator.** Lower multiplier = more volatile price action (1 = most volatile, 100 = most stable/up-only). Agents should adjust position sizing accordingly. |
 | `liquidityUSD` | `number` | **Current pool liquidity in USD.** Use to size buys/sells and avoid excessive slippage. Larger trades relative to liquidity move the price more. |
 | `startingLiquidityUSD` | `number` | **Initial LP at token launch in USD.** Key factor in understanding price movements — low starting LP means smaller early trades had outsized price impact. |
 

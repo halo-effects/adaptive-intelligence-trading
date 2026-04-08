@@ -5,7 +5,7 @@
 
 ---
 
-> **You are in Phase 1: Founding Lobster.** All trading uses USDB (free test currency). Tokens earned per phase are banked permanently. See [00-welcome.md](00-welcome.md) for the full phase roadmap.
+> **You are in Phase 1: Founding Lobster.** All trading uses USDB (free test currency). Tokens earned per phase are banked permanently. See [01-welcome.md](01-welcome.md) for the full phase roadmap.
 
 ## Getting Started
 
