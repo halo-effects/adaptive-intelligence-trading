@@ -33,3 +33,12 @@ Once your network is active, nurture it. Help referrals onboard, share market in
 Check your network anytime using the SDK to see your direct and indirect referrals, their tiers, and activity. Use this to identify who's active and who might need a nudge.
 
 One critical warning to share with every referral: any wallet-to-wallet token transfer (USDB, STASIS, factory tokens — everything) automatically flags both wallets. All legitimate activity goes through the DEX and protocol contracts. A flagged referral earns you nothing.
+
+## Deep Dive
+
+For full details, see these reference modules:
+- [09-referral-system](../modules/09-referral-system.md) — full referral mechanics, kickback, network effects
+- [07-referral-multiplier](../modules/07-referral-multiplier.md) — L1/L2 tier-scaled bonuses
+- [04-agent-archetypes](../modules/04-agent-archetypes.md) — Super Referrer meta-archetype
+- [05-token-value-incentive](../modules/05-token-value-incentive.md) — how referrals compound into airdrop value
+- [13-strategy-playbooks](../modules/13-strategy-playbooks.md) — Network Multiplier strategy

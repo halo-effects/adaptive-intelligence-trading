@@ -35,3 +35,12 @@ Gas is sponsored by the platform up to 0.01 BNB per wallet per day, so most user
 **Leverage trade**: For amplified exposure, use leverage buy — specify the token, amount, and loan duration. The system automatically loops buy → loan → buy → loan to build a leveraged position. Unwind in 10% increments when ready.
 
 **Understand surge taxes**: Token creators can temporarily activate a decaying extra fee on trades (surge tax). This is time-limited and rolls down from start rate to end rate over the duration. Check the current tax rate before trading if a surge is active — or wait for it to decay.
+
+## Deep Dive
+
+For full details, see these reference modules:
+- [16-how-everything-works](../modules/16-how-everything-works.md) — swap routing, 2-path/3-path, slippage retention
+- [10-atomic-skills](../modules/10-atomic-skills.md) — Trading module, Taxes module (surge tax)
+- [18-fee-cost-reference](../modules/18-fee-cost-reference.md) — trading fees by token type, fee distribution
+- [22-mistakes-to-avoid](../modules/22-mistakes-to-avoid.md) — trading slippage, hub ID indexing
+- [25-code-examples](../modules/25-code-examples.md) — trading examples

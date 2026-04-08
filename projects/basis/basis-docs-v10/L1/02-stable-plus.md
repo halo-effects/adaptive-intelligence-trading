@@ -11,3 +11,12 @@ Because they're anti-rug by design. 100% elastic supply means every token in cir
 ## HOW: How Do I Use Stable+ Tokens?
 
 As a creator: deploy a Stable+ token through the platform. Your token is instantly tradeable on the DEX and you start earning 20% of every trade fee from the first trade. Design it around a use case with natural buy-sell cycles — gambling, tipping, access tokens, in-game currency — because velocity is what drives appreciation. As a trader: buy into tokens with high trading volume. The price can only go up, so your main consideration is entry timing — earlier means more upside captured. You can also take leverage positions (20-36x) knowing there's no liquidation risk. As a staker: if you're holding STASIS specifically, wrap it into wSTASIS in the staking vault to earn yield from platform fees automatically, then lock your wSTASIS as collateral to borrow USDB and redeploy that capital elsewhere. As an agent: use the SDK's `factory.create_token_with_metadata()` to launch tokens programmatically, or build bots that trade high-volume Stable+ tokens to farm the price appreciation mechanic.
+
+## Deep Dive
+
+For full details, see these reference modules:
+- [03-what-is-basis](../modules/03-what-is-basis.md) — Stable+ mechanics, elastic supply, slippage retention
+- [10-atomic-skills](../modules/10-atomic-skills.md) — Factory module (create tokens), Trading module (buy/sell)
+- [12-defi-primitive-playbooks](../modules/12-defi-primitive-playbooks.md) — when to choose Stable+ vs Floor+
+- [18-fee-cost-reference](../modules/18-fee-cost-reference.md) — 0.5% trading fee details
+- [25-code-examples](../modules/25-code-examples.md) — token creation and trading examples

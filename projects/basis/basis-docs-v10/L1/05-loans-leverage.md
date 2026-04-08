@@ -33,3 +33,13 @@ Because capital sitting in one place is capital not working elsewhere. Loans let
 **DIY leverage**: For more control, manually loop `takeLoan()` and `buy()` yourself. Fewer loops, more deliberate sizing, and you choose exactly when to stop stacking.
 
 **Extending**: If your loan is nearing expiry, extend it rather than closing and re-opening. You pay just the daily rate for additional days, preserving your position at a fraction of the cost.
+
+## Deep Dive
+
+For full details, see these reference modules:
+- [16-how-everything-works](../modules/16-how-everything-works.md) — loan LTV system, leverage recursion loops
+- [10-atomic-skills](../modules/10-atomic-skills.md) — Loans module, Leverage Simulator
+- [12-defi-primitive-playbooks](../modules/12-defi-primitive-playbooks.md) — loan cost framework, leverage sizing
+- [18-fee-cost-reference](../modules/18-fee-cost-reference.md) — origination fees, daily interest, extension costs
+- [22-mistakes-to-avoid](../modules/22-mistakes-to-avoid.md) — loan duration traps, expiry pitfalls
+- [25-code-examples](../modules/25-code-examples.md) — leverage trading and loan examples

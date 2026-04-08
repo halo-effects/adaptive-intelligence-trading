@@ -35,3 +35,13 @@ Because there are multiple ways to profit, and you don't need to be right about 
 **Resolve a market**: After the end time passes, propose the correct outcome with a 5 USDB bond. If nobody disputes within the challenge period, you finalise and earn the bounty. If someone disputes, the market goes to a vote among staked token holders.
 
 **Redeem winnings**: After resolution, if you hold winning outcome shares, redeem them for your proportional share of the entire merged pot — all outcome pools combined. The more winning shares you hold relative to total winning supply, the bigger your payout.
+
+## Deep Dive
+
+For full details, see these reference modules:
+- [16-how-everything-works](../modules/16-how-everything-works.md) — market lifecycle, dispute phases
+- [26-prediction-deep-dive](../modules/26-prediction-deep-dive.md) — structural comparison, uncapped payouts, strategy stacking
+- [27-prediction-arb-engine](../modules/27-prediction-arb-engine.md) — cross-platform arbitrage
+- [10-atomic-skills](../modules/10-atomic-skills.md) — Prediction Markets, Order Book, Market Resolver, Private Markets modules
+- [13-strategy-playbooks](../modules/13-strategy-playbooks.md) — Polymarket Mirror, Predict Leverage strategies
+- [25-code-examples](../modules/25-code-examples.md) — prediction market and resolver examples

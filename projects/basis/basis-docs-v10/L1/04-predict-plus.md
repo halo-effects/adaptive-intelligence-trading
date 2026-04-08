@@ -31,3 +31,12 @@ Because you can play both sides of a prediction market independently — and bot
 **To create a market**: Define your question, set the outcomes (up to 150), choose an end time, and seed it with USDB for initial liquidity. Your market goes live immediately. You start earning creator fees from the first trade.
 
 **To resolve a market**: After the end time, anyone can propose an outcome by posting a 5 USDB bond. If nobody disputes within the challenge period, the proposal finalises and the proposer earns a bounty. If disputed, it goes to a vote among staked token holders — 70% supermajority decides.
+
+## Deep Dive
+
+For full details, see these reference modules:
+- [03-what-is-basis](../modules/03-what-is-basis.md) — Predict+ token lifecycle, pool merging
+- [26-prediction-deep-dive](../modules/26-prediction-deep-dive.md) — structural comparison, 7 participant roles
+- [27-prediction-arb-engine](../modules/27-prediction-arb-engine.md) — cross-platform arb strategies
+- [12-defi-primitive-playbooks](../modules/12-defi-primitive-playbooks.md) — Predict+ dual-profit structure
+- [18-fee-cost-reference](../modules/18-fee-cost-reference.md) — Predict+ fee breakdown

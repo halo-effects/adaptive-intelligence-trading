@@ -31,3 +31,12 @@ Because it turns passive holdings into a multi-layered income engine.
 **Repay and unlock**: When you're ready to exit the loan, repay the USDB debt. This unlocks your wSTASIS. You can then unwrap back to STASIS (which will be worth more than when you started, thanks to accumulated yield) and sell back to USDB if you want to fully exit.
 
 **Quick exit**: If you just want out fast, there's an atomic unwrap-to-USDB path that converts wSTASIS → STASIS → USDB in a single transaction. No need to manually unwind each layer.
+
+## Deep Dive
+
+For full details, see these reference modules:
+- [16-how-everything-works](../modules/16-how-everything-works.md) — vault 3-layer architecture, ERC4626
+- [10-atomic-skills](../modules/10-atomic-skills.md) — Staking module (wrap, lock, borrow, repay)
+- [12-defi-primitive-playbooks](../modules/12-defi-primitive-playbooks.md) — staking sizing (30-50% rule)
+- [18-fee-cost-reference](../modules/18-fee-cost-reference.md) — vault round-trip costs
+- [25-code-examples](../modules/25-code-examples.md) — 5-step staking flow example
