@@ -903,7 +903,7 @@ Create and trade prediction markets. Note: buying the Predict+ token is separate
 **What it does:** Creates a prediction market AND registers metadata (image, description) on IPFS in one call.
 **Module:** `client.predictionMarkets`
 **Earns airdrop points** once the market attracts enough unique participants.
-**Fee:** Creator earns 20% of all trading fees on this market forever.
+**Fee:** Creator earns 20% of net trading fees on this market forever.
 **Requires:** SIWE authentication
 
 **JS:**

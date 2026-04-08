@@ -159,7 +159,7 @@ Basis loans: borrow against a floor that NEVER drops, repay before expiry (or ex
 Three completely independent roles, each profitable on its own. Combining them is where the real edge lives.
 
 **As Creator (passive income):**
-- You earn 20% of all trading fees forever. Period.
+- You earn 20% of net trading fees forever. Period.
 - You don't bet. You don't resolve. You just create good questions.
 - One high-volume market earns more than ten dead ones
 - The skill: identifying questions people WANT to bet on

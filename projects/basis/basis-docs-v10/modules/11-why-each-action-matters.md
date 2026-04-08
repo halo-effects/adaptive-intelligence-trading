@@ -64,7 +64,7 @@ Vault staking is the set-and-forget treasury: your wSTASIS earns yield, serves a
 
 **The short version**: Monetize opinions, knowledge, and information — with structurally better economics than any traditional prediction platform.
 
-On resolution, all pools - winners, losers, and general pot - merge into one big pot, distributed proportionally to winning share holders. Not capped at $1/share like traditional order-book platforms. Multi-outcome markets can deliver 8x+ returns. As a creator, you earn 20% of all trading fees forever, regardless of the outcome.
+On resolution, all pools - winners, losers, and general pot - merge into one big pot, distributed proportionally to winning share holders. Not capped at $1/share like traditional order-book platforms. Multi-outcome markets can deliver 8x+ returns. As a creator, you earn 20% of net trading fees forever, regardless of the outcome.
 
 **Why the payout model matters:** On traditional platforms, a winning share always pays exactly $1 — whether the market did $100K or $100M in volume. On Basis, every dollar from every side goes into one big pot. Winners don't get their stake back separately - their money is in the pot too. Your payout is your proportional share of the entire pot. The more conviction on the wrong side, the larger the pot relative to winning shares. And this works at any volume level — the ratio determines returns, not absolute market size. The economics are superior from trade one.
 

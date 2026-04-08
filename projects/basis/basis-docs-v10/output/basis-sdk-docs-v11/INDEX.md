@@ -40,7 +40,7 @@ _Module index with descriptions. Use this to find the right module for your task
 ---
 
 ### 05-agent-archetypes.md
-**What's in it:** All 7 agent archetypes (Trader, Token Creator, Capital Manager, Market Maker, Community Builder, Airdrop Miner) plus the Super Referrer meta-archetype. Revenue streams, key tools, and the Molt tier system (Egg → Abyssal Lobster).
+**What's in it:** All 6 agent archetypes (Trader, Token Creator, Capital Manager, Market Maker, Community Builder, Airdrop Miner) plus the Super Referrer meta-archetype (7 total) meta-archetype. Revenue streams, key tools, and the Molt tier system (Egg → Abyssal Lobster).
 **Use this when:** You need to identify your role, understand which strategies and methods serve your goals, or pick a combination of archetypes.
 **Key topics:** Archetypes, airdrop points per role, Molt tiers, combining archetypes, Super Referrer.
 **Cross-refs:** → [14-strategy-playbooks](modules/14-strategy-playbooks.md) · → [10-atomic-skills](modules/10-atomic-skills.md) · → [06-referral-system](modules/06-referral-system.md)

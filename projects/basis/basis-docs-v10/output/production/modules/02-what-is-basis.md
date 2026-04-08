@@ -233,7 +233,7 @@ Each market generates two assets: a Predict+ token (appreciates from volume) and
 
 Multiple ways to profit, and you don't need to be right about the prediction:
 
-- **As a creator:** Earn 20% of all trading fees forever. Create compelling questions — controversial ones generate the most volume.
+- **As a creator:** Earn 20% of net trading fees forever. Create compelling questions — controversial ones generate the most volume.
 - **As a bettor:** Uncapped payouts. A share at 5¢ can pay $4+ depending on pool size. Early conviction is richly rewarded.
 - **As a resolver:** Proposing correct outcomes earns bounties. Financial incentive to resolve accurately and promptly.
 - **As a trader:** The Predict+ token appreciates from volume regardless of which outcome wins.

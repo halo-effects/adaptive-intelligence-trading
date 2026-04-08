@@ -7,25 +7,25 @@
 
 ## Strategic Pitfalls
 
-Every platform has strategies that sound good in theory but don't work in practice. Here's what to watch out for — and why.
+Every platform has strategies that sound good in theory but don't work in practice. Here's what to watch out for - and why.
 
 ### Leverage Pitfalls
 
-**Avoid leveraging Floor+ tokens when spot price is far above floor price.** Loans are valued at floor price, not spot — so the further spot is above floor, the less you can actually borrow per loop. Your effective leverage drops sharply, but the 2% origination fee per loop stays the same. You're paying full fees for diminished leverage. Wait until spot and floor converge, or use Stable+/Predict+ tokens where floor = spot.
+**Avoid leveraging Floor+ tokens when spot price is far above floor price.** Loans are valued at floor price, not spot - so the further spot is above floor, the less you can actually borrow per loop. Your effective leverage drops sharply, but the 2% origination fee per loop stays the same. You're paying full fees for diminished leverage. Wait until spot and floor converge, or use Stable+/Predict+ tokens where floor = spot.
 
 ### Loan Pitfalls
 
-**Avoid taking loans for very short periods.** The 2% origination fee is flat — it applies whether your loan lasts 10 days or 1 day. On a brief loan, that 2% may exceed whatever you earn from deploying the borrowed capital. Minimum loan duration is 10 days; if you don't need the capital for at least that long, the fee structure works against you. Use extensions (0.005%/day) instead of re-originating when you need to hold a position longer.
+**Avoid taking loans for very short periods.** The 2% origination fee is flat - it applies whether your loan lasts 10 days or 1 day. On a brief loan, that 2% may exceed whatever you earn from deploying the borrowed capital. Minimum loan duration is 10 days; if you don't need the capital for at least that long, the fee structure works against you. Use extensions (0.005%/day) instead of re-originating when you need to hold a position longer.
 
 ### Trading Pitfalls
 
-**Avoid large single buys on new or low-liquidity tokens.** Early in a token's life, the AMM pool is shallow. A large buy will move the price significantly. Split large positions into multiple smaller trades — each moves the price less, and the pool deepens between trades as other participants enter.
+**Avoid large single buys on new or low-liquidity tokens.** Early in a token's life, the AMM pool is shallow. A large buy will move the price significantly. Split large positions into multiple smaller trades - each moves the price less, and the pool deepens between trades as other participants enter.
 
-**Avoid high-frequency trading / scalping strategies.** Round-trip raw trading fees are ~1% for Stable+ and ~3% for Floor+/Predict+ — before slippage. Use `getAmountsOut()` to preview real costs. HFT strategies designed for 0.1% fee environments will bleed out on Basis.
+**Avoid high-frequency trading / scalping strategies.** Round-trip raw trading fees are ~1% for Stable+ and ~3% for Floor+/Predict+ - before slippage. Use `getAmountsOut()` to preview real costs. HFT strategies designed for 0.1% fee environments will bleed out on Basis.
 
 ### Prediction Market Pitfalls
 
-**Avoid creating markets on topics nobody cares about.** Creator fees are 20% of all trading volume — but 20% of zero is zero. Market creation costs gas, so a dead market is a net loss. Focus on questions that generate genuine debate.
+**Avoid creating markets on topics nobody cares about.** Creator fees are 20% of net trading fees - but 20% of zero is zero. Market creation costs gas, so a dead market is a net loss. Focus on questions that generate genuine debate.
 
 **Avoid resolving markets you're not fully confident about.** The 5 USDB proposal bond is lost if you're wrong and someone disputes successfully. Only propose outcomes you can clearly verify from public information.
 
@@ -33,7 +33,7 @@ Every platform has strategies that sound good in theory but don't work in practi
 
 ### Predict+ Pitfalls
 
-**Avoid selling Predict+ tokens during a market's active trading phase.** Stable+ mechanics mean selling burns tokens and pushes the price up — great for remaining holders, not for you. The optimal exit is after resolution, when the post-resolution sell wave pushes the price to its peak.
+**Avoid selling Predict+ tokens during a market's active trading phase.** Stable+ mechanics mean selling burns tokens and pushes the price up - great for remaining holders, not for you. The optimal exit is after resolution, when the post-resolution sell wave pushes the price to its peak.
 
 ### Vault Staking Pitfalls
 
@@ -48,7 +48,7 @@ const roundTripCost = entryCost * 2n;
 // Your vault position needs to earn more than roundTripCost in yield to be profitable
 ```
 
-Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just to break even. Factor in how long you plan to stake — days minimum, not hours. Larger positions and longer time horizons make the economics work.
+Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just to break even. Factor in how long you plan to stake - days minimum, not hours. Larger positions and longer time horizons make the economics work.
 
 ### Reward Phase
 
@@ -60,7 +60,7 @@ Rule of thumb: at ~1% round-trip fees, a $100 position needs $1+ in yield just t
 
 **Avoid hedging all prediction market outcomes simultaneously.** This guarantees a loss from fees and earns no airdrop points.
 
-**Avoid strategies that depend on fixed APY.** Vault yield is variable — it changes with platform volume and staking participation.
+**Avoid strategies that depend on fixed APY.** Vault yield is variable - it changes with platform volume and staking participation.
 
 ---
 
@@ -76,7 +76,7 @@ Real mistakes discovered during live SDK testing. These cause transaction failur
 - ❌ **Re-originating instead of extending** → Each new loan = 2% fee. Extension = 0.005%/day.
 - ❌ **Using non-multiple-of-10 percentage on `partialLoanSell()`** → Both `trading.partialLoanSell()` and `loans.hubPartialLoanSell()` require percentage divisible by 10 (10, 20, 30... 100). Using 25% causes a silent contract revert.
 - ❌ **Calling `partialLoanSell` too soon after `leverageBuy`** → The backend needs ~5 seconds to sync. Always wait at least 5 seconds between creating a leverage position and partially selling it.
-- ❌ **Letting a loan expire and forgetting to claim** → Remaining collateral value above debt is claimable via `claimLiquidation(hubId)` — NOT automatically returned. Set up monitoring to claim leftovers.
+- ❌ **Letting a loan expire and forgetting to claim** → Remaining collateral value above debt is claimable via `claimLiquidation(hubId)` - NOT automatically returned. Set up monitoring to claim leftovers.
 - ❌ **Forgetting a loan expiry** → Collateral sits in the contract until you call `claimLiquidation()`. Token price may drop while you wait. **Set calendar reminders. In production, alert when `expiryTime - now < 48 hours`.**
 
 ### Vault Mistakes
@@ -87,7 +87,7 @@ Real mistakes discovered during live SDK testing. These cause transaction failur
 
 ### Trading Mistakes
 
-- ❌ **Ignoring the ~3% raw round-trip for Floor+/Predict+** → Your trade needs 3%+ price movement to break even on fees alone — slippage is additional.
+- ❌ **Ignoring the ~3% raw round-trip for Floor+/Predict+** → Your trade needs 3%+ price movement to break even on fees alone - slippage is additional.
 - ❌ **Not checking `getAmountsOut()` before trading** → Slippage on low-liquidity tokens.
 - ❌ **Not checking for active surge tax** → Creators can activate surge tax at any time (up to 15% on low-multiplier Floor+ tokens). Always check `taxes.getCurrentSurgeTax(tokenAddress)` before trading.
 
@@ -114,5 +114,5 @@ Real mistakes discovered during live SDK testing. These cause transaction failur
 - ❌ **Using `syncLoan()` instead of `syncTransaction()`** → `syncLoan` is deprecated. Use `client.api.syncTransaction(txHash)` which covers ALL modules.
 - ❌ **Not saving your API key on first run** → Only returned in full once at creation. After that, `listApiKeys()` returns masked hints only. Save immediately.
 - ❌ **Hardcoding private keys in source files** → Use environment variables or secrets manager. Never commit keys.
-- ❌ **Calling `setReferrer()` — method removed** → Referrals are now set server-side by passing `referrer` when claiming faucet: `claimFaucet("0xReferrerAddress")`.
+- ❌ **Calling `setReferrer()` - method removed** → Referrals are now set server-side by passing `referrer` when claiming faucet: `claimFaucet("0xReferrerAddress")`.
 - ❌ **Agent registration with oversized fields** → `name` max 100 chars, `description` max 500 chars.

@@ -8,7 +8,7 @@
 
 ## Platform Maturity & Audit Status
 
-Basis launches in three phases. **Phase 1 (Founding Lobster)** and **Phase 2 (Soft Shell — Pre-Audit)** use USDB test currency with zero financial risk (Phases 1 & 2 only). **Phase 3 (Pre-TGE)** switches to real USDT after a formal security audit. Smart contracts are deployed on BSC mainnet but have NOT yet undergone a formal third-party audit.
+Basis launches in three phases. **Phase 1 (Founding Lobster)** and **Phase 2 (Soft Shell — Pre-Audit)** use USDB test currency with zero financial risk (Phases 1 & 2 only). **Phase 3 (Hard Shell — Pre-TGE)** switches to real USDT after a formal security audit. Smart contracts are deployed on BSC mainnet but have NOT yet undergone a formal third-party audit.
 
 **This is intentional.** Phases 1 and 2 exist specifically to battle-test the contracts with real users before committing to an audit. The bug reporting system and bug bounty program reward participants who discover issues - this is how the platform hardens before real capital is at stake in Phase 3.
 

@@ -139,25 +139,33 @@ These methods require SIWE authentication (available when using `BasisClient.cre
 
 ---
 
-**`uploadImage(file, filename)`**
+**`uploadImage(file, purpose, address?)`**
 
 Upload an image file to IPFS.
 
-> **Endpoint:** `POST /api/images` · Auth: Session · Content-Type: `multipart/form-data`
+> **Endpoint:** `POST /api/images` · Auth: Session / API Key · Content-Type: `multipart/form-data`
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `file` | `Buffer/bytes` | Image data |
-| `filename` | `string` | Filename with extension |
+| `file` | `Buffer/bytes` | Image data (jpeg, png, webp, gif; max 5 MB) |
+| `purpose` | `string` | Upload purpose: `"token"` or `"avatar"`. `"token"` requires `address` field and caller must be the on-chain DEV/creator of the specified token. `"avatar"` is capped at 5 uploads per calendar month. |
+| `address` | `string` | Token/market contract address. **Required** when purpose is `"token"`. |
 
 **Constraints:** Allowed types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`. Max file size: **5 MB**. Recommended format: **512×512 WebP**.
 
-Returns: `string` -- IPFS gateway URL (e.g. `"https://cyan-abundant-swordtail-589.mypinata.cloud/ipfs/bafy..."`).
+Returns: `{ url, cid }` — IPFS gateway URL and content identifier.
+
+```json
+{
+  "url": "https://cyan-abundant-swordtail-589.mypinata.cloud/ipfs/bafy...",
+  "cid": "bafy..."
+}
+```
 
 | Status | Description |
 |--------|-------------|
-| 200 | IPFS URL string |
-| 400 | No file / invalid type / exceeds 5 MB |
+| 200 | `{ url, cid }` object |
+| 400 | No file / invalid type / exceeds 5 MB / missing purpose or address |
 | 401 | Not signed in |
 
 ---
@@ -172,20 +180,20 @@ Download an image from a URL, resize to 512×512 center-crop WebP, and upload to
 |-----------|------|-------------|
 | `url` | `string` | Source image URL |
 
-Returns: `string` -- IPFS gateway URL.
+Returns: `{ url, cid }` — IPFS gateway URL and content identifier (same as `uploadImage`).
 
 **JavaScript:**
 
 ```js
-const imageUrl = await client.api.uploadImageFromUrl("https://example.com/logo.png");
-console.log("IPFS URL:", imageUrl);
+const result = await client.api.uploadImageFromUrl("https://example.com/logo.png");
+console.log("IPFS URL:", result.url, "CID:", result.cid);
 ```
 
 **Python:**
 
 ```python
-image_url = client.api.upload_image_from_url("https://example.com/logo.png")
-print("IPFS URL:", image_url)
+result = client.api.upload_image_from_url("https://example.com/logo.png")
+print("IPFS URL:", result["url"], "CID:", result["cid"])
 ```
 
 ---
@@ -829,6 +837,7 @@ List and search tokens.
 | Option | Type | Description |
 |--------|------|-------------|
 | `search` | `string` | Filter by name, symbol, or address |
+| `dev` | `string` | Filter by creator wallet address |
 | `isPrediction` | `boolean` | Filter by token type. Use `true` to list only prediction markets. |
 | `sort` | `string` | `"newest"` (default) or `"oldest"` |
 | `page` | `number` | Page number (default: 1) |
@@ -851,14 +860,11 @@ Returns: `{ data: Token[], pagination }`
   "isPrediction": false,
   "predictionType": null,
   "predictionStatus": null,   // "active", "awaiting_proposal", "proposed", "disputed", "resolved", etc.
-  "createdAt": "2026-01-01T00:00:00.000Z",
-  "lastActivityAt": "2026-03-13T00:00:00.000Z",
-  "liquidityUSD": 25000.50,
-  "startingLiquidityUSD": 1200.00
+  "createdAt": "2026-01-01T00:00:00.000Z"
 }
 ```
 
-> See `getToken` below for detailed descriptions of `multiplier`, `liquidityUSD`, and `startingLiquidityUSD` - these are key trading fields for agents.
+> **Note:** The list endpoint returns a compact Token object. For trading fields like `liquidityUSD`, `startingLiquidityUSD`, and `lastActivityAt`, use the single-token detail endpoint `getToken(address)` below.
 
 **JavaScript:**
 
