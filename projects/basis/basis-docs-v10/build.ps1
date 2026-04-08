@@ -7,7 +7,6 @@ Run from: basis-docs-v10/
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 $modulesDir = Join-Path $root "modules"
-$l1Dir = Join-Path $root "L1"
 $outDir = $root
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
@@ -38,7 +37,7 @@ $sb = New-Object System.Text.StringBuilder
 [void]$sb.AppendLine("# Basis SDK Documentation - COMPLETE")
 [void]$sb.AppendLine()
 $dateStr = Get-Date -Format "yyyy-MM-dd HH:mm"
-[void]$sb.AppendLine("_All 29 modules concatenated. Generated $dateStr from individual module files._")
+[void]$sb.AppendLine("_All $($modules.Count) modules concatenated. Generated $dateStr from individual module files._")
 [void]$sb.AppendLine()
 [void]$sb.AppendLine("---")
 [void]$sb.AppendLine()
@@ -106,41 +105,8 @@ $llms = New-Object System.Text.StringBuilder
 [void]$llms.AppendLine("# https://launchonbasis.com/sdk-docs")
 [void]$llms.AppendLine()
 [void]$llms.AppendLine("# This file contains the complete Basis SDK documentation for LLM consumption.")
-[void]$llms.AppendLine("# For the navigation guide, see: 00-guide.md")
 [void]$llms.AppendLine("# For individual modules, see: modules/")
 [void]$llms.AppendLine()
-[void]$llms.AppendLine("---")
-[void]$llms.AppendLine("## NAVIGATION GUIDE")
-[void]$llms.AppendLine("---")
-[void]$llms.AppendLine()
-
-# Include 00-guide
-$guideContent = [System.IO.File]::ReadAllText((Join-Path $modulesDir "00-guide.md"), [System.Text.Encoding]::UTF8)
-$guideContent = $guideContent.TrimStart([char]0xFEFF)
-[void]$llms.AppendLine($guideContent.TrimEnd())
-[void]$llms.AppendLine()
-[void]$llms.AppendLine("---")
-[void]$llms.AppendLine("## LAYER 1 - STRATEGIC SUMMARIES (What / Why / How)")
-[void]$llms.AppendLine("---")
-[void]$llms.AppendLine()
-
-# Include L1 files
-$l1Files = Get-ChildItem $l1Dir -Filter "*.md" |
-    Where-Object { $_.Name -match "^\d{2}-" } |
-    Sort-Object Name
-
-foreach ($l1 in $l1Files) {
-    $content = [System.IO.File]::ReadAllText($l1.FullName, [System.Text.Encoding]::UTF8)
-    $content = $content.TrimStart([char]0xFEFF)
-    [void]$llms.AppendLine("### L1: $($l1.BaseName)")
-    [void]$llms.AppendLine()
-    [void]$llms.AppendLine($content.TrimEnd())
-    [void]$llms.AppendLine()
-    [void]$llms.AppendLine("---")
-    [void]$llms.AppendLine()
-}
-
-[void]$llms.AppendLine("## LAYER 2 - MODULE REFERENCE")
 [void]$llms.AppendLine("---")
 [void]$llms.AppendLine()
 

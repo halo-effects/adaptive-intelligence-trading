@@ -10,9 +10,9 @@
 
 **If you have 5 minutes:** Read [02-what-is-basis](02-what-is-basis.md). You'll understand every feature on the platform — what it is, why you'd use it, and how to get started.
 
-**If you're ready to build:** Jump to the module you need. [INDEX.md](../INDEX.md) has descriptions of all 28 modules. [10-atomic-skills](10-atomic-skills.md) is the SDK method reference. [03-getting-started](03-getting-started.md) walks you through setup.
+**If you're ready to build:** Jump to the module you need. [INDEX.md](../INDEX.md) has descriptions of all 28 modules. [10-atomic-skills](10-atomic-skills.md) is the SDK method reference. [17-getting-started](17-getting-started.md) walks you through setup.
 
-**If you're going to production:** [25-production-operations](25-production-operations.md) covers health checks, error recovery, and monitoring. [21-error-handling](21-error-handling.md) has every revert reason and API error code.
+**If you're going to production:** [29-production-operations](29-production-operations.md) covers health checks, error recovery, and monitoring. [19-error-handling](19-error-handling.md) has every revert reason and API error code.
 
 ---
 
@@ -32,7 +32,7 @@ Basis launches in three phases. **These docs are written for Phase 1.** The SDK 
 
 **Expected timeline:** Phase 1 ~2-6 weeks → Phase 2 ~4-8 weeks → Phase 3 until TGE.
 
-→ See: [22-trust-safety](22-trust-safety.md) for full audit status and security details
+→ See: [21-trust-safety](21-trust-safety.md) for full audit status and security details
 
 ---
 
@@ -72,7 +72,7 @@ Whether you have capital or need it, Basis has a path for you.
 
 **You want a business** → Build one. Launch a token. That's it. You now earn a share of every trade on it for as long as it exists. Add community, add markets, add utility — watch the fees compound.
 
-→ See: [02-what-is-basis](02-what-is-basis.md) to understand the platform · [03-getting-started](03-getting-started.md) to start building · [05-agent-archetypes](05-agent-archetypes.md) to find your role
+→ See: [02-what-is-basis](02-what-is-basis.md) to understand the platform · [17-getting-started](17-getting-started.md) to start building · [04-agent-archetypes](04-agent-archetypes.md) to find your role
 
 ---
 
@@ -112,8 +112,8 @@ The scoring system is designed to make cheating unprofitable:
 - **Top 50 USDB balance at TGE** earns additional bonus
 - **Leaderboard is a skill contest** — same daily faucet for everyone, no shortcuts
 
-→ See: [04-token-value-incentive](04-token-value-incentive.md) for the full economic model
+→ See: [05-token-value-incentive](05-token-value-incentive.md) for the full economic model
 
 ---
 
-**Related sections:** → See: [02-what-is-basis](02-what-is-basis.md) for platform fundamentals · → See: [03-getting-started](03-getting-started.md) to begin building · → See: [05-agent-archetypes](05-agent-archetypes.md) to find your role
+**Related sections:** → See: [02-what-is-basis](02-what-is-basis.md) for platform fundamentals · → See: [17-getting-started](17-getting-started.md) to begin building · → See: [04-agent-archetypes](04-agent-archetypes.md) to find your role

@@ -1,7 +1,7 @@
 # Atomic Skills - SDK Method Reference
 
 **What this covers:** Every callable SDK method as a plain-English reference. JS + Python signatures, key params, and fees. This is THE code reference.
-**Related sections:** → See: [03-getting-started.md](03-getting-started.md) for setup · → See: [23-contract-addresses.md](23-contract-addresses.md) for addresses · → See: [21-error-handling.md](21-error-handling.md) for error handling · → See: [24-code-examples.md](24-code-examples.md) for complete working examples
+**Related sections:** → See: [17-getting-started.md](17-getting-started.md) for setup · → See: [24-contract-addresses.md](24-contract-addresses.md) for addresses · → See: [19-error-handling.md](19-error-handling.md) for error handling · → See: [25-code-examples.md](25-code-examples.md) for complete working examples
 
 ---
 
@@ -1161,7 +1161,7 @@ for (const market of needsProposal) {
 - **253 (EARLY)**: Only the disputer can propose. Resets market to fresh proposal cycle (round increments)
 - **254 (INVALID)**: Anyone can propose/vote. Proportional refund to all participants
 
-→ See: [12-how-everything-works.md](12-how-everything-works.md) for the full resolution deep dive with bond outcomes, bounty distribution, and veto mechanics.
+→ See: [16-how-everything-works.md](16-how-everything-works.md) for the full resolution deep dive with bond outcomes, bounty distribution, and veto mechanics.
 
 ---
 
@@ -1616,7 +1616,7 @@ Returns: `address` (string) — wallet address linked to the NFT.
 ## Module: Off-Chain API (`client.api`)
 
 Backend data endpoints - read token data, trade history, order books, manage authentication, and more.
-→ See: [18-offchain-api-reference.md](18-offchain-api-reference.md) for the full API reference with all endpoints, schemas, and rate limits.
+→ See: [20-offchain-api-reference.md](20-offchain-api-reference.md) for the full API reference with all endpoints, schemas, and rate limits.
 
 **Quick reference — data & market methods:**
 
@@ -1868,7 +1868,7 @@ Available as both `client.claimFaucet()` (convenience) and `client.api.claimFauc
 
 **How to refer someone (current):** Share your wallet address directly with the user you're referring. They paste it into the referrer field on the dapp faucet page, or pass it programmatically via the SDK. There is no referral URL yet — shareable URL params (`?ref=0xYourWallet`) are planned but not yet live. Check back for updates on the link format.
 
-→ See: [06-referral-system.md](06-referral-system.md) for full referral tiers, kickback rates, and L1/L2 mechanics.
+→ See: [09-referral-system.md](09-referral-system.md) for full referral tiers, kickback rates, and L1/L2 mechanics.
 
 **Module:** `client` (top-level) and `client.api`
 
