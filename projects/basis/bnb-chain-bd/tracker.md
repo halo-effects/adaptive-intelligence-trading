@@ -1,7 +1,7 @@
 # BNB Chain Business Development — Action Tracker
 
 _Source: Follow-up call with Walter, BD Manager at BNB Chain (April 2026)_
-_Last updated: 2026-04-04_
+_Last updated: 2026-04-08_
 _Contact: Walter (BNB Chain BD) — offered referral for Yzi Labs + CMC Labs_
 
 ---
@@ -19,8 +19,8 @@ Seed funding, promotional support, and participation in BNB Chain sponsored chan
 | # | Track | Priority | Owner | Status | Target Date |
 |---|-------|----------|-------|--------|-------------|
 | 1 | DappBay Listing | 🔴 HIGH | TBD | Not started | ASAP |
-| 2 | X Deployment Post + Welcome Tweet | 🔴 HIGH | Brett + Diamond | Not started | After DappBay approval |
-| 3 | Walter's 12 Questions | 🔴 HIGH | Brett + GeeGee | Drafting | Before welcome tweet |
+| 2 | X Deployment Post + Welcome Tweet | 🔴 HIGH | Brett + Diamond | Phase 1 live, ready to draft deployment tweet | ASAP |
+| 3 | Walter's 12 Questions | 🟡 MEDIUM | Brett + GeeGee | 10/12 answered, Q11 pending (Atlas) | When Atlas delivers profiles |
 | 4 | Yzi Labs $1B Builders Fund | 🟡 MEDIUM | Brett + GeeGee | Not started | TBD |
 | 5 | CMC Labs Incubation | 🟡 MEDIUM | Brett | Not started | Parallel to Yzi |
 | 6 | Binance Wallet SDK Integration | 🟡 MEDIUM | Alex | Steps 1-2 done, step 3 pending | Submit self-listing |
@@ -110,14 +110,14 @@ All answers needed before Walter can proceed with support.
 | Q7 | Audit/security docs | Preliminary audit in progress using Claude Sonnet 4.6. Testing methodology based on Hashlock public audits for similar projects. Formal third-party audit planned pre-TGE. | ⏳ IN PROGRESS |
 | Q8 | TGE details | Not yet TGE'd. Currently in Phase 1 "Founding Lobster" (pre-launch testing, zero financial risk). Planned ticker: **BASIS**. Floor FDV: $150M. TGE price: $0.15. Airdrop: 11% of total supply across 3 phases. | ✅ DRAFTED |
 | Q9 | Date of main contract deployment | **2026-03-20** — full redeployment of all 13 smart contracts on BSC mainnet (Chain ID: 56) | ✅ |
-| Q10 | Target date for launch post + welcome tweet | ⏳ **Need decision** — after beta testing feedback? Suggest aligning with formal Phase 1 launch | Needs Brett |
-| Q11 | Team background / LinkedIn | ⏳ **Need from each team member**: Brett, Diamond, Alex, Atlas | **BLOCKING** |
-| Q12 | Raise details / investors | Presale planned: 4 rounds, 30% allocation (300M tokens), target raise ~$30M. Notice-based staking with USDC yield. No external investors announced yet. | ⏳ Needs Brett confirmation |
+| Q10 | Target date for launch post + welcome tweet | **Phase 1 (Founding Lobster) is LIVE.** Launch announced on Telegram, Moltbook (m/basis), and X (@LaunchOnBasis). Ready for deployment tweet + BNB Chain welcome tweet. See: https://launchonbasis.com/articles/article-phases-tokenomics | ✅ READY |
+| Q11 | Team background / LinkedIn | ⏳ Atlas is compiling team profiles. | IN PROGRESS (Atlas) |
+| Q12 | Raise details / investors | Presale planned: 4 rounds, 30% allocation (300M tokens), target raise ~$30M. Notice-based locked. Floor FDV: $150M. Full tokenomics published: https://launchonbasis.com/articles/article-phases-tokenomics | ✅ PUBLIC |
 
 ### Blockers:
-- **Q11 is the main gap** — need LinkedIn profiles / backgrounds from all team members
-- **Q10** — need target date decision from Brett
-- **Q12** — need Brett to confirm what's shareable publicly about raise details
+- **Q11 is the remaining gap** — Atlas is compiling team LinkedIn profiles / backgrounds
+- ~~Q10~~ — **RESOLVED**: Phase 1 is live, launch announced across channels
+- ~~Q12~~ — **RESOLVED**: Tokenomics article published, raise details are public
 
 ---
 
