@@ -1662,11 +1662,16 @@ class V14PortfolioLiveAster:
                 self.router.return_capital(sym, granted)
                 if cs.engine:
                     cs.engine.reject_action(action)
-                send_telegram(
-                    f"⚠️ {TG_PREFIX} BUY skipped — insufficient USDT\n"
-                    f"Need: ${cost:.2f} | Have: ${exchange_balance:.2f}\n"
-                    f"Symbol: {sym}"
-                )
+                # Throttle: alert once per coin per hour
+                now = time.time()
+                last_alert = getattr(cs, '_last_insufficient_alert', 0)
+                if now - last_alert > 3600:
+                    cs._last_insufficient_alert = now
+                    send_telegram(
+                        f"⚠️ {TG_PREFIX} BUY skipped — insufficient USDT\n"
+                        f"Need: ${cost:.2f} | Have: ${exchange_balance:.2f}\n"
+                        f"Symbol: {sym}"
+                    )
                 return
 
             result = self.client.create_market_buy(sym, qty)
