@@ -2585,6 +2585,11 @@ class V14PortfolioLiveAster:
             ),
             "timeframe": "1h",
             "last_update": datetime.now(timezone.utc).isoformat(),
+            "halted": self.bot_state in (BotState.PAUSED, BotState.WIND_DOWN),
+            "max_drawdown_pct": round(
+                (self.capital - equity) / self.capital * 100
+                if self.capital > 0 and equity < self.capital else 0.0, 2
+            ),
         }
 
         # Aggregate totals from CSV (survives restarts)

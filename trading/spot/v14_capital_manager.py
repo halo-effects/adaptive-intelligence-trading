@@ -340,6 +340,9 @@ class CapitalRouter:
 
         # 4. Calculate total adjusted score
         total_score = sum(c["adjusted_score"] for c in top_coins)
+        if total_score <= 0:
+            logger.warning("All coins have zero adjusted score — skipping allocation")
+            return {}
         
         # 5. Proportional weighting by adjusted score & dynamic max cap per coin
         # Scale cap inversely with number of coins:

@@ -38,6 +38,7 @@ Then it rotates to the next best opportunity. Rinse and repeat, 24/7.
 | **Exchange Is Truth** | Position state synced from exchange every 65s cycle | Engine can never diverge from reality |
 | **Resting Limit Orders** | Exchange handles take-profit, not the bot | Even if the bot crashes, your TP order sits on the exchange. TP price is always computed from the actual exchange entry price (not engine's candle-based estimate) to account for spread/slippage. |
 | **Pre-Order Exchange Checks** | Every BUY checks `fetch_balance()`, every SELL checks `fetch_open_positions()` | No order executes without exchange confirmation that the prerequisite exists (cash for buys, position for sells) |
+| **Leverage Enforcement** | `ensure_leverage()` called per symbol at first trade | Sets 1x on Aster (which defaults to 5x Cross). Note: `_leverage_set` is not persisted to state.json — on restart with no open positions, leverage is re-verified at next trade entry. |
 | **Human Approval** | Direction changes require Telegram confirmation | The bot never flips strategy on its own |
 | **PAUSE/RESUME** | Freeze all trading with one command | Instant kill switch, existing TPs stay active |
 | **No Engine Position Tracking** | Engine doesn't maintain its own position state | Eliminates entire class of drift/divergence bugs |
@@ -407,12 +408,12 @@ Where:
 
 **Simulation parameters (High Profile):**
 ```
-Base Order:      40% of allocation
+Base Order:      30% of allocation  (DCA_BO_PCT = 0.30)
 Safety Order deviation: 1.5% per layer
 Safety Order multiplier: 1.5x volume per layer
-Max layers:      12
+Max layers:      12  (DCA_MAX_LAYERS = 8 default; overridden to 12 by High profile)
 Take Profit:     1.5% above average entry
-Taker fee:       0.025% (Hyperliquid)
+Taker fee:       0.035% (Aster Perps)
 ```
 
 **Scan windows:** 7d, 14d, 30d, bear (extended lookback)
@@ -569,13 +570,13 @@ Triggered by confirmed top signal. Same grid mechanics, inverted direction.
 ### 5.2 DCA Grid Mechanics
 
 ```
-Base Order (BO) = capital × DCA_BO_PCT (40%)
+Base Order (BO) = capital × DCA_BO_PCT (30%)   ← DCA_BO_PCT = 0.30 in code
 
 Layer 0 (Base): BO amount at entry price
 Layer 1: BO × SO_VOL_MULT at (entry × (1 - SO_DEV))
 Layer 2: Layer1_size × SO_VOL_MULT at (Layer1_price × (1 - SO_DEV × price_multiplier))
 ...
-Layer N: where N = DCA_MAX_LAYERS
+Layer N: where N = DCA_MAX_LAYERS (default 8; High profile overrides to 12)
 
 Take Profit: when avg_entry × (1 + DCA_TP_PCT) ≤ current_price → SELL ALL
 ```
@@ -622,10 +623,10 @@ until production data justifies differentiation.
 | Parameter | Production Value |
 |-----------|-----------------|
 | Leverage | **1.0x** (no liquidation risk) |
-| Base Order | 40% |
+| Base Order | **30%** (DCA_BO_PCT = 0.30) |
 | SO Deviation | 1.5% |
 | SO Multiplier | 1.5x |
-| Max Layers | 12 |
+| Max Layers | **12** (DCA_MAX_LAYERS default=8; High profile=12) |
 | Take Profit | 1.5% |
 | Scanner Window | 30d |
 | Trend Multiplier | Yes (0.3–1.5x) |

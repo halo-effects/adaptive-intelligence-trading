@@ -874,8 +874,10 @@ def main():
             print(f"{coin:<8} {t['direction']:<14} {t7:>8} {t14:>8} {t30:>8} {t['trend_multiplier']:>5.2f}x")
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+    tmp_path = OUTPUT_PATH.with_suffix(".tmp")
+    with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
+    tmp_path.replace(OUTPUT_PATH)
     logger.info(f"Results saved to {OUTPUT_PATH}")
 
     if not args.no_telegram:

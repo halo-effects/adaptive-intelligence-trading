@@ -2,7 +2,7 @@
 
 > **Use this file first.** Read specific line ranges from `V14PM_SYSTEM_ARCHITECTURE.md` (2,234 lines / 111KB) instead of loading the full document. Line numbers are stable until the next edit.
 >
-> **Last updated:** 2026-04-09 (v1.7 — pre-order exchange checks, GAPs 14-16)
+> **Last updated:** 2026-04-09 (v1.8 — comprehensive audit fixes, BO% corrected, leverage note)
 
 ## Quick Lookup by Topic
 
@@ -20,7 +20,8 @@
 | **Signal stack (ROUTER v2)** | §4.5 | 498–544 | Phase transition signals, top/bottom detection |
 | **Exchange-as-truth** | §6.8.1 | 930–958 | Core architecture principle, what was removed |
 | **TP limit orders** | §6.8.2 | 959–976 | Resting orders on exchange, fill handling, exchange-entry TP |
-| **Pre-order exchange checks** | Safety table | 42 | Every BUY checks balance, every SELL checks position |
+| **Pre-order exchange checks** | Safety table | 40 | Every BUY checks balance, every SELL checks position |
+| **Leverage enforcement** | Safety table | 41 | 1x enforcement on Aster (defaults 5x), persistence gap note |
 | **Regime monitor (global)** | §7.5 | 1217–1247 | Daily signal evaluation, tiered alerts, APPROVE/DENY |
 | **Wind-down phase** | §7.6 | 1248–1283 | Direction change procedure |
 | **Exchange client** | §8 | 1448–1574 | Supported exchanges, methods, API calls, credentials |
@@ -166,6 +167,7 @@
 | TZ Bug Incident | 2026-03-24 | §17.7 (new) |
 | TP Exchange-as-Truth | 2026-03-24 | §6.8.2 (updated), safety table |
 | Pre-order Exchange Checks | 2026-04-09 | Safety table, §18 GAPs 14-16 |
+| Comprehensive Audit (3 phases) | 2026-04-09 | BO% 40→30, DCA_MAX_LAYERS clarified, leverage note, status.json fields |
 
 ## Related Documents
 
@@ -176,6 +178,10 @@
 | `V14PM_PRODUCTION_CLONE_GUIDE.md` | Step-by-step guide to deploy a standalone clone | 🔄 In Progress |
 | `PRODUCTION_DECISIONS_2026-03-19.md` | Key architectural decisions (exchange, profile, coins) | ✅ Reference |
 | `v14-dca-architecture.md` | DCA engine design rationale | ✅ Stable |
+| `V14PM_COMPREHENSIVE_AUDIT_REPORT.md` | Full 3-phase audit: static, logic, doc accuracy | ✅ Current |
+| `V14PM_PHASE1_AUDIT_RESULTS.md` | Phase 1: Static analysis (18 files, 13 findings) | ✅ Current |
+| `V14PM_PHASE2_AUDIT_RESULTS.md` | Phase 2: Component logic & integration (11 findings) | ✅ Current |
+| `V14PM_PHASE3_AUDIT_RESULTS.md` | Phase 3: Documentation accuracy (55 claims checked) | ✅ Current |
 | `V14PM_CODE_AUDIT_2026-03-21.md` | Deep code audit (findings merged into §18) | 📦 Archive |
 | `CLOUD_MIGRATION_GUIDE.md` | Original migration guide (pre-exchange-as-truth) | ⚠️ Superseded by Production Clone Guide |
 | `MIGRATION_PROJECT_PLAN.md` | Phase tracker for original migration | ⚠️ Superseded |

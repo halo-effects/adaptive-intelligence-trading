@@ -405,6 +405,8 @@ class V14DCAEngine:
                 order = min(order, self.capital * 0.3)
             if order < 10 or order > self.capital:
                 return
+            if price <= 0:
+                return
 
             coins = order / price
             fee = self._charge_fee(order, is_taker=False)  # DCA entry = maker/limit
@@ -520,6 +522,8 @@ class V14DCAEngine:
             if not self.live_mode:
                 order = min(order, self.capital * 0.3)
             if order < 10 or order > self.capital:
+                return
+            if price <= 0:
                 return
 
             coins = order / price
