@@ -699,8 +699,8 @@ class V14LifecycleEngine:
         action_type = action_dict.get('action')
         reason = action_dict.get('reason', '')
         
-        # We only support rolling back recent BUY or SHORT_OPEN actions
-        if action_type not in ('BUY', 'SHORT_OPEN'):
+        # Support rollback for BUY, SHORT_OPEN, and SELL (phantom sells with no exchange position)
+        if action_type not in ('BUY', 'SHORT_OPEN', 'SELL'):
             logger.warning(f"Cannot reject action type {action_type} for {self.symbol}")
             return
             
@@ -757,6 +757,24 @@ class V14LifecycleEngine:
                 eng.short_tp = eng.short_avg_entry * (1 - eng.cfg.DCA_TP_PCT)
             eng.short_trades -= 1
             logger.info(f"{self.symbol}: Rejected SHORT_OPEN, rolled back {coins} coins @ ${price}. Refunded ${amount}.")
+
+        elif action_type == 'SELL':
+            # Rollback a phantom TP sell that had no exchange position.
+            # The engine already credited proceeds and zeroed the position.
+            # Reverse: restore position state from the trade record and debit proceeds.
+            pnl = trade.get('pnl', 0)
+            fee = trade.get('fee', 0)
+            proceeds = coins * price
+            eng.capital -= proceeds
+            eng.long_coins = coins
+            eng.long_cost = amount if amount else coins * price / (1 + eng.cfg.DCA_TP_PCT)
+            eng.long_avg_entry = eng.long_cost / coins if coins > 0 else 0
+            eng.long_layers = 1  # approximate — exact layer count lost
+            eng.long_tp = eng.long_avg_entry * (1 + eng.cfg.DCA_TP_PCT)
+            eng.long_trades -= 1
+            eng.long_wins -= 1
+            eng.long_pnl -= pnl
+            logger.info(f"{self.symbol}: Rejected SELL (no exchange position), restored {coins} coins @ ${price}. Debited ${proceeds:.2f}.")
 
     # -----------------------------------------------------------------------
     # Feed daily (for signal context on restore)

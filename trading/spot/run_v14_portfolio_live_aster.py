@@ -1752,6 +1752,15 @@ class V14PortfolioLiveAster:
                             f"exchange={exchange_qty:.4f} — using exchange"
                         )
                         sell_qty = exchange_qty
+                else:
+                    # No position on exchange — nothing to sell
+                    logger.warning(
+                        f"SELL skipped for {sym}: no open position on exchange "
+                        f"(engine wanted to sell {qty:.4f} for {reason})"
+                    )
+                    if cs.engine:
+                        cs.engine.reject_action(action)
+                    return
             except Exception as e:
                 logger.warning(f"Position fetch for sell qty failed ({sym}), using engine qty: {e}")
 

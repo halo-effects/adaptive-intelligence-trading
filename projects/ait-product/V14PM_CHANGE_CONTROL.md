@@ -177,6 +177,9 @@ These are capabilities the new bot has that the old bot never had:
 | 2026-03-21 AM | **Startup rebalance guard** | Skip initial `_do_rebalance()` when restoring from saved state. Prevents overwriting restored engine values before reconciliation runs. |
 | 2026-03-24 PM | **TP price exchange-as-truth** | `_place_tp_order()` now computes TP from actual exchange entry price instead of engine's candle-based TP. Fixes exchange rejection when spread causes candle price ≠ fill price. Affected HYPE/USDT ($38.93 TP rejected, actual entry $40.31) and TAO/USDT ($265.98 TP rejected, actual entry $336.76). |
 | 2026-03-24 PM | **Multi-coin scaling live** | Scanner automatically picked HYPE and TAO at midnight UTC rebalance. Tier system confirmed: 3 coins at $340 equity, 90/10 split. TP recovery successfully placed orders for both new coins after fix. |
+| 2026-04-09 PM | **Insufficient USDT alert throttle** | `_execute_action()` BUY path: Telegram alert for insufficient balance now throttled to once per coin per hour (was every tick). Prevents alert spam when bot is cash-starved. Balance check itself still runs every time (exchange-as-truth). |
+| 2026-04-09 PM | **Sell guard — no exchange position** | `_execute_action()` SELL path: Before executing any sell, fetches `fetch_open_positions()` and skips if no position exists on exchange. Prevents "ReduceOnly Order is rejected" errors when engine generates phantom BUY+SELL pairs during candle catch-up but the BUY was rejected (no cash). Engine state rolled back via `reject_action()`. |
+| 2026-04-09 PM | **SELL rollback in reject_action()** | `v14_lifecycle_engine.py`: `reject_action()` now supports SELL action type. Reverses the engine's TP credit (capital, coins, avg_entry, layers, pnl, wins) when a sell is rejected due to no exchange position. Previously only BUY and SHORT_OPEN were supported. |
 
 ---
 
