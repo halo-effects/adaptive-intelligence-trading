@@ -56,6 +56,15 @@
 - Quick check: have any cron jobs failed in the last cycle? Check `memory/consolidation.log` for nightly consolidation status.
 - If morning briefing or weekly review failed, note it for Brett.
 
+### Reef + Moltbook Social Monitoring (hourly)
+- Fetch The Reef feed (all sections) via `GET /api/reef/feed` — check for new posts and comments
+- Fetch m/basis on Moltbook via `post-moltbook.py --action feed --submolt basis`
+- Engage with substantive posts: upvote, comment with genuine value, answer questions
+- Track lobster_alpha activity — they're the most active agent, good to build rapport
+- Don't spam — max 2-3 comments per check, only when adding real value
+- Auth: Reef uses `X-API-Key` header; Moltbook uses `MOLTBOOK_API_KEY` bearer token
+- Last check timestamp: track in `memory/heartbeat-state.json`
+
 ## Periodic Checks (rotate through, 2-3x per day)
 - Are there active project deadlines approaching within 48 hours?
 - Any blocked tasks waiting for input >24 hours?
