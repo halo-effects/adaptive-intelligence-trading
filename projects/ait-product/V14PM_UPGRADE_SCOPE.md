@@ -866,21 +866,15 @@ Upgrade 0 (tiers) → Upgrade 1 (deposits) → Deposit $1K → Bot runs 3 coins 
 
 ---
 
-## Open Questions
+## Open Questions — ALL RESOLVED ✅
 
 0. ~~**Tier boundary hysteresis:**~~ **RESOLVED — implemented in Upgrade 0C.** 5% asymmetric hysteresis band. Upgrade at threshold (immediate). Downgrade only when equity drops 5% below the current tier's threshold. Applies to both coin cap and pool split via `_apply_hysteresis()`. Tier indices persisted in state.json for restart survival. See sections 0C (code spec), test cases T0.13–T0.18.
 
-1. **Deposit threshold:** What amount should trigger auto-detection? The old bot used 10% drift. For PM bot with $340 capital, 10% = $34. Should we use a fixed dollar floor (e.g., $5) instead?
+1. ~~**Deposit threshold:**~~ **RESOLVED — implemented in Upgrade 1 (Dynamic Capital).** Uses `max($5, 2% of tracked capital)` as recommended. `CAPITAL_DRIFT_MIN_PCT = 0.02`. Auto-detection runs every sync cycle via `_detect_capital_changes()`, comparing exchange balance to `_tracked_capital`.
 
-   > **Recommendation:** Use $5 OR 2% (whichever is larger). With exchange-as-truth, drift detection is trivial since exact balances are already cached in `_exchange_usdt_total` — no estimation needed.
+2. ~~**Withdrawal with open positions:**~~ **RESOLVED — implemented in Upgrade 1 (Dynamic Capital).** Partial withdrawals allowed from free balance. Safety guard: `if (tracked_capital - amount) < total_invested → reject`. Exchange margin protection is a second layer (`usdt_free` vs `usdt_used`). Both Telegram `WITHDRAW` command and auto-detection enforce this.
 
-2. **Withdrawal with open positions:** Should we allow partial withdrawals when positions are open (reduce reserve only), or require all positions closed first?
-
-   > **Recommendation:** Allow partial withdrawal from free balance. Exchange already protects margin — `usdt_free` is separate from `usdt_used`, so withdrawing free cash cannot liquidate open positions.
-
-3. **Per-coin pause capital:** When a coin is paused, should its allocated capital be redistributed to other coins, or held in reserve until unpaused?
-
-   > **Recommendation:** Hold paused capital in reserve until unpaused. Redistributing adds complexity and churn. The 25% reserve pool already provides buffer for new opportunities.
+3. ~~**Per-coin pause capital:**~~ **RESOLVED — implemented in Upgrade 2 (Per-Coin Pause).** Paused/flagged coins are excluded from rebalance candidates — their capital stays with their existing allocation (held, not redistributed). On unpause, the coin resumes trading with its allocation intact at next rebalance cycle.
 
 4. ~~**Regime flag persistence:**~~ **RESOLVED — Q5: A.** Auto-clear flag when TP fills and no position remains. Implemented in `_clear_regime_flag_on_tp()`.
 

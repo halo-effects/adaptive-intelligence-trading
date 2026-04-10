@@ -97,47 +97,35 @@ audit comparing the PM bot against the battle-tested single-coin bot.
 
 ---
 
-## ❌ Remaining Items (P2 — Operational)
+## ✅ Previously Remaining Items (all resolved)
 
-### 18. Cash Tracking (Double-Entry) — NOT IMPLEMENTED
-**What old bot had:** Independent `self.cash` tracker alongside `eng.capital`. Every buy:
-`self.cash -= cost`. Every sell: `self.cash += proceeds`. Periodically synced to `eng.capital`
-as a sanity check. Catches discrepancies early.
+### 18. Cash Tracking (Double-Entry) — SUPERSEDED by Exchange-as-Truth
+**Original gap:** Independent `self.cash` tracker alongside `eng.capital` for sanity checking.
 
-**Current PM bot:** No equivalent. The CapitalRouter tracks pool-level cash, but individual
-engine cash is not independently verified.
+**Resolution:** The exchange-as-truth architecture (2026-03-21) + periodic reconciliation every 5 minutes against exchange balance makes double-entry redundant. The old bot needed it because it had no exchange-side reconciliation — the PM bot syncs positions and balances directly from Aster every cycle.
 
-**Risk:** Low. Periodic reconciliation (every 5 min) against exchange balance catches drift.
-The old bot needed double-entry because it had no exchange-side reconciliation — the PM bot does.
+### 19. Capital Ledger — ✅ IMPLEMENTED (Upgrade 1: Dynamic Capital, 2026-03-24)
+**Original gap:** Capital was CLI arg only, no deposit/withdrawal tracking.
 
-**Recommendation:** Nice-to-have. The periodic reconciliation serves the same purpose (catching
-drift via exchange as source of truth). If we wanted defense-in-depth, add per-coin cash
-tracking, but it's not blocking.
+**Resolution:** Full implementation in Upgrade 1:
+- `capital_ledger.json` — persistent ledger tracking all capital changes with timestamps and notes
+- `load_capital_ledger()` / `save_capital_ledger()` / `record_ledger_transaction()` — ledger API
+- `--deposit` and `--withdraw` CLI flags at launch
+- `DEPOSIT <amount>` and `WITHDRAW <amount>` Telegram commands (live, no restart needed)
+- `CAPITAL` Telegram command — shows current capital, deposits, withdrawals, transaction history
+- `_tracked_capital` — survives restarts via state.json
+- Safety: withdrawal blocked if it would drop capital below total invested
 
-### 19. Capital Ledger — NOT IMPLEMENTED
-**What old bot had:** `capital_ledger.json` tracking deposits, withdrawals, capital adjustments.
-`--deposit` and `--withdraw` CLI flags. Capital loaded from ledger on startup.
+### 20. Deposit/Withdrawal Detection — ✅ IMPLEMENTED (Upgrade 1: Dynamic Capital, 2026-03-24)
+**Original gap:** No auto-detection of deposits/withdrawals; large deposits triggered reconciliation warnings.
 
-**Current PM bot:** Capital is CLI arg only. Deposits/withdrawals require restart with new
-`--capital` value.
-
-**Risk:** Low for current single-coin testing. Becomes important at scale or when Brett
-wants to add/remove capital without restart.
-
-**Recommendation:** Implement before scaling beyond test phase. For now, restart with new
-`--capital` is acceptable.
-
-### 20. Deposit/Withdrawal Detection — NOT IMPLEMENTED
-**What old bot had:** `_maybe_reconcile()` auto-detected deposits/withdrawals when drift
-exceeded threshold and no position was open. Logged "Possible deposit detected" and adjusted.
-
-**Current PM bot:** Periodic reconciliation adjusts for drift, but doesn't distinguish between
-drift (bad) and deposits (intentional). Large deposits would trigger a reconciliation warning.
-
-**Risk:** Low. Brett controls deposits manually and would restart the bot anyway.
-
-**Recommendation:** Add logging to distinguish "drift correction" from "possible deposit" in
-periodic reconciliation. Low priority.
+**Resolution:** `_detect_capital_changes()` runs every cycle:
+- Compares exchange balance to `_tracked_capital`
+- Distinguishes drift (small, ignored) from deposits/withdrawals (exceed `CAPITAL_DRIFT_MIN_PCT` threshold)
+- Auto-records transaction to `capital_ledger.json`
+- Sends Telegram alert with old→new capital and drift percentage
+- Safety: auto-detected withdrawals that would drop below invested are rejected with explanation
+- `router.resize()` called automatically to reallocate across pools
 
 ---
 

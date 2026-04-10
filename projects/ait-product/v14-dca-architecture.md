@@ -225,5 +225,5 @@ This engine stands on extensive V13 research:
 - [x] Trend Score multiplier wired into PM allocation (2026-03-06) — `Adjusted Score = Base × Trend Mult` in `rebalance_daily()`
 - [x] TP fill model fix (2026-03-17) — TP now checked against candle high/low (simulates limit order fill on wick touch). Fills at TP price, not wick extreme. Previously used candle close, missing valid TP fills.
 - [x] Resting limit orders for TP (2026-03-17) — `run_v14_live_aster.py` now places a limit sell on the exchange at TP price after every BUY fill. Order recovered on restart, cancelled on phase change. Dual approach: limit order (primary) + candle-based detection (fallback). Verified on exchange (order 485775318).
-- [ ] Correlation gate for broad market stress *(planned pre-live)*
-- [ ] 30+ days paper data → evaluate live deployment at scale
+- [x] Correlation gate for broad market stress — *superseded by Portfolio Regime Monitor (§7.5), per-coin regime flagging (Upgrade 3), CFGI integration, and human-in-the-loop direction gates. Multi-layered regime system replaces simple correlation check.*
+- [x] 30+ days paper data → evaluate live deployment at scale — *V14 Paper: 41 days, $50K→$69.9K (+39.7%), 437 deals, 100% WR. V14PM Paper: 36 days. Live deployed to Aster 2026-03-19.*
