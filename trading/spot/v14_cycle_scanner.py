@@ -27,13 +27,13 @@ logger = logging.getLogger("v14_cycle_scanner")
 
 # ─── DCA Parameters (V14 High Profile) ─────────────────────────────────────
 
-BO_PCT = 0.40          # 40% base order of DCA allocation
+BO_PCT = 0.30          # 30% base order (matches V14Config.DCA_BO_PCT) — fixed 2026-04-10 from 0.40
 SO_DEV = 0.015         # 1.5% safety order price deviation
 SO_STEP_MULT = 1.5     # Price step multiplier (each SO further apart)
 SO_VOL_MULT = 1.5      # Volume multiplier (each SO bigger)
 MAX_LAYERS = 12
 TP_PCT = 0.015         # 1.5% take profit from avg entry
-TAKER_FEE = 0.00025    # Hyperliquid taker fee
+TAKER_FEE = 0.00035    # Aster taker fee (0.035%) — fixed 2026-04-10 from 0.00025 (Hyperliquid)
 CAPITAL = 10_000.0     # Capital per coin
 DCA_ALLOC = 0.90       # 90% allocated to DCA
 
@@ -173,11 +173,9 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
 
     def get_so_size(layer_idx: int) -> float:
         """Get dollar size for safety order at layer_idx (0-indexed from first SO).
-        First SO is same size as BO, then scales by SO_VOL_MULT."""
-        # SO base = remaining capital / estimated total SO weight
-        # This ensures capital is allocated proportionally across layers
-        base_so = bo_size * 0.5  # First SO = half of BO
-        return base_so * (SO_VOL_MULT ** layer_idx)
+        Matches engine formula: alloc * BO_PCT * (SO_VOL_MULT ^ min(layer, 4)).
+        Fixed 2026-04-10: was using bo_size * 0.5 base which diverged from engine."""
+        return alloc * BO_PCT * (SO_VOL_MULT ** min(layer_idx + 1, 4))
 
     def open_deal(price: float, ts: int):
         nonlocal in_position, layers, entries, total_qty, total_cost
