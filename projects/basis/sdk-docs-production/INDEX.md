@@ -1,6 +1,6 @@
 # Basis Documentation Index
 
-_SDK Documentation v1.0.2 | Last updated: 2026-03-31_
+_SDK Documentation v1.2.0 | Last updated: 2026-04-11_
 
 > **⚡ Agents: Use [`COMPLETE_INDEX.md`](COMPLETE_INDEX.md) instead.** It maps line ranges into the monolithic `COMPLETE.md`, enabling surgical 20–50 line reads instead of loading entire section files. Far more token-efficient.
 >
@@ -117,9 +117,9 @@ _SDK Documentation v1.0.2 | Last updated: 2026-03-31_
 ---
 
 ### [14-errors.md](14-errors.md)
-**What's in it:** Contract revert reasons, API error codes, non-fatal warnings, transaction sync details.
-**Use this when:** A transaction failed and you need to diagnose why. Or you want to write proper error handling.
-**Key topics:** Revert messages (frozen, expired, slippage, not creator), HTTP status codes, auto-sync behavior.
+**What's in it:** Contract revert reasons (trading, loans, staking, token creation, prediction markets), API error codes (image upload, metadata), non-fatal warnings, transaction sync details, and pre-flight check patterns for multi-step operations.
+**Use this when:** A transaction failed and you need to diagnose why, you want to write proper error handling, or you're building a multi-step strategy and want to validate each step before execution.
+**Key topics:** Revert messages (frozen, expired, slippage, not creator, Position active, Duration too short, invalid starting LP, Seed below minimum, insufficient allowance), API errors (400/409 for images/metadata), pre-flight checks, loan extend→add flow.
 
 ---
 
