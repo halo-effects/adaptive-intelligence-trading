@@ -37,6 +37,12 @@ TAKER_FEE = 0.00035    # Aster taker fee (0.035%) — fixed 2026-04-10 from 0.00
 CAPITAL = 10_000.0     # Capital per coin
 DCA_ALLOC = 0.90       # 90% allocated to DCA
 
+# ─── Liquidity Filter ───────────────────────────────────────────────────────
+# Max L1 order as percentage of 24h volume.  If L1 > threshold, coin is tagged
+# LOW_LIQUIDITY — still scanned and scored, but not eligible for trading.
+# Default 2% keeps market impact negligible on smaller exchanges like Aster.
+LIQUIDITY_MAX_IMPACT_PCT = 0.02   # 2% — L1 must be < 2% of 24h volume
+
 # Minimum months of 1h candle history to appear on the published rankings.
 # Coins below this threshold are still scanned (for internal tracking) but
 # flagged as immature and excluded from the dashboard feed.
@@ -772,6 +778,109 @@ def send_telegram_summary(output: dict):
         logger.warning(f"Failed to send Telegram notification: {e}")
 
 
+# ─── Liquidity Check ────────────────────────────────────────────────────────
+
+def fetch_aster_volumes() -> dict[str, float]:
+    """Fetch 24h quote volumes from Aster Perps for all traded pairs.
+
+    Returns {symbol: volume_usd} e.g. {"TAO/USDT": 5614237.0}.
+    On failure returns empty dict (scanner proceeds without volume data).
+    """
+    try:
+        import ccxt
+        exchange = ccxt.aster({
+            "apiKey": os.environ.get("ASTER_API_KEY", ""),
+            "secret": os.environ.get("ASTER_API_SECRET", ""),
+            "options": {"defaultType": "swap"},
+        })
+        exchange.load_markets()
+        tickers = exchange.fetch_tickers()
+        volumes = {}
+        for key, t in tickers.items():
+            # Key format: "TAO/USDT:USDT" → normalize to "TAO/USDT"
+            sym = key.split(":")[0]
+            vol = t.get("quoteVolume") or 0
+            if vol > 0:
+                volumes[sym] = float(vol)
+        logger.info(f"Fetched 24h volumes for {len(volumes)} pairs from Aster")
+        return volumes
+    except ImportError:
+        logger.warning("ccxt not installed — skipping volume check")
+        return {}
+    except Exception as e:
+        logger.warning(f"Failed to fetch Aster volumes: {e}")
+        return {}
+
+
+def apply_liquidity_filter(output: dict, volumes: dict[str, float],
+                           total_capital: float, num_coins: int) -> dict:
+    """Tag each coin with liquidity_status and volume_24h.
+
+    Args:
+        output: Scanner output dict (modified in place)
+        volumes: {symbol: 24h_volume_usd}
+        total_capital: Total account capital (for L1 sizing)
+        num_coins: Number of active coin slots (for per-coin allocation)
+
+    Adds to each ranking entry:
+        volume_24h: float — 24h quote volume in USD
+        liquidity_status: "TRADEABLE" | "LOW_LIQUIDITY"
+        volume_impact_pct: float — L1 order as % of 24h volume
+    """
+    if not volumes:
+        logger.warning("No volume data — all coins default to TRADEABLE")
+        for w_data in output.get("windows", {}).values():
+            for r in w_data.get("rankings", []):
+                r["volume_24h"] = None
+                r["liquidity_status"] = "TRADEABLE"
+                r["volume_impact_pct"] = None
+            for r in w_data.get("immature", []):
+                r["volume_24h"] = None
+                r["liquidity_status"] = "TRADEABLE"
+                r["volume_impact_pct"] = None
+        return output
+
+    # Compute L1 order size: (total_capital * active_pct / num_coins) * BO_PCT
+    per_coin_alloc = total_capital * DCA_ALLOC / max(num_coins, 1)
+    l1_size = per_coin_alloc * BO_PCT
+
+    low_liq_count = 0
+    for w_data in output.get("windows", {}).values():
+        for coin_list in [w_data.get("rankings", []), w_data.get("immature", [])]:
+            for r in coin_list:
+                sym = r.get("symbol", "")
+                vol = volumes.get(sym, 0)
+                r["volume_24h"] = vol if vol > 0 else None
+
+                if vol <= 0:
+                    r["liquidity_status"] = "LOW_LIQUIDITY"
+                    r["volume_impact_pct"] = None
+                    low_liq_count += 1
+                else:
+                    impact = l1_size / vol
+                    r["volume_impact_pct"] = round(impact * 100, 2)
+                    if impact > LIQUIDITY_MAX_IMPACT_PCT:
+                        r["liquidity_status"] = "LOW_LIQUIDITY"
+                        low_liq_count += 1
+                    else:
+                        r["liquidity_status"] = "TRADEABLE"
+
+    # Add summary to output
+    output["liquidity_filter"] = {
+        "total_capital": total_capital,
+        "num_coins": num_coins,
+        "l1_order_size": round(l1_size, 2),
+        "max_impact_pct": LIQUIDITY_MAX_IMPACT_PCT * 100,
+        "low_liquidity_count": low_liq_count,
+    }
+
+    logger.info(
+        f"Liquidity filter: L1=${l1_size:,.0f}, max {LIQUIDITY_MAX_IMPACT_PCT:.0%} impact, "
+        f"{low_liq_count} coins tagged LOW_LIQUIDITY"
+    )
+    return output
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="V14 DCA Cycle Scanner \u2014 Bear Market Capital Velocity Optimizer"
@@ -783,6 +892,12 @@ def main():
     parser.add_argument("--no-telegram", action="store_true", help="Skip Telegram notification")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
     parser.add_argument("--as-of", type=str, help="Run as if date is YYYY-MM-DD (for historical snapshots)")
+    parser.add_argument("--capital", type=float, default=20000,
+                        help="Total account capital for liquidity filter (default: 20000)")
+    parser.add_argument("--active-coins", type=int, default=5,
+                        help="Number of active coin slots for liquidity filter (default: 5)")
+    parser.add_argument("--no-volume", action="store_true",
+                        help="Skip volume/liquidity check")
     parser.add_argument("--backfill-history", type=int, metavar="DAYS",
                         help="Backfill N days of score history snapshots (runs scanner N times with past dates)")
     args = parser.parse_args()
@@ -870,6 +985,32 @@ def main():
             t14 = f"{t['trend_14d']:+.1%}" if t['trend_14d'] is not None else "—"
             t30 = f"{t['trend_30d']:+.1%}" if t['trend_30d'] is not None else "—"
             print(f"{coin:<8} {t['direction']:<14} {t7:>8} {t14:>8} {t30:>8} {t['trend_multiplier']:>5.2f}x")
+
+    # Fetch 24h volumes and apply liquidity filter
+    if not args.no_volume:
+        volumes = fetch_aster_volumes()
+        apply_liquidity_filter(output, volumes, args.capital, args.active_coins)
+
+        # Print liquidity summary
+        lf = output.get("liquidity_filter", {})
+        if lf:
+            print(f"\n{'='*70}")
+            print(f"  Liquidity Filter (${args.capital:,.0f} capital, {args.active_coins} coins)")
+            print(f"  L1 order: ${lf['l1_order_size']:,.0f} | Max impact: {lf['max_impact_pct']:.0f}%")
+            print(f"{'='*70}")
+            # Show affected coins from 30d window
+            w30 = output.get("windows", {}).get("30d", {}).get("rankings", [])
+            low_liq = [r for r in w30 if r.get("liquidity_status") == "LOW_LIQUIDITY"]
+            if low_liq:
+                print(f"  LOW LIQUIDITY ({len(low_liq)} coins):")
+                for r in low_liq:
+                    vol = r.get("volume_24h")
+                    vol_str = f"${vol:,.0f}" if vol else "NO DATA"
+                    impact = r.get("volume_impact_pct")
+                    impact_str = f"{impact:.1f}%" if impact is not None else "N/A"
+                    print(f"    {r['coin']:8s} Vol: {vol_str:>12s}  Impact: {impact_str:>6s}  Score: {r.get('dca_score', 0):.1f}")
+            else:
+                print(f"  All coins pass liquidity filter ✓")
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = OUTPUT_PATH.with_suffix(".tmp")
