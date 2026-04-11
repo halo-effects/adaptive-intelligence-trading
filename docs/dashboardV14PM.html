@@ -504,7 +504,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th title="Base Score = Realized PnL � (1 - DD%) � Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5�) &#x2192; stable (1.0�) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score � Trend Multiplier � the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="24h trading volume on Aster (quote currency)" style="cursor:help">24h VOL</th><th title="Base Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5×) &#x2192; stable (1.0×) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score × Trend Multiplier — the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -1183,7 +1183,11 @@ function renderFlowDiagram(){
     var isPaused=c.paused||false;
     var isRegimeFlagged=c.regime_flagged||false;
     var isExcluded=isPaused||isRegimeFlagged;
-    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData,isPaused:isPaused,isRegimeFlagged:isRegimeFlagged,isExcluded:isExcluded});
+    var liqStatus=scanCoinData?scanCoinData.liquidity_status:null;
+    var vol24h=scanCoinData?scanCoinData.volume_24h:null;
+    var volImpact=scanCoinData?scanCoinData.volume_impact_pct:null;
+    if(liqStatus==='LOW_LIQUIDITY')isExcluded=true;
+    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData,isPaused:isPaused,isRegimeFlagged:isRegimeFlagged,isExcluded:isExcluded,liqStatus:liqStatus,vol24h:vol24h,volImpact:volImpact});
   });
 
   rowData.sort(function(a,b){
@@ -1196,7 +1200,14 @@ function renderFlowDiagram(){
 
   var h='';
   rowData.forEach(function(rd){
-    var phaseHtml=rd.phase==='--'?'<span class="phase-pill" style="background:rgba(99,102,241,.1);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Watchlist</span>':'<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[rd.phase]||'var(--text3)')+'"></span>'+rd.phase.replace('_',' ')+'</span>';
+    var phaseHtml;
+    if(rd.liqStatus==='LOW_LIQUIDITY'){
+      phaseHtml='<span class="phase-pill" style="background:rgba(245,158,11,.1);color:var(--amber)"><span class="pd" style="background:var(--amber)"></span>Low Liq</span>';
+    }else if(rd.phase==='--'){
+      phaseHtml='<span class="phase-pill" style="background:rgba(99,102,241,.1);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Watchlist</span>';
+    }else{
+      phaseHtml='<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[rd.phase]||'var(--text3)')+'"></span>'+rd.phase.replace('_',' ')+'</span>';
+    }
 
     var g=dcaGrade(rd.dcaScore);
     var scoreHtml=rd.dcaScore!=null?'<span style="font-weight:800;font-size:1.05rem;color:'+scoreColor(rd.dcaScore)+'">'+rd.dcaScore.toFixed(1)+'</span> <span style="font-size:.7rem;color:'+g.color+'">'+g.letter+'</span>':'<span style="color:var(--text3)">--</span>';
@@ -1213,6 +1224,14 @@ function renderFlowDiagram(){
     if(rd.isPaused)badges+=' <span style="font-size:.55rem;color:var(--amber);vertical-align:middle">⏸ PAUSED</span>';
     h+='<td class="coin-name">'+rd.m.label+badges+'</td>';
     h+='<td>'+phaseHtml+'</td>';
+    var volHtml='<span style="color:var(--text3)">--</span>';
+    if(rd.vol24h!=null){
+      var vc=rd.vol24h>=100000?'var(--green)':rd.vol24h>=50000?'var(--amber)':'var(--red)';
+      var vf=rd.vol24h>=1000000?'$'+(rd.vol24h/1000000).toFixed(1)+'M':'$'+(rd.vol24h/1000).toFixed(0)+'K';
+      var impTip=rd.volImpact!=null?' (L1='+rd.volImpact.toFixed(1)+'% of vol)':'';
+      volHtml='<span style="color:'+vc+'" title="'+vf+impTip+'">'+vf+'</span>';
+    }
+    h+='<td style="text-align:center">'+volHtml+'</td>';
     h+='<td style="text-align:center">'+scoreHtml+'</td>';
     var trendHtml='<span style="color:var(--text3)">--</span>';
     var tradeScoreHtml=rd.tradeScore!=null?'<span style="font-weight:800;font-size:1.05rem;color:var(--accent2)">'+rd.tradeScore.toFixed(1)+'</span>':'<span style="color:var(--text3)">--</span>';
@@ -1232,7 +1251,7 @@ h+='<td style="text-align:center">'+dealsHtml+'</td>';
   var oppMaxPage=Math.max(0,Math.ceil(oppRows.length/ops)-1);
   oppPage=Math.min(oppPage,oppMaxPage);
   var oppPageRows=oppRows.slice(oppPage*ops,(oppPage+1)*ops);
-  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
+  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
   if(oppRows.length>ops){
     $('oppPagBar').style.display='flex';
     $('oppPagInfo').textContent='Page '+(oppPage+1)+' of '+(oppMaxPage+1);
