@@ -1,6 +1,4 @@
 # BASIS Stacking Strategies — Agent Knowledge File
-> **Version:** 2.0 (2026-04-11)
-> **Changelog:** v1→v2: Expanded Path A as yielding base layer; corrected Floor+ LTV nuance (timing-dependent); changed Path E leverage target from Stable+ to Floor+ near launch; updated strategies and fee table accordingly.
 
 ## The Core Concept
 
@@ -14,7 +12,7 @@ The key insight: **buying a token doesn't lock your capital.** You can borrow ag
 
 Every stack is built from simple loops. Each one starts with USDB and ends with USDB (plus an open position). These are your Lego bricks.
 
-### Path A: The Stable+ Path — Your Yielding Base Layer
+### Path A: The Stable+ Path
 ```
 USDB → buy STASIS → wrap to wSTASIS → borrow USDB
 ```
@@ -24,21 +22,15 @@ USDB → buy STASIS → wrap to wSTASIS → borrow USDB
 - **Risk:** Loan expiry (extend cheaply — 400x less than new loan)
 - **Points:** Trade + Staking + Lending categories
 
-**Why Path A is always Stack 1:** This isn't just the safest entry — it creates a **yield engine that runs underneath every other play you make.** wSTASIS earns vault yield from all platform trading fees, continuously. Every subsequent stack uses borrowed USDB while your wSTASIS keeps compounding.
-
-**The killer combo with predictions:** Long-term outcome bets (Path D) can take weeks or months to resolve. Normally that's idle capital. But with Path A as your base, the wSTASIS position earns yield the entire time you're waiting. You get the prediction upside AND passive yield — same bag, two income streams.
-
 ### Path B: The Floor+ Path
 ```
 USDB → buy Floor+ token → borrow USDB
 ```
 - **Fees:** 1.5% buy tax + 2% loan origination
-- **USDB recovered:** Varies — depends on when you buy relative to the floor
+- **USDB recovered:** ~96.5% of input
 - **Position held:** Floor+ token (price has a rising floor)
 - **Risk:** Loan expiry + token price can drop (but not below floor)
 - **Points:** Trade + Lending categories
-
-**Important — LTV depends on timing:** The amount of USDB you borrow back is tied to the token's loan-to-value ratio. If you buy right after launch when price is near the floor, you recover the most USDB. If the token has already run up well above its floor, LTV on your position is lower — less USDB comes back for the next stack. **For best capital efficiency in a stacking strategy, target Floor+ tokens early, close to launch.**
 
 ### Path C: The Predict+ Token Path
 ```
@@ -59,20 +51,17 @@ USDB → buy outcome shares → [wait for resolution] → USDB (if correct)
 - **Position held:** Outcome shares in a prediction market
 - **Risk:** You lose if the outcome is wrong
 - **Points:** Prediction category
-- **Stacking synergy:** Pair with Path A — your wSTASIS earns yield while you wait for resolution, so capital is never truly idle.
 
 ### Path E: The Leverage Path
 ```
-USDB → leverageBuy on a Floor+ token near launch → [position auto-loops buy→loan→buy]
+USDB → leverageBuy on Stable+ → [position auto-loops buy→loan→buy]
 ```
 - **Fees:** 2% origination per loop (auto-consumed, ~6-8 loops typical)
 - **USDB recovered:** 0 (fully deployed into leveraged position)
-- **Position held:** Large leveraged Floor+ position
-- **Risk:** Loan expiry only (no price liquidation)
+- **Position held:** Large Stable+ position (e.g., $10 → ~$200 bag)
+- **Risk:** Loan expiry only (no price liquidation on Stable+)
 - **Points:** Trade + Lending categories (heavy)
 - **Note:** This is a terminal path — doesn't return USDB for further stacking
-
-**Why Floor+ near launch, not Stable+:** Stable+ appreciation is slow and steady — leverage doesn't amplify much. A Floor+ token near its floor gives you protected downside (rising floor + no price liquidation) with real upside potential. If the token runs after launch, leverage amplifies the gains massively. If it doesn't, the floor limits your loss.
 
 ---
 
@@ -83,13 +72,11 @@ Each path costs fees. When you chain paths, the bag shrinks:
 | After Path | USDB Remaining (from $1,000 start) |
 |---|---|
 | Path A (Stable+) | ~$975 |
-| Path A → Path C (Predict+) | ~$941 |
-| Path A → Path C → Path B (Floor+) | Varies* |
-| + Path D (Bet) | Above minus bet amount |
+| Path A → Path B (Floor+) | ~$941 |
+| Path A → Path B → Path C (Predict+) | ~$908 |
+| Path A → Path B → Path C → Path D (Bet) | ~$908 minus bet amount |
 
-*Floor+ USDB recovery depends heavily on timing — buying near launch when price is close to the floor returns significantly more than buying after a run-up. Plan stack order accordingly.
-
-**Rule of thumb:** Path A is the most capital-efficient loop at ~2.5% cost. Predict+ and Floor+ cost ~3.5% in fees, but Floor+ LTV varies with market timing. After 3 stacks, you're typically running three separate yielding positions with most of your USDB still deployed.
+**Rule of thumb:** Each non-terminal path costs ~2.5-3.5% of the remaining bag. After 3 stacks you've deployed about 9-10% in fees but hold 3 separate yielding positions plus still have ~91% of your USDB working.
 
 After 4+ stacks, fees start biting meaningfully. Three stacks is the sweet spot for most strategies.
 
@@ -106,25 +93,24 @@ Start: 1,000 USDB
 
 Stack 1 — Path A (Stable+):
   Buy STASIS → wrap wSTASIS → borrow USDB
-  Position: wSTASIS (yielding base — earns vault yield continuously)
+  Position: wSTASIS (rising value + vault yield)
   USDB remaining: ~975
 
 Stack 2 — Path B (Floor+):
   Buy a Floor+ token near launch → borrow USDB
   Position: Floor+ token (rising floor protects downside)
-  USDB remaining: varies (best if bought near floor)
+  USDB remaining: ~941
 
 Stack 3 — Path D (Outcome Bet):
-  Buy outcome shares on a long-term, high-conviction market
+  Buy outcome shares on a high-conviction market
   Position: Outcome shares (potential big payout)
-  USDB remaining: above minus bet amount
+  USDB remaining: ~841 (assuming 100 USDB bet)
   Keep the rest liquid for loan extensions
 ```
 
 **Categories hit:** Trading, Staking, Lending, Predictions = 4 categories (diversity multiplier)
 **Total positions:** 3 active + USDB reserve
 **Risk profile:** Low — STASIS can't drop, Floor+ has a floor, prediction is sized small
-**Key insight:** Your wSTASIS earns yield the entire time you wait for the prediction to resolve — capital is never idle.
 
 ---
 
@@ -146,15 +132,15 @@ Stack 2 — Path C (Predict+ Token):
   USDB remaining: ~941
 
 Stack 3 — Path B (Floor+):
-  Buy a Floor+ token near launch → borrow USDB
+  Buy a Floor+ token → borrow USDB
   Position: Floor+ with protected downside
-  USDB remaining: varies
+  USDB remaining: ~908
   Keep liquid for extensions + opportunistic moves
 ```
 
 **Categories hit:** Trading, Staking, Lending, Predictions = 4 categories
 **Total positions:** 3 yielding + USDB reserve
-**Why it works:** wSTASIS is your always-on yield engine underneath everything. Predict+ token earns from market activity. Floor+ captures upside with a floor. Three income streams from one bag.
+**Why it works:** wSTASIS earns from all platform volume. Predict+ token earns from market activity. Floor+ captures upside with a floor. Three income streams from one bag.
 
 ---
 
@@ -167,7 +153,7 @@ Start: 1,000 USDB
 
 Stack 1 — Path A (Stable+):
   Buy STASIS → wrap wSTASIS → borrow USDB
-  Position: wSTASIS (yielding base)
+  Position: wSTASIS
   USDB remaining: ~975
 
 Stack 2 — Path C (Predict+ Token):
@@ -176,8 +162,8 @@ Stack 2 — Path C (Predict+ Token):
   USDB remaining: ~941
 
 Stack 3 — Path E (Leverage, terminal):
-  LeverageBuy on a Floor+ token near launch with remaining USDB
-  Position: Large leveraged Floor+ position
+  LeverageBuy on STASIS with remaining USDB
+  Position: ~$18,000+ leveraged STASIS (from ~$941 at 20x)
   USDB remaining: 0
 
   (Reserve a small amount for loan extensions before entering Path E)
@@ -186,7 +172,7 @@ Stack 3 — Path E (Leverage, terminal):
 **Categories hit:** Trading, Staking, Lending, Predictions = 4 categories
 **Total positions:** 3 active (1 heavily leveraged)
 **Risk profile:** Aggressive — all capital deployed, must manage loan expiries carefully
-**Why it works:** Your wSTASIS base earns yield underneath everything. The leveraged Floor+ has a rising floor protecting downside and no price liquidation — if the token runs after launch, leverage amplifies returns massively.
+**Why it works:** The leveraged STASIS position can't be price-liquidated. If STASIS appreciates even modestly, the leveraged position amplifies returns massively.
 
 ---
 
@@ -203,7 +189,7 @@ Step 0 — Create:
 
 Stack 1 — Path A (Stable+):
   Buy STASIS → wrap wSTASIS → borrow USDB
-  Position: wSTASIS (yielding base)
+  Position: wSTASIS
   USDB remaining: ~975
 
 Stack 2 — Buy your own token:
@@ -216,7 +202,7 @@ Stack 3 — Path D (Outcome Bet) or hold liquid:
 ```
 
 **Categories hit:** Trading, Staking, Lending, Token Creation, (optionally Predictions) = 4-5 categories
-**Why it's special:** You're not just deploying capital — you've created an asset that generates passive fee income from other users' activity. The 20% creator fee compounds with your wSTASIS vault yield and everything else.
+**Why it's special:** You're not just deploying capital — you've created an asset that generates passive fee income from other users' activity. The 20% creator fee compounds with everything else.
 
 ---
 
@@ -240,7 +226,5 @@ The no-price-liquidation mechanic is what makes deep stacking *safe*. On any oth
 2. **3 stacks is the sweet spot** — beyond that, fees erode the bag significantly
 3. **Manage expiry dates** — stagger loan durations so they don't all expire at once
 4. **Diversity multiplier matters** — hitting different categories with each stack multiplies your airdrop points
-5. **Path E (leverage) is always terminal** — use it last, on a Floor+ near launch for best risk/reward
-6. **Stable+ is always Stack 1** — it's the yielding base that makes every other play better
-7. **Floor+ timing matters** — buy near launch for best LTV and capital recovery in stacking loops
-8. **Path A + Path D is a killer combo** — wSTASIS earns yield while you wait for prediction resolution
+5. **Path E (leverage) is always terminal** — use it last, with whatever USDB you're willing to fully deploy
+6. **Stable+ collateral is the safest base** — start with Path A, it's the foundation everything else builds on
