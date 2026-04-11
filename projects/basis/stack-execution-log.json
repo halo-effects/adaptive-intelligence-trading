@@ -1,0 +1,44 @@
+{
+  "strategy": "Creator's Edge Stack",
+  "token": "0x1Cc51478f8273C68cF343FA6511D890bFd470f4e",
+  "market": "0x1Cc51478f8273C68cF343FA6511D890bFd470f4e",
+  "log": [
+    {
+      "step": "1a",
+      "tx": "82750cee33ee8e08",
+      "desc": "Buy+Wrap 100 USDB -> wSTASIS"
+    },
+    {
+      "step": "1b",
+      "tx": "2a16b85ab1ca3aae",
+      "desc": "Lock 45.24 wSTASIS"
+    },
+    {
+      "step": "1c",
+      "tx": "7f2f815c87995004",
+      "desc": "Borrow 97.68 USDB against wSTASIS (30d)"
+    },
+    {
+      "step": "0a",
+      "tx": "a82fb839008f2d400b18c8b3ebc10cb7867821e3615b7595aaa6a6c04816b66c",
+      "desc": "Create DSTACK Floor+ token",
+      "addr": "0x1Cc51478f8273C68cF343FA6511D890bFd470f4e"
+    },
+    {
+      "step": "0b",
+      "tx": "0a4c4889183302fdf632e9d17bb7c7a32400e11e19daccfcc85c521372c51955",
+      "desc": "Create AIDFI prediction market",
+      "addr": "0x1Cc51478f8273C68cF343FA6511D890bFd470f4e"
+    },
+    {
+      "step": "2a",
+      "tx": "9e38a54ce6409c47520e68400deb389ab491eeb1d5f556f4b2c09419761c1579",
+      "desc": "Buy DSTACK with 50 USDB"
+    },
+    {
+      "step": "2b",
+      "tx": "942fab93c6fd0e703bfd3f3fda1c118995d9af82b5096680743958ec9e0d57e7",
+      "desc": "Borrow against DSTACK"
+    }
+  ]
+}
