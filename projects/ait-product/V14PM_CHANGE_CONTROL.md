@@ -176,6 +176,7 @@ These are capabilities the new bot has that the old bot never had:
 | 2026-04-09 PM | **Arch doc: DCA_BO_PCT corrected 40%→30%** | Architecture doc §5.2 and production config table incorrectly stated base order = 40%. Actual `DCA_BO_PCT = 0.30`. Dashboard HTML BO display also corrected. Found in Phase 3 accuracy audit. |
 | 2026-04-09 PM | **Arch doc: DCA_MAX_LAYERS clarified** | Architecture doc §5.2 clarified: default `DCA_MAX_LAYERS = 8`, High profile overrides to 12. Removed incorrect `DCA_MAX_ORDERS` reference. Found in Phase 3 accuracy audit. |
 | 2026-04-09 PM | **Arch doc: leverage persistence gap documented** | Added note to safety features table: `_leverage_set` is not persisted to state.json. On restart with no open positions, leverage re-verified at next trade entry. Found in Phase 3 accuracy audit. |
+| 2026-04-10 PM | **CRITICAL: False TP bug fixed in lifecycle engine** | `v14_lifecycle_engine.py`: (1) Removed daily high/low from `_run_daily_tick()`'s DCA tick calls — daily tick now handles signals/phase transitions only. (2) Removed "Live TP catch-up" block entirely. (3) Moved hourly DCA grid tick to run on ALL candles (including daily boundary). Previously, the daily tick used the previous day's aggregate high against the current TP target, causing false TP fills on underwater positions. **106 of 467 TP deals (22.7%) were false, totaling $9,423 phantom PnL.** Live bot unaffected (uses exchange limit orders). See §17.8. |
 
 ---
 

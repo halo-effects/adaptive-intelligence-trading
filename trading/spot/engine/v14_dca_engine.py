@@ -399,10 +399,10 @@ class V14DCAEngine:
                 order = available * cfg.DCA_BO_PCT
             else:
                 order = available * cfg.DCA_BO_PCT * (cfg.DCA_SO_MULTIPLIER ** min(self.long_layers, 4))
-            # 30% cap: prevents any single layer from using too much capital.
-            # Disabled in live mode — the CapitalRouter manages allocation externally.
-            if not self.live_mode:
-                order = min(order, self.capital * 0.3)
+            # 30% cap REMOVED (2026-04-10): Was paper-only and completely inverted
+            # the Martingale multiplier — deeper layers got SMALLER instead of larger,
+            # making paper results non-representative of live bot behavior.
+            # The CapitalRouter manages allocation limits for both live and paper.
             if order < 10 or order > self.capital:
                 return
             if price <= 0:
@@ -519,8 +519,7 @@ class V14DCAEngine:
                 order = available * cfg.DCA_BO_PCT
             else:
                 order = available * cfg.DCA_BO_PCT * (cfg.DCA_SO_MULTIPLIER ** min(self.short_layers, 4))
-            if not self.live_mode:
-                order = min(order, self.capital * 0.3)
+            # 30% cap REMOVED (2026-04-10): See long side comment.
             if order < 10 or order > self.capital:
                 return
             if price <= 0:

@@ -252,37 +252,15 @@ class V14LifecycleEngine:
                     daily_high = float(day_row.get('high', daily_close))
                     daily_low = float(day_row.get('low', daily_close))
 
-                # Run full daily tick (router evaluates direction, signals compute)
+                # Run daily tick (signal evaluation and phase transitions ONLY).
+                # TP/DCA grid logic is handled by hourly ticks — see _run_daily_tick docstring.
                 actions.extend(self._run_daily_tick(prev_date_ts, daily_close, daily_high, daily_low))
 
-                # ── Live TP catch-up ──
-                # The daily tick uses previous day's OHLC. If today's price already
-                # exceeds TP (e.g. overnight gap up), the daily tick won't see it
-                # and may add DCA layers instead of selling. Run a TP-only check
-                # with the current candle's price to catch this case.
-                # Safe because: if price > avg_entry, the DCA buy check won't fire
-                # (negative drop from avg), so only TP logic runs.
-                if self._live_mode:
-                    eng = self._engine
-                    date_ts_now = pd.Timestamp(ts.replace(tzinfo=None))
-                    if eng.phase == Phase.LONG_DCA and eng.long_coins > 0 and eng.long_tp > 0:
-                        tp_check = high if high is not None and not np.isnan(high) else price
-                        if tp_check >= eng.long_tp:
-                            old_tc = len(eng.trades)
-                            eng._long_dca_tick(date_ts_now, price, high=high)
-                            actions.extend(self._extract_new_actions(old_tc))
-                            if eng.long_coins == 0:
-                                logger.info(f"{self.symbol} Live TP catch-up: sold at daily boundary "
-                                            f"(current price {price:.4f} >= TP {eng.long_tp:.4f})")
-                    elif eng.phase == Phase.SHORT_DCA and eng.short_coins > 0 and eng.short_tp > 0:
-                        tp_check = low if low is not None and not np.isnan(low) else price
-                        if tp_check <= eng.short_tp:
-                            old_tc = len(eng.trades)
-                            eng._short_dca_tick(date_ts_now, price, low=low)
-                            actions.extend(self._extract_new_actions(old_tc))
-                            if eng.short_coins == 0:
-                                logger.info(f"{self.symbol} Live TP catch-up: covered at daily boundary "
-                                            f"(current price {price:.4f} <= TP {eng.short_tp:.4f})")
+                # NOTE (2026-04-10): "Live TP catch-up" block REMOVED.
+                # It used the current candle's high against the daily-tick context,
+                # which is redundant — the hourly tick for this candle (below) already
+                # runs _long_dca_tick with the correct hourly high. The catch-up block
+                # was also a source of false TPs. See incident log §17.8.
 
                 # Engine is now warmed up — router has set direction, signals are loaded
                 if not self._warmed_up:
@@ -293,28 +271,27 @@ class V14LifecycleEngine:
                 # Clear old candles (keep current day only)
                 self._candles_1h = [c for c in self._candles_1h
                                     if c['timestamp'].strftime('%Y-%m-%d') == current_date]
-            else:
-                # Between daily: run DCA grid for hourly TP responsiveness
-                # BUT only if warmed up (router has set direction at least once)
-                if self._live_mode and self._warmed_up:
-                    date_ts = pd.Timestamp(ts.replace(tzinfo=None))
-                    old_trade_count = len(self._engine.trades)
 
-                    if self._engine.phase == Phase.LONG_DCA:
-                        self._engine._long_dca_tick(date_ts, price, high=high)
-                        # Check orphaned short TP (manual phase override — close only, no new layers)
-                        if self._engine.short_coins > 0 and self._engine.short_tp > 0 and low <= self._engine.short_tp:
-                            old_unwinding = self._engine.unwinding
-                            self._engine.unwinding = True  # Prevent new layers
-                            self._engine._short_dca_tick(date_ts, price, low=low)
-                            self._engine.unwinding = old_unwinding
-                    elif self._engine.phase == Phase.SHORT_DCA:
+            # Run hourly DCA grid tick for EVERY candle (daily boundary or not).
+            # This ensures TP/DCA checks use the individual candle's high/low,
+            # not stale daily aggregates. Runs after daily tick (if any) so
+            # signals are fresh before grid evaluation.
+            if self._live_mode and self._warmed_up:
+                date_ts = pd.Timestamp(ts.replace(tzinfo=None))
+                old_trade_count = len(self._engine.trades)
+
+                if self._engine.phase == Phase.LONG_DCA:
+                    self._engine._long_dca_tick(date_ts, price, high=high)
+                    # Check orphaned short TP (manual phase override — close only, no new layers)
+                    if self._engine.short_coins > 0 and self._engine.short_tp > 0 and low <= self._engine.short_tp:
+                        old_unwinding = self._engine.unwinding
+                        self._engine.unwinding = True  # Prevent new layers
                         self._engine._short_dca_tick(date_ts, price, low=low)
+                        self._engine.unwinding = old_unwinding
+                elif self._engine.phase == Phase.SHORT_DCA:
+                    self._engine._short_dca_tick(date_ts, price, low=low)
 
-                    actions.extend(self._extract_new_actions(old_trade_count))
-                elif self._live_mode and not self._warmed_up:
-                    # Accumulating candles, tracking price, but not trading yet
-                    pass
+                actions.extend(self._extract_new_actions(old_trade_count))
 
         except Exception as e:
             logger.error(f"V14Engine tick error for {self.symbol}: {e}", exc_info=True)
@@ -323,7 +300,13 @@ class V14LifecycleEngine:
 
     def _run_daily_tick(self, date: pd.Timestamp, price: float,
                         high: float = None, low: float = None) -> List[dict]:
-        """Run the V14 engine's full daily logic, matching run() loop order exactly."""
+        """Run the V14 engine's full daily logic: signals, phase transitions only.
+
+        NOTE (2026-04-10): TP/DCA grid checks are handled by hourly ticks, NOT here.
+        Previously this passed daily high/low to _long_dca_tick/_short_dca_tick, which
+        caused false TPs — the full-day high was compared against a TP target lowered
+        by intraday DCA layers that didn't exist when the high occurred. See incident log.
+        """
         actions = []
         eng = self._engine
         old_trade_count = len(eng.trades)
@@ -332,19 +315,11 @@ class V14LifecycleEngine:
         # Compute signals first
         signals = eng._compute_signals(date, price)
 
-        # Phase-specific logic (EXACT order from V14 run() loop)
+        # Phase-specific logic: signal evaluation and phase transitions ONLY.
+        # DCA grid ticks (buys + TP checks) are handled by hourly candle ticks.
         if eng.phase == Phase.LONG_DCA:
-            eng._long_dca_tick(date, price, high=high)
-            # Check orphaned short TP (manual phase override — close only, no new layers)
-            tp_low = low if low is not None else price
-            if eng.short_coins > 0 and eng.short_tp > 0 and tp_low <= eng.short_tp:
-                old_unwinding = eng.unwinding
-                eng.unwinding = True
-                eng._short_dca_tick(date, price, low=low)
-                eng.unwinding = old_unwinding
             eng._check_top_signals(date, price, signals)
         elif eng.phase == Phase.SHORT_DCA:
-            eng._short_dca_tick(date, price, low=low)
             eng._check_bottom_signals(date, price, signals)
             eng._check_markdown_exit(date, price, signals)
         elif eng.phase == Phase.ROUTER:
