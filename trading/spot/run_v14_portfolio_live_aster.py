@@ -828,20 +828,15 @@ class V14PortfolioLiveAster:
                     if engine._engine:
                         engine._engine.live_mode = True
 
-                    # LIVE FIX: Reset engine internal capital to allocated amount.
-                    # The engine's paper-capital tracking drifts from reality in live mode
-                    # (CapitalRouter manages real capital). A depleted engine capital can
-                    # cause order sizes to fall below the $10 minimum, silently blocking
-                    # trades via the `order > self.capital` guard in v14_dca_engine.py.
-                    #
-                    # GAP-13 FIX: Reset capital ALWAYS, not just when no position.
-                    # Mid-DCA, the engine capital is irrelevant — the router manages
-                    # real capital. But the engine still uses it for order sizing guards.
-                    # A depleted paper capital would permanently block further DCA layers.
+                    # LIVE FIX (revised 2026-04-11): Reset engine capital to
+                    # allocated_capital minus current position cost. This ensures
+                    # the Martingale formula sizes layers correctly without
+                    # overspending the allocation. See GAP-13 revision notes.
                     eng_inner = engine._engine
                     if eng_inner:
                         old_cap = eng_inner.capital
-                        eng_inner.capital = cs.allocated_capital
+                        invested = eng_inner.long_cost if eng_inner.long_coins > 0 else 0
+                        eng_inner.capital = max(0, cs.allocated_capital - invested)
                         if eng_inner.long_coins == 0 and eng_inner.short_coins == 0:
                             # No position — also sanitize stale fields
                             eng_inner.long_avg_entry = 0
@@ -1701,12 +1696,17 @@ class V14PortfolioLiveAster:
                 # Track layer count (exchange sync will confirm, but track locally too)
                 cs.layer_count += 1
 
-                # GAP-13 FIX: Reset engine capital after each BUY to prevent
-                # paper-capital depletion from blocking future DCA layers.
-                # The engine decrements eng.capital on each buy (paper tracking),
-                # but in live mode the CapitalRouter manages real capital.
+                # GAP-13 FIX (revised 2026-04-11): Reset engine capital to
+                # allocated_capital minus what's already invested in this deal.
+                # Original GAP-13 reset to full allocation, which let the
+                # Martingale formula overshoot — L1+L2+L3 could exceed the
+                # allocation because each layer calculated from the full amount.
+                # Now the engine sees only what's actually left to spend.
                 if cs.engine and cs.engine._engine:
-                    cs.engine._engine.capital = cs.allocated_capital
+                    eng = cs.engine._engine
+                    invested = eng.long_cost  # Total cost of current position
+                    remaining = max(0, cs.allocated_capital - invested)
+                    eng.capital = remaining
 
                 # Place TP limit order
                 self._place_tp_order(sym, cs)

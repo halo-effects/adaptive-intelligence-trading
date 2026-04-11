@@ -626,13 +626,32 @@ until production data justifies differentiation.
 | Base Order | **30%** (DCA_BO_PCT = 0.30) |
 | SO Deviation | 1.5% |
 | SO Multiplier | 1.5x |
-| Max Layers | **12** (DCA_MAX_LAYERS default=8; High profile=12) |
+| Max Layers | **12** (DCA_MAX_LAYERS default=8; High profile=12). **Effective depth: ~4 layers** — Martingale sizing depletes the per-coin allocation by L4 (L1=30%, L2≈31.5%, L3≈26%, L4=remainder). See §5.2.1. |
 | Take Profit | 1.5% |
 | Scanner Window | 30d |
 | Trend Multiplier | Yes (0.3–1.5x) |
 
-This is identical to the V14PM Paper configuration that produced $53.8K equity,
-102 deals, 100% win rate over its operating period.
+> **§5.2.1 — Grid Capital Mechanics (revised 2026-04-11)**
+>
+> The DCA grid uses a Martingale formula: `order = remaining_capital × BO_PCT × SO_MULT^min(layer, 4)`.
+> With `BO_PCT=0.30` and `SO_MULT=1.5x`, the allocation naturally depletes in ~4 layers:
+>
+> | Layer | % of Allocation | Cumulative |
+> |-------|----------------|------------|
+> | L1 | 30.0% | 30.0% |
+> | L2 | 31.5% | 61.5% |
+> | L3 | 26.0% | 87.5% |
+> | L4 | 12.5% (remainder) | 100.0% |
+>
+> This is by design: the strategy prioritizes **capital velocity** — large L1 orders cycle
+> at 1.48% net profit quickly (69% of deals are L1), while L2-L4 provide downside averaging
+> within the allocation. The `DCA_MAX_LAYERS=12` config serves as a ceiling but is not expected
+> to be reached under normal Martingale sizing. 365-day backtest: 81.4% annual ROI (long-only,
+> $50K, 5 coins), zero pool denials, 702 completed deals.
+>
+> **Capital accounting**: The engine tracks `remaining = allocated_capital - long_cost`.
+> Each layer calculates its order from what's actually left to spend, preventing any single
+> coin from overspending its allocation into the shared pool.
 
 #### Legacy Profiles (paper bots / backtesting only)
 
