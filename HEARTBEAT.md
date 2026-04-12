@@ -37,7 +37,8 @@
 - Check `trading/spot/paper/v14_portfolio/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
 - Scheduled Task: `V14PMPaperBot` (at login)
-- Entry point: `python -u -m trading.spot.run_v14_portfolio_paper --capital 50000 --profile high --leverage 1.0 --fresh`
+- Entry point: `python -u -m trading.spot.run_v14_portfolio_paper --capital 50000 --profile high --leverage 1.0`
+  - ⚠️ **NEVER use --fresh** unless intentionally wiping all positions. --fresh skips state restore.
 - Dashboard: `docs/dashboardV14PM.html`
 
 ### V14 DCA Cycle Scanner
