@@ -531,6 +531,8 @@ class V14LifecycleEngine:
             'long_trades': eng.long_trades,
             'long_wins': eng.long_wins,
             'long_pnl': eng.long_pnl,
+            'long_trailing_active': eng.long_trailing_active,
+            'long_trailing_peak': eng.long_trailing_peak,
             # Short DCA
             'short_coins': eng.short_coins,
             'short_avg_entry': eng.short_avg_entry,
@@ -541,6 +543,8 @@ class V14LifecycleEngine:
             'short_trades': eng.short_trades,
             'short_wins': eng.short_wins,
             'short_pnl': eng.short_pnl,
+            'short_trailing_active': eng.short_trailing_active,
+            'short_trailing_peak': eng.short_trailing_peak,
             # Top detection
             'early_warning_date': str(eng.early_warning_date) if eng.early_warning_date else None,
             'failsafe_armed': eng.failsafe_armed,
@@ -610,6 +614,8 @@ class V14LifecycleEngine:
         eng.long_trades = state.get('long_trades', 0)
         eng.long_wins = state.get('long_wins', 0)
         eng.long_pnl = state.get('long_pnl', 0.0)
+        eng.long_trailing_active = state.get('long_trailing_active', False)
+        eng.long_trailing_peak = state.get('long_trailing_peak', 0.0)
 
         # Short DCA
         eng.short_coins = state.get('short_coins', 0.0)
@@ -622,6 +628,8 @@ class V14LifecycleEngine:
         eng.short_trades = state.get('short_trades', 0)
         eng.short_wins = state.get('short_wins', 0)
         eng.short_pnl = state.get('short_pnl', 0.0)
+        eng.short_trailing_active = state.get('short_trailing_active', False)
+        eng.short_trailing_peak = state.get('short_trailing_peak', float('inf'))
 
         # Top detection
         ewd = state.get('early_warning_date')

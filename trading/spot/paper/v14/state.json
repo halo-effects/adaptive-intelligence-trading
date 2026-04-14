@@ -1,5 +1,5 @@
 {
-  "saved_at": "2026-04-14T01:04:38.225181+00:00",
+  "saved_at": "2026-04-14T02:04:28.705164+00:00",
   "capital": 10000.0,
   "cash": 28086.387651030767,
   "per_coin_cash": {
@@ -61,6 +61,8 @@
       "long_trades": 5,
       "long_wins": 5,
       "long_pnl": 118.35749983574914,
+      "long_trailing_active": false,
+      "long_trailing_peak": 0.0,
       "short_coins": 0.0,
       "short_avg_entry": 0.0,
       "short_layers": 0,
@@ -70,6 +72,8 @@
       "short_trades": 0,
       "short_wins": 0,
       "short_pnl": 0.0,
+      "short_trailing_active": false,
+      "short_trailing_peak": Infinity,
       "early_warning_date": null,
       "failsafe_armed": false,
       "peak_2w_k": 5.828106403826343,
@@ -85,9 +89,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-04-14",
       "_live_mode": true,
-      "_last_candle_ts": 1776124800000,
+      "_last_candle_ts": 1776128400000,
       "start_time": 1773163074.972557,
-      "current_price": 0.086708
+      "current_price": 0.086622
     },
     "ATOM/USDT": {
       "symbol": "ATOM/USDT",
@@ -106,6 +110,8 @@
       "long_trades": 21,
       "long_wins": 20,
       "long_pnl": 3604.422169920415,
+      "long_trailing_active": false,
+      "long_trailing_peak": 0.0,
       "short_coins": 0,
       "short_avg_entry": 0,
       "short_layers": 0,
@@ -115,6 +121,8 @@
       "short_trades": 66,
       "short_wins": 65,
       "short_pnl": 9257.924683340905,
+      "short_trailing_active": false,
+      "short_trailing_peak": Infinity,
       "early_warning_date": null,
       "failsafe_armed": false,
       "peak_2w_k": 23.644174453514438,
@@ -130,9 +138,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-04-14",
       "_live_mode": true,
-      "_last_candle_ts": 1776124800000,
+      "_last_candle_ts": 1776128400000,
       "start_time": 1772333044.734216,
-      "current_price": 1.7598
+      "current_price": 1.7561
     },
     "LINK/USDC": {
       "symbol": "LINK/USDC",
@@ -151,6 +159,8 @@
       "long_trades": 84,
       "long_wins": 83,
       "long_pnl": 7299.210263788013,
+      "long_trailing_active": false,
+      "long_trailing_peak": 0.0,
       "short_coins": 0,
       "short_avg_entry": 0,
       "short_layers": 0,
@@ -160,6 +170,8 @@
       "short_trades": 51,
       "short_wins": 49,
       "short_pnl": 5331.390085549998,
+      "short_trailing_active": false,
+      "short_trailing_peak": Infinity,
       "early_warning_date": null,
       "failsafe_armed": false,
       "peak_2w_k": 8.884401268151832,
@@ -175,9 +187,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-04-14",
       "_live_mode": true,
-      "_last_candle_ts": 1776124800000,
+      "_last_candle_ts": 1776128400000,
       "start_time": 1772333044.940803,
-      "current_price": 9.2209
+      "current_price": 9.2426
     },
     "NEAR/USDT": {
       "symbol": "NEAR/USDT",
@@ -196,6 +208,8 @@
       "long_trades": 75,
       "long_wins": 74,
       "long_pnl": 7005.236469429313,
+      "long_trailing_active": false,
+      "long_trailing_peak": 0.0,
       "short_coins": 0,
       "short_avg_entry": 0,
       "short_layers": 0,
@@ -205,6 +219,8 @@
       "short_trades": 37,
       "short_wins": 37,
       "short_pnl": 4579.615455862351,
+      "short_trailing_active": false,
+      "short_trailing_peak": Infinity,
       "early_warning_date": null,
       "failsafe_armed": false,
       "peak_2w_k": 55.03623738560495,
@@ -220,9 +236,9 @@
       "router_from_markdown": false,
       "_last_daily_date": "2026-04-14",
       "_live_mode": true,
-      "_last_candle_ts": 1776124800000,
+      "_last_candle_ts": 1776128400000,
       "start_time": 1772333045.106119,
-      "current_price": 1.4125
+      "current_price": 1.4151
     }
   }
 }

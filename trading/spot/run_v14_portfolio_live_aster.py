@@ -106,6 +106,15 @@ CAPITAL_DRIFT_MIN_USD = 5.0    # Minimum absolute change to trigger detection
 CAPITAL_DRIFT_MIN_PCT = 0.02   # Minimum percentage change (2%)
 LEDGER_PATH = OUTPUT_DIR / "capital_ledger.json"
 
+# ── Trailing Stop TP ─────────────────────────────────────────────────────────
+# Replaces fixed limit-sell TP with a trailing stop that activates at +1.5%.
+# After activation, the stop trails price upward by CALLBACK_PCT. If price
+# pulls back by that amount from the peak, a market sell triggers.
+# Zero downside: trail only activates at the existing TP level.
+# Set ENABLED=False to revert to fixed limit-sell TP.
+TRAILING_STOP_ENABLED  = True    # Feature flag
+TRAILING_CALLBACK_PCT  = 0.5     # 0.5% trail distance after activation
+
 # ── Unified production profile ────────────────────────────────────────────────
 PRODUCTION_PROFILE = "high"
 PRODUCTION_LEVERAGE = 1.0
@@ -479,8 +488,49 @@ class AsterPerpClient:
             logger.error(f"place_limit_sell({db_symbol}) failed: {e}")
             return None
 
+    def place_trailing_stop_sell(self, db_symbol: str, qty: float,
+                                  activation_price: float,
+                                  callback_rate: float = 0.5) -> Optional[str]:
+        """Place a TRAILING_STOP_MARKET sell order on Aster.
+
+        The order activates when price reaches activation_price, then trails
+        upward by callback_rate %. If price drops callback_rate % from peak,
+        a market sell triggers. Aster handles all trailing logic natively.
+
+        Returns: order_id or None
+        """
+        sym = self._aster_symbol(db_symbol)
+        base = db_symbol.split("/")[0]
+        exchange_qty = qty * 1000 if base in ("PEPE", "BONK", "FLOKI") else qty
+        if self.dry_run:
+            return f"dry_run_trail_{db_symbol}_{int(time.time())}"
+        try:
+            logger.info(
+                f"PLACE TRAILING STOP SELL {db_symbol} qty={qty:.8f} "
+                f"activation=${activation_price:.8f} callback={callback_rate}%"
+            )
+            order = self._exchange.create_order(
+                symbol=sym,
+                type="TRAILING_STOP_MARKET",
+                side="sell",
+                amount=exchange_qty,
+                params={
+                    "quantity": str(exchange_qty),
+                    "activationPrice": str(activation_price),
+                    "callbackRate": str(callback_rate),
+                    "positionSide": "BOTH",
+                    "reduceOnly": "true",
+                }
+            )
+            oid = order.get("id")
+            logger.info(f"Trailing stop order placed: {oid}")
+            return oid
+        except Exception as e:
+            logger.error(f"place_trailing_stop_sell({db_symbol}) failed: {e}")
+            return None
+
     def cancel_tp_order(self, db_symbol: str, order_id: str) -> bool:
-        """Cancel a resting TP limit order."""
+        """Cancel a resting TP order (limit or trailing stop)."""
         sym = self._aster_symbol(db_symbol)
         if self.dry_run:
             return True
@@ -612,6 +662,10 @@ class CoinState:
         self.coin_regime_signal: Optional[str] = None  # "TOP" or "BOTTOM"
         self.flagged_at: Optional[str] = None          # ISO timestamp when flagged
         self.regime_cooldown_until: float = 0.0        # Unix timestamp — no re-flag before this
+        # Trailing stop TP fields
+        self.tp_type: str = "trailing" if TRAILING_STOP_ENABLED else "limit"
+        self.tp_activation_price: Optional[float] = None  # Price where trail activates
+        self.trailing_callback_pct: float = TRAILING_CALLBACK_PCT
 
     def to_dict(self) -> dict:
         return {
@@ -619,6 +673,9 @@ class CoinState:
             "allocated_capital": self.allocated_capital,
             "tp_order_id": self.tp_order_id,
             "tp_limit_price": self.tp_limit_price,
+            "tp_type": self.tp_type,
+            "tp_activation_price": self.tp_activation_price,
+            "trailing_callback_pct": self.trailing_callback_pct,
             "last_candle_ts": self.last_candle_ts,
             "cumulative_funding": self.cumulative_funding,
             "last_funding_check_ms": self.last_funding_check_ms,
@@ -811,6 +868,10 @@ class V14PortfolioLiveAster:
             cs.coin_regime_signal = cs_data.get("coin_regime_signal")
             cs.flagged_at = cs_data.get("flagged_at")
             cs.regime_cooldown_until = cs_data.get("regime_cooldown_until", 0.0)
+            # Trailing stop fields (backward compat: default to current config)
+            cs.tp_type = cs_data.get("tp_type", "trailing" if TRAILING_STOP_ENABLED else "limit")
+            cs.tp_activation_price = cs_data.get("tp_activation_price")
+            cs.trailing_callback_pct = cs_data.get("trailing_callback_pct", TRAILING_CALLBACK_PCT)
 
             engine_state = cs_data.get("engine_state", {})
             if engine_state:
@@ -1299,22 +1360,60 @@ class V14PortfolioLiveAster:
             cs.tp_order_id = None
             cs.tp_limit_price = None
 
-        # Place new TP order
-        oid = self.client.place_limit_sell(sym, qty, tp_price)
-        if oid:
-            cs.tp_order_id = oid
-            cs.tp_limit_price = tp_price  # Audit #8: store separately
-            logger.info(f"TP order placed for {sym}: qty={qty:.4f} @ ${tp_price:.8f} | order={oid}")
+        # Place new TP order — trailing stop or limit sell
+        if TRAILING_STOP_ENABLED:
+            oid = self.client.place_trailing_stop_sell(
+                sym, qty, tp_price, TRAILING_CALLBACK_PCT
+            )
+            if oid:
+                cs.tp_order_id = oid
+                cs.tp_limit_price = tp_price  # Audit #8: store separately (= activation price)
+                cs.tp_type = "trailing"
+                cs.tp_activation_price = tp_price
+                cs.trailing_callback_pct = TRAILING_CALLBACK_PCT
+                logger.info(
+                    f"Trailing TP placed for {sym}: qty={qty:.4f} "
+                    f"activation=${tp_price:.8f} trail={TRAILING_CALLBACK_PCT}% | order={oid}"
+                )
+            else:
+                # Fallback: place regular limit sell if trailing stop fails
+                logger.warning(f"Trailing stop failed for {sym}, falling back to limit TP")
+                oid = self.client.place_limit_sell(sym, qty, tp_price)
+                if oid:
+                    cs.tp_order_id = oid
+                    cs.tp_limit_price = tp_price
+                    cs.tp_type = "limit"
+                    cs.tp_activation_price = None
+                    logger.info(f"Fallback limit TP placed for {sym}: qty={qty:.4f} @ ${tp_price:.8f} | order={oid}")
+                else:
+                    logger.warning(
+                        f"TP order placement FAILED for {sym} (both trailing and limit). "
+                        f"Candle-based TP detection remains as fallback."
+                    )
+                    send_telegram(
+                        f"⚠️ {TG_PREFIX} TP order placement FAILED for {sym}\n"
+                        f"Qty: {qty:.4f} @ ${tp_price:.6f}\n"
+                        f"Both trailing stop and limit sell failed\n"
+                        f"Candle-based TP detection still active as fallback"
+                    )
         else:
-            logger.warning(
-                f"TP order placement FAILED for {sym}. "
-                f"Candle-based TP detection remains as fallback."
-            )
-            send_telegram(
-                f"⚠️ {TG_PREFIX} TP order placement FAILED for {sym}\n"
-                f"Qty: {qty:.4f} @ ${tp_price:.6f}\n"
-                f"Candle-based TP detection still active as fallback"
-            )
+            oid = self.client.place_limit_sell(sym, qty, tp_price)
+            if oid:
+                cs.tp_order_id = oid
+                cs.tp_limit_price = tp_price
+                cs.tp_type = "limit"
+                cs.tp_activation_price = None
+                logger.info(f"TP order placed for {sym}: qty={qty:.4f} @ ${tp_price:.8f} | order={oid}")
+            else:
+                logger.warning(
+                    f"TP order placement FAILED for {sym}. "
+                    f"Candle-based TP detection remains as fallback."
+                )
+                send_telegram(
+                    f"⚠️ {TG_PREFIX} TP order placement FAILED for {sym}\n"
+                    f"Qty: {qty:.4f} @ ${tp_price:.6f}\n"
+                    f"Candle-based TP detection still active as fallback"
+                )
 
     def _check_tp_fills(self):
         """Poll exchange for TP order fills."""
@@ -1385,8 +1484,17 @@ class V14PortfolioLiveAster:
                         tp_order = limit_sells[0]
                         cs.tp_order_id = tp_order["id"]
                         cs.tp_limit_price = tp_order.get("price")
+                        # Detect trailing stop vs limit order
+                        order_info = tp_order.get("info", {})
+                        if order_info.get("type") == "TRAILING_STOP_MARKET" or order_info.get("origType") == "TRAILING_STOP_MARKET":
+                            cs.tp_type = "trailing"
+                            cs.tp_activation_price = float(order_info.get("activatePrice", 0)) or cs.tp_limit_price
+                            cs.trailing_callback_pct = float(order_info.get("priceRate", TRAILING_CALLBACK_PCT))
+                        else:
+                            cs.tp_type = "limit"
+                            cs.tp_activation_price = None
                         logger.info(
-                            f"TP RECOVERY: Adopted orphan sell order {cs.tp_order_id} "
+                            f"TP RECOVERY: Adopted orphan {cs.tp_type} order {cs.tp_order_id} "
                             f"for {sym} @ ${tp_order.get('price', 0):.6f}"
                         )
                         send_telegram(
@@ -1450,12 +1558,20 @@ class V14PortfolioLiveAster:
                 if abs(cs.cumulative_funding) > 0.001
                 else ""
             )
+            # Trail bonus: extra profit captured above the fixed TP activation price
+            trail_bonus_str = ""
+            if cs.tp_type == "trailing" and cs.tp_activation_price and actual_price > cs.tp_activation_price:
+                trail_bonus = (actual_price - cs.tp_activation_price) * actual_qty
+                trail_bonus_str = f"\n🎯 Trail bonus: +${trail_bonus:.2f} above fixed TP"
+                logger.info(f"Trail bonus for {sym}: +${trail_bonus:.2f} (fill ${actual_price:.6f} vs activation ${cs.tp_activation_price:.6f})")
+
+            tp_type_str = "Trailing TP" if cs.tp_type == "trailing" else "TP Hit"
             send_telegram(
-                f"{emoji} {TG_PREFIX} <b>Deal Closed (TP Hit)</b>\n"
+                f"{emoji} {TG_PREFIX} <b>Deal Closed ({tp_type_str})</b>\n"
                 f"Symbol: {sym}\n"
                 f"Fill: ${actual_price:.6f} × {actual_qty:.4f} = ${actual_proceeds:.2f}\n"
                 f"PnL: ${pnl:.2f} ({record['return_pct']:.1f}%)"
-                f"{funding_str}\n"
+                f"{funding_str}{trail_bonus_str}\n"
                 f"Layers: {record.get('layers', '?')}"
             )
 
@@ -1498,6 +1614,7 @@ class V14PortfolioLiveAster:
         # Clean up
         cs.tp_order_id = None
         cs.tp_limit_price = None
+        cs.tp_activation_price = None
         cs.cumulative_funding = 0.0
         self.tracker.save_csv()
 
@@ -2517,6 +2634,9 @@ class V14PortfolioLiveAster:
 
                 coin_data["cumulative_funding"] = round(cs.cumulative_funding, 6)
                 coin_data["tp_order_id"]  = cs.tp_order_id
+                coin_data["tp_type"]      = cs.tp_type
+                coin_data["tp_activation_price"] = cs.tp_activation_price
+                coin_data["trailing_callback_pct"] = cs.trailing_callback_pct
                 coin_data["layer_count"]  = cs.layer_count
                 coin_data["paused"]       = cs.paused
                 coin_data["regime_flagged"] = cs.regime_flagged

@@ -408,6 +408,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
       <span class="header-badge" id="hdrRegime">--</span>
       <span class="header-badge" id="hdrTrend">--</span>
       <span class="header-badge tier" id="hdrTier">-- slots</span>
+      <span class="header-badge" id="hdrTrailing" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2);display:none">🎯 Trail 0.5%</span>
     </div>
     <div class="header-status-col">
       <div class="header-status"><span id="statusDot" class="status-dot stopped"></span><span id="statusLabel">Loading...</span></div>
@@ -663,6 +664,13 @@ function render(){
   var activeCoinCount=(S.symbols||Object.keys(S.coins||{})).length;
   $('hdrTier').textContent=activeCoinCount+'/'+tierCap+' coin slots';
 
+  // Show trailing stop badge if any coin has trailing TP
+  var hasTrailing=false;
+  var coins=S.coins||{};
+  for(var ck in coins){if(coins[ck].tp_type==='trailing'){hasTrailing=true;break}}
+  var trailEl=$('hdrTrailing');
+  if(trailEl){trailEl.style.display=hasTrailing?'inline-flex':'none'}
+
   var fns=[renderStats,renderRiskProfile,renderPortfolioAlloc,renderPositions,renderAIPanel,renderCompounding,renderMacro,renderCapDonut,renderFlowDiagram,renderBottomBar];
   fns.forEach(function(fn){try{fn()}catch(e){console.warn(fn.name,e)}});
 }
@@ -844,7 +852,13 @@ function renderPositions(){
     html+='<div class="position-stat"><div class="ps-label">Avg Entry</div><div class="ps-val">'+fUsd(entry,pd_)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Invested</div><div class="ps-val">'+fUsd(inv)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Grid Layers</div><div class="ps-val">'+layers+' / '+maxLayers+'</div></div>';
-    html+='<div class="position-stat"><div class="ps-label">TP Target</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+'</div></div>';
+    var tpLabel='TP Target';
+    var tpExtra='';
+    if(c.tp_type==='trailing'){
+      tpLabel='TP Activation';
+      tpExtra=' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">TRAIL '+(c.trailing_callback_pct||0.5)+'%</span>';
+    }
+    html+='<div class="position-stat"><div class="ps-label">'+tpLabel+'</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+tpExtra+'</div></div>';
     var liqPrice=c.liquidation_price||null;
     var liqDist=c.distance_to_liq_pct||null;
     html+='<div class="position-stat"><div class="ps-label">Liquidation</div><div class="ps-val" style="color:var(--red)">'+(liqPrice?fUsd(liqPrice,pd_):'N/A')+'</div></div>';

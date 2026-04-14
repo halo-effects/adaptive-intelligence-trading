@@ -36,7 +36,7 @@ Then it rotates to the next best opportunity. Rinse and repeat, 24/7.
 |---------|-------------|----------------|
 | **1x Leverage** | No borrowing, no liquidation risk | You can't lose more than you put in |
 | **Exchange Is Truth** | Position state synced from exchange every 65s cycle | Engine can never diverge from reality |
-| **Resting Limit Orders** | Exchange handles take-profit, not the bot | Even if the bot crashes, your TP order sits on the exchange. TP price is always computed from the actual exchange entry price (not engine's candle-based estimate) to account for spread/slippage. |
+| **Trailing Stop TP** | Exchange handles take-profit with trailing stop, not the bot | TRAILING_STOP_MARKET activates at +1.5% (same as old fixed TP), then trails with 0.5% callback. Captures runaway moves while guaranteeing minimum ~+1.0% profit. Even if the bot crashes, the trailing stop sits on the exchange. Feature flag allows instant rollback to limit sell. |
 | **Pre-Order Exchange Checks** | Every BUY checks `fetch_balance()`, every SELL checks `fetch_open_positions()` | No order executes without exchange confirmation that the prerequisite exists (cash for buys, position for sells) |
 | **Leverage Enforcement** | `ensure_leverage()` called per symbol at first trade | Sets 1x on Aster (which defaults to 5x Cross). Note: `_leverage_set` is not persisted to state.json — on restart with no open positions, leverage is re-verified at next trade entry. |
 | **Human Approval** | Direction changes require Telegram confirmation | The bot never flips strategy on its own |
@@ -976,18 +976,42 @@ ephemeral and exchange-derived.
 is tracked separately — incremented on confirmed BUY fill, reset on confirmed SELL fill.
 Persisted in `state.json`.
 
-#### 6.8.2 Resting Limit Orders as Primary TP Mechanism
+#### 6.8.2 Trailing Stop as Primary TP Mechanism (updated 2026-04-13)
 
-After every BUY fill, a resting limit sell is placed on the exchange at the TP price for the
-full position size. The exchange executes the TP without any bot interaction — bot polling is
-a **fallback**, not the primary path.
+After every BUY fill, a **TRAILING_STOP_MARKET** order is placed on the exchange.
+The order activates at the TP price (+1.5% above avg entry), then trails the peak
+price with a 0.5% callback distance. Aster handles all trailing logic natively —
+the bot's 65-second poll is a **fallback**, not the primary path.
+
+**Zero-downside design:** The trail only activates after the current TP level is reached.
+Worst case = price reverses 0.5% from activation, selling at ~+1.0% (slightly below
+the old 1.48% fixed TP). Best case = captures runaway moves far beyond 1.5%.
+Backtest showed +95% extra profit on 103 trades.
 
 Sequence:
-1. BUY fill → cancel any existing TP limit order
-2. Place new limit sell at updated TP price for full position size
-3. Persist `tp_order_id` in CoinState
-4. Each poll cycle: check order status; if filled, record trade and clear `tp_order_id`
-5. If engine also detects TP via candle tick while exchange order active → skip (exchange handles it)
+1. BUY fill → cancel any existing TP order (trailing or limit)
+2. Compute activation price from exchange entry: `exchange_entry × (1 + TP_PCT)`
+3. Place `TRAILING_STOP_MARKET` with `activationPrice` and `callbackRate=0.5%`
+4. Persist `tp_order_id`, `tp_type="trailing"`, `tp_activation_price` in CoinState
+5. Each poll cycle: check order status; if filled, record trade, log trail bonus
+6. If engine also detects TP via candle tick while exchange order active → skip (exchange handles it)
+7. If trailing stop placement fails → automatic fallback to limit sell (same as before)
+
+Config constants:
+```python
+TRAILING_STOP_ENABLED  = True    # Feature flag (False reverts to limit sell)
+TRAILING_CALLBACK_PCT  = 0.5     # 0.5% trail distance
+```
+
+**Paper bot simulation:** The DCA engine (`v14_dca_engine.py`) simulates trailing stops
+using candle OHLC data. When candle high reaches the TP level, the trail activates.
+Peak is tracked across subsequent candles. When candle low drops 0.5% from peak,
+the engine sells at the trigger price. Fee model uses taker fee (market order) for
+trailing exits vs maker fee for fixed limit exits.
+
+> **History (2026-04-13):** Prior to this change, TP was a fixed limit sell at
+> `avg_entry × 1.015`. The trailing stop preserves this as the activation threshold
+> while adding upside capture. Feature flag allows instant rollback.
 
 #### 6.8.3 Fill Price Handling
 
@@ -1841,7 +1865,7 @@ matplotlib, scipy, scikit-learn, plotly  # Backtest analysis only
 | `resample_daily.py` in hourly pipeline | Ensures all coins have daily candles for signal computation; closes gap between 1h collector and daily-dependent signal pack |
 | TP checks candle high/low not close | Matches resting limit order behavior; fills on wick touch at TP price (2026-03-17) |
 | LIVE GUARD pattern | Engine TP sells blocked when exchange limit order is active; prevents engine from overriding exchange truth (2026-03-18) |
-| Resting limit orders as primary TP | Exchange executes TP even if bot dies; polling is fallback only (2026-03-17) |
+| Trailing stop as primary TP | Exchange executes trailing TP even if bot dies; activates at +1.5%, trails 0.5%. Polling is fallback only. Feature flag for instant rollback to limit sell (2026-04-13, originally resting limit orders 2026-03-17) |
 | Fill price from exchange, never engine | PnL accuracy; prevents fictional bookkeeping when fill price differs from TP price (2026-03-18) |
 | Human-in-the-loop for direction flips | V14-ETF incident: autonomous LONG↔SHORT switches can cause catastrophic losses (2026-03-17) |
 | Top-5 scanner summary picks | Summary Best/Fastest/Safest picks derived from top 5 only; avoids low-quality picks from tail of coin universe (2026-03-18) |
