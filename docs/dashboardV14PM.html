@@ -900,7 +900,12 @@ function renderPositions(){
 
 // ADAPTIVE INTELLIGENCE (Per-Coin)
 function renderAIPanel(){
-  var syms=S.symbols||Object.keys(S.coins||{});
+  var allSyms=S.symbols||Object.keys(S.coins||{});
+  // Only show coins with active positions (invested > 0)
+  var syms=allSyms.filter(function(sym){
+    var c=(S.coins||{})[sym]||{};
+    return (c.invested||0)>0;
+  });
   var html='';
 
   syms.forEach(function(sym){
