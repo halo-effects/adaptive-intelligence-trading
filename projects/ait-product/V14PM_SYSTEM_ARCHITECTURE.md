@@ -1192,6 +1192,14 @@ Both coin cap and pool split use asymmetric hysteresis to prevent tier flapping:
 - Proportional allocation by Adjusted Score
 - Per-coin cap: max 20% of Active Pool
 
+**Tier cap enforcement (added 2026-04-13):**
+During daily rebalance, new coin engines are only created if the total number of
+active positions (coins with `long_coins > 0` or `short_coins > 0`) is below the
+tier coin cap. This prevents overshoot when existing positions that fell off the
+top-N scanner list are still open. The cap is checked per-coin as engines are
+created, and the count is incremented for each new engine added. Existing positions
+are never force-closed by the rebalancer — they drain naturally via TP fills.
+
 **Capital rotation:**
 When a position closes (TP hit):
 1. Release capital back to active pool
