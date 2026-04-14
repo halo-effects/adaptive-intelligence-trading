@@ -852,13 +852,16 @@ function renderPositions(){
     html+='<div class="position-stat"><div class="ps-label">Avg Entry</div><div class="ps-val">'+fUsd(entry,pd_)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Invested</div><div class="ps-val">'+fUsd(inv)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Grid Layers</div><div class="ps-val">'+layers+' / '+maxLayers+'</div></div>';
-    var tpLabel='TP Target';
-    var tpExtra='';
-    if(c.tp_type==='trailing'){
-      tpLabel='TP Activation';
-      tpExtra=' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">TRAIL '+(c.trailing_callback_pct||0.5)+'%</span>';
+    var isTrailing=c.tp_type==='trailing';
+    var tpActivation=c.tp_activation_price||null;
+    var tpCallback=c.trailing_callback_pct||0;
+    if(isTrailing){
+      html+='<div class="position-stat"><div class="ps-label">\ud83c\udfaf Trail TP</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+'</div></div>';
+      html+='<div class="position-stat"><div class="ps-label">Activation</div><div class="ps-val" style="color:var(--accent2)">'+(tpActivation?fUsd(tpActivation,pd_):'--')+'</div></div>';
+      html+='<div class="position-stat"><div class="ps-label">Callback</div><div class="ps-val" style="color:var(--accent2)">'+fmt(tpCallback,1)+'%</div></div>';
+    } else {
+      html+='<div class="position-stat"><div class="ps-label">TP Target</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+'</div></div>';
     }
-    html+='<div class="position-stat"><div class="ps-label">'+tpLabel+'</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+tpExtra+'</div></div>';
     var liqPrice=c.liquidation_price||null;
     var liqDist=c.distance_to_liq_pct||null;
     html+='<div class="position-stat"><div class="ps-label">Liquidation</div><div class="ps-val" style="color:var(--red)">'+(liqPrice?fUsd(liqPrice,pd_):'N/A')+'</div></div>';
