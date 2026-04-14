@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-V14 Portfolio Manager — Live Trading Bot (Aster DEX Perpetuals)
+V14 Portfolio Manager - Live Trading Bot (Aster DEX Perpetuals)
 ==============================================================
 Production live trading runner for V14PM on Aster DEX Perps.
 
@@ -98,7 +98,7 @@ LIVE_POLL_INTERVAL = 65        # seconds between exchange polls
 TP_CHECK_INTERVAL  = 65        # seconds between TP order status checks
 STATUS_WRITE_INTERVAL = 60     # seconds between status.json writes
 REGIME_EVAL_HOUR   = 0         # UTC hour for daily regime evaluation (midnight)
-# REENTRY_COOLDOWN removed — old bot never had it, it masked bugs
+# REENTRY_COOLDOWN removed - old bot never had it, it masked bugs
 TG_PREFIX          = "[V14-PM]"
 
 # Capital change detection thresholds (Upgrade 1)
@@ -121,9 +121,9 @@ PRODUCTION_LEVERAGE = 1.0
 
 # Bot operational states
 class BotState:
-    RUNNING   = "RUNNING"    # Normal trading — entries and DCA layers active
-    PAUSED    = "PAUSED"     # Operator freeze — no new entries/layers, TPs active
-    WIND_DOWN = "WIND_DOWN"  # Regime change approved — winding down before flip
+    RUNNING   = "RUNNING"    # Normal trading - entries and DCA layers active
+    PAUSED    = "PAUSED"     # Operator freeze - no new entries/layers, TPs active
+    WIND_DOWN = "WIND_DOWN"  # Regime change approved - winding down before flip
 
 
 # ── Telegram ─────────────────────────────────────────────────────────────────
@@ -310,7 +310,7 @@ class AsterPerpClient:
 
     def ensure_leverage(self, db_symbol: str, leverage: float = 1.0):
         """Set leverage for a symbol on the exchange. Called once per symbol.
-        Aster defaults perp pairs to 5x Cross — we must explicitly set 1x."""
+        Aster defaults perp pairs to 5x Cross - we must explicitly set 1x."""
         if self.dry_run or db_symbol in self._leverage_set:
             return
         sym = self._aster_symbol(db_symbol)
@@ -390,8 +390,8 @@ class AsterPerpClient:
                                                            params={"positionSide": "BOTH"})
             fill = order.get("average") or order.get("price")
             if not fill:
-                # Fetch actual trade fills from exchange — more accurate than ticker
-                logger.warning(f"Exchange did not return fill price for BUY — fetching trades")
+                # Fetch actual trade fills from exchange - more accurate than ticker
+                logger.warning(f"Exchange did not return fill price for BUY - fetching trades")
                 try:
                     import time as _time
                     _time.sleep(1)  # Give exchange time to settle
@@ -443,7 +443,7 @@ class AsterPerpClient:
                                                             params={"positionSide": "BOTH", "reduceOnly": True})
             fill = order.get("average") or order.get("price")
             if not fill:
-                logger.warning(f"Exchange did not return fill price for SELL — fetching ticker")
+                logger.warning(f"Exchange did not return fill price for SELL - fetching ticker")
                 fill = self.fetch_ticker_price(db_symbol)
             else:
                 if base in ("PEPE", "BONK", "FLOKI"):
@@ -661,7 +661,7 @@ class CoinState:
         self.regime_flagged: bool = False              # True when coin signals conflict with global direction
         self.coin_regime_signal: Optional[str] = None  # "TOP" or "BOTTOM"
         self.flagged_at: Optional[str] = None          # ISO timestamp when flagged
-        self.regime_cooldown_until: float = 0.0        # Unix timestamp — no re-flag before this
+        self.regime_cooldown_until: float = 0.0        # Unix timestamp - no re-flag before this
         # Trailing stop TP fields
         self.tp_type: str = "trailing" if TRAILING_STOP_ENABLED else "limit"
         self.tp_activation_price: Optional[float] = None  # Price where trail activates
@@ -700,7 +700,7 @@ class V14PortfolioLiveAster:
     Architecture: Exchange-as-truth
       - _sync_positions_from_exchange() runs at top of every main loop iteration
       - Engine position fields (long_coins, long_cost, etc.) are overwritten from
-        exchange every cycle — engine is used only for signal generation
+        exchange every cycle - engine is used only for signal generation
       - Resting limit orders: Exchange handles TP, not polling
       - Fill price from exchange: Never fall back to engine price
       - PnL from actual proceeds: Not engine estimates
@@ -765,7 +765,7 @@ class V14PortfolioLiveAster:
         self._last_status_write: float = 0.0
 
         # Re-entry cooldown (prevents rapid-fire after TP fills)
-        # _reentry_cooldown_until removed (dead code — superseded by ORDER_DEDUP_WINDOW)
+        # _reentry_cooldown_until removed (dead code - superseded by ORDER_DEDUP_WINDOW)
 
         # Exchange-as-truth: cached position data (refreshed every cycle by _sync_positions_from_exchange)
         self._exchange_usdt_free: float = 0.0
@@ -899,7 +899,7 @@ class V14PortfolioLiveAster:
                         invested = eng_inner.long_cost if eng_inner.long_coins > 0 else 0
                         eng_inner.capital = max(0, cs.allocated_capital - invested)
                         if eng_inner.long_coins == 0 and eng_inner.short_coins == 0:
-                            # No position — also sanitize stale fields
+                            # No position - also sanitize stale fields
                             eng_inner.long_avg_entry = 0
                             eng_inner.long_tp = 0
                             eng_inner.long_cost = 0
@@ -919,7 +919,7 @@ class V14PortfolioLiveAster:
                 except Exception as e:
                     logger.error(f"  Failed to restore engine for {sym}: {e}")
             else:
-                # No saved engine state — create fresh engine (warmed up for live)
+                # No saved engine state - create fresh engine (warmed up for live)
                 try:
                     engine = V14LifecycleEngine(
                         symbol=sym,
@@ -932,7 +932,7 @@ class V14PortfolioLiveAster:
                         engine._engine.live_mode = True
                     engine._warmed_up = True
                     cs.engine = engine
-                    # Set candle ts to NOW — only process future candles, never replay history
+                    # Set candle ts to NOW - only process future candles, never replay history
                     cs.last_candle_ts = int(time.time() * 1000)
                     logger.info(f"  Created fresh engine for {sym} (no saved state, candle_ts=now)")
                 except Exception as e:
@@ -1029,10 +1029,10 @@ class V14PortfolioLiveAster:
                 eng.long_tp = ex_entry * (1 + tp_pct)
                 # Sync layer count: ensure consistency between CoinState, engine, and exchange
                 if cs.layer_count == 0 and ex_qty > 0:
-                    # Position exists but layer_count is 0 — derive from engine state
+                    # Position exists but layer_count is 0 - derive from engine state
                     cs.layer_count = max(1, eng.long_layers)
                 elif cs.layer_count > 0 and ex_qty == 0:
-                    # No position but layer_count > 0 — stale, reset
+                    # No position but layer_count > 0 - stale, reset
                     cs.layer_count = 0
                 # Always sync engine layers to match CoinState
                 if eng.long_layers != cs.layer_count:
@@ -1068,7 +1068,7 @@ class V14PortfolioLiveAster:
             )
             logger.info(f"Capital ledger initialized with seed=${seed_capital:.2f}")
         else:
-            # Ledger exists — use its tracked capital instead of CLI --capital
+            # Ledger exists - use its tracked capital instead of CLI --capital
             self._tracked_capital = ledger.get("current_capital", seed_capital)
             if abs(self._tracked_capital - seed_capital) > 1.0:
                 logger.info(
@@ -1147,7 +1147,7 @@ class V14PortfolioLiveAster:
         else:
             self._tracked_capital -= tx_amount
 
-        # Resize router (adjusts pools, tier cap, split — all hysteresis-aware)
+        # Resize router (adjusts pools, tier cap, split - all hysteresis-aware)
         self.router.resize(self._tracked_capital)
         self.capital = self._tracked_capital
 
@@ -1197,7 +1197,7 @@ class V14PortfolioLiveAster:
             cs.coin_regime_signal = "TOP"
             cs.flagged_at = datetime.now(timezone.utc).isoformat()
             coin_name = sym.split("/")[0]
-            logger.warning(f"REGIME FLAG: {sym} — top detected, conflicts with global LONG")
+            logger.warning(f"REGIME FLAG: {sym} - top detected, conflicts with global LONG")
 
             # Count total flagged coins for context
             flagged_count = sum(1 for s, c in self.coins.items() if c.regime_flagged)
@@ -1220,7 +1220,7 @@ class V14PortfolioLiveAster:
             cs.coin_regime_signal = "BOTTOM"
             cs.flagged_at = datetime.now(timezone.utc).isoformat()
             coin_name = sym.split("/")[0]
-            logger.warning(f"REGIME FLAG: {sym} — bottom detected, conflicts with global SHORT")
+            logger.warning(f"REGIME FLAG: {sym} - bottom detected, conflicts with global SHORT")
 
             flagged_count = sum(1 for s, c in self.coins.items() if c.regime_flagged)
             flagged_names = [s.split("/")[0] for s, c in self.coins.items() if c.regime_flagged]
@@ -1247,7 +1247,7 @@ class V14PortfolioLiveAster:
             cs.regime_flagged = False
             cs.coin_regime_signal = None
             cs.flagged_at = None
-            logger.info(f"REGIME UNFLAG: {sym} — TP filled, no position remaining")
+            logger.info(f"REGIME UNFLAG: {sym} - TP filled, no position remaining")
             send_telegram(
                 f"\u2705 {TG_PREFIX} <b>{coin_name} Regime Flag Cleared</b>\n"
                 f"TP filled, no position remaining.\n"
@@ -1269,11 +1269,11 @@ class V14PortfolioLiveAster:
                     cs.regime_flagged = False
                     cs.coin_regime_signal = None
                     cs.flagged_at = None
-                    logger.info(f"REGIME UNFLAG: {sym} — matches new global direction {new_direction}")
+                    logger.info(f"REGIME UNFLAG: {sym} - matches new global direction {new_direction}")
                     send_telegram(
                         f"\u2705 {TG_PREFIX} <b>{coin_name} Regime Flag Cleared</b>\n"
                         f"Global direction changed to {new_direction}.\n"
-                        f"Coin signal now matches — returned to opportunity list."
+                        f"Coin signal now matches - returned to opportunity list."
                     )
 
     # ── Funding rate tracking ─────────────────────────────────────────────────
@@ -1360,7 +1360,7 @@ class V14PortfolioLiveAster:
             cs.tp_order_id = None
             cs.tp_limit_price = None
 
-        # Place new TP order — trailing stop or limit sell
+        # Place new TP order - trailing stop or limit sell
         if TRAILING_STOP_ENABLED:
             oid = self.client.place_trailing_stop_sell(
                 sym, qty, tp_price, TRAILING_CALLBACK_PCT
@@ -1469,7 +1469,7 @@ class V14PortfolioLiveAster:
             if not cs.engine:
                 continue
             if cs.tp_order_id:
-                continue  # Phase 1 confirmed this order is still open — no scan needed
+                continue  # Phase 1 confirmed this order is still open - no scan needed
             eng = cs.engine._engine
             has_position = eng is not None and (eng.long_coins > 0 or eng.long_layers > 0)
 
@@ -1522,7 +1522,7 @@ class V14PortfolioLiveAster:
                     # Position open but no TP order anywhere → place one
                     if eng and eng.long_tp > 0:
                         logger.info(
-                            f"TP RECOVERY: Position open for {sym} but no TP order — "
+                            f"TP RECOVERY: Position open for {sym} but no TP order - "
                             f"placing new limit sell @ ${eng.long_tp:.6f}"
                         )
                         self._place_tp_order(sym, cs)
@@ -1581,7 +1581,7 @@ class V14PortfolioLiveAster:
         # Audit #2: Complete engine cleanup after TP fill
         if cs.engine and cs.engine._engine:
             eng = cs.engine._engine
-            # Always add full actual proceeds — the engine never ran a sell tick
+            # Always add full actual proceeds - the engine never ran a sell tick
             # (exchange handled TP), so eng.capital still has pre-buy minus buy cost.
             eng.capital += actual_proceeds
 
@@ -1621,10 +1621,10 @@ class V14PortfolioLiveAster:
         # Upgrade 3: auto-clear regime flag if position fully closed (Q5: A)
         self._clear_regime_flag_on_tp(sym, cs)
 
-        # Do NOT reset last_candle_ts — the old proven bot never does.
+        # Do NOT reset last_candle_ts - the old proven bot never does.
         # The engine naturally re-enters on the next complete candle.
         # Resetting to 0 caused the 635 GRASS incident (replayed 50 historical candles).
-        logger.info(f"TP fill complete for {sym} — engine will re-enter on next candle")
+        logger.info(f"TP fill complete for {sym} - engine will re-enter on next candle")
 
         # Orphaned TP order cleanup: cancel any stale sell orders on the exchange
         # that don't belong to our current state. This catches orders left behind
@@ -1707,21 +1707,21 @@ class V14PortfolioLiveAster:
         if act_type == "BUY":
             # PAUSED or WIND_DOWN: block new entries and DCA layers
             if self.bot_state in (BotState.PAUSED, BotState.WIND_DOWN):
-                logger.info(f"BUY blocked for {sym} — bot state is {self.bot_state}")
+                logger.info(f"BUY blocked for {sym} - bot state is {self.bot_state}")
                 if cs.engine:
                     cs.engine.reject_action(action)
                 return
 
             # Per-coin pause (Upgrade 2): block buys for individually paused coins
             if cs.paused:
-                logger.info(f"BUY blocked for {sym} — coin is paused")
+                logger.info(f"BUY blocked for {sym} - coin is paused")
                 if cs.engine:
                     cs.engine.reject_action(action)
                 return
 
             # Per-coin regime flag (Upgrade 3): block buys for regime-conflicted coins
             if cs.regime_flagged:
-                logger.info(f"BUY blocked for {sym} — regime conflict ({cs.coin_regime_signal})")
+                logger.info(f"BUY blocked for {sym} - regime conflict ({cs.coin_regime_signal})")
                 if cs.engine:
                     cs.engine.reject_action(action)
                 return
@@ -1731,7 +1731,7 @@ class V14PortfolioLiveAster:
             if time.time() - cs._last_buy_time < ORDER_DEDUP_WINDOW:
                 elapsed_since = time.time() - cs._last_buy_time
                 logger.warning(
-                    f"DUPLICATE BUY blocked for {sym} — last buy was {elapsed_since:.0f}s ago "
+                    f"DUPLICATE BUY blocked for {sym} - last buy was {elapsed_since:.0f}s ago "
                     f"(dedup window: {ORDER_DEDUP_WINDOW}s)"
                 )
                 if cs.engine:
@@ -1758,7 +1758,7 @@ class V14PortfolioLiveAster:
                     cs.engine.reject_action(action)
                 return
             if granted < cost:
-                logger.warning(f"Router partial capital for {sym} — rejecting")
+                logger.warning(f"Router partial capital for {sym} - rejecting")
                 if cs.engine:
                     cs.engine.reject_action(action)
                 self.router.return_capital(sym, granted)
@@ -1780,7 +1780,7 @@ class V14PortfolioLiveAster:
                 if now - last_alert > 3600:
                     cs._last_insufficient_alert = now
                     send_telegram(
-                        f"⚠️ {TG_PREFIX} BUY skipped — insufficient USDT\n"
+                        f"⚠️ {TG_PREFIX} BUY skipped - insufficient USDT\n"
                         f"Need: ${cost:.2f} | Have: ${exchange_balance:.2f}\n"
                         f"Symbol: {sym}"
                     )
@@ -1816,7 +1816,7 @@ class V14PortfolioLiveAster:
                 # GAP-13 FIX (revised 2026-04-11): Reset engine capital to
                 # allocated_capital minus what's already invested in this deal.
                 # Original GAP-13 reset to full allocation, which let the
-                # Martingale formula overshoot — L1+L2+L3 could exceed the
+                # Martingale formula overshoot - L1+L2+L3 could exceed the
                 # allocation because each layer calculated from the full amount.
                 # Now the engine sees only what's actually left to spend.
                 if cs.engine and cs.engine._engine:
@@ -1836,7 +1836,7 @@ class V14PortfolioLiveAster:
                     f"Reason: {reason}"
                 )
             else:
-                logger.error(f"BUY failed for {sym} — rolling back router")
+                logger.error(f"BUY failed for {sym} - rolling back router")
                 self.router.return_capital(sym, granted)
                 if cs.engine:
                     cs.engine.reject_action(action)
@@ -1845,7 +1845,7 @@ class V14PortfolioLiveAster:
             # If a TP limit order is active on exchange, skip engine TP sells.
             # Exchange will fill the TP; next cycle sync will clear engine state.
             if cs.tp_order_id and "TP" in reason:
-                logger.info(f"Skipping engine TP for {sym} — exchange TP order active")
+                logger.info(f"Skipping engine TP for {sym} - exchange TP order active")
                 return
 
             # Non-TP sell: cancel TP order first, then market sell
@@ -1866,11 +1866,11 @@ class V14PortfolioLiveAster:
                     if abs(exchange_qty - qty) > 0.01:
                         logger.info(
                             f"SELL qty adjusted for {sym}: engine={qty:.4f}, "
-                            f"exchange={exchange_qty:.4f} — using exchange"
+                            f"exchange={exchange_qty:.4f} - using exchange"
                         )
                         sell_qty = exchange_qty
                 else:
-                    # No position on exchange — nothing to sell
+                    # No position on exchange - nothing to sell
                     logger.warning(
                         f"SELL skipped for {sym}: no open position on exchange "
                         f"(engine wanted to sell {qty:.4f} for {reason})"
@@ -1914,7 +1914,7 @@ class V14PortfolioLiveAster:
                     self._check_wind_down_complete()
 
             else:
-                logger.error(f"SELL FAILED for {sym} — will retry on next candle")
+                logger.error(f"SELL FAILED for {sym} - will retry on next candle")
                 send_telegram(
                     f"⚠️ {TG_PREFIX} <b>SELL FAILED</b>\n"
                     f"Symbol: {sym} | Reason: {reason}\n"
@@ -1925,14 +1925,14 @@ class V14PortfolioLiveAster:
             # Short actions are not supported on live Aster Perps (long-only mode).
             # Explicitly reject to keep engine state consistent and prevent silent drift.
             logger.warning(
-                f"SHORT action {act_type} for {sym} — not supported in live mode. "
+                f"SHORT action {act_type} for {sym} - not supported in live mode. "
                 f"Rejecting to keep engine consistent."
             )
             if cs.engine:
                 cs.engine.reject_action(action)
 
         else:
-            logger.warning(f"Unknown action type '{act_type}' for {sym} — ignoring")
+            logger.warning(f"Unknown action type '{act_type}' for {sym} - ignoring")
 
     # ── Capital Router integration ────────────────────────────────────────────
 
@@ -1943,7 +1943,7 @@ class V14PortfolioLiveAster:
             return
         # Timing guard: prevent rapid-fire rebalances (e.g. from duplicate loop iterations)
         if hasattr(self, '_last_rebalance_ts') and time.time() - self._last_rebalance_ts < 60:
-            logger.warning("Rebalance blocked — less than 60s since last rebalance")
+            logger.warning("Rebalance blocked - less than 60s since last rebalance")
             return
 
         logger.info(f"Daily rebalance for {today}")
@@ -1965,10 +1965,25 @@ class V14PortfolioLiveAster:
 
             allocations = self.router.rebalance_daily(scanner_data, current_equity=current_equity)
 
+            # Enforce tier coin cap: count existing coins with open positions
+            active_count = sum(
+                1 for cs in self.coins.values()
+                if cs.engine and cs.engine._engine
+                and (cs.engine._engine.long_coins > 0 or cs.engine._engine.short_coins > 0)
+            )
+            tier_cap = self.router.tier_coin_cap
+
             for sym, alloc in allocations.items():
                 if sym not in self.coins:
                     if self.bot_state != BotState.RUNNING:
                         logger.info(f"Skipping new coin {sym} — bot state is {self.bot_state}")
+                        continue
+                    # Gate: don't exceed tier coin cap with new engines
+                    if tier_cap > 0 and active_count >= tier_cap:
+                        logger.info(
+                            f"Skipping new coin {sym} — at tier cap "
+                            f"({active_count}/{tier_cap} active positions)"
+                        )
                         continue
                     logger.info(f"Creating engine for new coin {sym} (alloc=${alloc:.2f})")
                     cs = CoinState(sym, alloc)
@@ -1981,11 +1996,12 @@ class V14PortfolioLiveAster:
                     cs.engine._live_mode = True
                     if cs.engine._engine:
                         cs.engine._engine.live_mode = True
-                    # Force warmup for live trading — we're trading against real
+                    # Force warmup for live trading — we’re trading against real
                     # exchange data, no need to wait for a daily boundary.
                     # The engine is initialized in LONG_DCA phase and ready to trade.
                     cs.engine._warmed_up = True
                     self.coins[sym] = cs
+                    active_count += 1  # Track newly added coin toward cap
                     # Set leverage on exchange for new coin
                     self.client.ensure_leverage(sym, self.leverage)
                 else:
@@ -2027,7 +2043,7 @@ class V14PortfolioLiveAster:
         try:
             # Load scanner data for per-coin signal states
             if not SCANNER_PATH.exists():
-                logger.warning("Scanner JSON not found — skipping regime eval")
+                logger.warning("Scanner JSON not found - skipping regime eval")
                 return
 
             with open(SCANNER_PATH) as f:
@@ -2065,7 +2081,7 @@ class V14PortfolioLiveAster:
                 # No significant signal
                 if self._regime_signal_count > 0:
                     logger.info(
-                        f"Regime signal faded: was {self._regime_signal_count}/{total} — "
+                        f"Regime signal faded: was {self._regime_signal_count}/{total} - "
                         f"now below threshold"
                     )
                     self._regime_signal_count = 0
@@ -2144,13 +2160,13 @@ class V14PortfolioLiveAster:
             logger.info(f"Wind-down: {len(open_positions)} positions still open: {open_positions}")
             return
 
-        # All closed — flip direction
+        # All closed - flip direction
         logger.info("Wind-down complete. All positions closed.")
         send_telegram(
             f"✅ {TG_PREFIX} <b>Wind-Down Complete</b>\n"
             f"All positions closed.\n"
             f"Ready for direction flip."
-            f"\n\n⚠️ Direction flip logic not yet implemented — "
+            f"\n\n⚠️ Direction flip logic not yet implemented - "
             f"please restart bot with new direction config."
         )
         self.bot_state = BotState.PAUSED
@@ -2201,7 +2217,7 @@ class V14PortfolioLiveAster:
 
         if text == "APPROVE":
             if self._regime_alert_state != "AWAITING_APPROVAL":
-                send_telegram(f"ℹ️ {TG_PREFIX} No pending regime change to approve.")
+                send_telegram(f"i️ {TG_PREFIX} No pending regime change to approve.")
                 return
             self.bot_state = BotState.WIND_DOWN
             self._regime_alert_state = "NONE"
@@ -2216,7 +2232,7 @@ class V14PortfolioLiveAster:
 
         elif text == "DENY":
             if self._regime_alert_state != "AWAITING_APPROVAL":
-                send_telegram(f"ℹ️ {TG_PREFIX} No pending regime change to deny.")
+                send_telegram(f"i️ {TG_PREFIX} No pending regime change to deny.")
                 return
             self._regime_alert_state = "NONE"
             self._regime_signal_count = 0
@@ -2228,7 +2244,7 @@ class V14PortfolioLiveAster:
 
         elif text == "PAUSE" or text == "PAUSE TRADING":
             if self.bot_state == BotState.PAUSED:
-                send_telegram(f"ℹ️ {TG_PREFIX} Already paused.")
+                send_telegram(f"i️ {TG_PREFIX} Already paused.")
                 return
             self.bot_state = BotState.PAUSED
             send_telegram(
@@ -2257,7 +2273,7 @@ class V14PortfolioLiveAster:
                 return
             cs = self.coins[target]
             if cs.paused:
-                send_telegram(f"ℹ️ {TG_PREFIX} {coin_name} is already paused.")
+                send_telegram(f"i️ {TG_PREFIX} {coin_name} is already paused.")
                 return
             cs.paused = True
             send_telegram(
@@ -2270,9 +2286,9 @@ class V14PortfolioLiveAster:
             self._save_state()
 
         elif text == "RESUME" or text == "RESUME TRADING":
-            # Global resume — does NOT clear per-coin pauses
+            # Global resume - does NOT clear per-coin pauses
             if self.bot_state != BotState.PAUSED:
-                send_telegram(f"ℹ️ {TG_PREFIX} Not currently paused.")
+                send_telegram(f"i️ {TG_PREFIX} Not currently paused.")
                 return
             self.bot_state = BotState.RUNNING
             paused_coins = [s.split("/")[0] for s, cs in self.coins.items() if cs.paused]
@@ -2302,7 +2318,7 @@ class V14PortfolioLiveAster:
                 return
             cs = self.coins[target]
             if not cs.paused and not cs.regime_flagged:
-                send_telegram(f"ℹ️ {TG_PREFIX} {coin_name} is not paused or flagged.")
+                send_telegram(f"i️ {TG_PREFIX} {coin_name} is not paused or flagged.")
                 return
             was_flagged = cs.regime_flagged
             cs.paused = False
@@ -2350,7 +2366,7 @@ class V14PortfolioLiveAster:
         elif text.startswith("DEPOSIT ") or text.startswith("DEPOSIT\n"):
             parts = text.split(None, 1)
             if len(parts) < 2:
-                send_telegram(f"ℹ️ {TG_PREFIX} Usage: DEPOSIT <amount>")
+                send_telegram(f"i️ {TG_PREFIX} Usage: DEPOSIT <amount>")
                 return
             try:
                 amount = float(parts[1].strip())
@@ -2382,7 +2398,7 @@ class V14PortfolioLiveAster:
         elif text.startswith("WITHDRAW ") or text.startswith("WITHDRAW\n"):
             parts = text.split(None, 1)
             if len(parts) < 2:
-                send_telegram(f"ℹ️ {TG_PREFIX} Usage: WITHDRAW <amount>")
+                send_telegram(f"i️ {TG_PREFIX} Usage: WITHDRAW <amount>")
                 return
             try:
                 amount = float(parts[1].strip())
@@ -2455,7 +2471,7 @@ class V14PortfolioLiveAster:
                 )
 
         else:
-            # Unknown command — silently ignore
+            # Unknown command - silently ignore
             pass
 
     def _force_close_coin(self, sym: str):
@@ -2522,7 +2538,7 @@ class V14PortfolioLiveAster:
             if cs.engine and cs.engine._engine and cs.engine._engine.long_coins
         ]
         if not open_syms:
-            send_telegram(f"ℹ️ {TG_PREFIX} No open positions to close.")
+            send_telegram(f"i️ {TG_PREFIX} No open positions to close.")
             return
         send_telegram(f"🔄 {TG_PREFIX} Force-closing {len(open_syms)} positions...")
         for sym in open_syms:
@@ -2557,7 +2573,7 @@ class V14PortfolioLiveAster:
     def _write_status(self):
         """Write status.json for dashboard and heartbeat monitoring.
 
-        Uses cached exchange data from _sync_positions_from_exchange() —
+        Uses cached exchange data from _sync_positions_from_exchange() -
         no extra API calls needed. Exchange is source of truth for all
         position and balance data; engine contributes only phase/signal state.
         """
@@ -2609,7 +2625,7 @@ class V14PortfolioLiveAster:
                     coin_data["unrealized_pnl"] = 0
                     coin_data["position_size"]  = 0
 
-                # Live price for display (ticker — still needed for current_price display)
+                # Live price for display (ticker - still needed for current_price display)
                 try:
                     live_price = self.client.fetch_ticker_price(sym)
                     if live_price > 0:
@@ -2833,10 +2849,10 @@ class V14PortfolioLiveAster:
                 if restored:
                     logger.info(f"Restored state: bot_state={self.bot_state}")
             else:
-                logger.info("FRESH start — clean state")
+                logger.info("FRESH start - clean state")
 
             # Initial rebalance: only if starting fresh (no saved state).
-            # When restoring from state, engines are already configured —
+            # When restoring from state, engines are already configured -
             # skip startup rebalance to prevent it from overwriting the
             # restored engine state before reconciliation can correct it.
             if self.fresh or not self.coins:
@@ -2850,7 +2866,7 @@ class V14PortfolioLiveAster:
             self._sync_positions_from_exchange()
             logger.info("Initial exchange position sync complete.")
 
-            # Audit #6: TP recovery — check if any TP orders filled while bot was down
+            # Audit #6: TP recovery - check if any TP orders filled while bot was down
             self._recover_tp_orders()
 
             # Announce startup
@@ -3016,7 +3032,7 @@ class V14PortfolioLiveAster:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="V14PM Live Trading Bot — Aster DEX Perpetuals"
+        description="V14PM Live Trading Bot - Aster DEX Perpetuals"
     )
     parser.add_argument(
         "--capital", type=float, required=True,
@@ -3032,7 +3048,7 @@ def main():
     )
     parser.add_argument(
         "--fresh", action="store_true",
-        help="Start fresh — ignore saved state (use for first launch)"
+        help="Start fresh - ignore saved state (use for first launch)"
     )
     parser.add_argument(
         "--deposit", type=float, default=None, metavar="AMOUNT",
