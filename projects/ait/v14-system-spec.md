@@ -330,25 +330,6 @@ All three bots share the same V14 engine:
 - **Signal Stack:** ROUTER v2 (StochRSI, structure analysis, trend detection)
 - **Lifecycle:** `IDLE → LONG_DCA (Layer 1..12) → TP Hit → IDLE`
 - **Tick Interval:** 65 seconds (live), 1h candle-driven (paper)
-- **TP Fill Model:** TP is checked against candle high (long) or candle low (short),
-  simulating a resting limit order that fills on any wick touch. Fill price = TP level
-  (not the wick extreme). This matches real exchange behavior where a limit sell at
-  $0.1701 fills when price touches that level, even on a wick to $0.1710.
-  *(Changed 2026-03-17 — previously used candle close, which missed valid TP fills.)*
-
-- **Live Bot TP Execution — Dual Approach (implemented 2026-03-17):**
-  The Aster live bot (`run_v14_live_aster.py`) uses a belt-and-suspenders approach:
-  1. **Primary — Resting limit sell order on exchange:** After every BUY fill, a limit
-     sell is placed at the TP price for the full position. This fills automatically even
-     if the bot is down or the API is unreachable. Order ID stored as `self._tp_order_id`
-     and persisted in `state.json` for crash recovery.
-  2. **Fallback — Engine candle-based detection:** The engine continues to check TP on
-     each candle tick. If the limit order was already filled, the engine syncs state
-     accordingly. If for any reason the limit order is missing, candle detection can
-     still trigger a market sell.
-  
-  The limit order is cancelled and replaced whenever a new DCA layer adds (new avg
-  entry → new TP price), and cancelled on phase change or manual intervention.
 
 ### 5.2 Risk Profiles
 

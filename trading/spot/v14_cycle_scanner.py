@@ -27,57 +27,41 @@ logger = logging.getLogger("v14_cycle_scanner")
 
 # ─── DCA Parameters (V14 High Profile) ─────────────────────────────────────
 
-BO_PCT = 0.30          # 30% base order (matches V14Config.DCA_BO_PCT) — fixed 2026-04-10 from 0.40
+BO_PCT = 0.40          # 40% base order of DCA allocation
 SO_DEV = 0.015         # 1.5% safety order price deviation
 SO_STEP_MULT = 1.5     # Price step multiplier (each SO further apart)
 SO_VOL_MULT = 1.5      # Volume multiplier (each SO bigger)
 MAX_LAYERS = 12
 TP_PCT = 0.015         # 1.5% take profit from avg entry
-TAKER_FEE = 0.00035    # Aster taker fee (0.035%) — fixed 2026-04-10 from 0.00025 (Hyperliquid)
+TAKER_FEE = 0.00025    # Hyperliquid taker fee
 CAPITAL = 10_000.0     # Capital per coin
 DCA_ALLOC = 0.90       # 90% allocated to DCA
-
-# ─── Liquidity Filter ───────────────────────────────────────────────────────
-# Max L1 order as percentage of 24h volume.  If L1 > threshold, coin is tagged
-# LOW_LIQUIDITY — still scanned and scored, but not eligible for trading.
-# Default 2% keeps market impact negligible on smaller exchanges like Aster.
-LIQUIDITY_MAX_IMPACT_PCT = 0.02   # 2% — L1 must be < 2% of 24h volume
 
 # Minimum months of 1h candle history to appear on the published rankings.
 # Coins below this threshold are still scanned (for internal tracking) but
 # flagged as immature and excluded from the dashboard feed.
 MIN_HISTORY_MONTHS = 6
 
-# 50-coin Aster Perps universe (updated 2026-03-19).
-# All coins trade as {COIN}USDT perpetual on Aster DEX.
+# Full Hyperliquid quality perp universe + ASTER (Aster exchange live bot).
 # Format: preferred symbol as found in candles.db.  The scanner will also
 # try the other quote (USDT↔USDC) if the primary isn't found.
-# Candle data: Binance backfill (deep history) + Aster live (hourly collection).
 COINS = [
-    # --- Established (pre-2024) — 19 coins ---
-    'BTC/USDT',   'ETH/USDT',   'SOL/USDT',   'XRP/USDT',   'LINK/USDT',
+    # --- Established (pre-2024) ---
+    'BTC/USDC',   'ETH/USDC',   'SOL/USDC',   'XRP/USDT',   'LINK/USDT',
     'DOGE/USDT',  'ADA/USDT',   'LTC/USDT',   'AVAX/USDT',  'DOT/USDT',
     'UNI/USDT',   'ATOM/USDT',  'NEAR/USDT',  'HBAR/USDT',  'INJ/USDT',
-    'FIL/USDT',   'CRV/USDT',   'SNX/USDT',   'ZEC/USDT',
-    # --- DeFi / Mid-cap — 6 coins ---
-    'AAVE/USDT',  'ARB/USDT',   'JUP/USDT',   'PENDLE/USDT','STX/USDT',
-    'ZRO/USDT',
-    # --- High-beta / Speculative — 9 coins ---
-    'PEPE/USDT',  'BONK/USDT',  'FLOKI/USDT', 'JTO/USDT',   'PYTH/USDT',
-    'TIA/USDT',   'SEI/USDT',   'APT/USDT',   'SUI/USDT',
-    # --- AI / Infrastructure — 5 coins ---
-    'FET/USDT',   'TAO/USDT',   'HYPE/USDT',  'VIRTUAL/USDT','RENDER/USDT',
-    # --- New L1/L2 — 5 coins ---
-    'BERA/USDT',  'MOVE/USDT',  'INIT/USDT',  'S/USDT',     'IP/USDT',
-    # --- Yield / RWA — 3 coins ---
-    'ONDO/USDT',  'EIGEN/USDT', 'ENA/USDT',
-    # --- DePIN / Other — 3 coins ---
-    'GRASS/USDT', 'ORCA/USDT',  'TRUMP/USDT',
+    'FIL/USDT',   'RUNE/USDT',  'CRV/USDT',   'SNX/USDT',   'COMP/USDT',
+    'MKR/USDT',   'ENS/USDT',   'DYDX/USDT',  'LDO/USDT',   'ARB/USDT',
+    'OP/USDT',    'STX/USDT',   'SEI/USDT',    'RENDER/USDT',
+    # --- 2024 launches ---
+    'SUI/USDT',   'FET/USDT',   'TAO/USDT',   'TON/USDT',   'JUP/USDT',
+    'KAS/USDT',   'PENDLE/USDT','PYTH/USDT',  'TIA/USDT',   'ONDO/USDT',
+    'ENA/USDT',   'EIGEN/USDT', 'W/USDT',     'ZRO/USDT',
+    # --- Mid-cycle 2025 (OK per Brett — launched before bear) ---
+    'HYPE/USDC',  'ASTER/USDT',
+    # --- AAVE (established but listed separately for clarity) ---
+    'AAVE/USDT',
 ]
-# Note: PEPE, BONK, FLOKI use 1000-prefix on exchanges (1000PEPEUSDT, etc.)
-# The scanner handles this mapping when querying exchange APIs.
-# Dropped from v1.3: BAL, COMP, ENS, GMX, GRT, MANA, RUNE, SAND, WIF (not on Aster Perps)
-# Also dropped: MKR, DYDX, LDO, OP, KAS, W, TON, ASTER (not in new 50-coin universe)
 
 # ─── Data Paths ─────────────────────────────────────────────────────────────
 
@@ -179,9 +163,11 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
 
     def get_so_size(layer_idx: int) -> float:
         """Get dollar size for safety order at layer_idx (0-indexed from first SO).
-        Matches engine formula: alloc * BO_PCT * (SO_VOL_MULT ^ min(layer, 4)).
-        Fixed 2026-04-10: was using bo_size * 0.5 base which diverged from engine."""
-        return alloc * BO_PCT * (SO_VOL_MULT ** min(layer_idx + 1, 4))
+        First SO is same size as BO, then scales by SO_VOL_MULT."""
+        # SO base = remaining capital / estimated total SO weight
+        # This ensures capital is allocated proportionally across layers
+        base_so = bo_size * 0.5  # First SO = half of BO
+        return base_so * (SO_VOL_MULT ** layer_idx)
 
     def open_deal(price: float, ts: int):
         nonlocal in_position, layers, entries, total_qty, total_cost
@@ -749,12 +735,11 @@ def send_telegram_summary(output: dict):
         f"{output['coins_scanned']} coins"
     )
 
-    # Derive picks from top 5 only (match what's displayed above)
-    top5 = scored_rankings[:5] if scored_rankings else []
-    if top5:
-        best_trade = top5[0]["coin"]
-        fastest = max(top5, key=lambda r: r.get("deals_per_week", 0))["coin"]
-        safest = min(top5, key=lambda r: r.get("max_drawdown_pct", 100))["coin"]
+    # Derive picks from the Trade Score-ranked list (same window, same ranking)
+    if scored_rankings:
+        best_trade = scored_rankings[0]["coin"]
+        fastest = max(scored_rankings, key=lambda r: r.get("deals_per_week", 0))["coin"]
+        safest = min(scored_rankings, key=lambda r: r.get("max_drawdown_pct", 100))["coin"]
         lines.append(f"\U0001f3c6 Best: {best_trade} | "
                      f"\u26a1 Fastest: {fastest} | "
                      f"\U0001f6e1\ufe0f Safest: {safest}")
@@ -778,109 +763,6 @@ def send_telegram_summary(output: dict):
         logger.warning(f"Failed to send Telegram notification: {e}")
 
 
-# ─── Liquidity Check ────────────────────────────────────────────────────────
-
-def fetch_aster_volumes() -> dict[str, float]:
-    """Fetch 24h quote volumes from Aster Perps for all traded pairs.
-
-    Returns {symbol: volume_usd} e.g. {"TAO/USDT": 5614237.0}.
-    On failure returns empty dict (scanner proceeds without volume data).
-    """
-    try:
-        import ccxt
-        exchange = ccxt.aster({
-            "apiKey": os.environ.get("ASTER_API_KEY", ""),
-            "secret": os.environ.get("ASTER_API_SECRET", ""),
-            "options": {"defaultType": "swap"},
-        })
-        exchange.load_markets()
-        tickers = exchange.fetch_tickers()
-        volumes = {}
-        for key, t in tickers.items():
-            # Key format: "TAO/USDT:USDT" → normalize to "TAO/USDT"
-            sym = key.split(":")[0]
-            vol = t.get("quoteVolume") or 0
-            if vol > 0:
-                volumes[sym] = float(vol)
-        logger.info(f"Fetched 24h volumes for {len(volumes)} pairs from Aster")
-        return volumes
-    except ImportError:
-        logger.warning("ccxt not installed — skipping volume check")
-        return {}
-    except Exception as e:
-        logger.warning(f"Failed to fetch Aster volumes: {e}")
-        return {}
-
-
-def apply_liquidity_filter(output: dict, volumes: dict[str, float],
-                           total_capital: float, num_coins: int) -> dict:
-    """Tag each coin with liquidity_status and volume_24h.
-
-    Args:
-        output: Scanner output dict (modified in place)
-        volumes: {symbol: 24h_volume_usd}
-        total_capital: Total account capital (for L1 sizing)
-        num_coins: Number of active coin slots (for per-coin allocation)
-
-    Adds to each ranking entry:
-        volume_24h: float — 24h quote volume in USD
-        liquidity_status: "TRADEABLE" | "LOW_LIQUIDITY"
-        volume_impact_pct: float — L1 order as % of 24h volume
-    """
-    if not volumes:
-        logger.warning("No volume data — all coins default to TRADEABLE")
-        for w_data in output.get("windows", {}).values():
-            for r in w_data.get("rankings", []):
-                r["volume_24h"] = None
-                r["liquidity_status"] = "TRADEABLE"
-                r["volume_impact_pct"] = None
-            for r in w_data.get("immature", []):
-                r["volume_24h"] = None
-                r["liquidity_status"] = "TRADEABLE"
-                r["volume_impact_pct"] = None
-        return output
-
-    # Compute L1 order size: (total_capital * active_pct / num_coins) * BO_PCT
-    per_coin_alloc = total_capital * DCA_ALLOC / max(num_coins, 1)
-    l1_size = per_coin_alloc * BO_PCT
-
-    low_liq_count = 0
-    for w_data in output.get("windows", {}).values():
-        for coin_list in [w_data.get("rankings", []), w_data.get("immature", [])]:
-            for r in coin_list:
-                sym = r.get("symbol", "")
-                vol = volumes.get(sym, 0)
-                r["volume_24h"] = vol if vol > 0 else None
-
-                if vol <= 0:
-                    r["liquidity_status"] = "LOW_LIQUIDITY"
-                    r["volume_impact_pct"] = None
-                    low_liq_count += 1
-                else:
-                    impact = l1_size / vol
-                    r["volume_impact_pct"] = round(impact * 100, 2)
-                    if impact > LIQUIDITY_MAX_IMPACT_PCT:
-                        r["liquidity_status"] = "LOW_LIQUIDITY"
-                        low_liq_count += 1
-                    else:
-                        r["liquidity_status"] = "TRADEABLE"
-
-    # Add summary to output
-    output["liquidity_filter"] = {
-        "total_capital": total_capital,
-        "num_coins": num_coins,
-        "l1_order_size": round(l1_size, 2),
-        "max_impact_pct": LIQUIDITY_MAX_IMPACT_PCT * 100,
-        "low_liquidity_count": low_liq_count,
-    }
-
-    logger.info(
-        f"Liquidity filter: L1=${l1_size:,.0f}, max {LIQUIDITY_MAX_IMPACT_PCT:.0%} impact, "
-        f"{low_liq_count} coins tagged LOW_LIQUIDITY"
-    )
-    return output
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="V14 DCA Cycle Scanner \u2014 Bear Market Capital Velocity Optimizer"
@@ -892,12 +774,6 @@ def main():
     parser.add_argument("--no-telegram", action="store_true", help="Skip Telegram notification")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
     parser.add_argument("--as-of", type=str, help="Run as if date is YYYY-MM-DD (for historical snapshots)")
-    parser.add_argument("--capital", type=float, default=20000,
-                        help="Total account capital for liquidity filter (default: 20000)")
-    parser.add_argument("--active-coins", type=int, default=5,
-                        help="Number of active coin slots for liquidity filter (default: 5)")
-    parser.add_argument("--no-volume", action="store_true",
-                        help="Skip volume/liquidity check")
     parser.add_argument("--backfill-history", type=int, metavar="DAYS",
                         help="Backfill N days of score history snapshots (runs scanner N times with past dates)")
     args = parser.parse_args()
@@ -986,37 +862,9 @@ def main():
             t30 = f"{t['trend_30d']:+.1%}" if t['trend_30d'] is not None else "—"
             print(f"{coin:<8} {t['direction']:<14} {t7:>8} {t14:>8} {t30:>8} {t['trend_multiplier']:>5.2f}x")
 
-    # Fetch 24h volumes and apply liquidity filter
-    if not args.no_volume:
-        volumes = fetch_aster_volumes()
-        apply_liquidity_filter(output, volumes, args.capital, args.active_coins)
-
-        # Print liquidity summary
-        lf = output.get("liquidity_filter", {})
-        if lf:
-            print(f"\n{'='*70}")
-            print(f"  Liquidity Filter (${args.capital:,.0f} capital, {args.active_coins} coins)")
-            print(f"  L1 order: ${lf['l1_order_size']:,.0f} | Max impact: {lf['max_impact_pct']:.0f}%")
-            print(f"{'='*70}")
-            # Show affected coins from 30d window
-            w30 = output.get("windows", {}).get("30d", {}).get("rankings", [])
-            low_liq = [r for r in w30 if r.get("liquidity_status") == "LOW_LIQUIDITY"]
-            if low_liq:
-                print(f"  LOW LIQUIDITY ({len(low_liq)} coins):")
-                for r in low_liq:
-                    vol = r.get("volume_24h")
-                    vol_str = f"${vol:,.0f}" if vol else "NO DATA"
-                    impact = r.get("volume_impact_pct")
-                    impact_str = f"{impact:.1f}%" if impact is not None else "N/A"
-                    print(f"    {r['coin']:8s} Vol: {vol_str:>12s}  Impact: {impact_str:>6s}  Score: {r.get('dca_score', 0):.1f}")
-            else:
-                print(f"  All coins pass liquidity filter ✓")
-
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = OUTPUT_PATH.with_suffix(".tmp")
-    with open(tmp_path, "w", encoding="utf-8") as f:
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
-    tmp_path.replace(OUTPUT_PATH)
     logger.info(f"Results saved to {OUTPUT_PATH}")
 
     if not args.no_telegram:

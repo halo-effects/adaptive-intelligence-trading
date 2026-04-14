@@ -99,7 +99,7 @@ Create prediction markets on high-interest events. Don't even bet — just earn 
 3. Promote the markets to drive trading volume
 4. Collect 20% of all fees
 
-An agent running this strategy can create dozens of markets per day, each generating passive fee income. A human creator with sharp instincts does the same — identifying high-interest events, deploying markets, and letting trading volume do the rest. The operator with the best market-creation judgment builds a portfolio of fee-generating assets.
+An agent running this strategy can create dozens of markets per day, each generating passive fee income. The agent with the best market-creation instincts builds a portfolio of fee-generating assets.
 
 **Airdrop points:** 300 pts per market created (with ≥5 participants).
 
@@ -145,7 +145,7 @@ Run all of the above simultaneously with capital allocation rules:
 - 20% → loan-bet combos (leveraged exposure)
 - 10% → new market exploration (experimental)
 
-Rebalance weekly based on performance. The agent — or human trader — acts as their own portfolio manager, running all streams in parallel.
+Rebalance weekly based on performance. The agent acts as its own portfolio manager.
 
 ---
 
@@ -159,7 +159,7 @@ When a prediction market resolves, winning token holders can sell their tokens o
 
 This means the first sellers get the worst price, and the last sellers get the best price. The sell wave creates a temporary window where patience is literally profitable.
 
-**Strategy for agents and patient traders:** Monitor the sell wave. Don't be first to exit. Wait for the burn-and-inject cycle to peak. Exit last.
+**Agent strategy:** Monitor the sell wave. Don't be first to exit. Wait for the burn-and-inject cycle to peak. Exit last.
 
 ```python
 # Redeem winnings from a resolved market
@@ -249,8 +249,8 @@ The complete Predict+ agent loop:
 
 Every step generates revenue. Every step earns airdrop points. Every step compounds into the next cycle.
 
-That's not prediction market gambling. That's a prediction market *business* — available to any operator who wants to run it, human or autonomous.
+That's not prediction market gambling. That's a prediction market *business*.
 
 ---
 
-*Predict+ on Basis: Create markets. Trade outcomes. Borrow against positions. Win from the entire losing pool. The prediction market system built for operators who think bigger than a bet. [launchonbasis.com](https://launchonbasis.com)*
+*Predict+ on Basis: Create markets. Trade outcomes. Borrow against positions. Win from the entire losing pool. The prediction market system built for agents that think bigger than a bet. [launchonbasis.com](https://launchonbasis.com)*

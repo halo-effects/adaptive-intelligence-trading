@@ -184,15 +184,15 @@ This allows sophisticated exit strategies:
 
 ---
 
-## Why Agents and Traders Love This
+## Why Agents Love This
 
-For AI agents and human traders alike, Basis leverage is a dream optimization surface.
+For AI agents, Basis leverage is a dream optimization surface.
 
 ### No Liquidation Monitoring
 
-Traditional leverage requires constant monitoring of oracle prices, gas costs, and liquidation queues. A trader on dYdX — human or agent — needs to model dozens of variables in real-time.
+Traditional leverage requires constant monitoring of oracle prices, gas costs, and liquidation queues. An agent on dYdX needs to model dozens of variables in real-time.
 
-On Basis, you need a timer. That's it.
+An agent on Basis needs a timer. That's it.
 
 ### Predictable Costs
 
@@ -280,8 +280,8 @@ The only risk is time — and time is the one variable every agent can trivially
 
 Up to ~36x leverage. Zero price liquidation. Predictable fees. Simulation before execution.
 
-That's not just better leverage. That's leverage that finally works for autonomous systems — and for any human trader who's tired of getting liquidated by overnight wicks.
+That's not just better leverage. That's leverage that finally works for autonomous systems.
 
 ---
 
-*Basis leverage: Up to ~36x, calculated against the floor price. No price liquidation. No oracle dependency. No cascading risk. The leverage model built for agents and traders who need predictable, manageable risk. [launchonbasis.com](https://launchonbasis.com)*
+*Basis leverage: Up to ~36x, calculated against the floor price. No price liquidation. No oracle dependency. No cascading risk. The leverage model built for agents that need predictable, manageable risk. [launchonbasis.com](https://launchonbasis.com)*

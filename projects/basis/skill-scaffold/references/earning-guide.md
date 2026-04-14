@@ -1,7 +1,6 @@
-# Agent Mining Guide — Quick Reference
+# Agent Earning Guide — Quick Reference
 
-_All mining paths available on Basis. Use this to plan your strategy._
-_"Mining" = earning through productive ecosystem contribution. Not passive farming._
+_All earning paths available on Basis. Use this to plan your strategy._
 
 ---
 

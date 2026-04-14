@@ -42,8 +42,8 @@ def parse_args():
                         help="Bonding curve multiplier. 0=Stable+, 50-100=Floor+ (default: 50)")
     parser.add_argument("--frozen", action="store_true",
                         help="Start in frozen state (whitelist-only trading)")
-    parser.add_argument("--usdb-for-bonding", type=int, default=10000,
-                        help="USDB allocated to bonding curve (default: 10000)")
+    parser.add_argument("--usdc-for-bonding", type=int, default=10000,
+                        help="USDC allocated to bonding curve (default: 10000)")
     parser.add_argument("--start-lp", type=int, default=1000,
                         help="Initial LP pool size, 100-10000 (default: 1000)")
     parser.add_argument("--auto-vest", action="store_true",
@@ -73,7 +73,7 @@ def main():
     print("=" * 60)
     print(f"  Name:              {args.name} ({args.symbol})")
     print(f"  Type:              {token_type} (hybridMultiplier={args.hybrid_multiplier})")
-    print(f"  USDB for bonding:  {args.usdb_for_bonding}")
+    print(f"  USDC for bonding:  {args.usdc_for_bonding}")
     print(f"  Start LP:          {args.start_lp}")
     print(f"  Frozen:            {'Yes (whitelist-only)' if args.frozen else 'No (open trading)'}")
     print(f"  Auto-vest:         {'Yes (' + str(args.vest_duration_days) + ' days, ' + ('gradual' if args.gradual_vest else 'cliff') + ')' if args.auto_vest else 'No'}")
@@ -98,7 +98,7 @@ def main():
             "symbol": args.symbol,
             "type": token_type,
             "hybrid_multiplier": args.hybrid_multiplier,
-            "usdb_for_bonding": args.usdb_for_bonding,
+            "usdc_for_bonding": args.usdc_for_bonding,
             "start_lp": args.start_lp,
         }
     else:
@@ -110,7 +110,7 @@ def main():
                 args.name,
                 args.hybrid_multiplier,
                 args.frozen,
-                args.usdb_for_bonding,
+                args.usdc_for_bonding,
                 args.start_lp,
                 args.auto_vest,
                 args.vest_duration_days if args.auto_vest else 0,

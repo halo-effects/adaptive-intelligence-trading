@@ -10,8 +10,8 @@ SDK: client.staking.buy() / sell() / lock() / unlock() / borrow() / repay()
 
 Key mechanics:
 - Wrap STASIS → wSTASIS (appreciation tracking shares)
-- Lock wSTASIS → borrow USDB against it (stays in vault, keeps earning)
-- As ratio grows, refinance for additional USDB
+- Lock wSTASIS → borrow USDC against it (stays in vault, keeps earning)
+- As ratio grows, refinance for additional USDC
 - Two variables to manage: refinance threshold + loan expiry
 - Airdrop points: 2 pts per $1 per day staked; refinance = 150 pts
 
@@ -47,8 +47,8 @@ def parse_args():
     parser.add_argument("--stasis-amount", type=float, help="STASIS amount to borrow against (for borrow)")
     parser.add_argument("--duration-days", type=int, default=30, help="Loan duration in days (for borrow)")
     parser.add_argument("--extend-days", type=int, default=30, help="Days to add (for extend-loan)")
-    parser.add_argument("--pay-in-usdb", action="store_true", help="Pay extension fee in USDB")
-    parser.add_argument("--claim-usdb", action="store_true", help="Claim accrued USDB when unstaking")
+    parser.add_argument("--pay-in-usdc", action="store_true", help="Pay extension fee in USDC")
+    parser.add_argument("--claim-usdc", action="store_true", help="Claim accrued USDC when unstaking")
     parser.add_argument("--wallet", default=os.getenv("BASIS_WALLET_ADDRESS"), help="Wallet address (for status)")
     parser.add_argument("--dry-run", action="store_true", help="Simulate without submitting")
     parser.add_argument("--json-output", action="store_true", help="Output as JSON")
@@ -75,7 +75,7 @@ def main():
             print("Error: --amount required for unstake (wSTASIS shares)", file=sys.stderr)
             sys.exit(1)
         print(f"  wSTASIS shares:  {args.amount}")
-        print(f"  Claim USDB:      {'Yes' if args.claim_usdb else 'No'}")
+        print(f"  Claim USDC:      {'Yes' if args.claim_usdc else 'No'}")
 
     elif args.action == "lock":
         if not args.amount:
@@ -103,11 +103,11 @@ def main():
 
     elif args.action == "extend-loan":
         print(f"  Extend by:       {args.extend_days} days")
-        print(f"  Pay in USDB:     {'Yes' if args.pay_in_usdb else 'No'}")
+        print(f"  Pay in USDC:     {'Yes' if args.pay_in_usdc else 'No'}")
 
     elif args.action == "refinance":
         print(f"  Action:          Check ratio growth → extend/reborrow at new value")
-        print(f"  Result:          Extract additional USDB from vault appreciation")
+        print(f"  Result:          Extract additional USDC from vault appreciation")
         print(f"  Airdrop points:  150 pts")
 
     if args.dry_run:
@@ -139,7 +139,7 @@ def main():
 
             elif args.action == "unstake":
                 shares_raw = token_to_raw(args.amount)
-                tx_result = client.staking.sell(shares_raw, args.claim_usdb)
+                tx_result = client.staking.sell(shares_raw, args.claim_usdc)
                 print(f"\n✅ wSTASIS unwrapped to STASIS!")
                 print(f"  Tx hash: {tx_result['hash']}")
                 result = {"status": "success", "tx_hash": tx_result["hash"], "action": "unstake"}
@@ -173,7 +173,7 @@ def main():
 
             elif args.action == "extend-loan":
                 tx_result = client.staking.extend_loan(
-                    args.extend_days, args.pay_in_usdb, False
+                    args.extend_days, args.pay_in_usdc, False
                 )
                 print(f"\n✅ Staking loan extended by {args.extend_days} days!")
                 print(f"  Tx hash: {tx_result['hash']}")
@@ -212,7 +212,7 @@ def main():
     output_result(result, args.json_output)
 
     if not args.json_output and not args.dry_run and args.action == "stake":
-        print(f"\nNext: Lock wSTASIS → borrow USDB → redeploy. Your position earns yield the whole time.")
+        print(f"\nNext: Lock wSTASIS → borrow USDC → redeploy. Your position earns yield the whole time.")
 
 
 if __name__ == "__main__":

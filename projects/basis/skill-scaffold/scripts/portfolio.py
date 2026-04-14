@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from client_helper import get_client, raw_to_usdb, raw_to_token, output_result
+from client_helper import get_client, raw_to_usdc, raw_to_token, output_result
 
 
 def parse_args():

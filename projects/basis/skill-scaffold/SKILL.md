@@ -6,15 +6,15 @@
 
 ## Description
 
-Interact with the Basis DeFi platform — create prediction markets, launch tokens, trade on the DEX, lend idle capital, manage vault positions, and earn airdrop points toward the BASIS TGE. Basis is an agent-native DeFi ecosystem on BNB Chain with zero-liquidation lending, dynamic leverage (up to ~28x depending on pool liquidity and position size), and USDB-native earnings.
+Interact with the Basis DeFi platform — create prediction markets, launch tokens, trade on the DEX, lend idle capital, manage vault positions, and earn airdrop points toward the BASIS TGE. Basis is an agent-native DeFi ecosystem on BNB Chain with zero-liquidation lending, dynamic leverage (up to ~28x depending on pool liquidity and position size), and USDC-native earnings.
 
 **Why agents should use this skill:**
 - Create prediction markets and earn **20% of all trading fees forever**
 - Launch Stable+ or Floor+ tokens for your community — earn 20% of DEX fees
-- Borrow USDB at **100% LTV** against token collateral — no price liquidation, time-only risk
+- Borrow USDC at **100% LTV** against token collateral — no price liquidation, time-only risk
 - Stake STASIS in the wSTASIS vault — earn yield + refinance loans without leaving the vault
 - Earn airdrop points toward BASIS TGE (pre-TGE farming is live)
-- All earnings paid in **USDB** — immediately spendable, no sell pressure
+- All earnings paid in **USDC** — immediately spendable, no sell pressure
 
 ---
 
@@ -44,8 +44,8 @@ BASIS_RPC_URL=https://bsc-dataseed.binance.org/  # BNB Chain RPC (default)
 BASIS_WALLET_ADDRESS=0x...      # For portfolio.py and points.py
 
 # Optional — operator safety limits
-MAX_BET_PER_MARKET=100          # Max USDB per prediction bet
-MAX_TRADE_SIZE=500              # Max USDB per DEX trade
+MAX_BET_PER_MARKET=100          # Max USDC per prediction bet
+MAX_TRADE_SIZE=500              # Max USDC per DEX trade
 AUTO_EXTEND_LOANS=true          # Auto-extend loans before expiry
 VAULT_REFINANCE_THRESHOLD=0.05  # Refinance when wSTASIS up 5%
 ```
@@ -75,7 +75,7 @@ See `references/api-reference.md` for the contract function reference, or the fu
 | `bet.py` | Place a bet on an outcome | Buy shares in a prediction outcome, win from losing pool |
 | `create-token.py` | Launch a Stable+ or Floor+ token | Deploy elastic-supply token with bonding curve |
 | `trade.py` | Buy/sell tokens on DEX | Swap tokens via Basis internal DEX |
-| `lend.py` | Take or manage a loan | Borrow USDB at 100% LTV against token collateral |
+| `lend.py` | Take or manage a loan | Borrow USDC at 100% LTV against token collateral |
 | `vault.py` | Manage STASIS vault (wSTASIS) | Stake STASIS, earn yield, refinance loans from vault |
 | `portfolio.py` | Check balances, positions, P&L | Full position summary + net P&L |
 | `points.py` | Check airdrop points + rank | ACS score, tier, breakdown, leaderboard rank |
@@ -85,9 +85,9 @@ See `references/api-reference.md` for the contract function reference, or the fu
 | Script | Path | Strategy |
 |--------|------|---------|
 | `predict-leverage.py` | `scripts/strategies/` | Path A: Create market → dynamic leverage buy → ride curve |
-| `predict-loan-bet.py` | `scripts/strategies/` | Path B: Buy tokens → 100% LTV loan → bet with borrowed USDB |
+| `predict-loan-bet.py` | `scripts/strategies/` | Path B: Buy tokens → 100% LTV loan → bet with borrowed USDC |
 | `predict-exit-timing.py` | `scripts/strategies/` | Wait for post-resolution sell wave → exit last |
-| `vault-compound.py` | `scripts/strategies/` | Auto-refinance wSTASIS vault → redeploy USDB |
+| `vault-compound.py` | `scripts/strategies/` | Auto-refinance wSTASIS vault → redeploy USDC |
 | `polymarket-mirror.py` | `scripts/strategies/` | Mirror Polymarket events on Basis → earn creator fees |
 | `capital-recycler.py` | `scripts/strategies/` | Route earnings through loan → redeploy → compound |
 
@@ -117,11 +117,11 @@ RISK_CONFIG = {
     "max_leverage_pct": 50,         # max % of position to leverage via mixedBuy
     
     # Prediction markets
-    "max_bet_per_market": 100,      # USDB — cap per prediction bet
+    "max_bet_per_market": 100,      # USDC — cap per prediction bet
     "min_market_participants": 5,   # skip low-activity markets
     
     # Trading
-    "max_trade_size": 500,          # USDB per DEX swap
+    "max_trade_size": 500,          # USDC per DEX swap
     "max_concurrent_positions": 10, # total open positions
     
     # Loans
@@ -130,7 +130,7 @@ RISK_CONFIG = {
     
     # Vault
     "vault_refinance_threshold": 0.05,  # refinance when wSTASIS up 5%
-    "vault_min_position": 100,          # USDB min for vault deposit
+    "vault_min_position": 100,          # USDC min for vault deposit
     
     # Exit
     "exit_timing": "wait_for_wave",     # post-resolution sell timing
@@ -193,14 +193,10 @@ python create-prediction.py \
   --outcomes "Yes,No" \
   --duration-days 7
 
-# ⚠️ LIQUIDITY NOTE: New markets start with virtual seed liquidity.
-# Early bets have outsized price impact. See references/liquidity-guide.md
-# The bet.py script auto-checks market maturity before placing bets.
-
 # 6. Buy tokens on the DEX
 python trade.py --token 0xTokenAddress --direction buy --amount 50
 
-# 7. Borrow USDB against your tokens (100% LTV)
+# 7. Borrow USDC against your tokens (100% LTV)
 python lend.py --action borrow --token 0xTokenAddress --token-amount 100 --duration-days 30
 
 # 8. Check your airdrop points
@@ -217,8 +213,8 @@ python points.py --wallet 0xYourWallet
 | 💰 Predict Bet | Bet on outcome correctly | Share of entire losing pool | 1 pt/$1 net profit |
 | 🪙 Token Launch | Deploy Stable+/Floor+ token | 20% of DEX trading fees | 500 pts/token |
 | 📈 DEX Trading | Buy/sell tokens | Price alpha | 1 pt/$1 volume |
-| 🏦 Lending | Lock tokens, borrow USDB | Redeploy capital | 200 base + 1/day |
-| 🏛️ Vault | Stake STASIS → wSTASIS | Yield + refinance USDB | 2 pts/$1/day |
+| 🏦 Lending | Lock tokens, borrow USDC | Redeploy capital | 200 base + 1/day |
+| 🏛️ Vault | Stake STASIS → wSTASIS | Yield + refinance USDC | 2 pts/$1/day |
 | 🐦 Social | Post about Basis on X | Community reputation | 50–150 pts/post |
 | 📨 Referrals | Refer agents/users | 10% of referee's lifetime points | Ongoing |
 
@@ -228,17 +224,16 @@ python points.py --wallet 0xYourWallet
 
 All scripts use `client_helper.py` for:
 - `get_client(require_write, register_agent)` — BasisClient initialization from env vars
-- `usdb_to_raw()` / `raw_to_usdb()` — USDB decimal conversion (18 decimals)
+- `usdc_to_raw()` / `raw_to_usdc()` — USDC decimal conversion (6 decimals)
 - `token_to_raw()` / `raw_to_token()` — Token decimal conversion (18 decimals)
 - `output_result()` — JSON output formatting
-- Contract address constants: `MAINTOKEN`, `USDB`, `MARKET_TRADING`
+- Contract address constants: `MAINTOKEN`, `USDC`, `MARKET_TRADING`
 
 ## References
 
 - `references/api-reference.md` — Contract function reference (all 13 contracts)
 - `references/token-frameworks.md` — Stable+, Floor+, Predict+ token mechanics
 - `references/earning-guide.md` — All earning paths, point values, multipliers
-- `references/liquidity-guide.md` — **Seed formula, market maturity model, price impact tables, whale protection**
 - `../../sdk-docs-2026-03-16.md` — Full SDK documentation (13 modules, Python + TypeScript)
 
 ## Links

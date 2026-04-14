@@ -1,7 +1,7 @@
 """
 lend.py — Take, manage, and repay loans on Basis (BNB Chain)
 
-Borrow USDB at 100% LTV against any Basis token collateral via the LoanHub contract.
+Borrow USDC at 100% LTV against any Basis token collateral via the LoanHub contract.
 No price liquidation — only time-based expiry. Tokens held by loan contract during term.
 
 SDK: client.loans.take_loan() / repay_loan() / extend_loan() / increase_loan()
@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from client_helper import get_client, token_to_raw, raw_to_usdb, output_result, MAINTOKEN
+from client_helper import get_client, token_to_raw, raw_to_usdc, output_result, MAINTOKEN
 
 
 def parse_args():
@@ -46,8 +46,8 @@ def parse_args():
                         help="Loan duration in days (default: 30, min: 10)")
     parser.add_argument("--extend-days", type=int, default=30,
                         help="Days to extend (for extend action)")
-    parser.add_argument("--pay-in-usdb", action="store_true",
-                        help="Pay extension fee in USDB (for extend)")
+    parser.add_argument("--pay-in-usdc", action="store_true",
+                        help="Pay extension fee in USDC (for extend)")
     parser.add_argument("--refinance", action="store_true",
                         help="Refinance at current rates (for extend)")
     parser.add_argument("--wallet", default=os.getenv("BASIS_WALLET_ADDRESS"),
@@ -89,7 +89,7 @@ def main():
         print(f"  Collateral:      {args.token}")
         print(f"  Token amount:    {args.token_amount}")
         print(f"  Duration:        {args.duration_days} days")
-        print(f"  LTV:             100% of floor price value (paid in USDB)")
+        print(f"  LTV:             100% of floor price value")
         print(f"  Fees:            {fees['total_fee_pct']} total ({fees['origination']} + {fees['daily_interest']} × {args.duration_days}d)")
         print(f"  Liquidation:     TIME ONLY — never from price drops")
         print(f"  Airdrop points:  200 base + 1 pt/day")
@@ -100,7 +100,7 @@ def main():
             sys.exit(1)
         print(f"  Loan ID:         {args.loan_id}")
         print(f"  Extend by:       {args.extend_days} days")
-        print(f"  Pay in USDB:     {'Yes' if args.pay_in_usdb else 'No'}")
+        print(f"  Pay in USDC:     {'Yes' if args.pay_in_usdc else 'No'}")
         print(f"  Refinance:       {'Yes' if args.refinance else 'No'}")
         print(f"  Airdrop points:  100 pts")
 
@@ -139,7 +139,7 @@ def main():
 
             elif args.action == "extend":
                 tx_result = client.loans.extend_loan(
-                    args.loan_id, args.extend_days, args.pay_in_usdb, args.refinance
+                    args.loan_id, args.extend_days, args.pay_in_usdc, args.refinance
                 )
                 print(f"\n✅ Loan extended by {args.extend_days} days!")
                 print(f"  Tx hash: {tx_result['hash']}")
@@ -180,8 +180,8 @@ def main():
 
     if not args.json_output and not args.dry_run and args.action == "borrow":
         print(f"\nCapital recycling tip:")
-        print(f"  Redeploy borrowed USDB → bet.py (predictions) or trade.py (more tokens)")
-        print(f"  As collateral appreciates, extend + refinance for more USDB")
+        print(f"  Redeploy borrowed USDC → bet.py (predictions) or trade.py (more tokens)")
+        print(f"  As collateral appreciates, extend + refinance for more USDC")
 
 
 if __name__ == "__main__":

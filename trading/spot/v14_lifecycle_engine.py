@@ -192,8 +192,6 @@ class V14LifecycleEngine:
         try:
             ts = self._parse_timestamp(candle_1h.get('timestamp'))
             price = float(candle_1h['close'])
-            high = float(candle_1h.get('high', price))
-            low = float(candle_1h.get('low', price))
             self.current_price = price
 
             # Initialize engine phase start on first tick
@@ -244,23 +242,8 @@ class V14LifecycleEngine:
                 if np.isnan(daily_close):
                     daily_close = price  # fallback
 
-                # Get daily high/low for realistic TP fills
-                daily_high = daily_close
-                daily_low = daily_close
-                if self.pack and self.pack.daily is not None and prev_date_ts in self.pack.daily.index:
-                    day_row = self.pack.daily.loc[prev_date_ts]
-                    daily_high = float(day_row.get('high', daily_close))
-                    daily_low = float(day_row.get('low', daily_close))
-
-                # Run daily tick (signal evaluation and phase transitions ONLY).
-                # TP/DCA grid logic is handled by hourly ticks — see _run_daily_tick docstring.
-                actions.extend(self._run_daily_tick(prev_date_ts, daily_close, daily_high, daily_low))
-
-                # NOTE (2026-04-10): "Live TP catch-up" block REMOVED.
-                # It used the current candle's high against the daily-tick context,
-                # which is redundant — the hourly tick for this candle (below) already
-                # runs _long_dca_tick with the correct hourly high. The catch-up block
-                # was also a source of false TPs. See incident log §17.8.
+                # Run full daily tick (router evaluates direction, signals compute)
+                actions.extend(self._run_daily_tick(prev_date_ts, daily_close))
 
                 # Engine is now warmed up — router has set direction, signals are loaded
                 if not self._warmed_up:
@@ -271,42 +254,36 @@ class V14LifecycleEngine:
                 # Clear old candles (keep current day only)
                 self._candles_1h = [c for c in self._candles_1h
                                     if c['timestamp'].strftime('%Y-%m-%d') == current_date]
+            else:
+                # Between daily: run DCA grid for hourly TP responsiveness
+                # BUT only if warmed up (router has set direction at least once)
+                if self._live_mode and self._warmed_up:
+                    date_ts = pd.Timestamp(ts.replace(tzinfo=None))
+                    old_trade_count = len(self._engine.trades)
 
-            # Run hourly DCA grid tick for EVERY candle (daily boundary or not).
-            # This ensures TP/DCA checks use the individual candle's high/low,
-            # not stale daily aggregates. Runs after daily tick (if any) so
-            # signals are fresh before grid evaluation.
-            if self._live_mode and self._warmed_up:
-                date_ts = pd.Timestamp(ts.replace(tzinfo=None))
-                old_trade_count = len(self._engine.trades)
+                    if self._engine.phase == Phase.LONG_DCA:
+                        self._engine._long_dca_tick(date_ts, price)
+                        # Check orphaned short TP (manual phase override — close only, no new layers)
+                        if self._engine.short_coins > 0 and self._engine.short_tp > 0 and price <= self._engine.short_tp:
+                            old_unwinding = self._engine.unwinding
+                            self._engine.unwinding = True  # Prevent new layers
+                            self._engine._short_dca_tick(date_ts, price)
+                            self._engine.unwinding = old_unwinding
+                    elif self._engine.phase == Phase.SHORT_DCA:
+                        self._engine._short_dca_tick(date_ts, price)
 
-                if self._engine.phase == Phase.LONG_DCA:
-                    self._engine._long_dca_tick(date_ts, price, high=high)
-                    # Check orphaned short TP (manual phase override — close only, no new layers)
-                    if self._engine.short_coins > 0 and self._engine.short_tp > 0 and low <= self._engine.short_tp:
-                        old_unwinding = self._engine.unwinding
-                        self._engine.unwinding = True  # Prevent new layers
-                        self._engine._short_dca_tick(date_ts, price, low=low)
-                        self._engine.unwinding = old_unwinding
-                elif self._engine.phase == Phase.SHORT_DCA:
-                    self._engine._short_dca_tick(date_ts, price, low=low)
-
-                actions.extend(self._extract_new_actions(old_trade_count))
+                    actions.extend(self._extract_new_actions(old_trade_count))
+                elif self._live_mode and not self._warmed_up:
+                    # Accumulating candles, tracking price, but not trading yet
+                    pass
 
         except Exception as e:
             logger.error(f"V14Engine tick error for {self.symbol}: {e}", exc_info=True)
 
         return actions
 
-    def _run_daily_tick(self, date: pd.Timestamp, price: float,
-                        high: float = None, low: float = None) -> List[dict]:
-        """Run the V14 engine's full daily logic: signals, phase transitions only.
-
-        NOTE (2026-04-10): TP/DCA grid checks are handled by hourly ticks, NOT here.
-        Previously this passed daily high/low to _long_dca_tick/_short_dca_tick, which
-        caused false TPs — the full-day high was compared against a TP target lowered
-        by intraday DCA layers that didn't exist when the high occurred. See incident log.
-        """
+    def _run_daily_tick(self, date: pd.Timestamp, price: float) -> List[dict]:
+        """Run the V14 engine's full daily logic, matching run() loop order exactly."""
         actions = []
         eng = self._engine
         old_trade_count = len(eng.trades)
@@ -315,11 +292,18 @@ class V14LifecycleEngine:
         # Compute signals first
         signals = eng._compute_signals(date, price)
 
-        # Phase-specific logic: signal evaluation and phase transitions ONLY.
-        # DCA grid ticks (buys + TP checks) are handled by hourly candle ticks.
+        # Phase-specific logic (EXACT order from V14 run() loop)
         if eng.phase == Phase.LONG_DCA:
+            eng._long_dca_tick(date, price)
+            # Check orphaned short TP (manual phase override — close only, no new layers)
+            if eng.short_coins > 0 and eng.short_tp > 0 and price <= eng.short_tp:
+                old_unwinding = eng.unwinding
+                eng.unwinding = True
+                eng._short_dca_tick(date, price)
+                eng.unwinding = old_unwinding
             eng._check_top_signals(date, price, signals)
         elif eng.phase == Phase.SHORT_DCA:
+            eng._short_dca_tick(date, price)
             eng._check_bottom_signals(date, price, signals)
             eng._check_markdown_exit(date, price, signals)
         elif eng.phase == Phase.ROUTER:
@@ -531,8 +515,6 @@ class V14LifecycleEngine:
             'long_trades': eng.long_trades,
             'long_wins': eng.long_wins,
             'long_pnl': eng.long_pnl,
-            'long_trailing_active': eng.long_trailing_active,
-            'long_trailing_peak': eng.long_trailing_peak,
             # Short DCA
             'short_coins': eng.short_coins,
             'short_avg_entry': eng.short_avg_entry,
@@ -543,8 +525,6 @@ class V14LifecycleEngine:
             'short_trades': eng.short_trades,
             'short_wins': eng.short_wins,
             'short_pnl': eng.short_pnl,
-            'short_trailing_active': eng.short_trailing_active,
-            'short_trailing_peak': eng.short_trailing_peak,
             # Top detection
             'early_warning_date': str(eng.early_warning_date) if eng.early_warning_date else None,
             'failsafe_armed': eng.failsafe_armed,
@@ -614,8 +594,6 @@ class V14LifecycleEngine:
         eng.long_trades = state.get('long_trades', 0)
         eng.long_wins = state.get('long_wins', 0)
         eng.long_pnl = state.get('long_pnl', 0.0)
-        eng.long_trailing_active = state.get('long_trailing_active', False)
-        eng.long_trailing_peak = state.get('long_trailing_peak', 0.0)
 
         # Short DCA
         eng.short_coins = state.get('short_coins', 0.0)
@@ -628,8 +606,6 @@ class V14LifecycleEngine:
         eng.short_trades = state.get('short_trades', 0)
         eng.short_wins = state.get('short_wins', 0)
         eng.short_pnl = state.get('short_pnl', 0.0)
-        eng.short_trailing_active = state.get('short_trailing_active', False)
-        eng.short_trailing_peak = state.get('short_trailing_peak', float('inf'))
 
         # Top detection
         ewd = state.get('early_warning_date')
@@ -682,8 +658,8 @@ class V14LifecycleEngine:
         action_type = action_dict.get('action')
         reason = action_dict.get('reason', '')
         
-        # Support rollback for BUY, SHORT_OPEN, and SELL (phantom sells with no exchange position)
-        if action_type not in ('BUY', 'SHORT_OPEN', 'SELL'):
+        # We only support rolling back recent BUY or SHORT_OPEN actions
+        if action_type not in ('BUY', 'SHORT_OPEN'):
             logger.warning(f"Cannot reject action type {action_type} for {self.symbol}")
             return
             
@@ -740,24 +716,6 @@ class V14LifecycleEngine:
                 eng.short_tp = eng.short_avg_entry * (1 - eng.cfg.DCA_TP_PCT)
             eng.short_trades -= 1
             logger.info(f"{self.symbol}: Rejected SHORT_OPEN, rolled back {coins} coins @ ${price}. Refunded ${amount}.")
-
-        elif action_type == 'SELL':
-            # Rollback a phantom TP sell that had no exchange position.
-            # The engine already credited proceeds and zeroed the position.
-            # Reverse: restore position state from the trade record and debit proceeds.
-            pnl = trade.get('pnl', 0)
-            fee = trade.get('fee', 0)
-            proceeds = coins * price
-            eng.capital -= proceeds
-            eng.long_coins = coins
-            eng.long_cost = amount if amount else coins * price / (1 + eng.cfg.DCA_TP_PCT)
-            eng.long_avg_entry = eng.long_cost / coins if coins > 0 else 0
-            eng.long_layers = 1  # approximate — exact layer count lost
-            eng.long_tp = eng.long_avg_entry * (1 + eng.cfg.DCA_TP_PCT)
-            eng.long_trades -= 1
-            eng.long_wins -= 1
-            eng.long_pnl -= pnl
-            logger.info(f"{self.symbol}: Rejected SELL (no exchange position), restored {coins} coins @ ${price}. Debited ${proceeds:.2f}.")
 
     # -----------------------------------------------------------------------
     # Feed daily (for signal context on restore)

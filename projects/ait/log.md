@@ -1,18 +1,6 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
-## 2026-03-17
-- **INCIDENT: Live bot TP miss + state corruption** — full report: `projects/ait/incidents/2026-03-17-live-tp-miss.md`
-- **TP fill model fix**: TP now checked against candle high (long) / candle low (short) instead of candle close. Simulates limit order fill on wick touch — matches real exchange behavior. Fill price = TP level, not wick extreme.
-- **Root cause**: ASTER 12:00 UTC candle close $0.7465 missed TP $0.7481 by $0.0017, but high was $0.7521 (above TP). Same issue on JUP/USDT in V14PM paper bot.
-- **Files changed**: `v14_dca_engine.py` (`_long_dca_tick`, `_short_dca_tick`, `run()`), `v14_lifecycle_engine.py` (hourly + daily tick paths)
-- **Live bot complications**: Duplicate instances (scheduled task + manual launch) caused race condition. Instance A sold successfully at $0.7757, Instance B failed and corrupted state. Required manual reconciliation.
-- **Capital update**: $300 → $340 (fresh $40 USDT deposit). Updated DEFAULT_CAPITAL, state.json, HEARTBEAT.md.
-- **GitHub PAT renewed**: `openclaw-deploy` token expired 2026-03-16, replaced.
-- **Resting limit orders implemented** on `run_v14_live_aster.py`: bot now places a limit sell order on the Aster exchange at the TP price when a position opens. After every BUY fill → cancel old TP order, place new limit sell at updated TP for full position. Startup recovery reads `_tp_order_id` from `state.json`. Phase change cancels the order. Engine candle-based detection retained as fallback (dual approach). Verified on exchange — order 485775318. New `SpotExchangeClient` methods: `place_limit_sell()`, `cancel_tp_order()`, `check_order_status()`.
-- **Docs updated**: v14-system-spec.md, v14-dca-architecture.md, CLOUD_MIGRATION_GUIDE.md (items 12 + 13), LIVE_VS_PAPER_DIFFERENCES.md, log.md, incident report, memory files, HEARTBEAT.md
-- All 4 bots confirmed healthy and running post-fix.
-
 ## 2026-03-10
 - **Full system audit complete**: Read every file in V14PM dependency chain
 - **CRITICAL FIX**: `v13_router_engine_v2.py` wrong DB path (`.parent.parent.parent` → `.parent.parent`). HybridDetector2D was reading from 0-byte DB — top/bottom detection completely broken across ALL bots since deployment

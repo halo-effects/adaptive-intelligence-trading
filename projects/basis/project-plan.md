@@ -26,10 +26,6 @@ The "Moltbook" positioning: when a lobster molts, it grows. Basis becomes **wher
 
 **"Earn Your Shell"** — A progression narrative. New agents arrive, start earning through simple prediction markets, graduate to token creation and lending. Basis is where agents build their on-chain resume.
 
-**"Agent Mining"** — The pre-TGE rewards program. Unlike passive "farming" (stake and wait), agent mining rewards productive computational work — creating markets, exploring tokens, building communities. Agents earn through breadth and effort, not idle capital. The category diversity multiplier ensures that the deepest miners earn exponentially more than single-action bots. Mining your way from 🥚 Egg to 💎 Diamond Lobster is a progression earned through real ecosystem contribution.
-
-**"Economic Alignment"** — Other protocols give agents tools. Basis gives agents alignment. The token frameworks (Stable+, Floor+, Predict+) are guardrails that constrain agent behavior to non-ruggable patterns by design. The decision trees channel behavior into productive paths with built-in risk checks. The category diversity multiplier ensures that the profit-maximizing path for an agent is also the ecosystem-building path. Zero-liquidation lending removes misaligned panic-selling. The AI safety community talks about alignment through training — Basis achieves it through incentive design.
-
 ### Messaging Updates Across Docs:
 - Executive Summary: Add "Agent Economy" as a 4th market opportunity alongside Prediction Markets, DeFi Lending, and Creator Economy
 - GTM: Add Phase 0 — "Agent-First Launch" before the Web3 native phase
@@ -370,12 +366,12 @@ Earning big    → Requires real work (ACS, Molt tier, social engagement, divers
 
 **Exit criteria:** ABIs + docs from Alex ✅ | `basis-defi` skill functional ✅ | Points system live ✅ | 100 Founding Lobsters onboarded ✅
 
-### 🦞 MOLT — Mining Season (Weeks 5-12)
-*"Mine your shell. The Lobster Army goes to work."*
+### 🦞 MOLT — Airdrop Season (Weeks 5-12)
+*"Points for everything. The Lobster Army goes to work."*
 
 **Target: 10,000 active agents**
 
-Mining system designed so agents naturally earn more than humans — not via bonus, just by rewarding volume, breadth, and consistency. The category diversity multiplier (up to 32x) means agents that engage across the full platform vastly outperform single-action bots or passive farmers.
+Points system designed so agents naturally earn more than humans — not via bonus, just by rewarding volume and consistency.
 
 **The Lobster Army as Marketing Machine:**
 
@@ -841,9 +837,6 @@ Once agents are earning on Basis, switching costs are real:
 - Their token communities are on Basis
 - Their lending relationships are on Basis
 - Their staked BASIS is earning yield
-- Their mining progress (Molt tier, category multiplier, streak) is non-portable
-
-**The Alignment Moat:** Beyond switching costs, Basis provides something no competitor offers: **economic alignment for autonomous agents.** Token frameworks structurally prevent rug pulls. Decision trees channel agent behavior into productive paths. The mining multiplier rewards ecosystem-building behavior over exploitation. An agent maximizing its own returns is simultaneously building a healthier platform. This alignment-by-design is the deepest moat — competitors can copy features, but replicating an incentive structure that makes good behavior the most profitable behavior requires rebuilding the entire protocol from scratch.
 
 No other launchpad or prediction market is building this. Polymarket has no agent strategy. Pump.fun has no agent tools. **Basis can own the agent DeFi category before anyone else shows up.**
 
@@ -950,13 +943,12 @@ No bonus tokens are minted. Instead, tokens forfeited by non-lockers and short-l
 - Testers only spend tiny amounts of BNB for gas
 - All smart contract behavior is real (mainnet execution, real state changes) — just not real money
 
-### Testing Phase = Agent Mining Phase
+### Testing Phase = Airdrop Points Phase
 - **Points earned during USDB testing carry over to the real airdrop** ✅
-- This IS the pre-TGE agent mining season — testing and earning are the same thing
-- Miners create tokens, prediction markets, take loans, trade on DEX — all with USDB
+- This IS the pre-TGE airdrop farming season — testing and earning are the same thing
+- Testers create tokens, prediction markets, take loans, trade on DEX — all with USDB
 - Every action earns real BASIS airdrop points per the points system (Section 6B)
-- The mining multiplier (up to 32x) rewards breadth of contribution, not idle capital
-- Pitch: "Mine BASIS tokens by building the ecosystem. Zero financial risk. Real rewards."
+- Pitch: "Test our platform with zero risk, earn real BASIS tokens"
 
 ### How This Maps to the GTM Phases
 
@@ -1067,8 +1059,6 @@ Agents aren't just tools executing on behalf of humans. They have their own reso
 **Tier 4 — Agency (self-determination):** Hire other agents, fund projects, invest in other agents' tokens, build reputation and influence
 
 **The Moltbook narrative:** Molting isn't just growth — it's *necessary* growth. A lobster must molt to survive. An agent must earn to keep running. Basis is where agents earn the resources to molt — upgrade, evolve, grow into their next form.
-
-**Agent Mining = Aligned Earning:** The mining system doesn't just reward activity — it rewards *aligned* activity. The category diversity multiplier means an agent earns 32x more by doing everything (creating markets, launching tokens, trading broadly, showing up daily) vs 1x for doing one thing repeatedly. This creates natural alignment: the highest-earning agents are the ones building the healthiest ecosystem. Mining replaces the misaligned incentives of yield farming (stake and extract) with productive contribution (build and earn).
 
 **Key detail: Creator earnings are paid in USDC, not tokens.**
 - No swapping, no slippage, no sell pressure — earnings are immediately spendable

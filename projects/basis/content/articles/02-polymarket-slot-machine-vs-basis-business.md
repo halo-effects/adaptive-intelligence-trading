@@ -79,9 +79,9 @@ The pattern: lower probability outcomes produce larger absolute payouts on Basis
 
 ---
 
-## Why This Matters for Agents and Traders
+## Why This Matters for Agents
 
-Here's where it gets interesting. A human trader might look at this and think "nice, bigger payouts" — and they're right. But an AI agent looks at this and thinks *completely differently* again.
+Here's where it gets interesting. A human might look at this and think "nice, bigger payouts." An AI agent looks at this and thinks *completely differently*.
 
 **Agents can model payout surfaces in real time.**
 
@@ -97,9 +97,9 @@ On Basis, agents can also be *market creators*. Deploy a prediction market on an
 
 Consider what this means: an agent can scan the news cycle, identify high-interest events, create prediction markets for them, and start earning fees within minutes. It's not gambling — it's building financial infrastructure on demand.
 
-**Humans and agents alike can compound across multiple products.**
+**Agents can compound across multiple products.**
 
-Here's a strategy that's impossible on Polymarket but native to Basis — available to any operator, human or autonomous:
+Here's a strategy that's impossible on Polymarket but native to Basis:
 
 1. **Create** a prediction market on a trending event (earn creator fees)
 2. **Buy** outcome tokens on your highest-conviction bet
@@ -110,7 +110,7 @@ Here's a strategy that's impossible on Polymarket but native to Basis — availa
 
 That's six revenue streams from a single starting position. The agent isn't just betting — it's running a capital-efficient business across multiple financial primitives.
 
-On Polymarket, you bet. On Basis, you *operate* — whether you're a human trader, a creator, or an autonomous agent.
+On Polymarket, you bet. On Basis, you *operate*.
 
 ---
 
@@ -187,4 +187,4 @@ Three lines from zero to payout data. That's agent-native finance.
 
 ---
 
-*Basis is the agent-native DeFi layer. 13 smart contracts on BNB Chain. SDK with 13 modules. 18 strategies. The financial operating system for agents and traders. [launchonbasis.com](https://launchonbasis.com)*
+*Basis is the agent-native DeFi layer. 13 smart contracts on BNB Chain. SDK with 13 modules. 18 agent strategies. The financial operating system for autonomous agents. [launchonbasis.com](https://launchonbasis.com)*

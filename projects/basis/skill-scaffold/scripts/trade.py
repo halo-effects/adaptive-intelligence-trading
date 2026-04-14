@@ -8,7 +8,7 @@ SDK: client.trading.buy() / sell() / sell_percentage() / leverage_buy()
      client.leverage_simulator.simulate_leverage() for preview
 
 Key mechanics:
-- USDB → MAINTOKEN → FactoryToken (3-hop path, handled automatically by SDK)
+- USDC → MAINTOKEN → FactoryToken (3-hop path, handled automatically by SDK)
 - Leverage is per-position via leverage_buy, NOT a global toggle
 - Leveraged tokens held in leverage contract — cannot be used as loan collateral
 - No price liquidation on leverage — calculated against floor price
@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from client_helper import get_client, usdb_to_raw, token_to_raw, raw_to_token, output_result, USDB, MAINTOKEN
+from client_helper import get_client, usdc_to_raw, token_to_raw, raw_to_token, output_result, USDC, MAINTOKEN
 
 
 def parse_args():
@@ -39,12 +39,12 @@ def parse_args():
     parser.add_argument("--direction", required=True, choices=["buy", "sell"], help="Trade direction")
 
     amount_group = parser.add_mutually_exclusive_group(required=True)
-    amount_group.add_argument("--amount", type=float, help="USDB amount to spend (buy) or receive target (sell)")
+    amount_group.add_argument("--amount", type=float, help="USDC amount to spend (buy) or receive target (sell)")
     amount_group.add_argument("--token-amount", type=float, help="Exact number of tokens to sell")
     amount_group.add_argument("--percentage", type=int, help="Percentage of balance to sell (1-100)")
 
     parser.add_argument("--min-out", type=int, default=0, help="Minimum output (slippage protection, raw units)")
-    parser.add_argument("--to-usdb", action="store_true", help="Sell all the way to USDB (3-hop for factory tokens)")
+    parser.add_argument("--to-usdc", action="store_true", help="Sell all the way to USDC (3-hop for factory tokens)")
 
     # Leverage options (buy only)
     parser.add_argument("--leverage", action="store_true", help="Open a leveraged position")
@@ -61,11 +61,11 @@ def main():
     # Safety checks
     max_trade = float(os.getenv("MAX_TRADE_SIZE", "500"))
     if args.amount and args.amount > max_trade:
-        print(f"Warning: Trade ${args.amount} USDB exceeds MAX_TRADE_SIZE=${max_trade}")
+        print(f"Warning: Trade ${args.amount} exceeds MAX_TRADE_SIZE=${max_trade}")
         sys.exit(1)
 
     if args.amount and args.amount < 10:
-        print(f"Note: Minimum $10 USDB per trade for airdrop points.")
+        print(f"Note: Minimum $10 per trade for airdrop points.")
 
     if args.leverage and args.direction == "sell":
         print("Error: --leverage only works with buy direction.", file=sys.stderr)
@@ -81,7 +81,7 @@ def main():
     print(f"  Direction:       {args.direction}")
 
     if args.amount:
-        print(f"  USDB amount:     ${args.amount:.2f} ({usdb_to_raw(args.amount)} raw)")
+        print(f"  USDC amount:     ${args.amount:.2f} ({usdc_to_raw(args.amount)} raw)")
     elif args.token_amount:
         print(f"  Token amount:    {args.token_amount} ({token_to_raw(args.token_amount)} raw)")
     elif args.percentage:
@@ -98,14 +98,14 @@ def main():
         # Preview swap output
         if args.direction == "buy" and args.amount:
             try:
-                usdb_raw = usdb_to_raw(args.amount)
-                path = [USDB, MAINTOKEN, args.token]
+                usdc_raw = usdc_to_raw(args.amount)
+                path = [USDC, MAINTOKEN, args.token]
 
                 if args.leverage:
-                    sim = client.leverage_simulator.simulate_leverage(usdb_raw, path, args.leverage_days)
+                    sim = client.leverage_simulator.simulate_leverage(usdc_raw, path, args.leverage_days)
                     print(f"\n  Leverage simulation: {sim}")
                 else:
-                    expected = client.trading.get_amounts_out(usdb_raw, path)
+                    expected = client.trading.get_amounts_out(usdc_raw, path)
                     print(f"\n  Expected output: {expected} raw tokens ({raw_to_token(int(expected)):.4f} tokens)")
             except Exception as e:
                 print(f"\n  ⚠️  Preview failed: {e}")
@@ -122,7 +122,7 @@ def main():
             "status": "dry_run",
             "token": args.token,
             "direction": args.direction,
-            "amount_usdb": args.amount,
+            "amount_usdc": args.amount,
             "leverage": args.leverage,
         }
     else:
@@ -130,18 +130,18 @@ def main():
 
         try:
             if args.direction == "buy":
-                usdb_raw = usdb_to_raw(args.amount)
+                usdc_raw = usdc_to_raw(args.amount)
 
                 if args.leverage:
                     # Leveraged buy: protocol lends additional capital
-                    path = [USDB, MAINTOKEN, args.token]
+                    path = [USDC, MAINTOKEN, args.token]
                     tx_result = client.trading.leverage_buy(
-                        usdb_raw, args.min_out, path, args.leverage_days
+                        usdc_raw, args.min_out, path, args.leverage_days
                     )
                     print(f"\n✅ Leveraged buy executed!")
                 else:
                     # Spot buy
-                    tx_result = client.trading.buy(args.token, usdb_raw, args.min_out)
+                    tx_result = client.trading.buy(args.token, usdc_raw, args.min_out)
                     print(f"\n✅ Buy executed!")
 
             elif args.direction == "sell":

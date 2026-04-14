@@ -142,35 +142,6 @@ Trading Fee (0.5% or 1.5%)
 
 ## Prediction Market Creation Fees
 
-_Updated 2026-03-18 from Alex._
-
-### Seed Investment (required at market creation)
-
-| Market Type | Minimum Seed |
-|---|---|
-| Public Market | 50 USDB or more |
-| Creator Managed | 10 USDB or more |
-| Private Event (Creator Managed) | 0 USDB or more |
-
-### Virtual LP Liquidity System
-
-| Rule | Detail |
-|---|---|
-| Minimum total liquidity | 5,000 USDB across all outcomes |
-| Default per outcome | 500 USDB per outcome (if possible) |
-| Scale-down rule | If total outcome value exceeds 50K USDB, per-outcome amount is lowered |
-
-### Resolution / Dispute Bonds
-
-| Parameter | Value |
-|---|---|
-| Bond amount | 5 USDB (changed from 1 USDB) |
-| Voting window | 30 minutes |
-| Proposing window | 30 minutes |
-| Disputing window | 30 minutes |
-
-### Other Fees
-
 | Fee | Amount | Notes |
 |---|---|---|
 | Gas cost | TBD | <!-- TODO: measure real-world gas cost --> |

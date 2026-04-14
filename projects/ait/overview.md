@@ -14,8 +14,7 @@ _Last updated: 2026-03-10_
 
 ## Architecture Documents
 - `projects/ait-product/V14PM_SYSTEM_ARCHITECTURE.md` (v1.1) — Complete system reference
-- `projects/ait-product/CLOUD_MIGRATION_GUIDE.md` (v1.2) — Linux deployment guide
-- `projects/ait-product/LIVE_VS_PAPER_DIFFERENCES.md` — Live vs paper architecture, production checklist
+- `projects/ait-product/CLOUD_MIGRATION_GUIDE.md` (v1.1) — Linux deployment guide
 - `projects/ait-product/V14PM_FULL_AUDIT.md` — End-to-end code audit (2026-03-10)
 - `projects/ait-product/CODE_AUDIT_FINDINGS.md` — Bug tracker
 - `projects/ait-product/conviction-stack-spec.md` — Signal stack specification
@@ -38,18 +37,14 @@ _Last updated: 2026-03-10_
 | --fresh for first launch only | 2026-03-10 | Normal restarts use engine_state.json |
 | Macro conviction signals observational | 2026-03-08 | 6 index-level signals documented, not wired into bot logic |
 | Trend multiplier gates entry not exit | 2026-03-06 | Declining coins get less capital but existing positions stay |
-| V14PM = production target | 2026-03-18 | Exchange-as-truth architecture, V14 Live is legacy |
-| LIVE GUARD mandatory on live bots | 2026-03-18 | Rollback engine state when exchange TP order exists |
-| Equity = usdt_total + unrealized_pnl | 2026-03-20 | Matches V14 Live pattern; USDT.free excluded locked margin |
 
-## Current State (2026-03-20)
-- **V14PM Live (Aster Perps)**: ~$350 real USDT, GRASS/USDT, 13 deals, 100% WR, $24 realized PnL
-- **V14PM Paper**: $56.8K equity, 173 deals, 100% WR, 5 active coin slots
-- **V14 Paper**: $52.6K equity, 403 deals, 97.8% WR
-- **V14 Live (Aster Spot, LEGACY)**: ~$350 real, ASTER/USDT — being retired
-- **V14-ETF**: RETIRED (2026-03-17)
-- **V14PM vs V14 Live audit (2026-03-19)**: 20 critical paths, 12 gaps (3× P0). Equity bug fixed 2026-03-20.
-- **Equity computation bug fixed (2026-03-20)**: `fetch_balance()` returned `USDT.free` (excluded margin). Now uses `usdt_total + unrealized_pnl`, matching V14 Live pattern. Dashboard donut also fixed.
+## Current State (2026-03-10)
+- **V14PM**: $50,504 equity, 22 trades, 100% win rate, 10/10 coin slots
+- **V14 Paper**: $69K+ equity, 374+ deals, 97.6% win rate
+- **V14-ETF Paper**: $10K+, running
+- **V14 Live (Aster)**: $300 real, ASTER/USDT, running
+- **All bots restarted post-OpenClaw 2026.3.8 upgrade** (March 9)
+- **Full audit complete** — 3 critical bugs found and fixed (DB path, state persistence, daily resampling)
 
 ## Next Steps
 1. Cloud migration (Linux server, Hyperliquid mainnet)

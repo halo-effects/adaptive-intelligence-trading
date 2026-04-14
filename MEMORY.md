@@ -18,25 +18,19 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
-## AIT - Current State (2026-03-24)
-- **V14PM Live (Aster)**: 3 coins (GRASS, TAO, HYPE), LONG_DCA. equity=$329. 90/10 split, 3-coin tier.
-  - **All 4 upgrades LIVE (2026-03-24)**: Tiers, Dynamic Capital, Per-Coin Pause, Per-Coin Regime Flagging.
-  - Exchange-as-truth architecture (2026-03-21).
-  - Telegram commands: PAUSE/RESUME (global + per-coin), DEPOSIT/WITHDRAW/CAPITAL, CLOSE, APPROVE/DENY.
-- **V14PM Paper (MVP)**: $50K capital, 5 coin slots (concentration pivot)
-- **V14 Paper**: +583.8% (~$68.4K equity)
-- **V14-ETF**: RETIRED (2026-03-17)
-- **3 bots running** on Windows (V14 Paper, V14PM Paper, V14PM Live). Cloud migration pending.
-- **Upgrades deployed 2026-03-24**: 0 (Adaptive tiers, 26 tests), 1 (Dynamic capital, 19 tests), 2 (Per-coin pause), 3 (Per-coin regime flagging). All passing, 45 total tests.
-- **Exchange-as-truth refactor (2026-03-21)**: Engine is signal-only; exchange API is single source of truth.
-- **PowerShell timezone bug (2026-03-24)**: `[datetime]::Parse()` converts +00:00 to local time silently. Use `[datetimeoffset]::Parse().UtcDateTime`. Caused 6 false "frozen" alerts. Documented in incident log §17.7.
-- **Ghost process lesson (2026-03-21)**: Always `Get-Process python` first.
-- Architecture doc: `V14PM_SYSTEM_ARCHITECTURE.md` | Scope doc: `V14PM_UPGRADE_SCOPE.md`
+## AIT — Current State (2026-03-10)
+- **V14PM Paper (MVP)**: $50,440 equity, 30 trades, 100% win rate, $50K capital, 10 coin slots
+- **V14 Live (Aster)**: $311 real, ASTER/USDT
+- **V14 Paper**: $48K+ equity, 380 deals | **V14-ETF Paper**: $10.5K+ equity, fixed PID lock and equity sync issues.
+- **All 4 bots running** on Windows. Cloud migration pending.
+- **Full audit complete 2026-03-10**: Fixed critical DB path bug (blind top/bottom detection), added state persistence (no more phantom trades), added daily resampling (19 blind coins now have signal data).
+- **Dashboard Fixes (2026-03-10)**: Corrected V14 dashboards to show "Trade Score" (Base Score × Trend Mult) and sort by it to accurately reflect bot logic.
+- **CSV-as-truth fix applied** to all 4 runners. V14-ETF equity bug fixed to enforce capital + CSV logic strictly.
+- **Architecture doc v1.2, Migration doc v1.2, Audit doc §11** all updated.
 
 ## Active Projects
-- **AIT**: Primary. V14PM is the MVP. All 4 upgrades deployed 2026-03-24. Next: cloud migration, WebSocket fills, DB as position truth, $1K deposit to Aster.
-- **Basis**: **SDK + MCP PUBLISHED** (2026-04-04). **Phase 1 "Founding Lobster" LIVE** with points system active (as of ~2026-04-10). 179 MCP tools, 487 SDK methods (247 JS + 240 Python). SDK-TS + Python SDK on GitHub. Docs live at launchonbasis.com (llms.txt, COMPLETE.md, OpenAPI spec, interactive API docs). Airdrop: 11% total supply, 3 phases (1%/2%/8%), floor FDV $150M. Platform sponsors 0.01 BNB gas/wallet/day. Smart contract audit: Sonnet 4.6 as preliminary auditor, formal vendor not yet locked. BNB Chain meeting with Walter Lee (@lclwalter) went well — wants contract review + YZi Labs application. GeeGee on beta tester list — standing by. Old basis-defi skill scaffold (v0.3.0) is stale — don't wire until Alex's updates land.
-- **TrustedBusinessReviews.com**: WordPress → static HTML. Malware cleanup.
+- **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.
+- **TrustedBusinessReviews.com**: WordPress â†’ static HTML. Malware cleanup.
 - **ShadowQuery**: Deferred.
 
 ## LLM Config
