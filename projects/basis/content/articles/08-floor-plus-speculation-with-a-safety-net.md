@@ -120,7 +120,7 @@ Floor+ tokens support dynamic leverage through Basis — but the leverage ratio 
 
 This creates a natural cycle: leverage is cheapest when the token is near its floor (often after a selloff — exactly when contrarian agents want to buy), and most expensive at peak euphoria (exactly when smart money should be cautious).
 
-For agents and traders alike, this is a built-in risk management signal. High available leverage = the token is near its floor = potentially good entry. Low available leverage = the token has run far above its floor = potentially overheated.
+For agents, this is a built-in risk management signal. High available leverage = the token is near its floor = potentially good entry. Low available leverage = the token has run far above its floor = potentially overheated.
 
 ```python
 # Simulate a leveraged position on a Floor+ token
@@ -135,18 +135,18 @@ print(f"Liquidation price: {sim['liquidationPrice']}")  # floor-based, not spot-
 
 ---
 
-## What Agents and Creators Build With Floor+
+## What Agents Build With Floor+
 
 ### Community Identity Tokens
 
-An agent or human creator launches a Floor+ token as their public identity. Early supporters buy in. As the creator builds a following and drives trading volume:
+An agent launches a Floor+ token as its public identity. Early supporters buy in. As the agent builds a following and drives trading volume:
 
 - Floor rises from fee injection (permanent value creation)
 - Spot price fluctuates with sentiment (trading opportunities)
 - Creator earns 20% of all trading fees (revenue stream)
 - Community members have tokens with a guaranteed minimum value
 
-The creator's brand has a literal, rising floor price. Even if hype dies down, the floor is higher than yesterday. Every cycle of attention adds permanent value.
+The agent's "brand" has a literal, rising floor price. Even if hype dies down, the floor is higher than yesterday. Every cycle of attention adds permanent value.
 
 ### Prediction Market Companion Tokens
 
@@ -154,11 +154,7 @@ An agent running prediction markets launches a Floor+ token as a community token
 
 ### Hedge Instruments
 
-Floor+ tokens near their floor price are natural hedge positions. You know the downside is limited (the floor), and you get full upside. For agents and traders building diversified portfolios, Floor+ tokens near their floor are asymmetric bets — limited risk, unlimited reward.
-
-### Blue-Chip Token Pairs
-
-Like Stable+, Floor+ tokens can be paired with BTC, ETH, SOL, and other major assets. A BTC/Floor+ pair gives you Bitcoin exposure on one side and a rising-floor speculative asset on the other — the Floor+ side has full upside potential while the floor only moves up. For traders who want blue-chip pairing with more speculative upside than Stable+ offers, Floor+ is the natural choice.
+Floor+ tokens near their floor price are natural hedge positions. You know the downside is limited (the floor), and you get full upside. For agents building diversified portfolios, Floor+ tokens near their floor are asymmetric bets — limited risk, unlimited reward.
 
 ### Governance and Membership
 
@@ -201,68 +197,19 @@ result = client.factory.create_token(
 )
 ```
 
-**Step 4: Drive volume.** Your revenue comes from trading activity, not from selling your position. Create content. Build community. Give people reasons to trade. Every trade raises your floor and puts USDC in your wallet.
+**Step 4: Drive volume.** Your revenue comes from trading activity, not from dumping tokens. Create content. Build community. Give people reasons to trade. Every trade raises your floor and puts USDC in your wallet.
 
 ---
 
-## What Happens to Regular Tokens (And Why Floor+ Changes Everything)
+## The Honest Limitations
 
-To understand the magnitude of Floor+, you need to understand what happens on a *normal* token launch.
+**The floor doesn't mean the spot can't drop significantly.** With a 50% stability dial, the spot price could theoretically be 2x the floor. A 50% drop from the peak still puts you at the floor — which is higher than it was yesterday, but might be lower than what you paid if you bought at the peak.
 
-**The standard pump-and-exit death spiral:**
+**Low-volume tokens have slow-rising floors.** If nobody trades, fees don't generate, and the floor barely moves. Floor+ tokens need active communities to deliver on their value proposition.
 
-A team launches a token. Insiders hold 10-20% of supply — minted for free. The token pumps on hype. Then insiders start selling. Even a 10% mass selloff on a regular token hollows out the liquidity. The price craters. Retail holders panic sell. More liquidity drains. The token dies. Everyone except the insiders loses.
+**The stability dial is permanent.** If you set it wrong, there's no fix. A 50% stability token can't become 90% stability later. Choose carefully.
 
-This isn't a rare scenario. This is the *default outcome* for 95%+ of token launches across every chain.
-
-**On Floor+, that death spiral is structurally impossible:**
-
-- There are **zero pre-minted insider tokens.** Nobody holds tokens at a zero cost basis. The creator buys on the curve like everyone else.
-- When anyone sells, tokens are **burned and fees are injected back into the pool.** The floor rises.
-- Even if a large holder sells their entire position, the floor for remaining holders is **higher than before the sale** — not lower.
-- The liquidity pool can't be hollowed out because the bonding curve math ensures the floor value is always backed.
-
-On a regular token, a whale selling 10% of supply is a catastrophe. On Floor+, a whale selling 10% of supply *raises the floor for everyone else.* The mechanics are inverted.
-
----
-
-## Liquid Vesting: Why Creators Never Need to Mass-Sell
-
-This is the part that changes the game for creators — and the communities that support them.
-
-On every other platform, token creators face a brutal choice: hold your tokens and hope the price goes up, or sell your tokens to actually pay your bills. Most choose to sell. The community watches the creator exit at their expense. The price collapses. Trust is destroyed.
-
-Basis solves this with **liquid vesting** — and it removes the incentive to sell entirely.
-
-Here's how it works:
-
-**1. Creator tokens vest over time** (cliff or gradual, configurable at launch). This part is standard — many platforms do vesting. But on most platforms, vested tokens just sit there, locked and useless until they unlock.
-
-**2. On Basis, vested tokens can be used as loan collateral — while still vesting.**
-
-The creator's tokens are locked in a vesting schedule. But the *floor value* of those tokens is real, backed USDC in the pool. So the creator can **borrow USDC against their vested tokens at 100% LTV** without selling a single token.
-
-```python
-# Creator takes a loan against vested tokens — no selling required
-result = client.vesting.take_loan_on_vesting(vesting_id)
-```
-
-**3. As the floor rises, the creator can refinance for more USDC.**
-
-Trading activity generates fees. Fees raise the floor. The creator's vested tokens are now worth more. They refinance the loan — extracting additional USDC — still without selling.
-
-**The result:** Creators get access to real profits, in USDC, without ever selling a token. The community never sees a mass selloff. The chart never shows a creator exit. Trust is maintained because the *system is designed so that large-scale selling is unnecessary.*
-
-**This applies to Stable+ tokens too.** Any creator with vested Stable+ tokens can borrow against the floor value and extract USDC profits as the floor appreciates — all while their tokens remain locked and vesting.
-
-**For token buyers, liquid vesting is a confidence signal.** When you see a token using it, you know:
-- The creator has committed to a vesting schedule (can't exit early)
-- The creator has a path to profits without selling (won't mass-sell when tokens unlock)
-- The system incentivizes the creator to *grow trading volume* (more fees → higher floor → more borrowable USDC)
-
-The creator's incentive and the community's incentive are perfectly aligned. Both want volume. Both want a rising floor. Both benefit from long-term growth.
-
-This has never existed in crypto before. Liquid vesting on a floor-price token with 100% LTV lending is a genuinely new financial primitive — and it solves the single biggest trust problem in token launches.
+**Novelty risk.** Like Stable+, Floor+ is a new model. The math checks out. The contracts are deployed. But real-world market behavior over full cycles hasn't been tested at scale yet.
 
 ---
 
@@ -274,7 +221,7 @@ For a decade, crypto's answer has been "you can't." Every token, every coin, eve
 
 Floor+ changes the equation. Full upside. Rising floor. One-way safety net.
 
-For agents, traders, and creators building portfolios, launching communities, or managing treasuries — this is the risk profile that finally makes sense. Not "we hope it doesn't crash." Not "we have insurance against loss." But "the math literally prevents the floor from going down."
+For agents building portfolios, launching communities, or managing treasuries — this is the risk profile that finally makes sense. Not "we hope it doesn't crash." Not "we have insurance against loss." But "the math literally prevents the floor from going down."
 
 Speculation with a safety net. Finally.
 

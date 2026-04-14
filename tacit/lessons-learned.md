@@ -1,15 +1,6 @@
 # Lessons Learned
 _Hard-won knowledge from production incidents and development._
 
-## Operational
-
-### --fresh Flag Wipes All State (2026-04-12)
-- `--fresh` on the paper bot skips state restore and starts clean — wiping all 20 engine positions and $76K equity history.
-- I blindly copied the command from HEARTBEAT.md which had `--fresh` as a first-launch option.
-- Recovered from git auto-backup (`engine_state.json` at commit 2cecd3d92).
-- **Rule**: Never use `--fresh` for routine restarts. Only for intentional clean starts. Updated HEARTBEAT.md with explicit warning.
-- **Rule**: Before running any bot command, understand every flag. Don't cargo-cult from docs.
-
 ## Code & Architecture
 
 ### DB Path Resolution (2026-03-09, 2026-03-10)

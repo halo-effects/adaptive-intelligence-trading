@@ -16,23 +16,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Contract addresses (defaults from SDK — can override via env)
-MAINTOKEN = os.getenv("BASIS_MAINTOKEN", "0x76ACb5F98A422995a801008c8b7b28dBC23946Ff")
-USDB = os.getenv("BASIS_USDB", "0x78dD776204aA7e06BaF488959a90142f0B3027CE")
-MARKET_TRADING = os.getenv("BASIS_MARKET_TRADING", "0xCb64910a19B3641eb600b904741a074578Dda3F7")
+MAINTOKEN = os.getenv("BASIS_MAINTOKEN", "0x60Cd4E22C62c23d094479f38b1a80a1829e8D361")
+USDC = os.getenv("BASIS_USDC", "0xb957F3d754267B01bb1581344eFFe9726522F236")
+MARKET_TRADING = os.getenv("BASIS_MARKET_TRADING", "0x35F4874425868efaba198CB32273F465DcEcb7cC")
 
 # Decimal constants
-USDB_DECIMALS = 18
+USDC_DECIMALS = 6
 TOKEN_DECIMALS = 18
 
 
-def usdb_to_raw(amount: float) -> int:
-    """Convert human-readable USDB to raw units (18 decimals)."""
-    return int(amount * 10**USDB_DECIMALS)
+def usdc_to_raw(amount: float) -> int:
+    """Convert human-readable USDC to raw units (6 decimals)."""
+    return int(amount * 10**USDC_DECIMALS)
 
 
-def raw_to_usdb(raw: int) -> float:
-    """Convert raw USDB units to human-readable."""
-    return raw / 10**USDB_DECIMALS
+def raw_to_usdc(raw: int) -> float:
+    """Convert raw USDC units to human-readable."""
+    return raw / 10**USDC_DECIMALS
 
 
 def token_to_raw(amount: float) -> int:
@@ -43,12 +43,6 @@ def token_to_raw(amount: float) -> int:
 def raw_to_token(raw: int) -> float:
     """Convert raw token units to human-readable."""
     return raw / 10**TOKEN_DECIMALS
-
-
-# Backward-compatible aliases
-usdc_to_raw = usdb_to_raw
-raw_to_usdc = raw_to_usdb
-USDC = USDB
 
 
 def get_client(require_write: bool = False, register_agent: bool = False):

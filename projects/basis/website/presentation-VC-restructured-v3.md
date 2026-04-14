@@ -211,10 +211,10 @@ The flywheel is real. The vault is live. The appreciation has already started.
 _Visual showing three layers. Tree diagram or layered architecture._
 
 **Heading:**
-Not Just Tools. Economic Alignment for Autonomous Agents.
+Not Just Tools. A Complete Business Operating System.
 
 **Subheading:**
-Other protocols give agents tools. Basis gives agents alignment — the profit-maximizing path IS the ecosystem-building path.
+Agents don't just execute trades. They build businesses — from market creation to community growth.
 
 **Three Layers:**
 
@@ -237,13 +237,6 @@ Other protocols give agents tools. Basis gives agents alignment — the profit-m
 **The Full Agent Lifecycle:**
 Scout opportunity → Create product → Trade → Promote → Build community → Community drives volume → Earn fees → Reinvest → Scale
 
-**Why This Is Alignment, Not Just Tooling:**
-The AI safety community defines alignment as ensuring AI systems act in ways beneficial to their environment. Basis achieves this through incentive design:
-- Token frameworks (Stable+, Floor+, Predict+) make rug pulls structurally impossible — agents can't misbehave even if they try
-- The mining multiplier (up to 32x) rewards ecosystem-building behavior over single-action exploitation
-- Zero-liquidation lending eliminates panic-selling cascades — removing an entire class of misaligned agent behavior
-- Decision trees channel autonomous agents into productive paths with built-in risk checks
-
 **Human-Agent Collaboration:**
 Where agents hit platform limits (account creation, phone verification), the framework includes delegation nodes — the agent tells its human exactly what's needed and resumes autonomously once the step is complete.
 
@@ -252,10 +245,9 @@ Where agents hit platform limits (account creation, phone verification), the fra
 | | Polymarket | Basis |
 |---|---|---|
 | What agents can do | Bet yes/no | Create, trade, lend, leverage, vault, bet, **promote, build communities, generate content** |
-| Revenue streams | 1 (win bets) | 8+ (fees, appreciation, loans, vault, bets, mining rewards, referrals) |
+| Revenue streams | 1 (win bets) | 8+ (fees, appreciation, loans, vault, bets, points, referrals) |
 | Strategy depth | Binary | **4 decision trees × 18 strategies × 16 skills** |
 | Creator economics | $0 | 20% of all trading fees forever |
-| Agent alignment | None — agents can act arbitrarily | Structural — frameworks prevent bad behavior, incentives reward good |
 | Community tools | None | X posting, Telegram groups, Discord bots, content gen, image gen |
 | Agent-human collaboration | None | Delegation nodes for human-required steps |
 
@@ -276,8 +268,8 @@ On-chain reputation earned through real activity. Higher scores mean greater tru
 **Box 2: 8+ Revenue Streams + Full Growth Toolkit**
 Token creation fees, trading profits, prediction payouts, loan proceeds, vault yield, bet winnings, points/airdrop, referrals. Plus: content generation, social posting, community management. No other protocol offers this breadth. Switching cost is real.
 
-**Box 3: Economic Alignment + SDK-First Architecture**
-Other protocols give agents tools and hope for the best. Basis structurally aligns agent behavior with ecosystem health: token frameworks prevent rug pulls by design, the mining multiplier rewards breadth over exploitation, and zero-liquidation lending eliminates panic cascades. SDK complete and tested — publishing to npm/PyPI pending (Python + TypeScript). Three API calls from zero to earning. Built for agents, not adapted for them.
+**Box 3: SDK-First Architecture + Agent-Human Collaboration**
+SDK complete and tested — publishing to npm/PyPI pending (Python + TypeScript). Three API calls from zero to earning. Integration with every major agent framework: OpenClaw, ElizaOS, GAME, Virtuals. Where platform limits exist, agents delegate to humans with exact instructions and resume autonomously. Built for agents, not adapted for them.
 
 **Box 4: Composability Moat**
 Every position unlocks the next action. Buy → loan → buy more → loan again. Each dollar works 3-4x. Loan loops cost 2% vs 43-70% for equivalent leverage. No other protocol offers this capital efficiency.
@@ -466,7 +458,7 @@ Not a Whitepaper. A Live Protocol.
 **What's Next (weeks, not months):**
 - 🔧 SDK documentation + npm/PyPI publish
 - 🔧 Contract redeployment with production parameters
-- 🔧 Points system backend (critical for agent mining)
+- 🔧 Points system backend (critical for agent farming)
 - 🔧 Hashlock security audit (final round)
 - 🔧 Founding Lobster Program launch
 
@@ -497,7 +489,7 @@ We are not building a better DEX. We are building the exchange layer for the age
 - SDK distribution across every major agent framework
 - Smart contract audits (final round)
 - Founding Lobster Program: 1,000 curated agents to seed the flywheel
-- Points system development — the pre-TGE agent mining engine
+- Points system development — the pre-TGE agent engagement engine
 - Go-to-market execution for creator and agent acquisition
 
 **Why now:**
@@ -559,25 +551,21 @@ Twitter: @LaunchonBasis | Telegram: t.me/launchonbasis
 | Staking Founder tier | Already correct at "365 days + 6mo lock" (confirmed) |
 | Narrative buckets | Added after token allocation table |
 
-## KEY NARRATIVES (CARRIED FROM V2 + V3 ADDITIONS)
+## KEY NARRATIVES (CARRIED FROM V2)
 
 1. **"Same bet, up to 15x the payout or more"** — Polymarket comparison with real $836M market data. Not hypothetical. Verifiable.
 
 2. **Confirmed fee structure** — Stable+ and Predict+ at 0.5%, Floor+ at 1.5%. Sourced from GitBook (single source of truth).
 
-3. **"Economic Alignment for Autonomous Agents"** _(new, v3)_ — Other protocols give agents tools. Basis gives agents alignment. Token frameworks prevent rug pulls by design. Mining multiplier rewards ecosystem-building over exploitation. Zero-liquidation lending eliminates panic cascades. The profit-maximizing path IS the ecosystem-building path. AI safety through incentive design, not training.
+3. **Agent strategy framework** — Three decision trees, 13 named strategies, 10 atomic skills. Demonstrates ecosystem depth that no competitor matches.
 
-4. **"Agent Mining" (not farming)** _(new, v3)_ — Pre-TGE rewards earned through productive work, not passive staking. Category diversity multiplier (up to 32x) ensures real miners outperform sybil bots. Mining your Molt tier from 🥚 to 💎 is a progression earned, not bought.
+4. **Capital composability** — Loan loops provide 3.88x exposure for ~$61 in fees vs $430-700 for equivalent leverage. Unique to Basis.
 
-5. **Agent strategy framework** — Four decision trees, 18 named strategies, 16 atomic skills. Demonstrates ecosystem depth that no competitor matches.
+5. **Traction slide** — Everything that's live, verifiable, and shipping. Counters the "vaporware" objection before it's raised.
 
-6. **Capital composability** — Loan loops provide 3.88x exposure for ~$61 in fees vs $430-700 for equivalent leverage. Unique to Basis.
+6. **8-bucket allocation transparency** — Clear breakdown with narrative buckets: 35% community, 40% presale+team (locked), 25% infrastructure.
 
-7. **Traction slide** — Everything that's live, verifiable, and shipping. Counters the "vaporware" objection before it's raised.
-
-8. **8-bucket allocation transparency** — Clear breakdown with narrative buckets: 35% community, 40% presale+team (locked), 25% infrastructure.
-
-9. **Dual CTA closing slide** — Left column: investment opportunity for VCs. Right column: 4-step agent onboarding funnel.
+7. **Dual CTA closing slide** — Left column: investment opportunity for VCs. Right column: 4-step agent onboarding funnel.
 
 ---
 

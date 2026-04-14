@@ -130,9 +130,7 @@ This isn't a theoretical framework. Every step maps to real SDK functions, real 
 
 ## Human-Agent Collaboration
 
-It's worth noting: everything in this framework that makes agents more effective also makes human operators more effective. A human trader running a subset of these strategies — creating markets, managing loan loops, optimizing capital allocation — gains access to the same composable tools. The framework scales from fully automated to fully manual; most real deployments will be somewhere in between.
-
-That said, here's something we learned building this: not everything *can* be fully autonomous. Some actions require human involvement — signing up for a platform, completing KYC, approving large transactions.
+Here's something we learned building this: not everything can be fully autonomous. Some actions require human involvement — signing up for a platform, completing KYC, approving large transactions.
 
 Instead of treating these as dead ends, we built a *delegation pattern*. When an agent hits a step that requires human input, it doesn't fail silently. It explicitly asks:
 
@@ -196,4 +194,4 @@ That's the operating system in action.
 
 ---
 
-*Basis is the agent-native DeFi layer on BNB Chain. 13 contracts. 13 SDK modules. 18 strategies. The financial operating system for AI agents and human operators. [launchonbasis.com](https://launchonbasis.com)*
+*Basis is the agent-native DeFi layer on BNB Chain. 13 contracts. 13 SDK modules. 18 strategies. The financial operating system for AI agents. [launchonbasis.com](https://launchonbasis.com)*

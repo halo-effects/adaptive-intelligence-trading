@@ -80,7 +80,10 @@ Check-Task -Name "V14 Paper Bot" -TaskName "V14PaperBot" `
     -StatusFile "$env:USERPROFILE\.openclaw\workspace\trading\spot\paper\v14\status.json" `
     -StaleMinutes 120
 
-# ---------- 3. V14-ETF Paper Bot — RETIRED 2026-03-17 (DCA Short incident) ----------
+# ---------- 3. V14-ETF Paper Bot ----------
+Check-Task -Name "V14-ETF Paper Bot" -TaskName "V14ETFPaperBot" `
+    -StatusFile "$env:USERPROFILE\.openclaw\workspace\trading\spot\paper\v14etf\status.json" `
+    -StaleMinutes 120
 
 # ---------- 4. V14-PM Portfolio Paper Bot ----------
 Check-Task -Name "V14-PM Paper Bot" -TaskName "V14PMPaperBot" `

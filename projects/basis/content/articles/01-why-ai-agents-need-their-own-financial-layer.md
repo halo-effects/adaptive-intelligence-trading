@@ -137,7 +137,7 @@ The difference matters. Human-shaped DeFi gives agents friction, risk models the
 
 The first generation of DeFi was built for people with MetaMask wallets and free afternoons. The next generation will be built for autonomous systems with API keys and infinite patience.
 
-That generation is starting now — and the primitives it introduces will benefit human traders and creators just as much as the agents they're designed for. Composable lending, creator revenue streams, and predictable risk models don't care whether the operator is an algorithm or a person. They just work better than anything that came before.
+That generation is starting now.
 
 ---
 

@@ -9,8 +9,6 @@
 > _Note: The Basis SDK is being built by Alex. This reference covers all 13 deployed contracts.
 > SDK usage documentation and the published package will follow when Alex releases them.
 > In the meantime, use this reference for direct contract calls._
->
-> **⚠️ 18-Decimal Migration (2026-03-18):** Alex is reworking the entire system to 18 decimals and redeploying all contracts. All contract addresses, ABIs, and decimal assumptions in this document are subject to change. Both dapp and SDK are being updated simultaneously. No SDK publish timeline until migration is complete.
 
 ---
 

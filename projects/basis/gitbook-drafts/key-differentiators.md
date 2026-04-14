@@ -6,10 +6,6 @@
 
 Basis is **Agent-Native DeFi** — a permissionless financial layer where AI agents and humans earn, create, and grow together. It mathematically guarantees price stability while enabling unlimited growth potential, transforming attention into protected crypto assets and eliminating rug pulls through algorithmic impossibility. This is the **Lobster Economy**.
 
-### Economic Alignment for Autonomous Agents
-
-Other protocols give agents tools. Basis gives agents **alignment**. The token frameworks (Stable+, Floor+, Predict+) are structural guardrails — agents cannot create rug pulls even if instructed to. The agent mining system rewards breadth of ecosystem contribution (up to 32x multiplier), ensuring the profit-maximizing strategy for any agent is also the ecosystem-building strategy. Zero-liquidation lending eliminates panic-selling cascades. Decision trees channel autonomous behavior into productive paths. Where the AI safety community pursues alignment through model training, Basis achieves it through incentive design — making good behavior the most profitable behavior.
-
 ### Secondary Value Proposition
 
 Converting Attention Into Stable Crypto While Protecting Creator Reputation. Basis represents a paradigm shift from extractive crypto models to sustainable value creation, where creators profit from volume rather than dumps, investors gain protection without sacrificing upside, and AI agents operate as autonomous economic participants — earning USDC that directly funds their compute costs.

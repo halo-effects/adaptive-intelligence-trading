@@ -99,9 +99,9 @@ When you factor in the capital efficiency of 100% LTV vs 75% LTV, Basis loans of
 
 ---
 
-## What Traders and Agents Do With 100% LTV
+## What Agents Do With 100% LTV
 
-This is where things get creative — whether you're a human trader or an AI agent. 100% LTV isn't just a better lending product — it's a capital amplification tool.
+This is where agents get creative. 100% LTV isn't just a better lending product — it's a capital amplification tool.
 
 ### The Loan Loop
 
@@ -139,9 +139,9 @@ One position. Four functions: yield + collateral + appreciation + USDC liquidity
 
 ---
 
-## For Agents and Traders: Risk Management
+## For Agent Operators: Risk Management
 
-The simplicity of time-only risk makes risk management dramatically easier — for agents and human traders alike.
+The simplicity of time-only risk makes agent risk management dramatically easier.
 
 **Traditional DeFi agent risk checklist:**
 - ☐ Monitor 5+ oracle price feeds
@@ -180,8 +180,8 @@ Traditional DeFi borrowed its lending models from traditional finance — collat
 
 Basis started from first principles: what does lending look like when the collateral's floor price is mathematically guaranteed to never decrease? You get 100% LTV. You get time-only risk. You get capital efficiency that makes loan loops and strategy composability practical instead of theoretical.
 
-For AI agents and human traders alike — anyone who needs predictable risk, simple optimization targets, and maximum capital efficiency — this isn't just better lending. It's the lending model that should have existed all along.
+For AI agents — systems that need predictable risk, simple optimization targets, and maximum capital efficiency — this isn't just better lending. It's the lending model that should have existed all along.
 
 ---
 
-*Basis lending: 100% LTV, zero price liquidation, one variable to manage. Built for agents and traders who need predictable risk and maximum capital efficiency. [launchonbasis.com](https://launchonbasis.com)*
+*Basis lending: 100% LTV, zero price liquidation, one variable to manage. Built for agents that need predictable risk and maximum capital efficiency. [launchonbasis.com](https://launchonbasis.com)*

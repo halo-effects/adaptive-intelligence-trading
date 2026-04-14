@@ -75,11 +75,11 @@ Stable+ has no peg to defend. There's no paired governance token propping it up.
 
 ### It's not a Ponzi or pyramid.
 
-The common skeptic response: "If the price can only go up, someone has to lose."
+The common skeptic response: "If the price can only go up, someone has to be the bag holder."
 
 Here's why that doesn't apply: every buy adds real USDC to the pool. There are no phantom assets. No leverage. No borrowed reserves. The pool holds exactly the USDC that was put in (minus what was withdrawn through sells, plus the fees recaptured). 
 
-When a seller exits, they get real USDC from the pool, and the remaining holders have a *higher* floor. The "last person in" isn't left holding depreciating tokens — they're holding a token with the highest floor price in the token's history.
+When a seller exits, they get real USDC from the pool, and the remaining holders have a *higher* floor. The "last person in" isn't holding a bag — they're holding a token with the highest floor price in the token's history.
 
 ---
 
@@ -91,9 +91,9 @@ DAOs and protocols need a place to park capital that doesn't lose value. Treasur
 
 Stable+ is a treasury asset that mechanically appreciates. Every transaction on the token adds to the floor. A project that holds its treasury in Stable+ tokens is holding an asset with a one-way price trajectory. It's not yield farming — it's structural appreciation from trading activity.
 
-### For Agents and Traders Managing Capital
+### For Agent Treasuries Specifically
 
-AI agents and human traders both need predictable base assets. Nobody can build reliable strategies on top of collateral that might crash 30% overnight. Stable+ gives any operator — automated or human — a base token with a guaranteed floor, making every calculation about leverage, loans, and capital allocation simpler and more reliable.
+AI agents managing capital need predictable base assets. An agent can't build reliable strategies on top of collateral that might crash 30% overnight. Stable+ gives agents a base token with a guaranteed floor — making every calculation about leverage, loans, and capital allocation simpler and more reliable.
 
 ### For Loan Collateral
 
@@ -126,14 +126,6 @@ Your Stable+ tokens are locked as collateral. You get USDC equal to their full f
 Because the floor price equals the spot price on Stable+ (there's no gap between them), leverage on Stable+ tokens is maximized. The leverage ratio is calculated against the floor price — and since floor = spot, you get the highest possible leverage.
 
 This is why Stable+ tokens can support dynamic leverage up to ~36x depending on pool liquidity and position size. The math works because the floor gives leverage a natural, non-liquidatable reference point.
-
-### For Blue-Chip Token Pairs
-
-Stable+ tokens aren't limited to USDC pairs. They can be paired with BTC, ETH, Solana, and any other major asset — creating a rising-floor trading pair for blue-chip tokens.
-
-Consider what a BTC/Stable+ pair looks like: the BTC side moves with the market, while the Stable+ side can only go up. Compare that to MicroStrategy (MSTR), which is essentially leveraged Bitcoin exposure with full downside risk. A BTC/Stable+ pair gives you Bitcoin market exposure on one side and structural appreciation on the other — without the leveraged blowup risk that comes with MSTR-style instruments.
-
-The same logic applies to ETH/Stable+, SOL/Stable+, or any other major token pair. Wherever you want rising-floor stability on one side of a trade, Stable+ can serve that role.
 
 ### For Prediction Markets
 
@@ -181,38 +173,27 @@ Even in the beta phase, patterns are forming:
 
 **Agent Identity Tokens:** AI agents launching Stable+ tokens as their on-chain identity. Community members buy to support the agent. Every trade raises the floor. The agent's "brand" has a literal price floor that can only go up.
 
-**Creator Brand Tokens:** Human creators, analysts, and community builders launching Stable+ tokens as their on-chain brand. Every trade from supporters raises the floor and generates creator fees. The floor never drops — so supporters never feel like they're buying into something that can go to zero.
-
 **Event Currencies:** Conferences, communities, and DAOs creating Stable+ tokens as event currencies. Participants buy in, trade among themselves, and when the event ends, every holder has tokens worth more than they paid.
 
 **Savings Instruments:** Users parking USDC in Stable+ tokens as a savings strategy. Not yield farming with its risks — just a token that mathematically can't lose value relative to its floor.
 
-**Base Pair Tokens:** Protocols and traders using Stable+ as the base side of trading pairs — for stablecoins, BTC, ETH, SOL, or any other asset. The base pair never crashes, giving the whole trading pair a structural floor.
+**Base Pair Tokens:** Protocols using Stable+ as trading pairs for other assets, knowing the base pair will never crash.
 
 ---
 
-## Liquid Vesting: Profits Without Selling
+## The Uncomfortable Question
 
-One of the most powerful features of Stable+ is what it enables for token creators through **liquid vesting**.
+"If the price can only go up, what's the catch?"
 
-On every other platform, creators who vest their tokens face an impossible choice: wait for tokens to unlock, or find another way to pay the bills. When tokens finally unlock, the pressure to sell is enormous — and the community pays the price.
+Fair question. Here are the honest limitations:
 
-On Basis, vested Stable+ tokens can be used as **loan collateral while still vesting.** The creator borrows USDC against the floor value of their locked tokens — extracting real profits without selling a single token.
+**The price can go up slowly.** If trading volume is low, fee injection is low, and the floor barely moves. Stable+ isn't a get-rich-quick instrument — it's a structural appreciation vehicle. In a dead market, it just... sits there. Not losing value, but not rapidly gaining either.
 
-```python
-# Creator borrows against vested tokens — no selling required
-result = client.vesting.take_loan_on_vesting(vesting_id)
-```
+**Liquidity on exit depends on buyers.** You can always sell at the floor price back to the contract — but if you want to sell a large amount, the bonding curve means you'll move the price. Large exits take a price impact, though the floor remains intact for remaining holders.
 
-And because Stable+ floors only go up, the creator can **refinance over time** — as the floor appreciates from trading fees, the vested position is worth more, and additional USDC can be borrowed.
+**It's new.** The math is sound. The contracts are deployed. But this model hasn't been tested through a full crypto bear market cycle yet. Novelty carries its own risk — even when the mechanics are provably correct.
 
-**What this means for buyers:**
-- Creators have zero incentive to sell when tokens unlock
-- The chart never shows a creator selloff
-- Creator revenue comes from growing the community (more volume = higher floor = more borrowable USDC)
-- Buyer confidence is structurally built into the token model
-
-Liquid vesting turns the relationship between creators and communities from adversarial to cooperative. The creator wants exactly what the community wants: a healthy, active, growing token.
+These aren't hidden gotchas. They're the honest tradeoffs of a new financial primitive. The core property — the floor can only go up — is mathematically guaranteed. Everything else is market dynamics.
 
 ---
 
@@ -222,7 +203,7 @@ Crypto has had thousands of token models. All of them share one property: the pr
 
 Stable+ removes that variable. Not with promises. Not with reserves. Not with governance. With math.
 
-For treasuries, for collateral, for agent base assets, for blue-chip pairs, for prediction markets, for any trader or creator who wants exposure to crypto without the existential risk of going to zero — this is something genuinely new.
+For treasuries, for collateral, for agent base assets, for prediction markets, for anyone who wants exposure to crypto without the existential risk of going to zero — this is something genuinely new.
 
 The token that can only go up. Not a meme. A mechanism.
 

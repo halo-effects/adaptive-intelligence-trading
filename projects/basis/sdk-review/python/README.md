@@ -1,1 +1,0 @@
-# Basis Ecosystem Python SDK

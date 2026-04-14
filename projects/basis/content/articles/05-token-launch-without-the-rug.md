@@ -1,14 +1,14 @@
 # Token Launch Without the Rug
 
-*What if the creator literally couldn't sell at the community's expense? Not "trust me" — mathematically impossible.*
+*What if the creator literally couldn't dump on you? Not "trust me" — mathematically impossible.*
 
 ---
 
 The token launch space has a trust problem. And everyone knows it.
 
-On Pump.fun, over 95% of tokens launched go to zero. Creators mint tokens, hype them up, exit their pre-allocated positions, and disappear. The platform itself doesn't care — it takes fees on the way up and the way down. The incentives are aligned against the community from day one.
+On Pump.fun, over 95% of tokens launched go to zero. Creators mint tokens, hype them up, dump their pre-allocated bags, and disappear. The platform itself doesn't care — it takes fees on the way up and the way down. The incentives are aligned against the community from day one.
 
-Solana's token ecosystem has become a speedrun to exit liquidity. "Fair launch" has become an ironic phrase. And the agents operating in this space? They're the fastest exit-seekers of all — deploying, generating hype, and exiting in minutes.
+Solana's token ecosystem has become a speedrun to exit liquidity. "Fair launch" has become an ironic phrase. And the agents operating in this space? They're the fastest rugs of all — deploying, pumping, and dumping in minutes.
 
 There's a different way to build this.
 
@@ -18,12 +18,12 @@ There's a different way to build this.
 
 Every rug pull starts with the same mechanic: the creator holds tokens that were minted before anyone else could buy.
 
-It doesn't matter how it's packaged — "team allocation," "dev fund," "strategic reserve" — the result is the same. The creator has tokens at a cost basis of zero. Everyone else buys at market price. The creator liquidates their holdings. The price collapses. The community is left holding depreciating tokens.
+It doesn't matter how it's packaged — "team allocation," "dev fund," "strategic reserve" — the result is the same. The creator has tokens at a cost basis of zero. Everyone else buys at market price. The creator sells. The price collapses. Community holds the bag.
 
 This is such a fundamental problem that the entire token launch industry has been built around *managing* it rather than *eliminating* it:
 
-- Vesting schedules (delays the selloff, doesn't prevent it)
-- Locked liquidity (prevents LP drain, not token selloffs)
+- Vesting schedules (delays the dump, doesn't prevent it)
+- Locked liquidity (prevents LP rug, not token dumps)
 - Renounced ownership (prevents function changes, not pre-minted selling)
 - Audit certificates (checks code, not economic design)
 
@@ -77,7 +77,7 @@ The Floor+ token has a rising floor price with a customizable stability dial (se
 
 ## How Creators Actually Earn
 
-If creators can't pre-mint and sell off, how do they make money?
+If creators can't pre-mint and dump, how do they make money?
 
 Through *sustainable revenue*, not extraction.
 
@@ -90,7 +90,7 @@ The remaining fee split:
 - 4% → Presale participants
 - 60% → Platform
 
-This completely realigns incentives. The creator doesn't want to sell off — they want *volume*. More trading means more fees. More fees mean more USDC in the creator's wallet. The creator's best strategy is to build a healthy, active community that trades regularly.
+This completely realigns incentives. The creator doesn't want to dump — they want *volume*. More trading means more fees. More fees mean more USDC in the creator's wallet. The creator's best strategy is to build a healthy, active community that trades regularly.
 
 **Creator revenue is proportional to the token's success, not its failure.** That's the opposite of the Pump.fun model, where creators profit by extracting value on the way out.
 
@@ -106,23 +106,21 @@ For Stable+ tokens, the surge is modest (up to ~0.5%). For Floor+ tokens with hi
 
 Why does this matter for creators? Because hype cycles — the moments when everyone is buying — generate the most creator revenue. The surge tax amplifies this, rewarding creators who build tokens that attract genuine interest.
 
-And here's the anti-gaming property: surge tax makes pump-and-exit schemes *expensive*. If you try to artificially inflate volume, you're paying elevated fees on every trade. The cost of manipulation scales with the manipulation itself.
+And here's the anti-gaming property: surge tax makes pump-and-dump *expensive*. If you try to artificially inflate volume, you're paying elevated fees on every trade. The cost of manipulation scales with the manipulation itself.
 
 ---
 
-## What Agents and Creators Build With This
+## What Agents Build With This
 
-For AI agents and human creators alike, token creation isn't just about launching a coin. It's about building a *revenue-generating asset*.
+For AI agents, token creation isn't just about launching a coin. It's about building a *revenue-generating asset*.
 
 **Agent Identity Tokens:** An agent launches a Floor+ token as its public identity. Community members buy in to support the agent. Every trade generates creator fees for the agent. The token becomes both a brand and an income stream.
 
-**Creator Brand Tokens:** A human creator — writer, analyst, community builder — launches a Floor+ token as their on-chain brand. Supporters buy in, trading activity pays the creator, and the floor only rises. No pre-allocated bags, no temptation to exit at the community's expense.
+**Market-Specific Tokens:** An agent creating prediction markets can launch associated tokens. A sports prediction agent launches "SportsBet+" — a token that serves as the base pair for its prediction markets. All prediction market trading generates token trading volume. All token trading generates creator fees.
 
-**Market-Specific Tokens:** An agent or trader creating prediction markets can launch associated tokens. A sports prediction agent launches "SportsBet+" — a token that serves as the base pair for its prediction markets. All prediction market trading generates token trading volume. All token trading generates creator fees.
+**Treasury Tokens:** An agent managing capital launches a Stable+ token as its treasury. Deposits from users mint new tokens. The agent manages the treasury, generating returns. Stable+ means the price only goes up — depositors have floor-price guarantees.
 
-**Treasury Tokens:** An agent or DAO managing capital launches a Stable+ token as its treasury. Deposits mint new tokens. The treasury manager generates returns. Stable+ means the price only goes up — depositors have floor-price guarantees. Stable+ tokens can also be paired with BTC, ETH, SOL, and other major assets as the rising-floor side of a blue-chip trading pair.
-
-**Community Tokens:** An agent or human community builder launches a Floor+ token. Community participation drives volume. Volume drives creator fees. Creator fees fund more community building.
+**Community Tokens:** An agent building a community around a topic — AI research, market analysis, alpha calls — launches a Floor+ token. Community participation drives volume. Volume drives creator fees. Creator fees fund more community building.
 
 In each case, the token creation isn't the end goal — it's the beginning of a revenue flywheel.
 
@@ -158,7 +156,7 @@ result = client.factory.create_token(
 |---------|---------------------|-------|
 | Pre-mint | Yes (creator holds bags) | Zero (mathematically impossible) |
 | Rug pull possible | Yes | No |
-| Creator revenue model | Sell pre-minted tokens | 20% of trading fees forever |
+| Creator revenue model | Dump tokens | 20% of trading fees forever |
 | Price floor | None | Enforced by bonding curve |
 | Sustainability | Minutes to hours | Permanent revenue stream |
 | Token utility | Speculation only | Collateral, lending, prediction markets |
@@ -171,14 +169,14 @@ The difference isn't subtle. One model is built on extraction. The other is buil
 
 ## The Punchline
 
-Token launches don't need to be predatory. They don't need to be a race to the exit. They don't need "trust me" promises that evaporate the moment the chart goes green.
+Token launches don't need to be predatory. They don't need to be a race to dump. They don't need "trust me" promises that evaporate the moment the chart goes green.
 
 When you remove pre-minting, replace extraction with fees, and enforce floor prices mathematically, you get something that hasn't existed in crypto before: token launches where the creator's incentive is to *build*, not to *exit*.
 
 For AI agents — systems that can operate 24/7, build communities autonomously, and optimize for long-term revenue — this is the token model that finally makes sense.
 
-Not because it's safer (it is). Not because it's fairer (it is). But because it's *profitable to be honest*. And for any operator — agent or human — that's all the incentive it needs.
+Not because it's safer (it is). Not because it's fairer (it is). But because it's *profitable to be honest*. And for an optimizing agent, that's all the incentive it needs.
 
 ---
 
-*Basis: Zero pre-mint tokens. 100% elastic supply. Creator fees forever. The token launch model built for builders, not exit-seekers. [launchonbasis.com](https://launchonbasis.com)*
+*Basis: Zero pre-mint tokens. 100% elastic supply. Creator fees forever. The token launch model built for builders, not dumpers. [launchonbasis.com](https://launchonbasis.com)*

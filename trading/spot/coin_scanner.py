@@ -1,4 +1,4 @@
-"""
+﻿"""
 V13 Coin Scanner ΓÇö Backtest all CFGI-compatible tokens through V13 phase engine.
 Outputs ranked results for the dashboard.
 """
@@ -24,47 +24,39 @@ from trading.spot.engine.v13_phase_backtest_v8 import V13BacktestV8, V13Config
 
 DB_PATH = Path(__file__).resolve().parent / 'data' / 'candles.db'
 
-# 50-coin Aster Perps universe (updated 2026-03-19)
-# All coins trade as COIN/USDT perpetual on Aster DEX
-# Note: PEPE, BONK, FLOKI use 1000-prefix on Aster (1000PEPEUSDT etc.)
 ALL_TOKENS = {
-    # Established (pre-2024)
-    "AAVE": "AAVE/USDT", "ADA": "ADA/USDT",   "ARB": "ARB/USDT",
-    "ATOM": "ATOM/USDT", "AVAX": "AVAX/USDT", "BTC": "BTC/USDT",
-    "CRV":  "CRV/USDT",  "DOGE": "DOGE/USDT", "DOT": "DOT/USDT",
-    "ETH":  "ETH/USDT",  "FIL":  "FIL/USDT",  "HBAR": "HBAR/USDT",
-    "INJ":  "INJ/USDT",  "LINK": "LINK/USDT", "LTC": "LTC/USDT",
-    "NEAR": "NEAR/USDT", "SNX":  "SNX/USDT",  "SOL": "SOL/USDT",
-    "UNI":  "UNI/USDT",  "XRP":  "XRP/USDT",  "ZEC": "ZEC/USDT",
-    # DeFi / Mid-cap
-    "JUP":    "JUP/USDT",    "PENDLE": "PENDLE/USDT",
-    "STX":    "STX/USDT",    "ZRO":    "ZRO/USDT",
-    # High-beta / Speculative
-    "APT":   "APT/USDT",  "BONK":  "BONK/USDT",  "FLOKI": "FLOKI/USDT",
-    "JTO":   "JTO/USDT",  "PEPE":  "PEPE/USDT",  "PYTH":  "PYTH/USDT",
-    "SEI":   "SEI/USDT",  "SUI":   "SUI/USDT",   "TIA":   "TIA/USDT",
-    # AI / Infrastructure
-    "FET":     "FET/USDT",   "HYPE":    "HYPE/USDT",
-    "RENDER":  "RENDER/USDT","TAO":     "TAO/USDT",
-    "VIRTUAL": "VIRTUAL/USDT",
-    # New L1/L2
-    "BERA": "BERA/USDT", "INIT": "INIT/USDT", "IP":   "IP/USDT",
-    "MOVE": "MOVE/USDT", "S":    "S/USDT",
-    # Yield / RWA
-    "EIGEN": "EIGEN/USDT", "ENA": "ENA/USDT", "ONDO": "ONDO/USDT",
-    # DePIN / Other
-    "GRASS": "GRASS/USDT", "ORCA": "ORCA/USDT", "TRUMP": "TRUMP/USDT",
+    "AAVE": "AAVE/USDT", "ADA": "ADA/USDT", "ALGO": "ALGO/USDT",
+    "ARB": "ARB/USDT", "ASTER": "ASTER/USDT", "ATOM": "ATOM/USDT",
+    "AVAX": "AVAX/USDT", "AXS": "AXS/USDT", "BCH": "BCH/USDT",
+    "BNB": "BNB/USDT", "BONK": "BONK/USDT", "BTC": "BTC/USDT",
+    "CRV": "CRV/USDT", "DOGE": "DOGE/USDT", "DOT": "DOT/USDT",
+    "ETH": "ETH/USDT", "FET": "FET/USDT", "FIL": "FIL/USDT",
+    "FLOKI": "FLOKI/USDT", "FTM": "FTM/USDT", "GALA": "GALA/USDT",
+    "GRT": "GRT/USDT", "HYPE": "HYPE/USDC", "INJ": "INJ/USDT",
+    "JUP": "JUP/USDT", "LINK": "LINK/USDT", "LTC": "LTC/USDT",
+    "MANA": "MANA/USDT", "MATIC": "MATIC/USDT", "NEAR": "NEAR/USDT",
+    "PEPE": "PEPE/USDC", "RUNE": "RUNE/USDT", "SAND": "SAND/USDT",
+    "SEI": "SEI/USDT", "SHIB": "SHIB/USDT", "SOL": "SOL/USDT",
+    "SUI": "SUI/USDT", "TAO": "TAO/USDT", "TON": "TON/USDT",
+    "TRUMP": "TRUMP/USDC", "UNI": "UNI/USDT", "WIF": "WIF/USDT",
+    "XRP": "XRP/USDT", "ZEC": "ZEC/USDT",
 }
 
-# All 50 coins are on Aster Perps
-EXCHANGE_AVAILABILITY = {coin: ["aster_perp"] for coin in ALL_TOKENS}
+EXCHANGE_AVAILABILITY = {
+    "ASTER": ["aster"], "BNB": ["aster"],
+    "BTC": ["aster", "hyperliquid"], "DOGE": ["aster", "hyperliquid"],
+    "ETH": ["aster", "hyperliquid"], "SOL": ["aster", "hyperliquid"],
+    "XRP": ["aster", "hyperliquid"], "HYPE": ["hyperliquid"],
+    "PEPE": ["hyperliquid"], "TRUMP": ["hyperliquid"],
+    "LINK": ["hyperliquid"], "AVAX": ["hyperliquid"],
+    "SUI": ["hyperliquid"], "SEI": ["hyperliquid"],
+}
 
-# CFGI tokens that have a coin-specific Fear & Greed index
-# (subset of ALL_TOKENS — not all coins have CFGI data)
+# CFGI tokens that have coin-specific index
 CFGI_TOKENS = [
-    "BTC", "ETH", "SOL", "DOGE", "PEPE", "AVAX", "ADA", "XRP",
-    "DOT", "LINK", "UNI", "AAVE", "SUI", "ARB", "INJ", "TRUMP",
-    "HYPE", "NEAR", "ATOM", "FIL", "ONDO", "ENA",
+    "BTC", "ETH", "SOL", "BNB", "HYPE", "ASTER", "DOGE", "PEPE",
+    "AVAX", "ADA", "XRP", "DOT", "LINK", "UNI", "AAVE", "SUI",
+    "TON", "ARB", "INJ", "TRUMP",
 ]
 
 BACKTEST_DAYS = 90

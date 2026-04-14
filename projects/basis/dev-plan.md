@@ -54,8 +54,8 @@ The platform is fully on-chain. All financial operations (token creation, tradin
 - **All 7 core skill scripts wired to SDK API** (create-prediction, bet, create-token, trade, lend, vault, portfolio) — 2026-03-16
 
 ### 🔧 IN PROGRESS
-- **SDK npm/PyPI publish** — No timeline. Alex reworking entire system to 18 decimals, then redeploying. Updating both dapp and SDK. All current contract addresses/ABIs subject to change.
-- **Points system backend** — Alex will build it. Needs phased spec (manageable chunks). GeeGee to deliver phased build spec.
+- **SDK npm/PyPI publish** — Alex to publish when contracts finalized (beta). Docs are complete.
+- **Points system backend** — not started, no owner. Critical for `points.py` script.
 
 ### 📋 STILL TO BUILD
 
@@ -70,8 +70,7 @@ The platform is fully on-chain. All financial operations (token creation, tradin
 | Airdrop haircut/distribution contract | **New contract** | 🔴 Critical | TGE |
 | Presale notice-based vesting contracts | **New contract** | 🔴 Critical | TGE |
 | DEX/CEX liquidity deployment | Operations | 🔴 Critical | TGE |
-| Moltbook social integration | New build | 🟡 Important | Phase 1 growth channel |
-| Moltbook registry (on-chain) | New build | 🟡 Post-TGE | Agent social layer |
+| Moltbook registry | New build | 🟡 Post-TGE | Agent social layer |
 
 ---
 
@@ -94,14 +93,14 @@ Alex delivered full SDK documentation on 2026-03-16: `sdk-docs-2026-03-16.md`
 - Rate limits: 60 req/min (API key), 30 req/min (session)
 - ERC-8004 agent identity with auto-registration on `BasisClient.create(agent=True)`
 
-**npm/PyPI status:** NOT published yet. **18-decimal rework COMPLETE** (confirmed in SDK v2 docs, 2026-03-19). USDB is now 18 decimals (was 6). MAINTOKEN renamed STASIS/STASIS (was XETHER/STASIS). New contract addresses provided. All skill scripts need updating for 18-decimal USDB before they'll work. **Will publish as beta when ready — no test contracts in version history.**
+**npm/PyPI status:** NOT published yet. Alex confirmed contracts may get variable renames but no functionality changes. Will publish as beta when ready — no test contracts in version history. **All skill scripts wired to SDK API — will work as-is once package is installable.**
 
 **Remaining questions answered by SDK docs:**
 - ✅ SDK exposes read-only functions (prices, volumes, balances, market data) — no API key needed
 - ✅ Leverage simulator available before execution
 - ✅ `getPotentialPayout()` enables our Polymarket comparison tool with on-chain data
 - ✅ Tax rate queries (surge tax, base rates) available
-- ✅ All tokens use 18 decimals (USDB, MAINTOKEN, factory tokens) — 18-decimal rework confirmed 2026-03-19
+- ✅ USDC is 6 decimals, MAINTOKEN/factory tokens are 18 decimals
 
 ### 0.3 Points System Backend 🔧 NEW BUILD
 **Priority:** 🔴 Critical — drives airdrop incentives.
@@ -170,34 +169,6 @@ This is an **off-chain system** that tracks on-chain events and computes points.
   - Loan expiry warnings
 - WebSocket events needed: `new_market`, `new_token`, `resolution`, `trade_volume`
 - Note: `mixedBuy` (ASwap contract) is available for agents via SDK — NOT on frontend UI
-
-### 1.2b Moltbook Social Integration 🔧 NEW — Phase 1
-**Priority:** 🟡 Important
-**SDK-independent** — uses Moltbook's own REST API, not the Basis SDK.
-
-Moltbook is a Reddit-like social network built for AI agents. The primary Basis community
-lives at m/basis. Agents post trade receipts, market announcements, and P&L reports.
-This is a Phase 1 growth channel — running before TGE to build community and drive discovery.
-
-**Deliverables (all ready):**
-- ✅ `post-moltbook.py` skill script — register, post, comment, upvote, feed, engage
-- ✅ Content templates — `moltbook-content-templates.md`
-- ✅ Points spec updated — Social category added to category diversity multiplier
-
-**Points integration:**
-- Register on Moltbook → 200 pts (one-time)
-- First post → 100 pts (one-time)
-- Post mentioning Basis → 50 pts/post (cap 5/day)
-- Post receives upvotes → 5 pts/upvote (cap 500 base pts/day)
-- Refer new agent via Moltbook → 500 pts (one-time per referred wallet)
-- Social CP: posting 5+/week → +2 CP, receiving 10+ upvotes → +1 CP
-
-**Still to build:**
-- [ ] POST /api/v1/moltbook/log — activity logging endpoint (called by post-moltbook.py)
-- [ ] Points processor: read MoltbookActivity table, award social points
-- [ ] Create m/basis submolt on Moltbook
-
-**Rate limits (Moltbook-enforced):** 1 post/30 min | 50 comments/hr | 100 req/min
 
 ### 1.3 Shareable Activity Cards 🔧
 **Priority:** 🟡 Important
@@ -277,9 +248,7 @@ Haircut table:
 
 ## PHASE 3: TGE + MOLTBOOK
 
-### 3.1 Moltbook Registry 🔧 POST-TGE (on-chain layer)
-_Note: Moltbook social integration (post-moltbook.py, social points, m/basis community) is Phase 1 — see §1.2b. This section covers only the on-chain registry component._
-
+### 3.1 Moltbook Registry 🔧 POST-TGE
 - On-chain registry (minimal) + off-chain metadata (rich)
 - Agent profiles: wallet, name, framework, operator, activity stats
 - Reputation score from on-chain activity
@@ -332,13 +301,10 @@ UNBLOCKING AGENT TESTING (Do now):
   🔧 Points system backend + leaderboard ← CRITICAL BLOCKER
   ✅ OpenClaw basis-defi skill (wired to SDK API — 2026-03-16)
   🔧 Agent wallet registration (ERC-8004 in SDK — backend registration TBD)
-  ✅ Moltbook skill script (post-moltbook.py — SDK-independent, 2026-03-19)
 
 BEFORE AIRDROP SEASON:
   🔧 Shareable activity cards
   🔧 Prediction market enhancements
-  🔧 Moltbook activity log endpoint + points processor integration
-  🔧 Create m/basis submolt on Moltbook
 
 BEFORE TGE:
   🔧 BASIS staking contract (notice-based) ← NEW CONTRACT
@@ -362,12 +328,10 @@ POST-TGE:
 - ~~"Does SDK expose read-only functions?"~~ → Yes. All modules have read methods that work without private key. Prices, balances, market data, tax rates, leverage simulation.
 - ~~"Contract addresses?"~~ → All 14 addresses documented in SDK. Overridable via constructor options.
 
-**Answered (2026-03-18):**
-- ~~Oracle provider?~~ → **Chainlink for BTC up/down market.** All other markets: creator-managed resolution or Basis's own oracle system. Not a single provider decision — it's per-market-type.
-- ~~USDB faucet URL?~~ → **No standalone URL.** Faucet is built into the dapp: button on `launchonbasis.com/profile`, plus a hovering overlay on other pages if you have claimable USDB and balance < 2500. Also available via SDK.
-- ~~Points system ownership?~~ → **Alex will build it**, but wants it phased — manageable chunks, not dozens of features at once. Needs spec fleshed out in phases.
-
 **Still open:**
-1. Contract upgrade patterns in use (proxy, diamond, etc.)? Relevant for ABI stability.
-2. Audit timeline and preferred auditor?
-3. Confirm: Is `mixedBuy` the only ASwap function not exposed on frontend? Any others agent-only?
+1. Oracle provider decision for BNB Chain (Chainlink / API3 / custom)?
+2. Contract upgrade patterns in use (proxy, diamond, etc.)? Relevant for ABI stability.
+3. Audit timeline and preferred auditor?
+4. Confirm: Is `mixedBuy` the only ASwap function not exposed on frontend? Any others agent-only?
+5. What's the current USDB faucet URL and rate limits for test participants?
+6. Points system backend — who owns this? Critical blocker for airdrop farming.

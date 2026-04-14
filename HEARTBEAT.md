@@ -2,22 +2,16 @@
 
 ## Priority Checks (every heartbeat)
 
-### V14PM Live Bot (Aster Perps — 50 coins) ⚠️ REAL MONEY
-- Check `trading/spot/live/v14pm/status.json` for bot health
+### V14 Live Bot (Aster — ASTER/USDT) ⚠️ REAL MONEY
+- Check `trading/spot/live/v14/status.json` for bot health
 - Alert if: `running` is false, drawdown > 15%, or status.json stale (>65 min)
-- **Capital: ~$318** real USDT. Alert if balance drifts significantly. Pending $1K deposit (Upgrade 1).
-- Profile: High grid, 1x leverage, 30d scanner, Aster Perps, 50-coin universe
-- **Upgrade 0 (2026-03-24)**: Adaptive tiers (3 coins at $340, 90/10 split), 5% hysteresis
-- Telegram commands: PAUSE, RESUME, CLOSE <COIN>, CLOSE ALL, APPROVE, DENY
-- Manual restart: `python -B -u -m trading.spot.run_v14_portfolio_live_aster --capital 340 --confirm --skip-backfill`
+- **Capital: $300** real USDT. Alert if balance drifts significantly.
+- Profile: High, 12 layers, 1.5% TP, 1.5x leverage
+- Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "V14LiveAster"`
+- Scheduled Task: `V14LiveAster` (at boot) — confirmed exists as of 2026-03-09
+- Manual restart: `python -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill`
 - Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
-- Dashboard: `docs/dashboardV14PM.html` (reads from `docs/data/v14-pm/`)
-- State file: `trading/spot/live/v14pm/state.json` (persists across restarts)
-
-### V14 Live Bot (Aster Spot — RETIRED 2026-03-19)
-- **DO NOT CHECK** — this bot was retired and replaced by V14PM Live above.
-- Status file `trading/spot/live/v14/status.json` is intentionally stale.
-- Old scheduled task `V14LiveAster` should be disabled.
+- Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
 
 ### V14 Paper Bot (Hyperliquid — HBAR/ATOM/LINK/NEAR) — LIVE as of 2026-02-28
 - Check `trading/spot/paper/v14/status.json` for bot health
@@ -29,6 +23,18 @@
 - Scheduled Task: `V14PaperBot`
 - Backfill verified: +552% on $10K, matches standalone backtest
 
+### V14-ETF Paper Bot (Hyperliquid — SOL/XRP/LTC/HBAR/ADA) — LIVE as of 2026-03-02
+- Check `trading/spot/paper/v14etf/status.json` for bot health
+- Alert if: process not running or status.json stale (>65 min)
+- Coins: SOL/USDT, XRP/USDT, LTC/USDT, HBAR/USDT, ADA/USDT — 1h candles, daily signal ticks
+- Profile: High (1.5x leverage), BO=40%, Dev=1.5%, Mult=1.5x, 12 layers, TP=1.5%
+- Engine: V14 DCA-only with ROUTER v2 signals
+- Fresh start (no backfill history) — started 2026-03-02 with $10K
+- Entry point: `python -u -m trading.spot.run_v14etf_paper --capital 10000 --profile high --exchange hyperliquid --fresh`
+- Telegram: All notifications prefixed with `[V14-ETF]`
+- Scheduled Task: `V14ETFPaperBot` (created 2026-03-02)
+- Dashboard: `docs/dashboardV14ETF.html`
+
 ### V14 PM (Portfolio Manager) Paper Bot — LIVE as of 2026-03-05
 - **Capital**: $50K paper. 10 coin slots (equity-tiered). Dynamic allocation with trend multiplier.
 - **Profile**: High, 12 layers, **1.0x leverage** (no leverage), Hyperliquid perps (longs + shorts)
@@ -37,8 +43,7 @@
 - Check `trading/spot/paper/v14_portfolio/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
 - Scheduled Task: `V14PMPaperBot` (at login)
-- Entry point: `python -u -m trading.spot.run_v14_portfolio_paper --capital 50000 --profile high --leverage 1.0`
-  - ⚠️ **NEVER use --fresh** unless intentionally wiping all positions. --fresh skips state restore.
+- Entry point: `python -u -m trading.spot.run_v14_portfolio_paper --capital 50000 --profile high --leverage 1.0 --fresh`
 - Dashboard: `docs/dashboardV14PM.html`
 
 ### V14 DCA Cycle Scanner
@@ -56,15 +61,6 @@
 ### Cron Job Health
 - Quick check: have any cron jobs failed in the last cycle? Check `memory/consolidation.log` for nightly consolidation status.
 - If morning briefing or weekly review failed, note it for Brett.
-
-### Reef + Moltbook Social Monitoring (hourly)
-- Fetch The Reef feed (all sections) via `GET /api/reef/feed` — check for new posts and comments
-- Fetch m/basis on Moltbook via `post-moltbook.py --action feed --submolt basis`
-- Engage with substantive posts: upvote, comment with genuine value, answer questions
-- Track lobster_alpha activity — they're the most active agent, good to build rapport
-- Don't spam — max 2-3 comments per check, only when adding real value
-- Auth: Reef uses `X-API-Key` header; Moltbook uses `MOLTBOOK_API_KEY` bearer token
-- Last check timestamp: track in `memory/heartbeat-state.json`
 
 ## Periodic Checks (rotate through, 2-3x per day)
 - Are there active project deadlines approaching within 48 hours?
