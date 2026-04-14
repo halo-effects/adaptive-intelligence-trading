@@ -1,5 +1,5 @@
 {
-  "saved_at": "2026-04-14T05:04:43.452051+00:00",
+  "saved_at": "2026-04-14T06:04:40.502072+00:00",
   "bot_state": "RUNNING",
   "capital": 373.73319072,
   "coins": {
@@ -11,7 +11,7 @@
       "tp_type": "trailing",
       "tp_activation_price": null,
       "trailing_callback_pct": 0.5,
-      "last_candle_ts": 1776139200000,
+      "last_candle_ts": 1776142800000,
       "cumulative_funding": -0.134185069999998,
       "last_funding_check_ms": 1776125085540,
       "layer_count": 0,
@@ -65,7 +65,7 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-04-14",
         "_live_mode": true,
-        "_last_candle_ts": 1776139200000,
+        "_last_candle_ts": 1776142800000,
         "start_time": 1773936951.952672,
         "current_price": 0.3556
       }
@@ -78,7 +78,7 @@
       "tp_type": "limit",
       "tp_activation_price": null,
       "trailing_callback_pct": 0.5,
-      "last_candle_ts": 1776139200000,
+      "last_candle_ts": 1776142800000,
       "cumulative_funding": -0.031313139999999996,
       "last_funding_check_ms": 1776128094136,
       "layer_count": 2,
@@ -132,9 +132,9 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-04-14",
         "_live_mode": true,
-        "_last_candle_ts": 1776139200000,
+        "_last_candle_ts": 1776142800000,
         "start_time": 1774396830.124578,
-        "current_price": 256.62
+        "current_price": 254.08
       }
     },
     "HYPE/USDT": {
@@ -145,7 +145,7 @@
       "tp_type": "limit",
       "tp_activation_price": null,
       "trailing_callback_pct": 0.5,
-      "last_candle_ts": 1776139200000,
+      "last_candle_ts": 1776142800000,
       "cumulative_funding": 0.0,
       "last_funding_check_ms": 1776128094136,
       "layer_count": 1,
@@ -199,9 +199,9 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-04-14",
         "_live_mode": true,
-        "_last_candle_ts": 1776139200000,
+        "_last_candle_ts": 1776142800000,
         "start_time": 1774396830.771485,
-        "current_price": 44.915
+        "current_price": 44.776
       }
     },
     "FET/USDT": {
@@ -212,7 +212,7 @@
       "tp_type": "trailing",
       "tp_activation_price": 0.23811899999999997,
       "trailing_callback_pct": 0.5,
-      "last_candle_ts": 1776139200000,
+      "last_candle_ts": 1776142800000,
       "cumulative_funding": -0.00095896,
       "last_funding_check_ms": 1776127701135,
       "layer_count": 1,
@@ -266,9 +266,9 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-04-14",
         "_live_mode": true,
-        "_last_candle_ts": 1776139200000,
+        "_last_candle_ts": 1776142800000,
         "start_time": 1774483234.970977,
-        "current_price": 0.2345
+        "current_price": 0.2329
       }
     },
     "JTO/USDT": {
@@ -279,7 +279,7 @@
       "tp_type": "trailing",
       "tp_activation_price": 0.3230745,
       "trailing_callback_pct": 0.5,
-      "last_candle_ts": 1776139200000,
+      "last_candle_ts": 1776142800000,
       "cumulative_funding": 0.00395946,
       "last_funding_check_ms": 1776125347268,
       "layer_count": 1,
@@ -333,23 +333,23 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-04-14",
         "_live_mode": true,
-        "_last_candle_ts": 1776139200000,
+        "_last_candle_ts": 1776142800000,
         "start_time": 1775779209.030703,
-        "current_price": 0.3151
+        "current_price": 0.3147
       }
     },
     "ZEC/USDT": {
       "symbol": "ZEC/USDT",
       "allocated_capital": 59.61266061505898,
-      "tp_order_id": "2126492551",
-      "tp_limit_price": 367.77509999999995,
+      "tp_order_id": null,
+      "tp_limit_price": null,
       "tp_type": "limit",
       "tp_activation_price": null,
       "trailing_callback_pct": 0.5,
-      "last_candle_ts": 1776139200000,
+      "last_candle_ts": 1776142800000,
       "cumulative_funding": 0.0,
       "last_funding_check_ms": 1776125216319,
-      "layer_count": 1,
+      "layer_count": 0,
       "paused": false,
       "regime_flagged": false,
       "coin_regime_signal": null,
@@ -361,17 +361,17 @@
         "profile": "high",
         "leverage": 1.0,
         "phase": "LONG_DCA",
-        "capital": 38.23460061505898,
+        "capital": 59.61266061505898,
         "phase_start_date": "2026-04-08 23:00:00",
-        "long_coins": 0.059,
-        "long_avg_entry": 362.34,
-        "long_layers": 1,
-        "long_last_buy": "2026-04-14 02:00:00",
-        "long_tp": 367.77509999999995,
-        "long_cost": 21.378059999999998,
-        "long_trades": -1,
-        "long_wins": 0,
-        "long_pnl": 0.0,
+        "long_coins": 0.0,
+        "long_avg_entry": 0.0,
+        "long_layers": 0,
+        "long_last_buy": null,
+        "long_tp": 0.0,
+        "long_cost": 0.0,
+        "long_trades": 0,
+        "long_wins": 1,
+        "long_pnl": 0.2796,
         "long_trailing_active": false,
         "long_trailing_peak": 0.0,
         "short_coins": 0.0,
@@ -400,14 +400,14 @@
         "router_from_markdown": false,
         "_last_daily_date": "2026-04-14",
         "_live_mode": true,
-        "_last_candle_ts": 1776139200000,
+        "_last_candle_ts": 1776142800000,
         "start_time": 1775865667.655201,
-        "current_price": 361.79
+        "current_price": 363.19
       }
     }
   },
   "router": {
-    "active_pool_cash": 172.24119631680355,
+    "active_pool_cash": 193.94021631680354,
     "reserve_pool_cash": 37.373319072,
     "active_allocations": {
       "GRASS/USDT": 0.0,
@@ -415,7 +415,7 @@
       "HYPE/USDT": 19.5415028152373,
       "FET/USDT": 30.022816440202575,
       "JTO/USDT": 32.48865746102909,
-      "ZEC/USDT": 21.459012661258093
+      "ZEC/USDT": 0.0
     },
     "reserve_allocations": {
       "GRASS/USDT": 0.0
@@ -465,13 +465,6 @@
       "open_time": "2026-04-14T03:00:38.871399+00:00",
       "layers": 1,
       "invested": 32.776987860049324
-    },
-    "ZEC/USDT:long": {
-      "deal_id": 32,
-      "symbol": "ZEC/USDT",
-      "open_time": "2026-04-14T03:00:47.377490+00:00",
-      "layers": 1,
-      "invested": 21.419406208314527
     }
   },
   "last_rebalance_date": "2026-04-14"
