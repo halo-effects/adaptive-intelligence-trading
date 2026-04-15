@@ -41,10 +41,20 @@ class CFGICreditsExhausted(CFGIError):
 
 ENDPOINT = "https://cfgi.io/api/api_request_v2.php"
 
+# Coins with CFGI coin-specific index data.
+# Only include coins that the CFGI API actually supports.
+# Updated 2026-03-19 to align with 50-coin Aster universe.
+# New coins (BERA, MOVE, INIT, etc.) may not have CFGI data yet — excluded.
 VALID_TOKENS = [
-    "BTC", "ETH", "SOL", "BNB", "HYPE", "ASTER", "DOGE", "PEPE",
-    "AVAX", "ADA", "XRP", "DOT", "LINK", "UNI", "AAVE", "SUI",
-    "TON", "ARB", "INJ", "TRUMP", "MARKET",
+    # Core (high confidence CFGI support)
+    "BTC", "ETH", "SOL", "DOGE", "PEPE", "AVAX", "ADA", "XRP",
+    "DOT", "LINK", "UNI", "AAVE", "SUI", "ARB", "INJ", "TRUMP",
+    "HYPE", "NEAR", "ATOM", "FIL",
+    # Extended (likely supported — verify against API)
+    "ONDO", "ENA", "TIA", "APT", "SEI", "FET", "TAO",
+    "PENDLE", "STX", "JUP", "ZRO", "EIGEN",
+    # Special
+    "MARKET",
 ]
 
 VALID_FIELDS = [

@@ -49,7 +49,7 @@ from trading.spot.exchange_client import SpotExchangeClient
 SYMBOL = "ASTER/USDT"
 DB_SYMBOL = "ASTER/USDT"
 DEFAULT_OUTPUT_DIR = _WORKSPACE / "trading" / "spot" / "live" / "v14"
-DEFAULT_CAPITAL = 300.0
+DEFAULT_CAPITAL = 340.0
 DEFAULT_PROFILE = "high"
 DEFAULT_START_DATE = "2025-10-01"
 LIVE_POLL_INTERVAL = 65  # seconds (slightly over 1 min to avoid rate limits)
@@ -272,7 +272,13 @@ class AsterOrderExecutor:
             logger.info(f"Executing MARKET BUY {qty} {self.symbol} (${cost:.2f}) — {reason}")
             order = self.client.create_market_buy(self.symbol, qty)
 
-            fill_price = order.get("average") or order.get("price") or price
+            fill_price = order.get("average") or order.get("price")
+            if not fill_price:
+                logger.warning(
+                    "Exchange did not return fill price for BUY — using ticker"
+                )
+                ticker = self.client.fetch_ticker(self.symbol)
+                fill_price = (ticker or {}).get("last") or (ticker or {}).get("close") or price
             fill_qty = order.get("filled") or qty
             fill_cost = order.get("cost") or (fill_price * fill_qty)
             fee_cost = 0
@@ -353,10 +359,21 @@ class AsterOrderExecutor:
         # Execute market sell
         try:
             logger.info(f"Executing MARKET SELL {qty} {self.symbol} — {reason}")
+            logger.info(f"MARKET SELL {self.symbol} qty={qty:.8f}")
             order = self.client.create_market_sell(self.symbol, qty)
 
-            fill_price = order.get("average") or order.get("price") or price
+            fill_price = order.get("average") or order.get("price")
             fill_qty = order.get("filled") or qty
+            # NEVER fall back to engine's `price` param — it may be the TP
+            # price, not the actual market price. If exchange didn't return
+            # a fill price, fetch current market price as best estimate.
+            if not fill_price:
+                logger.warning(
+                    "Exchange did not return fill price — fetching current market price"
+                )
+                ticker = self.client.fetch_ticker(self.symbol)
+                fill_price = (ticker or {}).get("last") or (ticker or {}).get("close") or price
+                logger.warning(f"Using market price ${fill_price:.6f} as fill estimate")
             proceeds = order.get("cost") or (fill_price * fill_qty)
             fee_cost = 0
             if order.get("fee"):
@@ -387,6 +404,56 @@ class AsterOrderExecutor:
                 f"Qty: {qty:.4f} | Price: ${price:.6f}\n"
                 f"Error: {str(e)[:200]}"
             )
+            return None
+
+    # -----------------------------------------------------------------------
+    # Resting limit order helpers
+    # -----------------------------------------------------------------------
+
+    def place_limit_sell(self, qty: float, price: float, reason: str = "TP") -> Optional[str]:
+        """Place a resting limit sell order. Returns order ID or None on failure."""
+        qty = self._round_amount(qty)
+        price = self._round_price(price)
+
+        if self.dry_run:
+            logger.info(
+                f"[DRY RUN] LIMIT SELL {qty} {self.base_currency} @ ${price:.6f} — {reason}"
+            )
+            return f"dry_run_tp_{int(time.time())}"
+
+        try:
+            logger.info(
+                f"Placing LIMIT SELL {qty} {self.symbol} @ ${price:.6f} — {reason}"
+            )
+            order = self.client.create_limit_sell(self.symbol, qty, price)
+            order_id = order.get("id")
+            logger.info(
+                f"LIMIT SELL placed: order_id={order_id}, qty={qty:.6f}, price=${price:.6f}"
+            )
+            return str(order_id) if order_id is not None else None
+        except Exception as e:
+            logger.error(f"LIMIT SELL placement failed: {e}\n{traceback.format_exc()}")
+            return None
+
+    def cancel_tp_order(self, order_id: str) -> bool:
+        """Cancel an order by ID. Returns True if cancelled successfully."""
+        if self.dry_run:
+            logger.info(f"[DRY RUN] Cancel order {order_id}")
+            return True
+        try:
+            self.client.cancel_order(order_id, self.symbol)
+            logger.info(f"Order {order_id} cancelled successfully")
+            return True
+        except Exception as e:
+            logger.warning(f"Cancel order {order_id} failed: {e}")
+            return False
+
+    def check_order_status(self, order_id: str) -> Optional[dict]:
+        """Fetch order status from exchange. Returns order dict or None on failure."""
+        try:
+            return self.client.fetch_order(order_id, self.symbol)
+        except Exception as e:
+            logger.warning(f"fetch_order {order_id} failed: {e}")
             return None
 
 
@@ -501,6 +568,136 @@ class TradeTracker:
 
 
 # ---------------------------------------------------------------------------
+# Capital Ledger — local deposit/withdrawal tracking
+# (Aster DEX does not expose deposit/withdrawal history via API)
+# ---------------------------------------------------------------------------
+
+def load_capital_ledger(ledger_path: Path) -> Optional[dict]:
+    """Load capital ledger from JSON file. Returns None if file doesn't exist."""
+    if not ledger_path.exists():
+        return None
+    try:
+        with open(ledger_path) as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load capital ledger: {e}")
+        return None
+
+
+def save_capital_ledger(ledger_path: Path, ledger: dict):
+    """Atomically save capital ledger to JSON (write .tmp then rename)."""
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = ledger_path.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(ledger, f, indent=2)
+    tmp.replace(ledger_path)
+
+
+def record_ledger_transaction(
+    ledger_path: Path,
+    tx_type: str,
+    amount: float,
+    note: str = "",
+) -> dict:
+    """Record a deposit/withdrawal/seed in the capital ledger.
+
+    tx_type: 'seed' | 'deposit' | 'withdrawal'
+    Returns the updated ledger dict.
+    """
+    ledger = load_capital_ledger(ledger_path) or {
+        "seed_capital": amount,
+        "current_capital": 0.0,
+        "transactions": [],
+    }
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ledger["transactions"].append({
+        "date": today,
+        "type": tx_type,
+        "amount": amount,
+        "note": note,
+    })
+    if tx_type in ("deposit", "seed"):
+        ledger["current_capital"] = ledger.get("current_capital", 0.0) + amount
+    elif tx_type == "withdrawal":
+        ledger["current_capital"] = ledger.get("current_capital", 0.0) - amount
+    save_capital_ledger(ledger_path, ledger)
+    return ledger
+
+
+def print_ledger_summary(ledger_path: Path):
+    """Print a human-readable capital ledger summary and exit."""
+    ledger = load_capital_ledger(ledger_path)
+    if ledger is None:
+        print(f"No capital ledger found at {ledger_path}")
+        return
+    seed = ledger.get("seed_capital", 0.0)
+    current = ledger.get("current_capital", 0.0)
+    txns = ledger.get("transactions", [])
+    total_deposits = sum(t["amount"] for t in txns if t["type"] == "deposit")
+    total_withdrawals = sum(t["amount"] for t in txns if t["type"] == "withdrawal")
+    print("=" * 50)
+    print("  Capital Ledger Summary")
+    print("=" * 50)
+    print(f"  Seed capital:      ${seed:.2f}")
+    print(f"  Total deposits:    ${total_deposits:.2f}")
+    print(f"  Total withdrawals: ${total_withdrawals:.2f}")
+    print(f"  Current capital:   ${current:.2f}")
+    print("-" * 50)
+    print("  Transactions:")
+    for t in txns:
+        note = f"  [{t.get('note', '')}]" if t.get("note") else ""
+        print(f"    {t['date']}  {t['type']:12s}  ${t['amount']:.2f}{note}")
+    print("=" * 50)
+
+
+# ---------------------------------------------------------------------------
+# PID Lock — prevent duplicate live bot instances
+# ---------------------------------------------------------------------------
+
+def _acquire_pid_lock(lock_path: Path) -> bool:
+    """Acquire a PID lock file. Returns True if lock acquired, False if
+    another live bot instance is already running."""
+    if lock_path.exists():
+        try:
+            old_pid = int(lock_path.read_text().strip())
+            # Check if the old process is still alive
+            try:
+                os.kill(old_pid, 0)  # Signal 0 = existence check only
+                # Process exists — is it actually the live bot?
+                import subprocess
+                result = subprocess.run(
+                    ["wmic", "process", "where", f"ProcessId={old_pid}", "get", "CommandLine"],
+                    capture_output=True, text=True, timeout=5
+                )
+                if "run_v14_live_aster" in result.stdout:
+                    return False  # Another live bot is genuinely running
+                else:
+                    logger.warning(
+                        f"Stale PID lock (PID {old_pid} exists but isn't a live bot). Overwriting."
+                    )
+            except OSError:
+                logger.warning(f"Stale PID lock (PID {old_pid} no longer running). Overwriting.")
+        except (ValueError, IOError):
+            logger.warning("Corrupt PID lock file. Overwriting.")
+
+    # Write our PID
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path.write_text(str(os.getpid()))
+    return True
+
+
+def _release_pid_lock(lock_path: Path):
+    """Release the PID lock file if it belongs to this process."""
+    try:
+        if lock_path.exists():
+            stored_pid = int(lock_path.read_text().strip())
+            if stored_pid == os.getpid():
+                lock_path.unlink()
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------------
 # V14LiveBot
 # ---------------------------------------------------------------------------
 
@@ -516,10 +713,24 @@ class V14LiveBot:
         dry_run: bool = False,
     ):
         self.symbol = SYMBOL
-        self.capital = capital
         self.profile = profile
         self.output_dir = Path(output_dir or DEFAULT_OUTPUT_DIR)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Load capital from ledger if available — it is the source of truth.
+        # This overrides DEFAULT_CAPITAL / --capital arg when ledger exists.
+        _ledger_path = self.output_dir / "capital_ledger.json"
+        _ledger = load_capital_ledger(_ledger_path)
+        if _ledger is not None:
+            _ledger_capital = _ledger.get("current_capital", capital)
+            if abs(_ledger_capital - capital) > 0.01:
+                logger.info(
+                    f"Capital loaded from ledger: ${_ledger_capital:.2f} "
+                    f"(arg/default was ${capital:.2f})"
+                )
+            capital = _ledger_capital
+        self.capital = capital
+
         self.start_date = start_date
         self.dry_run = dry_run
         # Spot trading = no leverage. Override to 1.0 regardless of profile.
@@ -551,6 +762,9 @@ class V14LiveBot:
 
         # Last processed candle timestamp
         self._last_candle_ts: int = 0
+
+        # Resting TP limit sell order ID (None = no order placed)
+        self._tp_order_id: Optional[str] = None
 
         # Balance reconciliation
         self._last_recon_time: float = 0
@@ -760,6 +974,13 @@ class V14LiveBot:
             try:
                 cycle_start = time.time()
 
+                # Check if the resting TP limit sell has been filled by the exchange
+                if self._tp_order_id:
+                    try:
+                        self._check_tp_order_fill()
+                    except Exception as e:
+                        logger.error(f"TP order fill check error: {e}")
+
                 # Fetch latest candles from Aster
                 try:
                     ohlcv = self.exchange_client.fetch_ohlcv(self.symbol, "1h", limit=50)
@@ -846,6 +1067,18 @@ class V14LiveBot:
                         f"{prev_phase} → {self.engine.phase}\n"
                         f"Reason: {reason}"
                     )
+                    # Cancel TP order on phase change — position may be unwinding
+                    if self._tp_order_id and self.executor:
+                        logger.info(
+                            f"Phase change {prev_phase} → {self.engine.phase}: "
+                            f"cancelling TP limit sell {self._tp_order_id}"
+                        )
+                        self.executor.cancel_tp_order(self._tp_order_id)
+                        self._tp_order_id = None
+                        send_telegram(
+                            f"🔄 {TG_PREFIX} TP limit sell cancelled (phase change: "
+                            f"{prev_phase} → {self.engine.phase})"
+                        )
 
                 # Periodic balance reconciliation
                 self._maybe_reconcile()
@@ -905,21 +1138,127 @@ class V14LiveBot:
                 action["cost"] = actual_cost
                 self.tracker.process_actions(self.symbol, [action], ts)
 
+                # Place / replace resting TP limit sell order
+                eng = self.engine._engine
+                if eng and eng.long_coins > 0 and eng.long_tp > 0:
+                    # Cancel existing TP order — TP price shifts after each DCA layer
+                    if self._tp_order_id:
+                        logger.info(
+                            f"Cancelling existing TP order {self._tp_order_id} "
+                            f"before placing updated one"
+                        )
+                        self.executor.cancel_tp_order(self._tp_order_id)
+                        self._tp_order_id = None
+
+                    tp_price = eng.long_tp
+                    # Use actual exchange balance, not engine's virtual position
+                    # (with leverage, exchange holds more coins than eng.long_coins)
+                    bal = self.executor.get_balance()
+                    tp_qty = bal["base_free"] if bal["base_free"] > 0 else eng.long_coins
+                    new_order_id = self.executor.place_limit_sell(
+                        tp_qty, tp_price, reason=f"TP after BUY (L{eng.long_layers})"
+                    )
+                    if new_order_id:
+                        self._tp_order_id = new_order_id
+                        logger.info(
+                            f"TP limit sell placed: id={new_order_id}, "
+                            f"qty={tp_qty:.4f}, price=${tp_price:.6f}"
+                        )
+                        send_telegram(
+                            f"🎯 {TG_PREFIX} <b>TP Limit Sell Placed</b>\n"
+                            f"Order ID: {new_order_id}\n"
+                            f"Qty: {tp_qty:.4f} @ ${tp_price:.6f}\n"
+                            f"Layers: {eng.long_layers} | Avg entry: ${eng.long_avg_entry:.6f}"
+                        )
+                    else:
+                        logger.warning(
+                            "TP limit sell placement FAILED — candle-based TP detection "
+                            "remains as fallback"
+                        )
+                        send_telegram(
+                            f"⚠️ {TG_PREFIX} TP limit sell placement FAILED\n"
+                            f"Candle-based TP detection still active as fallback\n"
+                            f"Qty: {tp_qty:.4f} @ ${tp_price:.6f}"
+                        )
+
         elif act_type == "SELL":
+            # ── LIVE GUARD: If a TP limit order is on the exchange, let the ──
+            # ── exchange handle TP. Do NOT cancel it based on engine's stale ──
+            # ── daily data. The engine uses previous-day OHLC which can       ──
+            # ── trigger false TPs when yesterday's high > TP but today's      ──
+            # ── price is below TP. Market selling would lose money.           ──
+            if self._tp_order_id and "TP" in reason:
+                logger.info(
+                    f"LIVE GUARD: Ignoring engine TP sell — TP limit order "
+                    f"{self._tp_order_id} is active on exchange. "
+                    f"Engine reason: {reason}, engine price: ${price:.6f}"
+                )
+                # Roll back engine state — the TP didn't actually happen
+                eng = self.engine._engine
+                if pre_tick_snapshot and eng:
+                    old_trades_len = pre_tick_snapshot.pop("_trades_len", None)
+                    for k, v in pre_tick_snapshot.items():
+                        setattr(eng, k, v)
+                    if old_trades_len is not None and len(eng.trades) > old_trades_len:
+                        eng.trades = eng.trades[:old_trades_len]
+                    logger.info(
+                        f"LIVE GUARD: Engine state rolled back — "
+                        f"{eng.long_layers} layers, {eng.long_coins:.4f} coins restored"
+                    )
+                return
+
+            # For non-TP sells (phase close, signal exit, etc.), proceed
+            if self._tp_order_id:
+                logger.info(
+                    f"Cancelling TP limit sell {self._tp_order_id} before "
+                    f"non-TP sell ({reason})"
+                )
+                self.executor.cancel_tp_order(self._tp_order_id)
+                self._tp_order_id = None
+
             result = self.executor.execute_sell(qty, price, reason)
             if result and result.get("status") in ("filled", "dry_run"):
-                proceeds = result.get("proceeds", qty * price)
-                self.cash += proceeds
-                action["price"] = result.get("price", price)
-                action["qty"] = result.get("qty", qty)
-                pnl = action.get("pnl", 0)
-                emoji = "🟢" if pnl >= 0 else "🔴"
+                actual_proceeds = result.get("proceeds", 0)
+                actual_price = result.get("price", 0)
+                actual_qty = result.get("qty", qty)
+
+                # Calculate PnL from ACTUAL exchange fill, not engine's estimate
+                eng = self.engine._engine
+                invested = (eng.long_cost or 0.0) if eng else 0.0
+                fee = result.get("fee", 0) or 0
+                actual_pnl = actual_proceeds - invested - fee
+                actual_pnl_pct = (actual_pnl / invested * 100) if invested > 0 else 0.0
+
+                # Correct engine capital to reflect actual proceeds (not TP price)
+                if eng:
+                    # Engine already added TP-price proceeds to eng.capital
+                    # during the tick. Correct it to actual.
+                    engine_expected_proceeds = eng.long_tp * qty if eng.long_tp else qty * price
+                    correction = actual_proceeds - engine_expected_proceeds
+                    if abs(correction) > 0.01:
+                        eng.capital += correction
+                        logger.info(
+                            f"Engine capital corrected by ${correction:+.2f} "
+                            f"(actual fill vs engine TP)"
+                        )
+
+                self.cash = eng.capital if eng else self.cash + actual_proceeds
+
+                # Update action with actual exchange fill data
+                action["price"] = actual_price
+                action["qty"] = actual_qty
+                action["pnl"] = round(actual_pnl, 4)
+                action["pnl_pct"] = round(actual_pnl_pct, 2)
+
+                emoji = "🟢" if actual_pnl >= 0 else "🔴"
                 send_telegram(
                     f"{emoji} {TG_PREFIX} <b>Deal Closed</b>\n"
-                    f"PnL: ${pnl:.2f} ({action.get('pnl_pct', 0):.1f}%)\n"
+                    f"Fill: ${actual_price:.6f} × {actual_qty:.4f} = ${actual_proceeds:.2f}\n"
+                    f"PnL: ${actual_pnl:.2f} ({actual_pnl_pct:.1f}%)\n"
                     f"Reason: {reason}"
                 )
                 self.tracker.process_actions(self.symbol, [action], ts)
+                self._tp_order_id = None
             else:
                 # SELL FAILED — roll back engine state so it retries next tick
                 eng = self.engine._engine
@@ -1093,6 +1432,196 @@ class V14LiveBot:
             logger.warning("CFGI poll failed: %s", e)
             self._cfgi_last_poll = now
 
+    def _check_tp_order_fill(self):
+        """Check if the resting TP limit sell order has been filled by the exchange.
+
+        Called every poll cycle. Handles fill, cancellation, and expiry.
+        """
+        if not self._tp_order_id or not self.executor:
+            return
+
+        order = self.executor.check_order_status(self._tp_order_id)
+        if order is None:
+            logger.warning(f"Could not fetch TP order status for {self._tp_order_id}")
+            return
+
+        status = order.get("status", "")
+
+        if status == "closed":
+            # Order filled — update state and record trade
+            fill_price = order.get("average") or order.get("price") or 0.0
+            fill_qty = order.get("filled") or order.get("amount") or 0.0
+            proceeds = order.get("cost") or (fill_price * fill_qty)
+            fee_cost = 0.0
+            if order.get("fee"):
+                fee_cost = order["fee"].get("cost", 0) or 0.0
+
+            logger.info(
+                f"TP LIMIT SELL FILLED: {fill_qty:.4f} @ ${fill_price:.6f} = "
+                f"${proceeds:.2f} (fee: ${fee_cost:.4f})"
+            )
+
+            # Calculate PnL
+            eng = self.engine._engine
+            invested = (eng.long_cost or 0.0) if eng else 0.0
+            pnl = proceeds - invested - fee_cost if invested > 0 else proceeds - invested
+            pnl_pct = (pnl / invested * 100) if invested > 0 else 0.0
+
+            # Update cash
+            self.cash += proceeds
+
+            # Zero out engine position
+            if eng:
+                eng.capital += proceeds
+                eng.long_trades = (eng.long_trades or 0) + 1
+                if pnl >= 0:
+                    eng.long_wins = (eng.long_wins or 0) + 1
+                eng.long_pnl = (eng.long_pnl or 0.0) + pnl
+                eng.long_coins = 0.0
+                eng.long_avg_entry = 0.0
+                eng.long_layers = 0
+                eng.long_last_buy = None
+                eng.long_tp = 0.0
+                eng.long_cost = 0.0
+
+            # Record trade in tracker
+            ts_now = datetime.now(timezone.utc)
+            sell_action = {
+                "action": "SELL",
+                "price": fill_price,
+                "qty": fill_qty,
+                "pnl": round(pnl, 4),
+                "pnl_pct": round(pnl_pct, 2),
+                "reason": "TP limit sell filled",
+                "cost": proceeds,
+            }
+            self.tracker.process_actions(self.symbol, [sell_action], ts_now)
+
+            # Clear TP order ID
+            self._tp_order_id = None
+
+            # Notify
+            emoji = "🟢" if pnl >= 0 else "🔴"
+            send_telegram(
+                f"{emoji} {TG_PREFIX} <b>TP LIMIT SELL FILLED</b>\n"
+                f"Qty: {fill_qty:.4f} @ ${fill_price:.6f}\n"
+                f"Proceeds: ${proceeds:.2f} | Fee: ${fee_cost:.4f}\n"
+                f"PnL: ${pnl:.2f} ({pnl_pct:.1f}%)"
+            )
+
+            # Persist
+            try:
+                self._save_state()
+                self.tracker.save_csv()
+            except Exception as e:
+                logger.error(f"State save after TP fill failed: {e}")
+
+        elif status in ("canceled", "expired"):
+            logger.warning(
+                f"TP limit sell order {self._tp_order_id} was {status} — clearing. "
+                f"Candle-based TP detection remains active as fallback."
+            )
+            send_telegram(
+                f"⚠️ {TG_PREFIX} TP limit sell order <b>{status}</b>\n"
+                f"Order ID: {self._tp_order_id}\n"
+                f"Candle-based TP detection still active"
+            )
+            self._tp_order_id = None
+
+        # status 'open' or 'partially_filled' → nothing to do yet
+
+    def _recover_tp_order(self):
+        """On startup, reconcile TP limit sell orders with exchange open orders.
+
+        Cases:
+        - Open sell order exists + position open → adopt it as _tp_order_id
+        - Open sell order exists + no position   → stale order, cancel it
+        - No open sell order + position open     → place a fresh TP limit sell
+        - No open sell order + no position       → nothing to do
+        """
+        if self.executor is None:
+            return
+
+        eng = self.engine._engine
+        has_position = eng is not None and eng.long_coins > 0
+
+        try:
+            open_orders = self.exchange_client.fetch_open_orders(self.symbol)
+        except Exception as e:
+            logger.warning(f"Could not fetch open orders for TP recovery: {e}")
+            return
+
+        # Filter for limit sell orders only
+        limit_sells = [
+            o for o in open_orders
+            if o.get("side") == "sell" and o.get("type") in ("limit", "LIMIT")
+        ]
+
+        if limit_sells:
+            if has_position:
+                # Sort by timestamp descending; adopt the most recent as our TP order
+                limit_sells.sort(key=lambda o: o.get("timestamp", 0), reverse=True)
+                tp_order = limit_sells[0]
+                self._tp_order_id = str(tp_order.get("id"))
+                logger.info(
+                    f"TP RECOVERY: Adopted existing limit sell {self._tp_order_id} "
+                    f"@ ${tp_order.get('price', 0):.6f} x {tp_order.get('amount', 0):.4f}"
+                )
+                send_telegram(
+                    f"🔧 {TG_PREFIX} TP order recovered on startup\n"
+                    f"Order: {self._tp_order_id}\n"
+                    f"Price: ${tp_order.get('price', 0):.6f} | "
+                    f"Qty: {tp_order.get('amount', 0):.4f}"
+                )
+                # Cancel any surplus limit sells
+                for extra in limit_sells[1:]:
+                    eid = str(extra.get("id"))
+                    logger.info(f"TP RECOVERY: Cancelling duplicate limit sell {eid}")
+                    self.executor.cancel_tp_order(eid)
+            else:
+                # No open position → stale orders from a crash; cancel all
+                for o in limit_sells:
+                    oid = str(o.get("id"))
+                    logger.warning(
+                        f"TP RECOVERY: Cancelling stale limit sell {oid} "
+                        f"(no open position)"
+                    )
+                    self.executor.cancel_tp_order(oid)
+                self._tp_order_id = None
+                send_telegram(
+                    f"🔧 {TG_PREFIX} Stale TP order(s) cancelled on startup\n"
+                    f"Count: {len(limit_sells)} | No open position"
+                )
+        elif has_position and eng.long_tp > 0:
+            # Position open but no TP order — place one now
+            tp_price = eng.long_tp
+            # Use actual exchange balance, not engine's virtual position
+            # (with leverage, exchange holds more coins than eng.long_coins)
+            bal = self.executor.get_balance()
+            tp_qty = bal["base_free"] if bal["base_free"] > 0 else eng.long_coins
+            logger.info(
+                f"TP RECOVERY: No TP order found but position open "
+                f"({tp_qty:.4f} @ TP ${tp_price:.6f}) — placing new limit sell"
+            )
+            new_order_id = self.executor.place_limit_sell(
+                tp_qty, tp_price, reason="TP recovery on startup"
+            )
+            if new_order_id:
+                self._tp_order_id = new_order_id
+                logger.info(f"TP RECOVERY: New TP limit sell placed: {new_order_id}")
+                send_telegram(
+                    f"🔧 {TG_PREFIX} TP limit sell placed on startup (recovery)\n"
+                    f"Order: {new_order_id}\n"
+                    f"Price: ${tp_price:.6f} | Qty: {tp_qty:.4f}"
+                )
+            else:
+                logger.warning(
+                    "TP RECOVERY: Failed to place TP limit sell — "
+                    "candle-based TP detection active as fallback"
+                )
+        else:
+            logger.info("TP RECOVERY: No open orders, no open position — nothing to recover")
+
     def _maybe_reconcile(self):
         """Periodically reconcile engine state with exchange balances."""
         now = time.time()
@@ -1127,11 +1656,46 @@ class V14LiveBot:
                     f"Engine: ${engine_value:.2f} (${engine_cash:.2f} cash + "
                     f"{engine_coins:.4f} coins)"
                 )
-                send_telegram(
-                    f"⚠️ {TG_PREFIX} <b>Balance drift: {drift_pct:.1f}%</b>\n"
-                    f"Exchange: ${exchange_value:.2f}\n"
-                    f"Engine: ${engine_value:.2f}"
-                )
+
+                if engine_coins == 0:
+                    # No open position — drift is likely a deposit or withdrawal.
+                    # Auto-adjust capital and record to the capital ledger.
+                    tx_type = "deposit" if drift > 0 else "withdrawal"
+                    tx_amount = abs(drift)
+                    tx_note = f"Auto-detected {tx_type} via periodic reconciliation ({drift_pct:.1f}% drift)"
+                    logger.info(
+                        f"Probable {tx_type} detected: ${tx_amount:.2f} "
+                        f"(drift {drift_pct:.1f}%). Auto-adjusting capital and recording to ledger."
+                    )
+
+                    # Record to capital ledger
+                    ledger_path = self.output_dir / "capital_ledger.json"
+                    record_ledger_transaction(ledger_path, tx_type, tx_amount, note=tx_note)
+
+                    # Auto-adjust engine capital and self.cash to match exchange
+                    old_capital = eng.capital
+                    eng.capital = exchange_value  # no coins open, so value = USDT
+                    self.capital = eng.capital
+                    self.cash = eng.capital
+
+                    logger.info(
+                        f"Capital auto-adjusted: ${old_capital:.2f} → ${eng.capital:.2f}"
+                    )
+                    send_telegram(
+                        f"{'📥' if tx_type == 'deposit' else '📤'} {TG_PREFIX} "
+                        f"<b>{tx_type.capitalize()} detected: ${tx_amount:.2f}</b>\n"
+                        f"Drift: {drift_pct:.1f}% (no open position)\n"
+                        f"Capital adjusted: ${old_capital:.2f} → ${eng.capital:.2f}\n"
+                        f"Recorded in capital ledger."
+                    )
+                else:
+                    # Open position present — drift could be price movement, NOT auto-adjusting.
+                    send_telegram(
+                        f"⚠️ {TG_PREFIX} <b>Balance drift: {drift_pct:.1f}%</b>\n"
+                        f"Exchange: ${exchange_value:.2f}\n"
+                        f"Engine: ${engine_value:.2f}\n"
+                        f"Position open — not auto-adjusting."
+                    )
             else:
                 logger.debug(f"Reconciliation OK — drift {drift_pct:.1f}%")
 
@@ -1158,6 +1722,7 @@ class V14LiveBot:
             "deal_counter": self.tracker._deal_counter,
             "open_deals": self.tracker._open_deals,
             "last_candle_ts": self._last_candle_ts,
+            "tp_order_id": self._tp_order_id,
             "engine": self.engine.snapshot_state(),
         }
         path = self.output_dir / "state.json"
@@ -1179,6 +1744,7 @@ class V14LiveBot:
             self.tracker._deal_counter = state.get("deal_counter", 0)
             self.tracker._open_deals = state.get("open_deals", {})
             self._last_candle_ts = state.get("last_candle_ts", 0)
+            self._tp_order_id = state.get("tp_order_id", None)
 
             eng_state = state.get("engine", {})
             if eng_state:
@@ -1316,6 +1882,9 @@ class V14LiveBot:
         # any other discrepancy between engine state and reality.
         self._reconcile_on_startup()
 
+        # Recover/reconcile any resting TP limit sell order on the exchange.
+        self._recover_tp_order()
+
         # Save initial state
         try:
             self._write_status()
@@ -1360,20 +1929,59 @@ def main():
                         help="Test connectivity and exit")
     parser.add_argument("--confirm", action="store_true",
                         help="Required to actually trade with real money")
+    # Capital ledger management flags (do not start the bot)
+    parser.add_argument("--deposit", type=float, default=None, metavar="AMOUNT",
+                        help="Record a manual deposit to the capital ledger and exit")
+    parser.add_argument("--withdraw", type=float, default=None, metavar="AMOUNT",
+                        help="Record a manual withdrawal from the capital ledger and exit")
+    parser.add_argument("--ledger", action="store_true",
+                        help="Print capital ledger summary and exit")
 
     args = parser.parse_args()
-
-    bot = V14LiveBot(
-        capital=args.capital,
-        profile=args.profile,
-        dry_run=args.dry_run,
-    )
 
     # Force UTF-8 stdout on Windows
     if sys.platform == "win32":
         import io
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+    # Ledger management commands — run without starting the bot
+    ledger_path = Path(DEFAULT_OUTPUT_DIR) / "capital_ledger.json"
+    Path(DEFAULT_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+
+    if args.ledger:
+        print_ledger_summary(ledger_path)
+        sys.exit(0)
+
+    if args.deposit is not None:
+        if args.deposit <= 0:
+            print(f"ERROR: Deposit amount must be positive (got {args.deposit})")
+            sys.exit(1)
+        ledger = record_ledger_transaction(
+            ledger_path, "deposit", args.deposit,
+            note=f"Manual deposit via --deposit flag"
+        )
+        print(f"✅ Recorded deposit of ${args.deposit:.2f}")
+        print(f"   New current_capital: ${ledger['current_capital']:.2f}")
+        sys.exit(0)
+
+    if args.withdraw is not None:
+        if args.withdraw <= 0:
+            print(f"ERROR: Withdrawal amount must be positive (got {args.withdraw})")
+            sys.exit(1)
+        ledger = record_ledger_transaction(
+            ledger_path, "withdrawal", args.withdraw,
+            note=f"Manual withdrawal via --withdraw flag"
+        )
+        print(f"✅ Recorded withdrawal of ${args.withdraw:.2f}")
+        print(f"   New current_capital: ${ledger['current_capital']:.2f}")
+        sys.exit(0)
+
+    bot = V14LiveBot(
+        capital=args.capital,
+        profile=args.profile,
+        dry_run=args.dry_run,
+    )
 
     if args.test:
         print("🧪 Testing Aster connectivity...")
@@ -1390,10 +1998,24 @@ def main():
         print("Run with --confirm to trade live, or --dry-run to test.")
         sys.exit(1)
 
-    bot.run(
-        skip_backfill=args.skip_backfill,
-        fresh=args.fresh,
-    )
+    # PID lock — prevent duplicate live bot instances
+    lock_path = Path(DEFAULT_OUTPUT_DIR) / "bot.pid"
+    if not _acquire_pid_lock(lock_path):
+        old_pid = lock_path.read_text().strip()
+        print(f"ERROR: Another V14 live bot instance is already running (PID {old_pid}). Exiting.")
+        logger.error(f"Another V14 live bot instance is already running (PID {old_pid}). Exiting.")
+        sys.exit(1)
+
+    logger.info(f"PID lock acquired: {lock_path} (PID {os.getpid()})")
+
+    try:
+        bot.run(
+            skip_backfill=args.skip_backfill,
+            fresh=args.fresh,
+        )
+    finally:
+        _release_pid_lock(lock_path)
+        logger.info("PID lock released.")
 
 
 if __name__ == "__main__":
