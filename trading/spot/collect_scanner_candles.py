@@ -2,15 +2,10 @@
 """
 Incremental 1h candle collector for V14 DCA Cycle Scanner.
 
-Pulls latest 1h candles from Aster DEX Perps (fapi) for all 50 scanner coins,
+Pulls latest 1h candles from Hyperliquid (perps) for all scanner coins,
 stores in candles.db. Only fetches from the last stored timestamp forward.
 
 Designed to run hourly via scheduled task.
-
-Exchange history:
-- Pre-2026-03-19: Collected from Hyperliquid perps (COIN/USDC:USDC format)
-- 2026-03-19+: Switched to Aster DEX Perps (COIN/USDT:USDT format)
-- Historical backfill from Binance Futures stored in same DB (seamless)
 """
 
 import ccxt
@@ -36,81 +31,74 @@ logger = logging.getLogger("candle_collector")
 
 DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(Path(__file__).parent / "data" / "candles.db")))
 
-# ── Scanner universe (50 coins on Aster Perps) ─────────────────────────────
+# ── Scanner universe ────────────────────────────────────────────────────────
 # Must match v14_cycle_scanner.py COINS list.
-# Format: (db_symbol, aster_perp_symbol)
-# Aster perps use Binance-compatible format: COIN/USDT:USDT
-# 1000-prefix coins (PEPE, BONK, FLOKI) use 1000COIN on exchange but COIN in DB.
+# Format: (db_symbol, hyperliquid_perp_symbol)
+# Hyperliquid perps all trade as COIN/USDC:USDC
 
 COINS = [
-    # --- Established (pre-2024) — 19 coins ---
-    ("BTC/USDT",    "BTC/USDT:USDT"),
-    ("ETH/USDT",    "ETH/USDT:USDT"),
-    ("SOL/USDT",    "SOL/USDT:USDT"),
-    ("XRP/USDT",    "XRP/USDT:USDT"),
-    ("LINK/USDT",   "LINK/USDT:USDT"),
-    ("DOGE/USDT",   "DOGE/USDT:USDT"),
-    ("ADA/USDT",    "ADA/USDT:USDT"),
-    ("LTC/USDT",    "LTC/USDT:USDT"),
-    ("AVAX/USDT",   "AVAX/USDT:USDT"),
-    ("DOT/USDT",    "DOT/USDT:USDT"),
-    ("UNI/USDT",    "UNI/USDT:USDT"),
-    ("ATOM/USDT",   "ATOM/USDT:USDT"),
-    ("NEAR/USDT",   "NEAR/USDT:USDT"),
-    ("HBAR/USDT",   "HBAR/USDT:USDT"),
-    ("INJ/USDT",    "INJ/USDT:USDT"),
-    ("FIL/USDT",    "FIL/USDT:USDT"),
-    ("CRV/USDT",    "CRV/USDT:USDT"),
-    ("SNX/USDT",    "SNX/USDT:USDT"),
-    ("ZEC/USDT",    "ZEC/USDT:USDT"),
-    # --- DeFi / Mid-cap — 6 coins ---
-    ("AAVE/USDT",   "AAVE/USDT:USDT"),
-    ("ARB/USDT",    "ARB/USDT:USDT"),
-    ("JUP/USDT",    "JUP/USDT:USDT"),
-    ("PENDLE/USDT", "PENDLE/USDT:USDT"),
-    ("STX/USDT",    "STX/USDT:USDT"),
-    ("ZRO/USDT",    "ZRO/USDT:USDT"),
-    # --- High-beta / Speculative — 9 coins ---
-    ("PEPE/USDT",   "1000PEPE/USDT:USDT"),   # 1000-prefix on exchange
-    ("BONK/USDT",   "1000BONK/USDT:USDT"),   # 1000-prefix on exchange
-    ("FLOKI/USDT",  "1000FLOKI/USDT:USDT"),  # 1000-prefix on exchange
-    ("JTO/USDT",    "JTO/USDT:USDT"),
-    ("PYTH/USDT",   "PYTH/USDT:USDT"),
-    ("TIA/USDT",    "TIA/USDT:USDT"),
-    ("SEI/USDT",    "SEI/USDT:USDT"),
-    ("APT/USDT",    "APT/USDT:USDT"),
-    ("SUI/USDT",    "SUI/USDT:USDT"),
-    # --- AI / Infrastructure — 5 coins ---
-    ("FET/USDT",    "FET/USDT:USDT"),
-    ("TAO/USDT",    "TAO/USDT:USDT"),
-    ("HYPE/USDT",   "HYPE/USDT:USDT"),
-    ("VIRTUAL/USDT","VIRTUAL/USDT:USDT"),
-    ("RENDER/USDT", "RENDER/USDT:USDT"),
-    # --- New L1/L2 — 5 coins ---
-    ("BERA/USDT",   "BERA/USDT:USDT"),
-    ("MOVE/USDT",   "MOVE/USDT:USDT"),
-    ("INIT/USDT",   "INIT/USDT:USDT"),
-    ("S/USDT",      "S/USDT:USDT"),
-    ("IP/USDT",     "IP/USDT:USDT"),
-    # --- Yield / RWA — 3 coins ---
-    ("ONDO/USDT",   "ONDO/USDT:USDT"),
-    ("EIGEN/USDT",  "EIGEN/USDT:USDT"),
-    ("ENA/USDT",    "ENA/USDT:USDT"),
-    # --- DePIN / Other — 3 coins ---
-    ("GRASS/USDT",  "GRASS/USDT:USDT"),
-    ("ORCA/USDT",   "ORCA/USDT:USDT"),
-    ("TRUMP/USDT",  "TRUMP/USDT:USDT"),
+    # --- Established (pre-2024) ---
+    ("BTC/USDC",    "BTC/USDC:USDC"),
+    ("ETH/USDC",    "ETH/USDC:USDC"),
+    ("SOL/USDT",    "SOL/USDC:USDC"),    # DB stores as USDT, HL uses USDC perp
+    ("XRP/USDT",    "XRP/USDC:USDC"),
+    ("LINK/USDT",   "LINK/USDC:USDC"),
+    ("DOGE/USDT",   "DOGE/USDC:USDC"),
+    ("ADA/USDT",    "ADA/USDC:USDC"),
+    ("LTC/USDT",    "LTC/USDC:USDC"),
+    ("AVAX/USDT",   "AVAX/USDC:USDC"),
+    ("DOT/USDT",    "DOT/USDC:USDC"),
+    ("UNI/USDT",    "UNI/USDC:USDC"),
+    ("ATOM/USDT",   "ATOM/USDC:USDC"),
+    ("NEAR/USDT",   "NEAR/USDC:USDC"),
+    ("HBAR/USDT",   "HBAR/USDC:USDC"),
+    ("INJ/USDT",    "INJ/USDC:USDC"),
+    ("FIL/USDT",    "FIL/USDC:USDC"),
+    ("RUNE/USDT",   "RUNE/USDC:USDC"),
+    ("CRV/USDT",    "CRV/USDC:USDC"),
+    ("SNX/USDT",    "SNX/USDC:USDC"),
+    ("COMP/USDT",   "COMP/USDC:USDC"),
+    ("MKR/USDT",    "MKR/USDC:USDC"),
+    ("ENS/USDT",    "ENS/USDC:USDC"),
+    ("DYDX/USDT",   "DYDX/USDC:USDC"),
+    ("LDO/USDT",    "LDO/USDC:USDC"),
+    ("ARB/USDT",    "ARB/USDC:USDC"),
+    ("OP/USDT",     "OP/USDC:USDC"),
+    ("STX/USDT",    "STX/USDC:USDC"),
+    ("SEI/USDT",    "SEI/USDC:USDC"),
+    ("RENDER/USDT", "RENDER/USDC:USDC"),
+    # --- 2024 launches ---
+    ("SUI/USDT",    "SUI/USDC:USDC"),
+    ("FET/USDT",    "FET/USDC:USDC"),
+    ("TAO/USDT",    "TAO/USDC:USDC"),
+    ("TON/USDT",    "TON/USDC:USDC"),
+    ("JUP/USDT",    "JUP/USDC:USDC"),
+    ("KAS/USDT",    "KAS/USDC:USDC"),
+    ("PENDLE/USDT", "PENDLE/USDC:USDC"),
+    ("PYTH/USDT",   "PYTH/USDC:USDC"),
+    ("TIA/USDT",    "TIA/USDC:USDC"),
+    ("ONDO/USDT",   "ONDO/USDC:USDC"),
+    ("ENA/USDT",    "ENA/USDC:USDC"),
+    ("EIGEN/USDT",  "EIGEN/USDC:USDC"),
+    ("W/USDT",      "W/USDC:USDC"),
+    ("ZRO/USDT",    "ZRO/USDC:USDC"),
+    # --- Mid-cycle 2025 ---
+    ("HYPE/USDC",   "HYPE/USDC:USDC"),
+    # --- AAVE ---
+    ("AAVE/USDT",   "AAVE/USDC:USDC"),
 ]
 
-# Legacy: also collect USDC-quoted versions if they exist in DB
-# (historical data from when we collected from Hyperliquid)
+# ASTER is on a different exchange — handled separately by the live bot.
+# The scanner will use whatever ASTER data exists in the DB already.
+# If we need fresh ASTER candles, that requires the Aster exchange client.
+
+# Also pull USDC-quoted versions that may exist in the DB
 USDC_COINS = [
-    ("BTC/USDC",    "BTC/USDT:USDT"),
-    ("ETH/USDC",    "ETH/USDT:USDT"),
-    ("SOL/USDC",    "SOL/USDT:USDT"),
-    ("LINK/USDC",   "LINK/USDT:USDT"),
-    ("XRP/USDC",    "XRP/USDT:USDT"),
-    ("HYPE/USDC",   "HYPE/USDT:USDT"),
+    ("LINK/USDC",   "LINK/USDC:USDC"),
+    ("XRP/USDC",    "XRP/USDC:USDC"),
+    ("SOL/USDC",    "SOL/USDC:USDC"),
+    ("ETH/USDC",    "ETH/USDC:USDC"),
+    ("BTC/USDC",    "BTC/USDC:USDC"),
 ]
 
 # Default lookback for first-time pull (days)
@@ -140,8 +128,8 @@ def get_last_timestamp(conn: sqlite3.Connection, symbol: str) -> int | None:
     return row[0] if row and row[0] else None
 
 
-def fetch_candles(exchange, symbol: str, since_ms: int) -> list:
-    """Fetch 1h candles from exchange, paginating forward."""
+def fetch_candles(exchange, hl_symbol: str, since_ms: int) -> list:
+    """Fetch 1h candles from Hyperliquid, paginating forward."""
     all_candles = []
     cursor = since_ms
     now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
@@ -151,16 +139,16 @@ def fetch_candles(exchange, symbol: str, since_ms: int) -> list:
 
     while cursor < now_ms:
         try:
-            batch = exchange.fetch_ohlcv(symbol, "1h", since=cursor, limit=1000)
+            batch = exchange.fetch_ohlcv(hl_symbol, "1h", since=cursor, limit=1000)
             retries = 0  # Reset on success
         except Exception as e:
             if "429" in str(e) and retries < max_retries:
                 retries += 1
                 wait = 5 * retries
-                logger.info(f"  Rate limited on {symbol}, waiting {wait}s (retry {retries}/{max_retries})")
+                logger.info(f"  Rate limited on {hl_symbol}, waiting {wait}s (retry {retries}/{max_retries})")
                 time.sleep(wait)
                 continue
-            logger.warning(f"  Error fetching {symbol} from {cursor}: {e}")
+            logger.warning(f"  Error fetching {hl_symbol} from {cursor}: {e}")
             break
 
         if not batch:
@@ -229,39 +217,28 @@ def main():
             seen_hl.add(key)
             coin_list.append((db_sym, hl_sym))
 
-    logger.info(f"Candle Collector — {len(coin_list)} coins from Aster Perps")
+    logger.info(f"Candle Collector — {len(coin_list)} coins from Hyperliquid")
 
-    # Connect to Aster DEX Perps (Binance-compatible fapi)
-    # No API key needed for public candle data
-    exchange = ccxt.binance({
-        'urls': {
-            'api': {
-                'fapiPublic': 'https://fapi.asterdex.com/fapi/v1',
-                'fapiPrivate': 'https://fapi.asterdex.com/fapi/v1',
-            },
-        },
-        'options': {
-            'defaultType': 'future',
-        },
-    })
+    # Connect to Hyperliquid
+    hl = ccxt.hyperliquid()
     try:
-        exchange.load_markets()
+        hl.load_markets()
     except Exception as e:
-        logger.error(f"Failed to connect to Aster Perps: {e}")
+        logger.error(f"Failed to connect to Hyperliquid: {e}")
         sys.exit(1)
 
-    available_symbols = set(exchange.symbols)
+    available_symbols = set(hl.symbols)
     total_new = 0
     coins_updated = 0
     coins_skipped = 0
     coins_failed = 0
 
-    for db_sym, exchange_sym in coin_list:
+    for db_sym, hl_sym in coin_list:
         short = db_sym.split("/")[0]
 
-        # Check if symbol exists on Aster
-        if exchange_sym not in available_symbols:
-            logger.warning(f"  {short}: {exchange_sym} not available on Aster Perps, skipping")
+        # Check if symbol exists on Hyperliquid
+        if hl_sym not in available_symbols:
+            logger.warning(f"  {short}: {hl_sym} not available on Hyperliquid, skipping")
             coins_skipped += 1
             continue
 
@@ -272,7 +249,7 @@ def main():
             since_ms = last_ts - (INCREMENTAL_BUFFER_HOURS * 3600 * 1000)
             mode = "incremental"
         else:
-            # First time: pull what Aster has (Binance backfill handles deep history)
+            # First time: pull full history
             since_ms = int(
                 (datetime.now(timezone.utc) - timedelta(days=DEFAULT_LOOKBACK_DAYS))
                 .timestamp() * 1000
@@ -280,7 +257,7 @@ def main():
             mode = "full"
 
         try:
-            candles = fetch_candles(exchange, exchange_sym, since_ms)
+            candles = fetch_candles(hl, hl_sym, since_ms)
             new_count = store_candles(conn, db_sym, candles)
             total_new += new_count
 

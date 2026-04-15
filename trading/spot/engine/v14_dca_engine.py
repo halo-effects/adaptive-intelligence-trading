@@ -61,10 +61,6 @@ class V14Config:
     DCA_ACCUMULATE = True        # True = hold position (no TP), exit on signal
                                  # False = cycle TP profits (original DCA grid)
 
-    # -- Trailing Stop TP --
-    TRAILING_STOP_ENABLED = True   # Activate trailing stop at TP level instead of fixed sell
-    TRAILING_CALLBACK_PCT = 0.5    # 0.5% trail distance after activation
-
     # -- Top Detection (StochRSI) -- inherited from V13 --
     OB_THRESHOLD_2W = 93
     EARLY_WARNING_1W = 97
@@ -122,7 +118,6 @@ class V14DCAEngine:
         self.cfg = config or V14Config()
         self.coin = pack.coin
         self.daily = pack.daily
-        self.live_mode = False  # Set True by live bots; disables paper-trading caps
 
         # -- Phase State --
         self.phase = Phase.LONG_DCA if initial_phase == 'LONG_DCA' else Phase.SHORT_DCA
@@ -140,10 +135,6 @@ class V14DCAEngine:
         self.long_wins = 0
         self.long_pnl = 0.0
 
-        # -- Long Trailing Stop State (paper simulation) --
-        self.long_trailing_active = False
-        self.long_trailing_peak = 0.0
-
         # -- Short DCA Grid --
         self.short_coins = 0.0
         self.short_avg_entry = 0.0
@@ -154,10 +145,6 @@ class V14DCAEngine:
         self.short_trades = 0
         self.short_wins = 0
         self.short_pnl = 0.0
-
-        # -- Short Trailing Stop State (paper simulation) --
-        self.short_trailing_active = False
-        self.short_trailing_peak = float('inf')
 
         # -- Top Detection State --
         self.early_warning_date = None
@@ -316,8 +303,6 @@ class V14DCAEngine:
                     self.long_tp = 0
                     self.long_cost = 0
                     self.long_last_buy = None
-                    self.long_trailing_active = False
-                    self.long_trailing_peak = 0.0
 
         # Check short position
         if self.short_coins > 0 and self.short_avg_entry > 0:
@@ -352,73 +337,35 @@ class V14DCAEngine:
     #  LONG DCA GRID
     # =========================================================================
 
-    def _long_dca_tick(self, date, price, high=None, low=None):
-        """Process one tick of the long DCA grid.
-        
-        Args:
-            high: Candle high price. When provided, TP is checked against the high
-                  (simulating a limit sell order that fills on any wick touch).
-                  Falls back to close price if not provided (backward compat).
-            low: Candle low price. Used for trailing stop callback detection
-                 (trail triggers when price drops from peak high).
-        """
+    def _long_dca_tick(self, date, price):
+        """Process one tick of the long DCA grid."""
         if np.isnan(price):
             return
         available = self.capital * self.cfg.DCA_CAPITAL_PCT
         cfg = self.cfg
 
-        # Check TP / Trailing Stop (skip in accumulate mode — hold for signal-based exit)
-        tp_check_price = high if high is not None and not np.isnan(high) else price
-        check_low = low if low is not None and not np.isnan(low) else price
-        if not cfg.DCA_ACCUMULATE and self.long_coins > 0 and self.long_tp > 0:
-            fill_price = None
-            is_taker = False  # limit order fee by default
-
-            if self.long_trailing_active:
-                # Trail is active — track peak high, check for callback trigger
-                self.long_trailing_peak = max(self.long_trailing_peak, tp_check_price)
-                trail_trigger = self.long_trailing_peak * (1 - cfg.TRAILING_CALLBACK_PCT / 100)
-                if check_low <= trail_trigger:
-                    fill_price = trail_trigger
-                    is_taker = True  # trailing stop = market order (taker fee)
-            elif tp_check_price >= self.long_tp:
-                if cfg.TRAILING_STOP_ENABLED and not self.live_mode:
-                    # Activate trailing stop — price just hit the TP level
-                    self.long_trailing_active = True
-                    self.long_trailing_peak = tp_check_price
-                    # Check if callback already triggered in same candle (spike then drop)
-                    trail_trigger = self.long_trailing_peak * (1 - cfg.TRAILING_CALLBACK_PCT / 100)
-                    if check_low <= trail_trigger:
-                        fill_price = trail_trigger
-                        is_taker = True
-                else:
-                    # Fixed TP (original behavior, also used by live_mode — exchange handles trail)
-                    fill_price = self.long_tp
-
-            if fill_price is not None:
-                proceeds = self.long_coins * fill_price
-                fee = self._charge_fee(proceeds, is_taker=is_taker)
-                pnl = proceeds - self.long_cost - fee
-                pnl_pct = pnl / self.long_cost * 100 if self.long_cost > 0 else 0
-                self.capital += proceeds
-                self.long_trades += 1
-                self.long_wins += 1
-                self.long_pnl += pnl
-                action_label = 'LONG_DCA_TRAIL_TP' if self.long_trailing_active else 'LONG_DCA_TP'
-                self.trades.append({
-                    'date': date, 'action': f'{action_label} ({self.long_layers}L)',
-                    'price': fill_price, 'amount': proceeds, 'coins': self.long_coins,
-                    'phase': self.phase, 'pnl_pct': pnl_pct, 'pnl': pnl, 'fee': fee
-                })
-                self.long_coins = 0
-                self.long_avg_entry = 0
-                self.long_layers = 0
-                self.long_tp = 0
-                self.long_cost = 0
-                self.long_last_buy = None
-                self.long_trailing_active = False
-                self.long_trailing_peak = 0.0
-                return
+        # Check TP first (skip in accumulate mode — hold position for signal-based exit)
+        if not cfg.DCA_ACCUMULATE and self.long_coins > 0 and self.long_tp > 0 and price >= self.long_tp:
+            proceeds = self.long_coins * price
+            fee = self._charge_fee(proceeds, is_taker=False)  # TP = maker/limit
+            pnl = proceeds - self.long_cost - fee
+            pnl_pct = pnl / self.long_cost * 100 if self.long_cost > 0 else 0
+            self.capital += proceeds
+            self.long_trades += 1
+            self.long_wins += 1
+            self.long_pnl += pnl
+            self.trades.append({
+                'date': date, 'action': f'LONG_DCA_TP ({self.long_layers}L)',
+                'price': price, 'amount': proceeds, 'coins': self.long_coins,
+                'phase': self.phase, 'pnl_pct': pnl_pct, 'pnl': pnl, 'fee': fee
+            })
+            self.long_coins = 0
+            self.long_avg_entry = 0
+            self.long_layers = 0
+            self.long_tp = 0
+            self.long_cost = 0
+            self.long_last_buy = None
+            return
 
         # Don't open new deals if unwinding
         if self.unwinding:
@@ -440,15 +387,8 @@ class V14DCAEngine:
                 order = available * cfg.DCA_BO_PCT
             else:
                 order = available * cfg.DCA_BO_PCT * (cfg.DCA_SO_MULTIPLIER ** min(self.long_layers, 4))
-            # 30% cap REMOVED (2026-04-10): Was paper-only and completely inverted
-            # the Martingale multiplier — deeper layers got SMALLER instead of larger,
-            # making paper results non-representative of live bot behavior.
-            # Cap at remaining capital (2026-04-11): Deploy whatever's left instead
-            # of blocking entirely when order exceeds capital.
-            order = min(order, self.capital)
-            if order < 10:
-                return
-            if price <= 0:
+            order = min(order, self.capital * 0.3)
+            if order < 10 or order > self.capital:
                 return
 
             coins = order / price
@@ -493,82 +433,43 @@ class V14DCAEngine:
         self.long_tp = 0
         self.long_cost = 0
         self.long_last_buy = None
-        self.long_trailing_active = False
-        self.long_trailing_peak = 0.0
         return pnl_pct
 
     # =========================================================================
     #  SHORT DCA GRID
     # =========================================================================
 
-    def _short_dca_tick(self, date, price, low=None, high=None):
+    def _short_dca_tick(self, date, price):
         """Process one tick of the short DCA grid.
-        Mirror of long grid: sell high, buy back low.
-        
-        Args:
-            low: Candle low price. When provided, TP is checked against the low
-                 (simulating a limit buy-back order that fills on any wick touch).
-                 Falls back to close price if not provided (backward compat).
-            high: Candle high price. Used for trailing stop callback detection
-                  (short trail triggers when price bounces UP from the peak low).
-        """
+        Mirror of long grid: sell high, buy back low."""
         if np.isnan(price):
             return
         available = self.capital * self.cfg.DCA_CAPITAL_PCT
         cfg = self.cfg
 
-        # Check TP / Trailing Stop (skip in accumulate mode — hold for signal-based exit)
-        tp_check_price = low if low is not None and not np.isnan(low) else price
-        check_high = high if high is not None and not np.isnan(high) else price
-        if not cfg.DCA_ACCUMULATE and self.short_coins > 0 and self.short_tp > 0:
-            fill_price = None
-            is_taker = False
-
-            if self.short_trailing_active:
-                # Trail is active — track peak low, check for callback trigger
-                self.short_trailing_peak = min(self.short_trailing_peak, tp_check_price)
-                trail_trigger = self.short_trailing_peak * (1 + cfg.TRAILING_CALLBACK_PCT / 100)
-                if check_high >= trail_trigger:
-                    fill_price = trail_trigger
-                    is_taker = True
-            elif tp_check_price <= self.short_tp:
-                if cfg.TRAILING_STOP_ENABLED and not self.live_mode:
-                    # Activate trailing stop — price just hit the short TP level
-                    self.short_trailing_active = True
-                    self.short_trailing_peak = tp_check_price
-                    # Check if callback already triggered in same candle
-                    trail_trigger = self.short_trailing_peak * (1 + cfg.TRAILING_CALLBACK_PCT / 100)
-                    if check_high >= trail_trigger:
-                        fill_price = trail_trigger
-                        is_taker = True
-                else:
-                    # Fixed TP (original behavior)
-                    fill_price = self.short_tp
-
-            if fill_price is not None:
-                buy_cost = self.short_coins * fill_price
-                fee = self._charge_fee(buy_cost, is_taker=is_taker)
-                pnl = self.short_cost - buy_cost - fee
-                pnl_pct = pnl / self.short_cost * 100 if self.short_cost > 0 else 0
-                self.capital += self.short_cost + pnl
-                self.short_trades += 1
-                self.short_wins += 1
-                self.short_pnl += pnl
-                action_label = 'SHORT_DCA_TRAIL_TP' if self.short_trailing_active else 'SHORT_DCA_TP'
-                self.trades.append({
-                    'date': date, 'action': f'{action_label} ({self.short_layers}L)',
-                    'price': fill_price, 'amount': buy_cost, 'coins': self.short_coins,
-                    'phase': self.phase, 'pnl_pct': pnl_pct, 'pnl': pnl, 'fee': fee
-                })
-                self.short_coins = 0
-                self.short_avg_entry = 0
-                self.short_layers = 0
-                self.short_tp = 0
-                self.short_cost = 0
-                self.short_last_sell = None
-                self.short_trailing_active = False
-                self.short_trailing_peak = float('inf')
-                return
+        # Check TP first (skip in accumulate mode — hold for signal-based exit)
+        if not cfg.DCA_ACCUMULATE and self.short_coins > 0 and self.short_tp > 0 and price <= self.short_tp:
+            # Buy back at lower price
+            buy_cost = self.short_coins * price
+            fee = self._charge_fee(buy_cost, is_taker=False)  # TP = maker/limit
+            pnl = self.short_cost - buy_cost - fee  # Sold high, bought low, minus fee
+            pnl_pct = pnl / self.short_cost * 100 if self.short_cost > 0 else 0
+            self.capital += self.short_cost + pnl  # Return collateral + profit (fee already deducted)
+            self.short_trades += 1
+            self.short_wins += 1
+            self.short_pnl += pnl
+            self.trades.append({
+                'date': date, 'action': f'SHORT_DCA_TP ({self.short_layers}L)',
+                'price': price, 'amount': buy_cost, 'coins': self.short_coins,
+                'phase': self.phase, 'pnl_pct': pnl_pct, 'pnl': pnl, 'fee': fee
+            })
+            self.short_coins = 0
+            self.short_avg_entry = 0
+            self.short_layers = 0
+            self.short_tp = 0
+            self.short_cost = 0
+            self.short_last_sell = None
+            return
 
         # Don't open new deals if unwinding
         if self.unwinding:
@@ -591,12 +492,8 @@ class V14DCAEngine:
                 order = available * cfg.DCA_BO_PCT
             else:
                 order = available * cfg.DCA_BO_PCT * (cfg.DCA_SO_MULTIPLIER ** min(self.short_layers, 4))
-            # 30% cap REMOVED (2026-04-10): See long side comment.
-            # Cap at remaining capital (2026-04-11): See long side comment.
-            order = min(order, self.capital)
-            if order < 10:
-                return
-            if price <= 0:
+            order = min(order, self.capital * 0.3)
+            if order < 10 or order > self.capital:
                 return
 
             coins = order / price
@@ -641,8 +538,6 @@ class V14DCAEngine:
         self.short_tp = 0
         self.short_cost = 0
         self.short_last_sell = None
-        self.short_trailing_active = False
-        self.short_trailing_peak = float('inf')
         return pnl_pct
 
     # =========================================================================
@@ -862,20 +757,18 @@ class V14DCAEngine:
             price = row['close']
             if np.isnan(price):
                 continue
-            high = float(row['high']) if 'high' in row and not np.isnan(row['high']) else price
-            low = float(row['low']) if 'low' in row and not np.isnan(row['low']) else price
 
             signals = self._compute_signals(date, price)
 
             if self.phase == Phase.LONG_DCA:
                 # Run long DCA grid
-                self._long_dca_tick(date, price, high=high, low=low)
+                self._long_dca_tick(date, price)
                 # Check for top signals
                 self._check_top_signals(date, price, signals)
 
             elif self.phase == Phase.SHORT_DCA:
                 # Run short DCA grid
-                self._short_dca_tick(date, price, low=low, high=high)
+                self._short_dca_tick(date, price)
                 # Check for bottom signals
                 self._check_bottom_signals(date, price, signals)
                 # Also check for structural bullish reversal (markdown → DCA transition)
