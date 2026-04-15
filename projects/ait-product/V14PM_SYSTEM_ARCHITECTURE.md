@@ -770,6 +770,18 @@ and state is still restored — signals will refresh on the next daily boundary.
 > for its single engine. The PM bot does NOT use `state.json` — all its state is
 > in `engine_state.json`, which covers all 10 engines, the router, and open deals.
 
+> **⚠️ CRITICAL: State Edit Procedure (added 2026-04-15)**
+> The bot writes state every ~60 seconds. External edits to `state.json` will be
+> **overwritten** by the running bot within one cycle. The correct procedure:
+> 1. **Kill bot process** (confirm PID is dead)
+> 2. **Edit state file** (prune engines, fix TP orders, etc.)
+> 3. **Make exchange changes** (cancel/place orders while state is consistent)
+> 4. **Restart bot** (loads edited state into memory)
+>
+> Failure to follow this sequence caused the 2026-04-15 incident where pruned
+> state was overwritten by the still-running bot, resulting in 7 engines restoring
+> from stale in-memory data.
+
 ### 6.3 Equity Calculation (All Bots)
 
 **All bot runners** compute equity from ground truth, not engine internals:
@@ -2325,5 +2337,6 @@ _Updated: 2026-03-21 (v1.5 — Exchange-as-truth architecture: removed LIVE GUAR
 _Updated: 2026-03-21 (v1.6 — Code audit merge from V14PM\_CODE\_AUDIT\_2026-03-21.md: §1.5 Class & Module Quick Reference, §6.8.7 Data Source Map, §8.6 External API Dependencies, §18 Code Audit & Gap Analysis (13 gaps, all resolved). Architecture doc is now single source of truth for design-level findings.)_
 _Updated: 2026-04-09 (v1.7 — Pre-order exchange checks: SELL path verifies position exists via fetch_open_positions(), insufficient USDT alert throttle, SELL rollback in reject_action(). GAPs 14-16 added to §18.)_
 _Updated: 2026-04-15 (v1.8 — Trailing stop TP live. §7.10 bot status updated (7 coins, $365 equity). §17.8 accidental revert incident. §18 GAP-17 (missing low param). .gitignore safeguard for code/data separation.)_
+_Updated: 2026-04-15 (v1.9 — Tier cap enforcement fix: rebalance now gates new engine creation against active position count, not just scanner selection. §7.2 updated. State edit procedure documented: kill bot → edit state → restart (never edit state.json while bot is running). Source file protection: run_v14_portfolio_live_aster.py and v14_capital_manager.py gitignored to prevent data sync deletion. Bot status: 3 coins (TAO L2, HYPE L1, JTO L1), $374 equity, all trailing stop TPs.)_
 _Decisions reference: PRODUCTION_DECISIONS_2026-03-19.md_
 _Audit trail: V14PM_CHANGE_CONTROL.md (renamed from V14PM_UNIFIED_AUDIT.md 2026-03-24)_

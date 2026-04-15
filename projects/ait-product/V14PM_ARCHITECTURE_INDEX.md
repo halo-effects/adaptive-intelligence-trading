@@ -2,7 +2,7 @@
 
 > **Use this file first.** Read specific line ranges from `V14PM_SYSTEM_ARCHITECTURE.md` (2,329 lines / ~116KB) instead of loading the full document. Line numbers are stable until the next edit.
 >
-> **Last updated:** 2026-04-15 (v1.8 — trailing stop live, incident §17.8, GAP-17, safeguard)
+> **Last updated:** 2026-04-15 (v1.9 — tier cap enforcement, state edit procedure, source file protection, position prune to 3 coins)
 
 ## Quick Lookup by Topic
 
@@ -38,6 +38,8 @@
 | **Future architecture** | §16 | 1880–2018 | Production scaling plan, DB schema target, migration |
 | **Incident log** | §17 | 2019–2178 | All production incidents and fixes (incl. §17.8 revert) |
 | **Accidental revert incident** | §17.8 | 2145–2178 | Code revert, .gitignore safeguard, root cause |
+| **State edit procedure** | §6.2 | ~770–785 | Kill bot → edit state → exchange changes → restart. Never edit state.json while bot runs |
+| **Tier cap enforcement** | §7.2 | ~1193–1200 | Rebalance gates new engines against active position count, not just scanner selection |
 | **Code audit (2026-03-21+)** | §18 | 2179–2325 | 17 gaps found and resolved (GAPs 1-17) |
 | **GAP-17 (low param bug)** | §18 | 2305–2315 | _long_dca_tick missing low, trailing callback detection |
 | **Design decisions** | §15 | 1853–1879 | Key rationale for architectural choices |
