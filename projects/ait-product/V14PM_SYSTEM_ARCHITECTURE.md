@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading — V14PM System Architecture
-_Version: 1.6 | Date: 2026-03-21 | Status: Production — Live on Aster Perps_
+_Version: 1.8 | Date: 2026-04-15 | Status: Production — Live on Aster Perps_
 
 ---
 
@@ -84,15 +84,16 @@ downgrades only trigger when equity drops 5% below the current tier's threshold
 | **Telegram Interface** | Human oversight and commands | The control panel |
 | **Dashboard** | Real-time visualization on GitHub Pages | The scoreboard |
 
-### Current Status (2026-03-21)
+### Current Status (2026-04-15)
 
-- **Live on Aster Perps** with ~$340 real USDT
-- Scanner selected GRASS/USDT as first coin (top 30d DCA scorer)
+- **Live on Aster Perps** with ~$365 real USDT
+- Active coins: GRASS/USDT, TAO/USDT, HYPE/USDT, FET/USDT, JTO/USDT, ZEC/USDT, RENDER/USDT (7 coins)
+- **Trailing stop TP live** (2026-04-13): exchange TRAILING_STOP_MARKET orders active on all TP slots
 - 3 coin slots at current equity (Upgrade 0: adaptive tiers, 2026-03-24); scales to 10
 - **Adaptive pool split** (2026-03-24): 90/10 at current equity, scales to 75/25 at $20K+
 - **5% hysteresis** on tier transitions prevents flapping at boundaries
 - **Exchange-as-truth architecture** (2026-03-21): positions synced from exchange every cycle
-- Resting limit orders for TP execution, Telegram commands operational
+- Resting trailing stop orders for TP execution, Telegram commands operational
 - Dashboard shows correct exchange-derived equity, invested, and P&L
 
 ---
@@ -598,6 +599,8 @@ exchange correctly rejects. The flow is now:
 3. TP = `exchange_entry × (1 + DCA_TP_PCT)` — always above actual cost basis
 4. If fetch fails, falls back to engine's `eng.long_tp` (best effort)
 5. TP recovery (`_check_tp_fills`) retries placement for any position missing a TP order
+
+**Trailing Stop TP (default exit, 2026-04-13):** The trailing stop TP is the default exit mechanism. In **paper bots**, the engine simulates the trail using candle `high`/`low` — when candle high reaches `avg_entry × (1 + DCA_TP_PCT)`, the trail activates and peak is tracked; when candle low drops `TRAILING_CALLBACK_PCT` (0.5%) below peak, the position sells at the trail trigger price. In **live bots**, a `TRAILING_STOP_MARKET` order is placed on the exchange with `activationPrice = exchange_entry × (1 + DCA_TP_PCT)` and `callbackRate = 0.5%`. The exchange handles all trailing logic natively — even if the bot crashes, the trailing stop sits on the exchange. Feature flag `TRAILING_STOP_ENABLED` (default `True`) allows instant rollback to limit sell. See §6.8.2 for implementation details.
 
 **Layer timing:** There is no cooldown between layers at any risk profile (Low,
 Medium, or High). When price drops through multiple deviation thresholds, the
@@ -1465,22 +1468,24 @@ Aster perps settle funding every 8 hours. The bot tracks:
 At 1x leverage with DCA hold times of hours to days, funding is typically negligible
 (fractions of a basis point per 8-hour period) relative to the 1.5% TP target.
 
-### 7.10 Current Bot Status (2026-03-24)
+### 7.10 Current Bot Status (2026-04-15)
 
-- **V14PM Live (Aster Perps):** ✅ **LIVE as of 2026-03-19.** ~$340 real USDT on Aster Perps.
-  **All four upgrades deployed 2026-03-24:**
+- **V14PM Live (Aster Perps):** ✅ **LIVE.** ~$365 real USDT on Aster Perps.
+  **All four upgrades deployed 2026-03-24. Trailing stop TP live 2026-04-13.**
   - Upgrade 0: Adaptive tiers (3 coin slots at current equity, 90/10 split) with 5% hysteresis
   - Upgrade 1: Dynamic capital management (auto-detect deposits/withdrawals, capital ledger)
   - Upgrade 2: Per-coin pause (PAUSE/RESUME per coin, rebalance exclusion)
   - Upgrade 3: Per-coin regime flagging (auto-flag signal conflicts, 24h cooldown)
-  Active coins: GRASS/USDT, TAO/USDT, HYPE/USDT.
-  Exchange-as-truth architecture (2026-03-21). Resting limit orders, Telegram commands operational.
+  Active coins: GRASS/USDT, TAO/USDT, HYPE/USDT, FET/USDT, JTO/USDT, ZEC/USDT, RENDER/USDT (7 coins).
+  Trailing stop TP: exchange TRAILING_STOP_MARKET orders, 2 TP orders verified on exchange.
+  Exchange-as-truth architecture (2026-03-21). Telegram commands operational.
 - **V14 Live (Aster Spot, legacy):** ❌ **RETIRED 2026-03-19** — replaced by V14PM Live.
   Position closed, funds transferred to Perps. Scheduled task `V14LiveAster` still exists
   but should not be started (will conflict with PM bot).
-- **V14 Paper:** ~$52,600 equity, 400+ deals, 97.8% win rate
-- **V14 PM Paper:** ~$53,100 equity, 100+ deals, 100% win rate
-- **V14-ETF:** ❌ **RETIRED 2026-03-17** — HBAR autonomous direction switch caused losses.
+- **V14 Paper:** ~$58,629 equity, 459 deals, 98% win rate
+- **V14 PM Paper:** ~$75,434 equity, 587 deals, 100% win rate
+- **V14-ETF Paper:** ~$10,883 equity, 48 deals, 100% win rate (still running)
+- **V14-ETF Live:** ❌ **RETIRED 2026-03-17** — HBAR autonomous direction switch caused losses.
 
 > **Bug history:** Earlier equity figures were inflated by engine counter drift.
 > Engine-internal realized PnL could diverge from CSV on restart — one bot reported
@@ -2137,6 +2142,38 @@ deployed during the same session were unaffected.
 **Lesson:** Never use `[datetime]::Parse()` for UTC timestamp comparison in PowerShell.
 Always use `[datetimeoffset]` for timezone-aware parsing.
 
+### 17.8 2026-04-14: CRITICAL — Accidental Code Revert (Trailing Stop Regression)
+
+**Component:** `v14_dca_engine.py`, `v14_lifecycle_engine.py`, `run_v14_portfolio_live_aster.py`, `v14_capital_manager.py`
+**Severity:** Critical (live bot stopped trading for ~16 hours)
+**Status:** ✅ Resolved 2026-04-15
+
+**What happened:** An auto-backup committed a reverted version of the trailing stop code. The revert:
+- Deleted `run_v14_portfolio_live_aster.py` (3,120 lines — entire PM live runner)
+- Stripped `high`/`low` params from `_long_dca_tick` and `_short_dca_tick`
+- Removed trailing stop state, `live_mode` flag, `EQUITY_TIER_SPLITS`
+- Removed SELL rollback support from `reject_action()`
+
+The PM live bot continued running in-memory until ~10 PM Apr 14 when candle catch-up
+loaded the reverted DCA engine code, causing `NameError: name 'low' is not defined`
+on every tick.
+
+**Root cause:** The "Workspace Git Backup" cron job ran `git add -A` which staged bot
+runtime data files alongside code. When an external process reverted code on disk, the
+next auto-backup committed the regression.
+
+**Resolution:**
+1. Restored all code from commit `1554a0500` (trailing stop version)
+2. Fixed pre-existing bug: `_long_dca_tick` was missing `low` parameter for trailing stop callback detection
+3. PM Live bot restarted — 7 coins restored, 2 TP orders verified on exchange
+4. SAFEGUARD: `.gitignore` updated to exclude all bot runtime data from git tracking
+5. Auto-backup cron updated to respect `.gitignore` boundaries
+
+**Safeguard details:** Bot runtime files (`status.json`, `state.json`, `trades.csv`, logs,
+locks, PIDs) are now gitignored across all bot directories using wildcard patterns
+(`trading/spot/live/*/`). New bot instances are automatically covered. Code changes
+require explicit manual commits.
+
 ---
 
 ## 18. Code Audit & Gap Analysis (2026-03-21)
@@ -2162,6 +2199,10 @@ Full per-function traces and detailed flow analysis: `V14PM_CODE_AUDIT_2026-03-2
 | GAP-11 | `_place_tp_order` makes redundant `fetch_open_positions` call immediately after a BUY | P3 | ⏸️ DEFERRED |
 | GAP-12 | `_recover_tp_orders` Phase 2 (orphan scan) runs on coins already fully handled by Phase 1 | P2 | ✅ FIXED |
 | GAP-13 | Engine capital depletes mid-DCA, potentially blocking further layers on restart with open position | P1 | ✅ FIXED |
+| GAP-14 | `_execute_action` SELL path did not verify exchange position exists before market sell | P1 | ✅ FIXED |
+| GAP-15 | `reject_action()` only supported BUY/SHORT_OPEN rollbacks, not SELL | P1 | ✅ FIXED |
+| GAP-16 | Insufficient USDT Telegram alerts had no throttle (dozens per hour when cash-starved) | P2 | ✅ FIXED |
+| GAP-17 | `_long_dca_tick` missing `low` param for trailing stop callback detection; callers not passing `high` to `_short_dca_tick` | P1 | ✅ FIXED |
 
 ### 18.2 Gap Details
 
@@ -2265,6 +2306,15 @@ alerts per coin per hour.
 The actual `fetch_balance()` check still runs every time — only the Telegram notification is
 rate-limited.
 
+**GAP-17 — FIXED (2026-04-15):** `_long_dca_tick(self, date, price, high=None)` was missing
+the `low` parameter needed for trailing stop callback detection. The trailing stop callback
+triggers when candle low drops below `peak × (1 - callback_pct)`, but `low` was only defined
+in the function body as `check_low = low if low is not None...` without being a function
+parameter. Similarly, `_short_dca_tick` needed `high` for its callback detection but callers
+in `v14_lifecycle_engine.py` only passed `low`.
+**Fix:** Added `low=None` to `_long_dca_tick` signature; updated all call sites in lifecycle
+engine and backtest `run()` to pass both `high` and `low` to both tick functions.
+
 ---
 
 _Document generated by Gee Gee — 2026-03-09_
@@ -2274,5 +2324,6 @@ _Updated: 2026-03-19 (v1.4 — Production architecture locked: Aster Perps, 50-c
 _Updated: 2026-03-21 (v1.5 — Exchange-as-truth architecture: removed LIVE GUARD, engine rollbacks, reconciliation. Exchange API is single source of truth for positions and balances. §6.8 rewritten, §7.1 architecture updated, §16.4 Phase 3 partially implemented.)_
 _Updated: 2026-03-21 (v1.6 — Code audit merge from V14PM\_CODE\_AUDIT\_2026-03-21.md: §1.5 Class & Module Quick Reference, §6.8.7 Data Source Map, §8.6 External API Dependencies, §18 Code Audit & Gap Analysis (13 gaps, all resolved). Architecture doc is now single source of truth for design-level findings.)_
 _Updated: 2026-04-09 (v1.7 — Pre-order exchange checks: SELL path verifies position exists via fetch_open_positions(), insufficient USDT alert throttle, SELL rollback in reject_action(). GAPs 14-16 added to §18.)_
+_Updated: 2026-04-15 (v1.8 — Trailing stop TP live. §7.10 bot status updated (7 coins, $365 equity). §17.8 accidental revert incident. §18 GAP-17 (missing low param). .gitignore safeguard for code/data separation.)_
 _Decisions reference: PRODUCTION_DECISIONS_2026-03-19.md_
 _Audit trail: V14PM_CHANGE_CONTROL.md (renamed from V14PM_UNIFIED_AUDIT.md 2026-03-24)_
