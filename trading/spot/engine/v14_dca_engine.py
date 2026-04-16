@@ -63,7 +63,7 @@ class V14Config:
 
     # -- Trailing Stop TP --
     TRAILING_STOP_ENABLED = True   # Activate trailing stop at TP level instead of fixed sell
-    TRAILING_CALLBACK_PCT = 0.5    # 0.5% trail distance after activation
+    TRAILING_CALLBACK_PCT = 0.2    # 0.2% trail distance after activation (Aster min increment: 0.1%)
 
     # -- Top Detection (StochRSI) -- inherited from V13 --
     OB_THRESHOLD_2W = 93

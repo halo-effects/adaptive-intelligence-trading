@@ -18,15 +18,14 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
-## AIT — Current State (2026-03-10)
-- **V14PM Paper (MVP)**: $50,440 equity, 30 trades, 100% win rate, $50K capital, 10 coin slots
-- **V14 Live (Aster)**: $311 real, ASTER/USDT
-- **V14 Paper**: $48K+ equity, 380 deals | **V14-ETF Paper**: $10.5K+ equity, fixed PID lock and equity sync issues.
+## AIT — Current State (2026-04-15)
+- **V14PM Live (Aster)**: ~$375 equity, 3 coins (TAO, HYPE, JTO), trailing stop TP with **0.2% callback** (optimized from 0.5% via 365-day backtest)
+- **V14PM Paper**: $75K+ equity, 4 active positions, running on fixed TP (Phase 2 trailing deferred)
+- **V14 Paper**: Running | **V14-ETF Paper**: Running
 - **All 4 bots running** on Windows. Cloud migration pending.
-- **Full audit complete 2026-03-10**: Fixed critical DB path bug (blind top/bottom detection), added state persistence (no more phantom trades), added daily resampling (19 blind coins now have signal data).
-- **Dashboard Fixes (2026-03-10)**: Corrected V14 dashboards to show "Trade Score" (Base Score × Trend Mult) and sort by it to accurately reflect bot logic.
-- **CSV-as-truth fix applied** to all 4 runners. V14-ETF equity bug fixed to enforce capital + CSV logic strictly.
-- **Architecture doc v1.2, Migration doc v1.2, Audit doc §11** all updated.
+- **Trailing stop optimization (2026-04-15)**: Callback 0.5%→0.2%. Aster only accepts 0.1% increments. Backtest: 0.2% = $93K (187% ROI) vs fixed TP = $25K (50% ROI).
+- **Git stability fix (2026-04-15)**: Root cause found — two git processes fighting. Source files now protected in .gitignore, never in git.
+- **Architecture docs v2.0**: Implementation plan, change control, design doc all updated.
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.

@@ -1,5 +1,99 @@
 # Adaptive Intelligence Trading — V14PM System Architecture
-_Version: 1.2 | Date: 2026-03-10 | Status: Cloud-Ready_
+_Version: 1.6 | Date: 2026-03-21 | Status: Production — Live on Aster Perps_
+
+---
+
+## Executive Summary
+
+V14PM is an automated crypto portfolio trading system. Here's what it does,
+in plain English.
+
+### What It Does
+
+The system watches 50 cryptocurrencies, picks the best one to trade right now,
+buys it in layers as the price dips, and sells for a small profit (1.5%).
+Then it rotates to the next best opportunity. Rinse and repeat, 24/7.
+
+### How It Makes Decisions
+
+1. **The Scanner** looks at all 50 coins every day and asks: "Which coin is
+   completing the most profitable buy-low-sell-high cycles right now?" It scores
+   each coin by speed, profitability, and risk. The best scorer gets the capital.
+
+2. **The Grid Engine** manages the actual trading. When it enters a coin, it
+   doesn't go all-in. It buys a starter position (~40% of allocation) and places
+   up to 12 more buy orders at progressively lower prices. If the price dips,
+   it buys more at better prices, lowering its average. When the price recovers
+   just 1.5% above the average, it sells everything for a profit.
+
+3. **The Regime Monitor** watches for market-wide danger signs. If half the coins
+   start showing topping signals, it sends a Telegram alert. No automatic panic
+   selling — Brett decides whether to wind down positions.
+
+### Key Safety Features
+
+| Feature | What It Does | Why It Matters |
+|---------|-------------|----------------|
+| **1x Leverage** | No borrowing, no liquidation risk | You can't lose more than you put in |
+| **Exchange Is Truth** | Position state synced from exchange every 65s cycle | Engine can never diverge from reality |
+| **Trailing Stop TP** | Exchange handles take-profit with trailing stop, not the bot | TRAILING_STOP_MARKET activates at +1.5% (same as old fixed TP), then trails with 0.5% callback. Captures runaway moves while guaranteeing minimum ~+1.0% profit. Even if the bot crashes, the trailing stop sits on the exchange. Feature flag allows instant rollback to limit sell. |
+| **Pre-Order Exchange Checks** | Every BUY checks `fetch_balance()`, every SELL checks `fetch_open_positions()` | No order executes without exchange confirmation that the prerequisite exists (cash for buys, position for sells) |
+| **Leverage Enforcement** | `ensure_leverage()` called per symbol at first trade | Sets 1x on Aster (which defaults to 5x Cross). Note: `_leverage_set` is not persisted to state.json — on restart with no open positions, leverage is re-verified at next trade entry. |
+| **Human Approval** | Direction changes require Telegram confirmation | The bot never flips strategy on its own |
+| **PAUSE/RESUME** | Freeze all trading with one command | Instant kill switch, existing TPs stay active |
+| **No Engine Position Tracking** | Engine doesn't maintain its own position state | Eliminates entire class of drift/divergence bugs |
+
+### How Capital Flows
+
+```
+$350 USDT (Aster Perps account)
+  │
+  ├── 90% Active Pool ($315)        ← Adaptive: 90/10 below $10K
+  │     └── Deployed to top-ranked coins (up to 3 slots at current equity)
+  │           └── DCA grid: layers at 1.5% spacing
+  │                 └── TP hit → profit returned → rotate to next coin
+  │
+  └── 10% Reserve Pool ($35)        ← Scales to 25% at $20K+
+        └── Held back for deep DCA layers (6+) and new opportunities
+```
+
+As equity grows, more coins trade and the pool split adjusts:
+
+| Your Equity | Coins Trading | Pool Split | Effect |
+|-------------|--------------|------------|--------|
+| $350 (now) | 3 | 90/10 | Max turnover, thin reserve OK |
+| $3,000 | 4 | 90/10 | Demo phase: turnover + depth |
+| $5,000 | 5 | 90/10 | Aggressive turnover |
+| $10,000 | 5 | 80/20 | Intermediate (avoids cliff) |
+| $20,000+ | 5 | 75/25 | Proven paper profile |
+| $100,000+ | 10 | 75/25 | Full rotation |
+
+Tier transitions use **5% hysteresis**: upgrades are immediate at threshold;
+downgrades only trigger when equity drops 5% below the current tier's threshold
+(prevents flapping from normal PnL fluctuation).
+
+### The Components
+
+| Component | Role | Analogy |
+|-----------|------|---------|
+| **Cycle Scanner** | Ranks coins by DCA efficiency | The talent scout |
+| **Capital Router** | Allocates money across coins | The portfolio manager |
+| **DCA Grid Engine** | Generates buy/sell signals from candle data | The analyst |
+| **Exchange Sync** | Overwrites engine state from exchange every cycle | The auditor |
+| **Regime Monitor** | Watches for market-wide shifts | The risk officer |
+| **Telegram Interface** | Human oversight and commands | The control panel |
+| **Dashboard** | Real-time visualization on GitHub Pages | The scoreboard |
+
+### Current Status (2026-03-21)
+
+- **Live on Aster Perps** with ~$340 real USDT
+- Scanner selected GRASS/USDT as first coin (top 30d DCA scorer)
+- 3 coin slots at current equity (Upgrade 0: adaptive tiers, 2026-03-24); scales to 10
+- **Adaptive pool split** (2026-03-24): 90/10 at current equity, scales to 75/25 at $20K+
+- **5% hysteresis** on tier transitions prevents flapping at boundaries
+- **Exchange-as-truth architecture** (2026-03-21): positions synced from exchange every cycle
+- Resting limit orders for TP execution, Telegram commands operational
+- Dashboard shows correct exchange-derived equity, invested, and P&L
 
 ---
 
@@ -9,12 +103,20 @@ _Version: 1.2 | Date: 2026-03-10 | Status: Cloud-Ready_
 
 V14PM (V14 Portfolio Manager) is a fully automated crypto trading system built on a
 Dynamic Dollar-Cost Averaging (DCA) engine, combined with a capital rotation portfolio
-manager. It continuously scans a universe of 45 coins (66 symbol pairs), scores them
-by DCA cycle efficiency, and dynamically allocates capital toward the highest-velocity
-opportunities.
+manager. It continuously scans a universe of **50 coins**, scores them by DCA cycle
+efficiency, and dynamically allocates capital toward the highest-velocity opportunities.
 
-The system is designed for production deployment on **Hyperliquid** (perpetuals exchange),
-though the core engine is exchange-agnostic via a CCXT abstraction layer.
+The system runs in production on **Aster DEX Perpetuals** at 1x leverage (no liquidation
+risk). All coins trade in the same direction (global Long or Short), with direction
+changes requiring human approval. The core engine is exchange-agnostic via CCXT.
+
+**Key architectural principles (2026-03-19):**
+- All trading on Aster Perps — no Spot, no dual-account management
+- Unified risk profile (High grid, 1x leverage, 30d scanner window)
+- Global strategy direction — all coins Long or all Short, never mixed
+- Exchange is truth — LIVE GUARD, resting limit orders, actual fill prices
+- Human-in-the-loop for regime changes — Telegram APPROVE/DENY
+- Binance for candle backfill, Aster for live price data
 
 ### 1.2 Design Philosophy
 
@@ -22,6 +124,10 @@ though the core engine is exchange-agnostic via a CCXT abstraction layer.
 - **DCA-only exits:** All positions exit at a fixed take-profit above average entry
 - **Capital rotation:** Close winners fast, redeploy to the next best opportunity
 - **No manual intervention:** Fully autonomous from candle collection to order execution
+- **Exchange is truth (live bots):** For live trading, exchange balances and fill prices
+  are authoritative. Engine state is never used as a source of fill prices or position
+  truth. All live bot capital calculations reflect actual exchange proceeds. Engine TP
+  sells are blocked when an active exchange limit order exists (LIVE GUARD pattern).
 
 ### 1.3 System Layers
 
@@ -38,6 +144,9 @@ though the core engine is exchange-agnostic via a CCXT abstraction layer.
 ├─────────────────────────────────────────────────────────────┤
 │  DATA PIPELINE                                              │
 │  Candle Collector · candles.db · Daily Aggregator          │
+├─────────────────────────────────────────────────────────────┤
+│  EXCHANGE LAYER (LIVE BOTS ONLY)                            │
+│  Resting Limit Orders · Fill Verification · LIVE GUARD     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -45,10 +154,35 @@ though the core engine is exchange-agnostic via a CCXT abstraction layer.
 
 | Component | Entry Point | Exchange | Capital | Notes |
 |-----------|------------|----------|---------|-------|
-| **V14PM** (MVP) | `run_v14_portfolio_paper.py` | Hyperliquid | $50K paper | Target for live production |
-| V14 Paper | `run_v14_paper.py` | Hyperliquid | $10K paper | Customer demo |
-| V14-ETF Paper | `run_v14etf_paper.py` | Hyperliquid | $10K paper | Customer demo |
-| V14 Live | `run_v14_live_aster.py` | Aster DEX | $300 real | Proof-of-concept |
+| **V14PM Live** | `run_v14_portfolio_live_aster.py` | Aster Perps | $350 real | **Production.** Live since 2026-03-19. All safeguards active. |
+| V14PM Paper | `run_v14_portfolio_paper.py` | Hyperliquid (sim) | $50K paper | Benchmark / demo |
+| V14 Paper | `run_v14_paper.py` | Hyperliquid (sim) | $10K paper | Benchmark / demo |
+| V14 Live (legacy) | `run_v14_live_aster.py` | Aster Spot | — | **RETIRED 2026-03-19.** Replaced by V14PM Live. |
+
+> **V14-ETF Paper Bot RETIRED (2026-03-17):** HBAR autonomously switched to DCA Short
+> direction and suffered significant losses. Lesson learned: Long↔Short strategy direction
+> changes require human-in-the-loop approval. Scheduled task unregistered. State preserved
+> at `paper/v14etf/status.json.retired`.
+
+### 1.5 Class & Module Quick Reference
+
+Quick reference for all primary classes in the V14PM system. For full method-level details
+and per-function traces, see `V14PM_CODE_AUDIT_2026-03-21.md`.
+
+| Class | File | Description |
+|-------|------|-------------|
+| `BotState` | `run_v14_portfolio_live_aster.py` | Named constants for bot operational state (`RUNNING` / `PAUSED` / `WIND_DOWN`) |
+| `TradeTracker` | `run_v14_portfolio_live_aster.py` | Records closed trade history to `trades.csv`; tracks open deals and per-coin PnL |
+| `AsterPerpClient` | `run_v14_portfolio_live_aster.py` | Aster DEX Perpetuals exchange client; wraps `ccxt.aster` with perp-specific helpers |
+| `CoinState` | `run_v14_portfolio_live_aster.py` | Tracks live state for a single coin slot (TP order ID, layer count, funding, candle timestamp) |
+| `V14PortfolioLiveAster` | `run_v14_portfolio_live_aster.py` | Main bot class; orchestrates all trading logic, Telegram commands, and state persistence |
+| `CapitalRouter` | `v14_capital_manager.py` | Manages capital distribution across active coins (adaptive pool split + equity-tiered coin cap with 5% hysteresis) |
+| `V14LifecycleEngine` | `v14_lifecycle_engine.py` | Per-coin live wrapper around `V14DCAEngine`; manages signal pack, daily ticks, state persistence |
+| `V14DCAEngine` | `engine/v14_dca_engine.py` | DCA phase machine + grid; generates `BUY`/`SELL` actions from candle data |
+| `V13SignalPack` | `engine/v13_signals.py` | StochRSI, ADX, HH/HL structure detectors; shared signal library for V13 and V14 engines |
+| `HybridDetector2D` | `engine/v13_router_engine_v2.py` | Composite top/bottom detection (2D RSI divergence + 3D SMA death cross) |
+| `V13BacktestV8` | `engine/v13_phase_backtest_v8.py` | Backtest engine for historical phase simulation (not used in live trading) |
+| `SpotExchangeClient` | `exchange_client.py` | Universal exchange client for Hyperliquid + Aster (used by paper bots; imported but **not used** by the live PM bot) |
 
 ---
 
@@ -87,14 +221,16 @@ trading/
     │
     ├── run_v14_portfolio_paper.py  # V14PM bot runner (paper)
     ├── run_v14_paper.py            # V14 paper bot runner
-    ├── run_v14etf_paper.py         # V14-ETF paper bot runner
-    ├── run_v14_live_aster.py       # V14 live bot runner (Aster DEX)
+    ├── run_v14etf_paper.py         # V14-ETF paper bot runner (RETIRED — do not restart)
+    ├── run_v14_live_aster.py       # V14 live bot runner (Aster Spot — LEGACY, retired)
+    ├── run_v14_portfolio_live_aster.py # V14PM live bot (Aster Perps — PRODUCTION)
     ├── run_v14_scanner.py          # Manual scanner runner
     ├── run_daily_collector.py      # Manual collector runner
     │
     ├── collect_scanner_candles.py  # Incremental 1h candle collector (Step 1)
     ├── resample_daily.py           # 1h → daily OHLCV resampling (Step 1.5)
     ├── backfill_scanner_coins.py   # Historical candle backfill
+    ├── backfill_binance.py          # One-time deep history backfill from Binance Futures (50 coins)
     ├── backfill_etf_candles.py     # ETF coin candle backfill
     ├── generate_daily_equity.py    # Daily equity JSON for dashboards
     ├── pm_comparison_log.py        # PM performance comparison logger
@@ -109,17 +245,23 @@ trading/
     │   └── v14/                    # V14 live bot state (Aster DEX)
     │       ├── .env                # Credentials (NOT in git)
     │       ├── .env.template       # Credential template
-    │       ├── state.json          # Bot position state
+    │       ├── state.json          # Bot position state (includes _tp_order_id)
     │       ├── status.json         # Health/metrics (updated every ~1h)
     │       ├── trades.csv          # Trade history
     │       └── bot.log             # Runtime log
     │
-    ├── live/v14pm/                 # V14PM live bot state (create for production)
-    │   └── .env.template           # Hyperliquid credential template
+    ├── live/v14pm/                 # V14PM live bot state (Aster Perps — PRODUCTION)
+    │   ├── .env.template           # Credential template
+    │   ├── state.json              # Bot + engine state (persisted across restarts)
+    │   ├── status.json             # Health/metrics (updated every 60s)
+    │   ├── trades.csv              # Closed trade history
+    │   ├── bot.pid                 # PID lock file
+    │   └── bot.log                 # Runtime log
     │
     └── paper/
         ├── v14/                    # V14 paper bot state
-        ├── v14etf/                 # V14-ETF paper bot state
+        ├── v14etf/                 # V14-ETF paper bot state (RETIRED)
+        │   └── status.json.retired # Renamed on 2026-03-17 retirement
         └── v14_portfolio/          # V14PM paper bot state
             ├── engine_state.json     # Engine snapshots (saved every 60s)
             ├── status.json           # Health metrics (dashboard + heartbeat)
@@ -136,13 +278,14 @@ trading/
 
 **Entry point:** `run_candle_collector.ps1` (Windows) / `run_candle_collector.sh` (Linux)
 **Schedule:** Hourly via `AIT_CandleCollector` scheduled task
-**Exchange:** Hyperliquid perps (CCXT)
-**Coverage:** 66 symbol pairs (45 base coins × USDC/USDT), 1h timeframe, incremental
+**Exchange:** Aster DEX Perps (CCXT) — switched from Hyperliquid 2026-03-19
+**Coverage:** 50 coins (Aster Perps universe), 1h timeframe, incremental
+**Deep history:** Binance Futures backfill via `backfill_binance.py` (one-time, 722K candles)
 
 **Three-step hourly pipeline:**
 ```
 Step 1: collect_scanner_candles.py
-  Hyperliquid API
+  Aster Perps API (ccxt.aster, defaultType=future)
     └─ fetch_ohlcv(symbol, '1h', since=last_stored)
          └─ INSERT INTO candles (symbol, timeframe, timestamp, O/H/L/C/V)
 
@@ -265,17 +408,21 @@ Where:
 
 **Simulation parameters (High Profile):**
 ```
-Base Order:      40% of allocation
+Base Order:      30% of allocation  (DCA_BO_PCT = 0.30)
 Safety Order deviation: 1.5% per layer
 Safety Order multiplier: 1.5x volume per layer
-Max layers:      12
+Max layers:      12  (DCA_MAX_LAYERS = 8 default; overridden to 12 by High profile)
 Take Profit:     1.5% above average entry
-Taker fee:       0.025% (Hyperliquid)
+Taker fee:       0.035% (Aster Perps)
 ```
 
 **Scan windows:** 7d, 14d, 30d, bear (extended lookback)
 
 **Minimum history:** 6 months of 1h candles required to appear on dashboard rankings
+
+> **Scanner fix (2026-03-18):** Best/Fastest/Safest summary picks in `cycle_scanner.json`
+> are now derived from the top 5 scored coins only (`scored_rankings[:5]`), not the full
+> coin universe. This ensures summary picks are drawn from genuinely high-performing coins.
 
 ### 4.2 Trend Multiplier
 
@@ -299,18 +446,33 @@ Requires ≥3 historical snapshots. Without history, multiplier defaults to 1.0.
 
 ### 4.3 Coin Universe
 
-44 coins across Hyperliquid perps and Aster DEX (spot):
+**50 coins on Aster Perps** (updated 2026-03-19):
 
 **Established (pre-2024):** BTC, ETH, SOL, XRP, LINK, DOGE, ADA, LTC, AVAX, DOT,
-UNI, ATOM, NEAR, HBAR, INJ, FIL, RUNE, CRV, SNX, COMP
+UNI, ATOM, NEAR, HBAR, INJ, FIL, CRV, SNX, ZEC
 
-**DeFi/Mid-cap:** AAVE, ARB, GMX, JUP, PENDLE, STX, ZRO, ENS, GRT, BAL
+**DeFi/Mid-cap:** AAVE, ARB, JUP, PENDLE, STX, ZRO
 
-**High-beta/Speculative:** PEPE, BONK, WIF, FLOKI, JTO, PYTH, TIA, SEI, APT, SUI
+**High-beta/Speculative:** PEPE, BONK, FLOKI, JTO, PYTH, TIA, SEI, APT, SUI
 
-**AI/Infrastructure:** FET, TAO, HYPE
+**AI/Infrastructure:** FET, TAO, HYPE, VIRTUAL, RENDER
 
-**Legacy (still tracked):** ZEC, SAND, MANA
+**New L1/L2:** BERA, MOVE, INIT, S, IP
+
+**Yield/RWA:** ONDO, EIGEN, ENA
+
+**DePIN/Other:** GRASS, ORCA, TRUMP
+
+> **Changes from v1.3 (2026-03-19):**
+> - **Added 13 coins:** ONDO, RENDER, VIRTUAL, BERA, MOVE, INIT, IP, S, EIGEN, ENA, GRASS, ORCA, TRUMP
+> - **Dropped 9 coins (not on Aster Perps):** BAL, COMP, ENS, GMX, GRT, MANA, RUNE, SAND, WIF
+> - All 50 coins trade as `{COIN}USDT` perpetual on Aster DEX
+> - 3 coins use 1000-prefix on exchanges: PEPE→1000PEPE, BONK→1000BONK, FLOKI→1000FLOKI
+> - **Candle data:** Historical backfill from Binance Futures (deep history for ROUTER
+>   signals). Live collection from Aster Perp API. Both stored in `candles.db`.
+> - 38 coins have full ROUTER signal coverage (≥600 days). 12 newer coins have
+>   partial coverage — can trade and contribute to top detection, but bottom detection
+>   (3D SMA200 death cross) requires ~600 days to become valid.
 
 ### 4.4 Signal Stack (`trading.spot.engine`)
 
@@ -408,16 +570,34 @@ Triggered by confirmed top signal. Same grid mechanics, inverted direction.
 ### 5.2 DCA Grid Mechanics
 
 ```
-Base Order (BO) = capital × DCA_BO_PCT (40%)
+Base Order (BO) = capital × DCA_BO_PCT (30%)   ← DCA_BO_PCT = 0.30 in code
 
 Layer 0 (Base): BO amount at entry price
 Layer 1: BO × SO_VOL_MULT at (entry × (1 - SO_DEV))
 Layer 2: Layer1_size × SO_VOL_MULT at (Layer1_price × (1 - SO_DEV × price_multiplier))
 ...
-Layer N: where N = DCA_MAX_LAYERS
+Layer N: where N = DCA_MAX_LAYERS (default 8; High profile overrides to 12)
 
 Take Profit: when avg_entry × (1 + DCA_TP_PCT) ≤ current_price → SELL ALL
 ```
+
+**TP Fill Model (updated 2026-03-17):** TP detection now checks candle **high** (for longs)
+and candle **low** (for shorts), not candle close. This ensures wicks that touch the TP price
+trigger a fill at the TP price, matching the behavior of a resting exchange limit order.
+Previously, the engine could miss TPs when the wick touched the TP level but the candle
+closed below it. Files updated: `v14_dca_engine.py`, `v14_lifecycle_engine.py`.
+
+**TP Price — Exchange-as-Truth (updated 2026-03-24):** `_place_tp_order()` computes the TP
+price from the **actual exchange entry price**, not the engine's candle-based TP. The engine
+processes historical candles and computes TP from the candle close price, but the actual fill
+price can differ significantly due to spread/slippage (observed: 5.1% spread on HYPE entry).
+Using the engine's TP could result in a sell limit below the actual entry price, which the
+exchange correctly rejects. The flow is now:
+1. Engine tick generates BUY at candle close price → market buy executes at actual price
+2. `_place_tp_order()` fetches exchange position entry price via `fetch_open_positions()`
+3. TP = `exchange_entry × (1 + DCA_TP_PCT)` — always above actual cost basis
+4. If fetch fails, falls back to engine's `eng.long_tp` (best effort)
+5. TP recovery (`_check_tp_fills`) retries placement for any position missing a TP order
 
 **Layer timing:** There is no cooldown between layers at any risk profile (Low,
 Medium, or High). When price drops through multiple deviation thresholds, the
@@ -434,7 +614,49 @@ for faster TP recovery.
 
 ### 5.3 Risk Profiles
 
-All bots are launched with an explicit `--profile` flag:
+#### Production Profile (Unified — decided 2026-03-18)
+
+For initial production deployment, V14PM uses a **single unified profile** — the
+proven High grid at 1x leverage with a 30d scanner window. Risk tiers are deferred
+until production data justifies differentiation.
+
+| Parameter | Production Value |
+|-----------|-----------------|
+| Leverage | **1.0x** (no liquidation risk) |
+| Base Order | **30%** (DCA_BO_PCT = 0.30) |
+| SO Deviation | 1.5% |
+| SO Multiplier | 1.5x |
+| Max Layers | **12** (DCA_MAX_LAYERS default=8; High profile=12). **Effective depth: ~4 layers** — Martingale sizing depletes the per-coin allocation by L4 (L1=30%, L2≈31.5%, L3≈26%, L4=remainder). See §5.2.1. |
+| Take Profit | 1.5% |
+| Scanner Window | 30d |
+| Trend Multiplier | Yes (0.3–1.5x) |
+
+> **§5.2.1 — Grid Capital Mechanics (revised 2026-04-11)**
+>
+> The DCA grid uses a Martingale formula: `order = remaining_capital × BO_PCT × SO_MULT^min(layer, 4)`.
+> With `BO_PCT=0.30` and `SO_MULT=1.5x`, the allocation naturally depletes in ~4 layers:
+>
+> | Layer | % of Allocation | Cumulative |
+> |-------|----------------|------------|
+> | L1 | 30.0% | 30.0% |
+> | L2 | 31.5% | 61.5% |
+> | L3 | 26.0% | 87.5% |
+> | L4 | 12.5% (remainder) | 100.0% |
+>
+> This is by design: the strategy prioritizes **capital velocity** — large L1 orders cycle
+> at 1.48% net profit quickly (69% of deals are L1), while L2-L4 provide downside averaging
+> within the allocation. The `DCA_MAX_LAYERS=12` config serves as a ceiling but is not expected
+> to be reached under normal Martingale sizing. 365-day backtest: 81.4% annual ROI (long-only,
+> $50K, 5 coins), zero pool denials, 702 completed deals.
+>
+> **Capital accounting**: The engine tracks `remaining = allocated_capital - long_cost`.
+> Each layer calculates its order from what's actually left to spend, preventing any single
+> coin from overspending its allocation into the shared pool.
+
+#### Legacy Profiles (paper bots / backtesting only)
+
+These profiles remain available for paper bots and backtesting but are **not used
+in production**:
 
 | Profile | Leverage | BO% | SO Dev | SO Mult | Max Layers | TP |
 |---------|----------|-----|--------|---------|------------|----|
@@ -442,7 +664,9 @@ All bots are launched with an explicit `--profile` flag:
 | `medium` | 1.5x | 40% | 2.0% | 1.5x | 10 | 1.5% |
 | `high` | 1.5x | 40% | 1.5% | 1.5x | 12 | 1.5% |
 
-**V14PM live production uses:** `high` profile, `1.0x` leverage (no liquidation risk)
+> **Future:** Risk tiers may be reintroduced once production performance data
+> supports it. Planned differentiation: scanner window (14d for aggressive vs 30d
+> for moderate) rather than grid parameters. All tiers would remain 1x leverage.
 
 ### 5.4 Configuration (`V14Config`)
 
@@ -470,6 +694,7 @@ Every hour (on candle close):
   1. Fetch latest 1h candle from exchange
   2. Update signal state (StochRSI, ADX, HH/HL structure)
   3. Check for take-profit hit → execute sell if triggered
+     (LIVE GUARD: blocked if _tp_order_id is set — exchange limit order takes priority)
   4. Check phase transition signals → update phase if warranted
   5. Check for new DCA layer entry → execute buy if triggered
   6. Write state.json + status.json
@@ -479,6 +704,7 @@ At midnight UTC (daily signal evaluation):
   2. Run full signal stack (HVF, 3-check, Fibonacci, HybridDetector2D)
   3. Update ROUTER evaluation
   4. Write signal snapshot to DB
+  5. [Live mode only] Run TP catch-up check against current candle (§6.9)
 ```
 
 ### 6.2 State Persistence
@@ -543,7 +769,7 @@ and state is still restored — signals will refresh on the next daily boundary.
 
 ### 6.3 Equity Calculation (All Bots)
 
-**All four bot runners** compute equity from ground truth, not engine internals:
+**All bot runners** compute equity from ground truth, not engine internals:
 
 ```
 Equity = Capital + CSV Realized PnL - Fees + Unrealized PnL
@@ -568,23 +794,61 @@ Equity = Capital + CSV Realized PnL - Fees + Unrealized PnL
 > Deal counts and win rate were overridden from CSV, but equity and realized PnL
 > were not. On restart, engine counters could reset, inflate, or drift — producing
 > incorrect dashboard numbers while the CSV remained accurate. The fix applies to
-> all four runners: `run_v14_paper.py`, `run_v14etf_paper.py`,
-> `run_v14_portfolio_paper.py`, and `run_v14_live_aster.py`.
+> all runners: `run_v14_paper.py`, `run_v14_portfolio_paper.py`, and
+> `run_v14_live_aster.py`.
 
-### 6.3.1 Live Bot Equity (Exchange API)
+### 6.3.1 Live Bot Equity & Exchange Interaction (Aster)
 
-The V14 Live bot (Aster) has an additional equity source: **actual exchange balances**.
+The V14 Live bot (Aster) treats the **exchange as the ultimate source of truth**.
+Multiple safeguards ensure engine state can never override real exchange positions.
 
+**Equity calculation:**
 ```
 Live Equity = USDT Balance + (Base Coins × Current Price)
 ```
+Fetched from exchange API every cycle. Overrides the CSV-based calculation.
 
-This is fetched from the exchange API every cycle and overrides the CSV-based
-calculation. For a live bot, the exchange balance is the ultimate truth — it
-accounts for positions the engine may not know about (e.g., after a `--fresh`
-restart where the engine forgets old positions but the exchange still holds them).
+**Resting Limit Orders (implemented 2026-03-17):**
+After every BUY fill, the bot places a resting limit sell order on the exchange at
+the TP price for the full position size. This eliminates poll-dependent TP execution:
+- Bot process dies → limit order still on book, fills automatically
+- Exchange API errors → bot is blind, but exchange executes the order
+- Wick touches TP but candle closes below → limit sell fills on touch
 
-The exchange balance is included in status.json as `exchange_balance`:
+Implementation details:
+- After BUY fill → cancel old TP order, place new limit sell at updated TP price for full position
+- On startup → recover `_tp_order_id` from `state.json` or place fresh if missing
+- Each poll cycle → check if limit order was filled; if yes, sync engine state
+- Phase change → cancel TP order before transition
+- Engine candle-based TP detection retained as fallback (belt and suspenders)
+- `_tp_order_id` persisted in `state.json` for crash recovery
+
+New `SpotExchangeClient` methods: `place_limit_sell()`, `cancel_tp_order()`, `check_order_status()`
+
+**LIVE GUARD Pattern (implemented 2026-03-18 — incident response):**
+When `_tp_order_id` is set (a TP limit order is active on the exchange), all engine-initiated
+TP sells are **BLOCKED** and engine state is **ROLLED BACK** to pre-sell values. Only
+non-TP exits (phase close, signal exit) can override the exchange limit order.
+
+Root cause this addresses: the daily tick (which uses previous-day OHLC) could trigger an
+internal TP sell even while an exchange limit order was active. On 2026-03-18, previous-day
+high (~$0.78) exceeded TP ($0.7436) → engine cancelled exchange limit order → market sold at
+~$0.69 → $22 loss. LIVE GUARD prevents the engine from ever overriding an active exchange
+limit order with a TP sell. See §17.2 for full incident record.
+
+**Fill price handling (implemented 2026-03-18):**
+`execute_sell()` and `execute_buy()` now fetch the current ticker price if the exchange API
+does not return a fill price. **Engine TP prices are never used as fill price substitutes.**
+This corrects a pre-incident bug where fill price fell back to the engine's internal TP price
+($0.7436) instead of the actual exchange fill price (~$0.69), causing incorrect PnL.
+
+**PnL and capital correction:**
+- PnL is calculated from actual exchange proceeds, not engine TP-price math
+- Engine capital is corrected after sells to reflect actual vs. expected proceeds
+- Startup reconciliation compares engine state vs. exchange balances and corrects drift
+  (caught and corrected $22.73 drift from the 2026-03-18 incident on next restart)
+
+**exchange_balance in status.json:**
 ```json
 {
   "exchange_balance": {
@@ -633,8 +897,8 @@ On every PM bot restart:
    this updates allocations; if fresh start, this creates new engines.
 6. Enter live trading loop
 
-> **Live bot startup (future):** Will add exchange balance reconciliation after step 4.
-> Compare engine state vs. real balances, log drift, abort if drift exceeds threshold.
+> **Live bot startup:** Exchange balance reconciliation runs after step 4.
+> Compare engine state vs. real balances, log drift, correct automatically.
 > Paper bots skip this since they don't interact with real exchange positions.
 
 ### 6.5.1 Engine Warmup Period
@@ -677,6 +941,163 @@ was actually written, distinct from `close_time` (when the trade claims to have 
 This field is the forensic backstop: even if all other safeguards fail, phantom trades can always
 be identified and removed by comparing `recorded_at` vs `close_time`.
 
+### 6.8 Live Trading Safeguards
+
+> **This section is the authoritative reference for all live bot exchange interaction patterns.**
+> **Major revision 2026-03-21:** Exchange-as-truth architecture replaces LIVE GUARD, engine
+> rollbacks, and reconciliation. See §6.8.1 for the new architecture.
+
+#### 6.8.1 Exchange-as-Truth Architecture (2026-03-21)
+
+The live PM bot uses the exchange API as the **single source of truth** for all position data.
+Every main loop cycle (65 seconds), `_sync_positions_from_exchange()` overwrites the engine's
+internal position state (long_coins, long_cost, avg_entry, TP level) from the exchange API.
+
+**What the engine does:** Signal generation only — processes candles to decide WHEN to buy/sell
+(DCA levels, TP targets, phase transitions).
+
+**What the engine does NOT do:** Track positions. All position data comes from the exchange.
+The engine's internal position fields are ephemeral — overwritten from exchange every cycle.
+
+**What was removed (no longer needed):**
+- LIVE GUARD (engine TP blocking when exchange order active)
+- Pre-tick snapshots and engine state rollbacks
+- Startup reconciliation (`_reconcile_with_exchange()`)
+- Periodic reconciliation (`_periodic_reconcile()`)
+- Engine state correction after BUY/SELL fills
+
+**Why:** The previous architecture inherited from the paper bot, where the engine simulates
+positions from candle ticks. In live trading, this created two sources of truth that constantly
+diverged. LIVE GUARD, rollbacks, and reconciliation were all patches to manage this divergence.
+The 2026-03-21 refactor eliminates the divergence entirely by making the engine's position state
+ephemeral and exchange-derived.
+
+**Layer tracking:** Since the exchange doesn't know about DCA layers, `CoinState.layer_count`
+is tracked separately — incremented on confirmed BUY fill, reset on confirmed SELL fill.
+Persisted in `state.json`.
+
+#### 6.8.2 Trailing Stop as Primary TP Mechanism (updated 2026-04-13)
+
+After every BUY fill, a **TRAILING_STOP_MARKET** order is placed on the exchange.
+The order activates at the TP price (+1.5% above avg entry), then trails the peak
+price with a 0.5% callback distance. Aster handles all trailing logic natively —
+the bot's 65-second poll is a **fallback**, not the primary path.
+
+**Zero-downside design:** The trail only activates after the current TP level is reached.
+Worst case = price reverses 0.5% from activation, selling at ~+1.0% (slightly below
+the old 1.48% fixed TP). Best case = captures runaway moves far beyond 1.5%.
+Backtest showed +95% extra profit on 103 trades.
+
+Sequence:
+1. BUY fill → cancel any existing TP order (trailing or limit)
+2. Compute activation price from exchange entry: `exchange_entry × (1 + TP_PCT)`
+3. Place `TRAILING_STOP_MARKET` with `activationPrice` and `callbackRate=0.5%`
+4. Persist `tp_order_id`, `tp_type="trailing"`, `tp_activation_price` in CoinState
+5. Each poll cycle: check order status; if filled, record trade, log trail bonus
+6. If engine also detects TP via candle tick while exchange order active → skip (exchange handles it)
+7. If trailing stop placement fails → automatic fallback to limit sell (same as before)
+
+Config constants:
+```python
+TRAILING_STOP_ENABLED  = True    # Feature flag (False reverts to limit sell)
+TRAILING_CALLBACK_PCT  = 0.5     # 0.5% trail distance
+```
+
+**Paper bot simulation:** The DCA engine (`v14_dca_engine.py`) simulates trailing stops
+using candle OHLC data. When candle high reaches the TP level, the trail activates.
+Peak is tracked across subsequent candles. When candle low drops 0.5% from peak,
+the engine sells at the trigger price. Fee model uses taker fee (market order) for
+trailing exits vs maker fee for fixed limit exits.
+
+> **History (2026-04-13):** Prior to this change, TP was a fixed limit sell at
+> `avg_entry × 1.015`. The trailing stop preserves this as the activation threshold
+> while adding upside capture. Feature flag allows instant rollback.
+
+#### 6.8.3 Fill Price Handling
+
+Exchange fill prices are always used. **Engine TP prices are never used as fill price substitutes.**
+If the exchange API does not return a fill price, the current ticker price is fetched as fallback.
+
+#### 6.8.4 PnL from Actual Exchange Fills
+
+All PnL and capital accounting uses actual exchange proceeds. `trades.csv` reflects real
+exchange fills, not engine simulations.
+
+#### 6.8.5 Status.json — Exchange Data Only
+
+All fields in `status.json` come from the exchange API:
+- `equity` = `usdt_total + unrealized_pnl`
+- `cash` = `usdt_free`
+- `invested` = `sum(entry_price × qty)` per position
+- `exchange_balance` = `{usdt_free, usdt_total}`
+- Per-coin: `avg_entry`, `position_size`, `unrealized_pnl` from exchange positions
+- Engine contributes only: `phase`, `lifecycle_phase`, signal state
+
+#### 6.8.6 Human-in-the-Loop for Long↔Short Direction Changes
+
+The V14-ETF incident (2026-03-17) demonstrated that autonomous Long↔Short direction switches
+can cause catastrophic losses (HBAR switched to DCA Short autonomously and was liquidated).
+Strategy direction changes (LONG_DCA ↔ SHORT_DCA) across all **live bots** require explicit
+human approval before execution. Autonomous direction switches remain enabled for paper bots
+where capital risk is simulated.
+
+#### 6.8.7 Data Source Map
+
+Every significant runtime variable, its authoritative source, and when it is updated.
+This map reflects the exchange-as-truth architecture — position data originates from the
+exchange API, not the engine's internal state.
+
+| Variable | Authoritative Source | Updated When | Used By |
+|----------|---------------------|--------------|---------|
+| `eng.long_coins` | Exchange (`fetch_open_positions`) | Every cycle (exchange sync) | BUY sizing, TP qty, status |
+| `eng.long_avg_entry` | Exchange (`fetch_open_positions.entry_price`) | Every cycle (exchange sync) | Status display |
+| `eng.long_cost` | Exchange (`entry_price × qty`) | Every cycle (exchange sync) | PnL calc, equity |
+| `eng.long_tp` | Engine (calculated: `entry × 1.015`) | Exchange sync overwrites; engine recalculates on buy | TP placement |
+| `eng.long_layers` | `cs.layer_count` (CoinState) | BUY (+1), SELL/TP (0), exchange sync (copies layer_count) | Status, DCA logic |
+| `eng.capital` | Init to `allocated_capital`; decremented by engine on buys; reset on TP fill and rebalance | On buy (−), TP fill (reset), rebalance (reset if no position) | Buy sizing |
+| `cs.allocated_capital` | `router.rebalance_daily()` | Daily rebalance | Engine capital reset, status |
+| `cs.tp_order_id` | `_place_tp_order()` (exchange order ID) | On BUY (set), on SELL/TP fill (cleared) | TP fill detection, TP cancel |
+| `cs.tp_limit_price` | `_place_tp_order()` (stored separately from `eng.long_tp`) | On BUY (set), on SELL/TP fill (cleared) | Status display, fill correction logging |
+| `cs.layer_count` | `_execute_action` BUY (+1); SELL/TP fill (0) | On every buy/sell | TP qty, status |
+| `cs.last_candle_ts` | Main loop after each processed candle | Per candle | Dedup — prevent reprocessing |
+| `cs.cumulative_funding` | `_update_funding()` | Every 8h per open position | Status, TP fill message |
+| `_exchange_usdt_free` | `client.fetch_full_balance()` | Every cycle (exchange sync) | Status (`cash` field) |
+| `_exchange_usdt_total` | `client.fetch_full_balance()` | Every cycle (exchange sync) | Status (equity calc) |
+| `_last_exchange_positions` | `client.fetch_open_positions()` | Every cycle (exchange sync) | Status (per-coin position data) |
+| `router.active_pool_cash` | CapitalRouter: +/− on request/return | On every BUY (−) and SELL/TP (+ proceeds) | Capital availability |
+| `router.active_allocations` | CapitalRouter: +amount on request; 0 on return | On every BUY and SELL/TP | Accounting |
+| `router.tier_coin_cap` | `EQUITY_TIER_CAPS` via `_apply_hysteresis()` | On rebalance | Max simultaneous coins |
+| `router._cap_tier_index` | `_apply_hysteresis()` on `EQUITY_TIER_CAPS` | On rebalance | Hysteresis state for coin cap (persisted in state.json) |
+| `router._split_tier_index` | `_apply_hysteresis()` on `EQUITY_TIER_SPLITS` | On rebalance | Hysteresis state for pool split (persisted in state.json) |
+| `tracker._open_deals` | `on_buy()` (create/extend); `on_sell()` (pop) | On every BUY and SELL | PnL calculation, layer count for pool routing |
+| `tracker.trades` | `on_sell()` (append) | On every SELL/TP fill | CSV, win_rate, total_pnl |
+| `_cfgi_market` | CFGI API | Hourly | Status, regime eval message |
+| `_cfgi_coins` | CFGI API | Hourly | Per-coin status |
+| `_regime_signal_count` | `_evaluate_regime()` | Daily at midnight UTC | Telegram alerts |
+| `_regime_alert_state` | `_evaluate_regime()`, `_handle_command()` | On regime signal / APPROVE / DENY | BUY blocking (WIND_DOWN), status |
+| `bot_state` | `_handle_command()`, `_check_wind_down_complete()` | On PAUSE/RESUME/APPROVE/wind-down complete | BUY guard, status |
+| `_tg_update_offset` | `_process_telegram_commands()` | On each Telegram update processed | Telegram dedup |
+| `_last_rebalance_date` | `_do_rebalance()` | On successful rebalance | Prevents duplicate rebalances per day |
+| `_last_status_write` | `_write_status()` | On each status write | 60s throttle |
+
+### 6.9 TP Catch-Up (Paper Bots)
+
+**Bug (pre-2026-03-18):** The daily tick uses the **previous day's OHLC** data. If today's
+price gapped above the TP but yesterday's high was below the TP, the engine would add DCA
+layers instead of selling — because the previous candle showed price below TP, and the engine
+interpreted this as "price still below TP, DCA more."
+
+**Example:** TP = $0.7436. Yesterday's high = $0.72. Today's price = $0.80. Daily tick sees
+high=$0.72 < TP=$0.7436, skips TP, adds a DCA layer. Engine is now underwater on the new layer.
+
+**Fix (2026-03-18):** A "Live TP catch-up" block was added after the daily tick in
+`v14_lifecycle_engine.py`. After the daily tick completes, the engine checks the current
+(live) candle against the TP. If the current candle's high (longs) or low (shorts) exceeds
+the TP, it runs an additional TP tick with the current candle data.
+
+This fix applies **only in `_live_mode`**. Backtesting is unaffected — it uses historical
+OHLC data sequentially and cannot gap above TP in this way.
+
 ---
 
 ## 7. V14PM Portfolio Manager
@@ -684,34 +1105,86 @@ be identified and removed by comparing `recorded_at` vs `close_time`.
 ### 7.1 Architecture
 
 ```
-run_v14_portfolio_paper.py
+run_v14_portfolio_live_aster.py
     │
-    ├─ V14LifecycleEngine × N coins   (one instance per active slot)
+    ├─ _sync_positions_from_exchange()  (runs every 65s cycle)
+    │    └─ Overwrites engine position state from exchange API
+    │         └─ Engine position fields are ephemeral, not authoritative
+    │
+    ├─ V14LifecycleEngine × N coins   (signal generation only)
+    │    └─ Processes candles → decides WHEN to buy/sell
+    │         └─ Does NOT track positions (overwritten by exchange sync)
     │
     ├─ CapitalRouter                   (v14_capital_manager.py)
-    │    ├─ active_pool   (75% of equity)
-    │    └─ reserve_pool  (25% of equity)
+    │    ├─ active_pool   (90% of equity)
+    │    └─ reserve_pool  (10% of equity)
+    │
+    ├─ Portfolio Regime Monitor        (global direction governance)
+    │    ├─ ROUTER v2 signals × 50 coins (daily evaluation)
+    │    ├─ Tiered alerts → Telegram
+    │    └─ APPROVE / DENY → direction change
+    │
+    ├─ Capital Ledger                  (dynamic capital tracking)
+    │    ├─ Auto-detect deposits/withdrawals (every 65s sync)
+    │    ├─ capital_ledger.json        (persistent transaction log)
+    │    └─ resize() → tier + split recalculation
+    │
+    ├─ Per-Coin Governance             (per-coin trading controls)
+    │    ├─ Pause (manual)             (PAUSE/RESUME <COIN>)
+    │    └─ Regime Flag (auto)         (signal conflict detection)
+    │
+    ├─ Telegram Command Interface      (governance layer)
+    │    ├─ APPROVE / DENY             (regime change)
+    │    ├─ PAUSE / RESUME             (global trading freeze)
+    │    ├─ PAUSE / RESUME <COIN>      (per-coin pause + regime flag clear)
+    │    ├─ DEPOSIT / WITHDRAW / CAPITAL (capital management)
+    │    └─ CLOSE <COIN> / CLOSE ALL   (manual position override)
+    │
+    ├─ AsterPerpClient                 (Aster Perps via CCXT)
+    │    ├─ Resting limit orders       (exchange handles TP)
+    │    ├─ Fill price from exchange   (never engine fallback)
+    │    └─ Position + balance queries (source of truth)
     │
     └─ Cycle Scanner JSON              (docs/data/v14/cycle_scanner.json)
          └─ Adjusted Score = DCA Score × Trend Multiplier
 ```
 
+> **Architecture (revised 2026-03-21):** Exchange-as-truth. Engine is used for signal
+> generation only; all position data comes from the exchange API every cycle. LIVE GUARD,
+> rollbacks, and reconciliation have been removed — they were patches for a paper-bot
+> architecture that shouldn't exist in live trading. Resting limit orders and fill price
+> handling remain as proven exchange-interaction patterns.
+
 ### 7.2 CapitalRouter — Allocation Rules
 
-**Pool split:**
-- **Active Pool (75%):** Deployed capital for DCA positions
-- **Reserve Pool (25%):** Held back for new opportunities and drawdown buffer
+> **Updated 2026-03-24 (Upgrade 0):** Adaptive pool split + revised tier table + 5% hysteresis.
+
+**Adaptive pool split (equity-tiered):**
+
+| Portfolio Equity | Active % | Reserve % | Rationale |
+|-----------------|----------|-----------|-----------|
+| $20,000+ | 75% | 25% | Proven on paper; deep safety buffer |
+| $10,000 – $20,000 | 80% | 20% | Intermediate — avoids active-capital cliff |
+| $100 – $10,000 | 90% | 10% | Max grid depth; bounded total exposure |
 
 **Equity-tiered coin cap:**
 
 | Portfolio Equity | Max Simultaneous Coins |
 |-----------------|------------------------|
 | $100,000+ | 10 |
-| $50,000 – $100,000 | 5 |
-| $30,000 – $50,000 | 4 |
-| $20,000 – $30,000 | 3 |
-| $10,000 – $20,000 | 2 |
-| $100 – $10,000 | 1 |
+| $20,000 – $100,000 | 5 |
+| $10,000 – $20,000 | 5 |
+| $5,000 – $10,000 | 5 |
+| $3,000 – $5,000 | 4 |
+| $100 – $3,000 | 3 |
+
+**Hysteresis (5% band):**
+Both coin cap and pool split use asymmetric hysteresis to prevent tier flapping:
+- **Upgrade:** Immediate at threshold (e.g., equity hits $3,000 → 4 coins)
+- **Downgrade:** Only when equity drops 5% below the current tier's threshold
+  (e.g., must drop to $2,850 to go from 4 → 3 coins)
+- Tier indices (`_cap_tier_index`, `_split_tier_index`) are persisted in `state.json`
+  so hysteresis survives bot restarts.
 
 **Entry qualification:**
 - DCA Score ≥ 5.0 (hurdle rate)
@@ -726,30 +1199,288 @@ When a position closes (TP hit):
 3. Evaluate next best qualifying coin
 4. Deploy to new position
 
+### 7.2.1 Dynamic Capital Management (added 2026-03-24, Upgrade 1)
+
+Supports runtime deposits and withdrawals without bot restart.
+
+**Capital Ledger (`capital_ledger.json`):**
+- Tracks seed capital, all deposits/withdrawals with timestamps and reasons
+- Loaded on startup — if ledger exists, overrides `--capital` CLI arg
+- Written atomically on every capital change
+- Location: `trading/spot/live/v14pm/capital_ledger.json`
+
+**Auto-detection (`_detect_capital_change`):**
+- Runs every 65s sync cycle (piggybacks on `_sync_positions_from_exchange`)
+- Compares exchange total balance against tracked capital + invested
+- Threshold: max($5, 2% of tracked capital) — catches real deposits, ignores PnL fluctuation
+- On detection: records to ledger, adjusts `tracked_capital`, calls `router.resize()`, sends Telegram alert
+- Alert format: `📥 Deposit detected: +$X` or `📤 Withdrawal detected: -$X`
+
+**Router `resize(new_equity)`:**
+- Recalculates tier coin cap and pool split via hysteresis (same as rebalance)
+- Updates active/reserve pool totals and cash amounts
+- May trigger tier changes (e.g., deposit $2K pushes from 3-coin to 4-coin tier)
+
+**Telegram commands:**
+- `DEPOSIT <amt>` — Manual deposit recording (for when auto-detection misses or hasn't caught up)
+- `WITHDRAW <amt>` — Manual withdrawal recording (safety check: refuses if amount > free balance)
+- `CAPITAL` — Shows: seed, tracked, exchange balance, invested, free cash, deposits/withdrawals total
+
+**CLI flags:**
+- `--deposit <amt>` — Record deposit on startup
+- `--withdraw <amt>` — Record withdrawal on startup
+- `--ledger` — Print ledger summary and exit
+
+**State persistence:** `tracked_capital` field in `state.json`, full ledger in `capital_ledger.json`.
+
 ### 7.3 Daily Rebalance
 
 At midnight UTC, the PM runner:
 1. Updates total equity from exchange balances
-2. Recalculates tier cap (may change if equity grew/shrunk)
+2. Recalculates tier cap and pool split via hysteresis (may change if equity grew/shrunk)
 3. Loads latest `cycle_scanner.json`
 4. Computes trend multipliers from score history
 5. Identifies coins that no longer qualify (score dropped below hurdle)
 6. Identifies new entrants above hurdle
 7. Adjusts allocations proportionally
 
-### 7.4 Current Paper Performance (2026-03-10)
+### 7.4 Global Strategy Direction
 
-- **Capital:** $50,000 paper
-- **Equity:** ~$50,627 (+1.25%)
-- **Realized PnL:** $608 | Win rate: 100% (30 deals) | Drawdown: 0.0%
-- **Active coins:** 10/10 slots (dynamically selected by cycle scanner)
-- **Regime:** RANGING — DCA grids cycling TPs in sideways market
-- **State persistence:** Verified — multiple restart cycles with zero phantom trades
+**All coins run one direction.** No mixed strategies — every position is either Long
+or Short. When the direction changes, ALL positions change.
 
-**Other bots (2026-03-10, CSV-truth verified):**
-- **V14 Paper:** $49,988 equity, 380 deals, 97.6% win rate (Oct 2024 – present)
-- **V14-ETF Paper:** $10,834 equity, 24 deals, 100% win rate (Mar 2 – present)
-- **V14 Live (Aster):** $314 equity on $300 capital, +4.7%, 1 deal (exchange-verified)
+| Mode | Exchange | Execution |
+|------|----------|-----------|
+| **LONG_DCA** | Aster Perps | Long perpetual positions at 1x leverage |
+| **SHORT_DCA** | Aster Perps | Short perpetual positions at 1x leverage |
+
+Direction changes never happen autonomously. The Portfolio Regime Monitor detects
+potential regime shifts and alerts Brett via Telegram. Only after human APPROVE does
+the bot initiate a wind-down → direction flip.
+
+### 7.5 Portfolio Regime Monitor
+
+A daily evaluation of ROUTER v2 signals across all 50 scanner coins to detect
+market-wide regime changes (top or bottom). Runs at **midnight UTC** alongside
+the daily rebalance.
+
+**Signal evaluation:**
+- Each coin's ROUTER v2 signal stack is evaluated independently
+- Top detection: 1W/2W StochRSI, 2D RSI divergence, fallback/failsafe gates
+- Bottom detection: 3D death cross prerequisite, 2W StochRSI exhaustion, conviction score
+- Each coin classified: BULLISH / TOPPING / BEARISH / BOTTOMING
+- Coins with insufficient history (<180 days) excluded from bottom detection aggregate
+  but included in top detection if they have ≥180 days of weekly data
+
+**Tiered alert thresholds (locked):**
+
+| Tier | Threshold | Meaning |
+|------|-----------|---------|
+| 🟡 Early Warning | 5+ coins (~10%) | Some coins starting to signal |
+| 🟠 Strong Signal | 12+ coins (~25%) | Quarter of market flashing |
+| 🔴 Majority | 25+ coins (~50%) | Half the market confirms regime change |
+
+**Behavior:**
+- Alerts sent via Telegram with: which coins, what signals triggered, CFGI reading,
+  BTC status
+- No automatic action at any tier. Everything keeps running normally.
+- Brett decides when to APPROVE based on own analysis
+- On DENY: signal logged, monitoring continues. Re-alerts if count increases.
+- On no response: default DENY (safe — never flip without approval)
+- Daily updates while signals persist: "{N}/50 coins still signaling — awaiting decision"
+
+### 7.6 Direction Change — Wind-Down Phase
+
+On APPROVE of a regime change, the bot enters a **graceful wind-down**:
+
+```
+APPROVE received
+    ↓
+Phase 1: WIND_DOWN
+  - Freeze all grids: no new positions, no new DCA layers
+  - Existing TP limit orders stay active on exchange
+  - As each coin hits TP → close, capital returns to pool
+  - Dashboard shows: "Winding down — 7/10 coins still open"
+  - Daily Telegram status update with remaining positions
+    ↓
+Phase 2: TRANSFER (automatic when all positions closed)
+  - All capital now free as USDT in Perp account
+  - Telegram: "All positions closed. Ready for direction flip."
+    ↓
+Phase 3: DEPLOY (automatic)
+  - Flip direction (LONG_DCA → SHORT_DCA or vice versa)
+  - Run scanner, rank coins in new direction
+  - Open positions per DCA grid on top-ranked coins
+  - Normal operations resume
+```
+
+**Wind-down rules:**
+- **Grid frozen:** No new DCA layers added. Existing layers and TP orders stay.
+  Price drops do not trigger new buys.
+- **TP orders active:** Each coin exits naturally when TP is hit.
+- **Manual override for stragglers:** If a coin is stuck deep in its grid:
+  - `CLOSE ZRO` — force-close specific coin at market
+  - `CLOSE ALL` — force-close all remaining positions
+  - Bot handles: cancel TP order → market close → record actual fill → log PnL
+- **Never close directly on exchange UI** unless bot is down. Bot must process
+  all closes to keep state in sync.
+
+### 7.7 PAUSE / RESUME (Governance Override)
+
+An emergency safety valve — freezes all trading without initiating a direction change.
+
+**Global PAUSE** (via Telegram: `PAUSE`):
+- Immediately freezes all grids — no new positions, no new DCA layers
+- Existing TP limit orders **stay active** on exchange (let winners close)
+- Bot keeps polling — monitors TP fills, updates dashboard, sends status
+- Same manual override available: `CLOSE <COIN>`, `CLOSE ALL`
+- Watchdog/health checks see bot as **intentionally paused** — no auto-restart
+- Status shows: `⏸️ PAUSED — trading frozen by operator`
+- **Persisted to `state.json`** — survives bot restart
+
+**Global RESUME** (via Telegram: `RESUME`):
+- Unfreezes grids — new entries and DCA layers resume
+- Existing positions continue from where they were
+- **Does NOT clear per-coin pauses** — individually paused coins stay paused
+- Status returns to normal operations
+- Telegram confirms: "Trading resumed — grids active"
+
+**Per-Coin PAUSE / RESUME** (added 2026-03-24, Upgrade 2):
+- `PAUSE <COIN>` — Pause a specific coin. Blocks new orders for that coin only.
+- `RESUME <COIN>` — Resume a specific coin. Also clears regime flag if present (see §7.7.1).
+- Per-coin pauses survive global RESUME (they are independent).
+- Paused coin's capital held in reserve — not redistributed to other coins.
+- Paused coins excluded from rebalance candidate list.
+- TP limit orders stay active on exchange — positions can still close.
+- Persisted in `state.json` per coin (`paused: true/false`).
+
+**Difference from wind-down:** PAUSE has no destination — it's "stop until I say
+otherwise." RESUME returns to the pre-pause state. Wind-down has a purpose
+(direction change) and a destination (flip once all positions close).
+
+```
+Normal States:      LONG_DCA ←→ ROUTER ←→ SHORT_DCA
+                       ↕           ↕          ↕
+Override:           PAUSED      PAUSED     PAUSED
+                       ↕           ↕          ↕
+Direction Change:  WIND_DOWN → (all closed) → flip
+
+Per-coin:   ACTIVE ←→ PAUSED (manual)
+                ↕
+            REGIME FLAGGED (automatic, see §7.7.1)
+```
+
+#### 7.7.1 Per-Coin Regime Flagging (added 2026-03-24, Upgrade 3)
+
+Automatic per-coin protection when an individual coin's engine signals conflict
+with the portfolio's global direction. Extends the per-coin pause pattern with
+automatic detection and lifecycle management.
+
+**Detection (`_check_coin_regime_conflict`):**
+After each candle tick, check if the coin's engine fired a signal that conflicts
+with the global direction:
+- Global is LONG + engine fires `top_detected` → flag coin (signal: "TOP")
+- Global is SHORT + engine fires `conviction_fired` → flag coin (signal: "BOTTOM")
+- Skips already-flagged, paused, and cooldown-active coins
+
+**CoinState fields:**
+```python
+regime_flagged: bool = False              # True when signals conflict with global direction
+coin_regime_signal: Optional[str] = None  # "TOP" or "BOTTOM"
+flagged_at: Optional[str] = None          # ISO timestamp when flagged
+regime_cooldown_until: float = 0.0        # Unix timestamp — no re-flag before this
+```
+
+**Behavior when regime-flagged:**
+
+| Behavior | Effect |
+|----------|--------|
+| New orders | ❌ Blocked (buy gate rejects with `reject_action()`) |
+| TP fills | ✅ Active — exchange limit orders continue |
+| Rebalance candidate | ❌ Excluded from scanner data |
+| Signal scanning | ✅ Continues — engine keeps evaluating candles |
+| Global regime count | ✅ Flagged coins count toward aggregate signal |
+| Dashboard | 🚩 REGIME CONFLICT badge (red), dimmed in opportunity table |
+
+**Auto-clear conditions:**
+1. **TP fill with no remaining position:** Flag cleared automatically when TP fills
+   and `eng.long_coins == 0 and eng.short_coins == 0`. Nothing to protect = flag cleared.
+   Coin returns to opportunity list. (`_clear_regime_flag_on_tp`)
+2. **Global regime flip:** When global direction changes to match the coin's signal
+   (e.g., global flips to SHORT and coin was flagged TOP), flag auto-clears.
+   (`_clear_matching_regime_flags`)
+
+**Manual override:**
+`RESUME <COIN>` clears both pause AND regime flag. If a regime flag was active,
+a **24-hour cooldown** is applied (`regime_cooldown_until`). During cooldown,
+the coin cannot be auto-re-flagged — respects operator intent.
+
+**Telegram alerts:**
+- 🚩 On flag: coin name, signal direction, global direction, flagged coin count
+- ✅ On auto-clear (TP fill): coin returned to opportunity list
+- ✅ On auto-clear (regime flip): global direction matches
+- ▶️ On manual RESUME: cooldown status included
+
+**Interaction with per-coin pause:**
+
+| Behavior | Paused (manual) | Regime Flagged (auto) |
+|----------|:---------------:|:---------------------:|
+| New orders blocked | ✅ | ✅ |
+| TPs active | ✅ | ✅ |
+| Excluded from rebalance | ✅ | ✅ |
+| Cleared by | `RESUME <COIN>` | TP fill / regime flip / `RESUME <COIN>` |
+| Counts toward regime signal | ❌ | ✅ |
+| 24h cooldown after manual clear | ❌ | ✅ |
+
+### 7.8 Telegram Command Interface
+
+The bot listens for and processes these Telegram commands:
+
+| Command | Context | Action |
+|---------|---------|--------|
+| `APPROVE` | Regime change alert active | Initiate wind-down → direction flip |
+| `DENY` | Regime change alert active | Log signal, continue current direction |
+| `PAUSE` | Any time | Freeze all grids (governance override) |
+| `RESUME` | Bot is paused | Unfreeze grids, resume normal trading (preserves per-coin pauses) |
+| `PAUSE <COIN>` | Any time | Pause specific coin (Upgrade 2) |
+| `RESUME <COIN>` | Coin is paused/flagged | Resume specific coin; clears regime flag with 24h cooldown (Upgrades 2+3) |
+| `CLOSE <COIN>` | Wind-down or paused | Force-close specific coin at market |
+| `CLOSE ALL` | Wind-down or paused | Force-close all remaining positions |
+| `DEPOSIT <amt>` | Any time | Record manual deposit, resize pools (Upgrade 1) |
+| `WITHDRAW <amt>` | Any time | Record manual withdrawal, resize pools (Upgrade 1) |
+| `CAPITAL` | Any time | Show capital breakdown: seed, current, exchange balance, invested (Upgrade 1) |
+
+**Implementation:** Bot polls for Telegram messages from authorized chat ID.
+Commands are case-insensitive. Unknown commands are ignored.
+
+### 7.9 Funding Rate Tracking
+
+Aster perps settle funding every 8 hours. The bot tracks:
+- Funding payments received (positive) and paid (negative) per symbol
+- Funding rate at each settlement
+- All logged to DB with timestamps
+- Included in PnL calculation: `realized_pnl = trade_pnl + cumulative_funding`
+- Dashboard displays cumulative funding as a separate line item
+
+At 1x leverage with DCA hold times of hours to days, funding is typically negligible
+(fractions of a basis point per 8-hour period) relative to the 1.5% TP target.
+
+### 7.10 Current Bot Status (2026-03-24)
+
+- **V14PM Live (Aster Perps):** ✅ **LIVE as of 2026-03-19.** ~$340 real USDT on Aster Perps.
+  **All four upgrades deployed 2026-03-24:**
+  - Upgrade 0: Adaptive tiers (3 coin slots at current equity, 90/10 split) with 5% hysteresis
+  - Upgrade 1: Dynamic capital management (auto-detect deposits/withdrawals, capital ledger)
+  - Upgrade 2: Per-coin pause (PAUSE/RESUME per coin, rebalance exclusion)
+  - Upgrade 3: Per-coin regime flagging (auto-flag signal conflicts, 24h cooldown)
+  Active coins: GRASS/USDT, TAO/USDT, HYPE/USDT.
+  Exchange-as-truth architecture (2026-03-21). Resting limit orders, Telegram commands operational.
+- **V14 Live (Aster Spot, legacy):** ❌ **RETIRED 2026-03-19** — replaced by V14PM Live.
+  Position closed, funds transferred to Perps. Scheduled task `V14LiveAster` still exists
+  but should not be started (will conflict with PM bot).
+- **V14 Paper:** ~$52,600 equity, 400+ deals, 97.8% win rate
+- **V14 PM Paper:** ~$53,100 equity, 100+ deals, 100% win rate
+- **V14-ETF:** ❌ **RETIRED 2026-03-17** — HBAR autonomous direction switch caused losses.
 
 > **Bug history:** Earlier equity figures were inflated by engine counter drift.
 > Engine-internal realized PnL could diverge from CSV on restart — one bot reported
@@ -762,15 +1493,23 @@ At midnight UTC, the PM runner:
 
 ### 8.1 Supported Exchanges
 
-| Exchange | Type | Use |
-|----------|------|-----|
-| Hyperliquid | Perps (CCXT) | V14PM live + all paper bots |
-| Aster DEX | Spot (CCXT) | V14 live bot only |
+| Exchange | Type | API Base | Use |
+|----------|------|----------|-----|
+| **Aster DEX** | **Perps (CCXT)** | `fapi.asterdex.com` | **V14PM Live (production)** |
+| Aster DEX | Spot (CCXT) | `sapi.asterdex.com` | V14 Live legacy (being replaced) |
+| Hyperliquid | Perps (CCXT) | via CCXT | Paper bots (simulation only) |
+| Binance | Futures (CCXT) | `fapi.binance.com` | Candle backfill only (no trading) |
+
+**Aster fee structure (perps):**
+- Maker: 0.005% / Taker: 0.04% (identical to Spot)
+- 5% discount when paying fees with $ASTER token
+- Funding rate: 0.03% interest component + premium index, settled every 8h
 
 ### 8.2 Credential Resolution (Priority Order)
 
 1. **Explicit config dict** passed at construction
-2. **Environment variables** — `HYPERLIQUID_API_KEY` / `HYPERLIQUID_API_SECRET`
+2. **Environment variables** — `ASTER_API_KEY` / `ASTER_API_SECRET` (production)
+   or `HYPERLIQUID_API_KEY` / `HYPERLIQUID_API_SECRET` (paper bots)
 3. **Windows Registry** (Windows-only fallback — silent no-op on Linux)
 
 **Critical:** On Linux/cloud servers, env vars **must** be set. The Windows Registry
@@ -800,6 +1539,81 @@ All paper bots use `SpotExchangeClient` with Hyperliquid in paper/simulation mod
 No real orders are placed. State and P&L are tracked locally in state.json and trades.csv.
 The exchange connection is used only for live price data.
 
+### 8.5 Live Bot Methods (Aster Perps)
+
+Methods on `SpotExchangeClient` for production trading:
+
+| Method | Purpose |
+|--------|---------|
+| `create_market_buy(symbol, qty)` | Open/add to long position (perp) |
+| `create_market_sell(symbol, qty)` | Close long / open short (perp) |
+| `place_limit_sell(symbol, amount, price)` | Resting limit order at TP price |
+| `cancel_tp_order(order_id)` | Cancel existing TP limit order |
+| `check_order_status(order_id)` | Poll order fill status |
+| `fetch_balance()` | Get USDT balance from perp account |
+| `fetch_ticker(symbol)` | Get current price (fallback for fill price) |
+| `fetch_positions()` | Get open perp positions (for reconciliation) |
+| `fetch_funding_history(symbol)` | Get funding payments for PnL tracking |
+
+> **Perp-specific notes:**
+> - Long positions: BUY to open, SELL to close
+> - Short positions: SELL to open, BUY to close
+> - Position mode: ONE-WAY (not hedge mode) — simpler for 1x DCA
+> - TP limit orders: `TAKE_PROFIT_MARKET` or `LIMIT` with GTC
+
+### 8.6 External API Dependencies
+
+Complete inventory of all external calls made by the V14PM live bot
+(`run_v14_portfolio_live_aster.py`). For detailed call-site context (when in the main loop,
+what data flows in/out), see `V14PM_CODE_AUDIT_2026-03-21.md` §4.
+
+#### Exchange API Calls (Aster DEX Perpetuals via `ccxt.aster`)
+
+| Call | `AsterPerpClient` Method | When Called |
+|------|--------------------------|-------------|
+| Load markets | `load_markets()` | Startup once |
+| Set leverage | `set_leverage(1, sym)` | Per new coin (once each) |
+| Fetch balance (free) | `fetch_balance({"type":"future"})` | BUY pre-flight check |
+| Fetch balance (full) | `fetch_balance({"type":"future"})` | Exchange sync every cycle, `_compute_equity`, status write |
+| Fetch positions | `fetch_positions()` | Exchange sync every cycle, TP placement |
+| Fetch ticker | `fetch_ticker(sym)` | Status write (per coin), fill price fallback |
+| Fetch OHLCV | `fetch_ohlcv(sym, "1h", limit=50)` | Candle fetch every cycle per coin |
+| Market buy | `create_market_buy_order(sym, qty, {positionSide:"BOTH"})` | BUY execution |
+| Market sell | `create_market_sell_order(sym, qty, {positionSide:"BOTH", reduceOnly:True})` | SELL execution, force-close |
+| Fetch my trades | `fetch_my_trades(sym, limit=5)` | Fill price fallback when `order.average` is missing |
+| Limit sell (TP) | `create_limit_sell_order(sym, qty, price, {GTC, positionSide, reduceOnly})` | TP placement after every BUY |
+| Cancel order | `cancel_order(order_id, sym)` | TP cancellation before SELL or on phase change |
+| Fetch order status | `fetch_order(order_id, sym)` | TP fill check every 65s per coin |
+| Fetch open orders | `fetch_open_orders(sym)` | TP recovery at startup, orphan cleanup post-TP |
+| Fetch funding history | `fetch_funding_history(sym, params)` | Every 8h per open position |
+
+#### File I/O
+
+| File | Path | Operations | Frequency |
+|------|------|------------|-----------|
+| State | `OUTPUT_DIR/state.json` | Read on startup; atomic write via `.tmp` rename | Every 65s |
+| Status | `OUTPUT_DIR/status.json` | Atomic write via `.tmp` rename | Every 60s |
+| Trades | `OUTPUT_DIR/trades.csv` | Read on startup; atomic write via `.tmp` rename | On every trade + every cycle |
+| Bot log | `OUTPUT_DIR/bot.log` | Append (all `logging` output) | Continuous |
+| Bot lock | `OUTPUT_DIR/bot.lock` | Create + OS lock on startup; unlock on shutdown | Startup/shutdown |
+| Bot PID | `OUTPUT_DIR/bot.pid` | Write PID on startup; delete on clean shutdown | Startup/shutdown |
+| Scanner JSON | `SCANNER_PATH` (`docs/data/v14/cycle_scanner.json`) | Read on rebalance + regime eval | Daily |
+| Candles DB | `DB_PATH` (`trading/spot/data/candles.db`) | Read by `V13SignalPack` via SQLite3 | On engine init + daily signal refresh |
+
+#### Database Queries (`candles.db`)
+
+Not made directly from the main runner. All DB access is via `V13SignalPack(coin)` inside
+`V14LifecycleEngine.__init__()` and during the daily boundary tick. Queries fetch per-coin
+historical OHLCV + computed indicators from `candles_daily`.
+
+#### External HTTP Calls
+
+| Service | Endpoint | Frequency | Auth |
+|---------|----------|-----------|------|
+| Telegram sendMessage | `https://api.telegram.org/bot{token}/sendMessage` | On events (BUY, SELL, TP hit, alerts, startup/shutdown) | `AIT_TG_TOKEN` |
+| Telegram getUpdates | `https://api.telegram.org/bot{token}/getUpdates` | Every 15 seconds | `AIT_TG_TOKEN` |
+| CFGI API | `CFGIClient.get_current(...)` | Hourly | `CFGI_API_KEY` |
+
 ---
 
 ## 9. Presentation Layer
@@ -810,8 +1624,8 @@ The exchange connection is used only for live price data.
 |-----------|------|-----|
 | V14PM Portfolio | `docs/dashboardV14PM.html` | V14PM paper |
 | V14 DCA | `docs/dashboardV14.html` | V14 paper |
-| V14-ETF | `docs/dashboardV14ETF.html` | V14-ETF paper |
-| V14 Live | `docs/d-984ae0d4ab9dc1a5.html` | V14 live (Aster) |
+| V14-ETF | `docs/dashboardV14ETF.html` | V14-ETF paper (RETIRED — dashboard preserved for historical record) |
+| V14-PM Live | `docs/d-984ae0d4ab9dc1a5.html` | V14PM live (Aster Perps) |
 
 **Hosted at:** https://halo-effects.github.io/adaptive-intelligence-trading/
 
@@ -848,10 +1662,13 @@ docs/data/
 │   ├── cycle_scanner.json   ← DCA scores (read by V14PM runner)
 │   └── daily_equity.json    ← Equity curve data
 ├── v14etf/
-│   ├── status.json
+│   ├── status.json          ← RETIRED — static snapshot
+│   └── trades.csv           ← RETIRED — historical record
+├── v14-pm/
+│   ├── status.json          ← V14PM paper bot (always paper, never overwritten by live)
 │   └── trades.csv
-└── v14-pm/
-    ├── status.json
+└── v14-pm-live/
+    ├── status.json          ← V14PM live bot (Aster Perps)
     └── trades.csv
 ```
 
@@ -865,7 +1682,6 @@ All tasks run as the current user. Working directory: `C:\Users\Never\.openclaw\
 |-----------|---------|-------------|---------|
 | `V14LiveAster` | At boot | `run_v14_live_aster.py --confirm --skip-backfill` | V14 live bot |
 | `V14PaperBot` | At boot | `run_v14_paper.py` | V14 paper bot |
-| `V14ETFPaperBot` | At boot | `run_v14etf_paper.py` | V14-ETF paper bot |
 | `V14PMPaperBot` | At logon | `run_v14_portfolio_paper.py --capital 50000 --profile high --leverage 1.0` | V14PM paper bot (state restored from `engine_state.json`) |
 | `V14CycleScanner` | Daily | `v14_cycle_scanner.py` | DCA score refresh |
 | `AIT_CandleCollector` | Hourly | `run_candle_collector.ps1` | Candle + scanner pipeline |
@@ -873,7 +1689,10 @@ All tasks run as the current user. Working directory: `C:\Users\Never\.openclaw\
 | `AIT_PMComparisonLog` | Scheduled | `pm_comparison_log.py` | PM benchmark logging |
 | `AIT_Watchdog` | Every 5 min | `openclaw_watchdog.ps1` | Monitor + auto-restart bots |
 
-**Auto-restart:** `V14LiveAster`, `V14PaperBot`, `V14ETFPaperBot`, `V14PMPaperBot` all have
+> **V14ETFPaperBot UNREGISTERED (2026-03-17):** Scheduled task removed when bot was retired.
+> Do not re-register — bot is permanently retired. See §17.1.
+
+**Auto-restart:** `V14LiveAster`, `V14PaperBot`, `V14PMPaperBot` all have
 `RestartCount=3` / `RestartInterval=2min` configured on the task.
 
 ---
@@ -894,7 +1713,7 @@ All bots send structured Telegram alerts for:
 
 **Message prefixes:**
 - V14PM paper: `[V14-PM]`
-- V14-ETF paper: `[V14-ETF]`
+- V14 paper: `[V14]`
 - V14 live: `[ASTER]`
 
 ### 11.2 Heartbeat Health Check
@@ -910,9 +1729,11 @@ heartbeat monitor check:
 Runs every 5 minutes. Monitors:
 1. **OpenClaw Gateway** — restarts if process not found
 2. **V14PaperBot** — restarts scheduled task if not running or status stale > 2h
-3. **V14ETFPaperBot** — same
-4. **V14PMPaperBot** — same
-5. **V14LiveAster** — same
+3. **V14PMPaperBot** — same
+4. **V14LiveAster** — same
+
+> **V14ETFPaperBot removed from watchdog (2026-03-17):** Bot retired; watchdog no longer
+> monitors or restarts it.
 
 Log: `~/.openclaw/watchdog.log`
 
@@ -922,10 +1743,11 @@ Log: `~/.openclaw/watchdog.log`
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `HYPERLIQUID_API_KEY` | Yes (live) | None | Hyperliquid wallet address |
-| `HYPERLIQUID_API_SECRET` | Yes (live) | None | Hyperliquid private key |
-| `ASTER_API_KEY` | Yes (Aster bot) | None | Aster DEX API key |
-| `ASTER_API_SECRET` | Yes (Aster bot) | None | Aster DEX API secret |
+| `ASTER_API_KEY` | Yes (production) | None | Aster DEX API key (perp trading) |
+| `ASTER_API_SECRET` | Yes (production) | None | Aster DEX API secret |
+| `ASTER_FAPI_URL` | Optional | `https://fapi.asterdex.com` | Aster Perp API base URL |
+| `HYPERLIQUID_API_KEY` | Paper bots only | None | Hyperliquid wallet address |
+| `HYPERLIQUID_API_SECRET` | Paper bots only | None | Hyperliquid private key |
 | `AIT_TG_TOKEN` | Recommended | None | Telegram bot token for alerts |
 | `AIT_TG_CHAT_ID` | Recommended | None | Telegram chat ID for alerts |
 | `CFGI_API_KEY` | Optional | None | Fear & Greed Index API key |
@@ -959,17 +1781,24 @@ python -u -m trading.spot.run_v14_portfolio_paper \
 # After first cycle, engine_state.json is saved — subsequent restarts don't need --fresh.
 ```
 
-### V14PM Live Bot (production)
+### V14PM Live Bot (production — Aster Perps)
 ```bash
-python -u -m trading.spot.run_v14_portfolio_live \
-  --capital 50000 \
-  --profile high \
-  --leverage 1.0 \
-  --exchange hyperliquid \
-  --confirm         # Required for live trading
+# Normal start (restart / crash recovery):
+python -u -m trading.spot.run_v14_portfolio_live_aster \
+  --capital 340 \
+  --confirm \
+  --skip-backfill
+
+# First launch (fresh start):
+python -u -m trading.spot.run_v14_portfolio_live_aster \
+  --capital 340 \
+  --confirm \
+  --fresh
 ```
-> Note: `run_v14_portfolio_live.py` does not yet exist — must be created as part
-> of cloud migration. See Cloud Migration Guide.
+> Built from `run_v14_live_aster.py` (proven execution) + PM components.
+> Unified profile (High grid, 1x leverage, 30d scanner) is hardcoded — no
+> `--profile` or `--leverage` flags needed.
+> Exchange is always Aster Perps — no `--exchange` flag.
 
 ### V14 Live Bot (Aster)
 ```bash
@@ -1022,8 +1851,9 @@ matplotlib, scipy, scikit-learn, plotly  # Backtest analysis only
 |----------|-----------|
 | DCA-only entry/exit | Eliminates timing risk; consistent cycle completion regardless of market direction |
 | 1.5% TP across all profiles | Balances cycle frequency vs. fee impact; proven through extensive backtesting |
-| 75/25 active/reserve split | Reserve ensures capital always available for high-score opportunities |
-| Equity-tiered coin cap | Prevents over-diversification at small capital; scales naturally |
+| Adaptive pool split (90/10 → 80/20 → 75/25) | Small accounts need max grid depth; reserve scales up as equity grows and exposure warrants it (Upgrade 0, 2026-03-24) |
+| Equity-tiered coin cap (3 → 4 → 5 → 10) | More coins earlier for turnover; scales with capital. 3 coins at $3K captures 51% of paper trades (Upgrade 0, 2026-03-24) |
+| 5% hysteresis on tier transitions | Prevents flapping at boundaries from normal PnL fluctuation; upgrades immediate, downgrades buffered (Upgrade 0, 2026-03-24) |
 | Score hurdle ≥ 5.0 | Filters out coins with poor cycle efficiency; avoids capital traps |
 | Trend multiplier [0.3, 1.5] | Momentum bias without abandoning mean-reversion; bounded to prevent extremes |
 | SQLite for candles.db | Zero-dependency, portable, sufficient for 1.5M rows at current scale |
@@ -1033,83 +1863,416 @@ matplotlib, scipy, scikit-learn, plotly  # Backtest analysis only
 | Ground-truth equity calc | `Capital + Realized - Fees + Unrealized` from trades.csv; avoids engine internal drift. Live bot uses exchange API balances as ultimate truth. |
 | `load_existing()` on ALL startup paths | Trade history survives restarts including `--fresh`; prevents `save_csv()` from overwriting history with empty data |
 | `resample_daily.py` in hourly pipeline | Ensures all coins have daily candles for signal computation; closes gap between 1h collector and daily-dependent signal pack |
+| TP checks candle high/low not close | Matches resting limit order behavior; fills on wick touch at TP price (2026-03-17) |
+| LIVE GUARD pattern | Engine TP sells blocked when exchange limit order is active; prevents engine from overriding exchange truth (2026-03-18) |
+| Trailing stop as primary TP | Exchange executes trailing TP even if bot dies; activates at +1.5%, trails 0.5%. Polling is fallback only. Feature flag for instant rollback to limit sell (2026-04-13, originally resting limit orders 2026-03-17) |
+| Fill price from exchange, never engine | PnL accuracy; prevents fictional bookkeeping when fill price differs from TP price (2026-03-18) |
+| Human-in-the-loop for direction flips | V14-ETF incident: autonomous LONG↔SHORT switches can cause catastrophic losses (2026-03-17) |
+| Top-5 scanner summary picks | Summary Best/Fastest/Safest picks derived from top 5 only; avoids low-quality picks from tail of coin universe (2026-03-18) |
 
 ---
 
-## 16. Future Architecture: Trade Database Migration
+## 16. Future Architecture: Production Trading System
 
-> **Status:** Planning. Triggered when scaling to multiple live accounts on a DEX.
+> **Status:** Design finalized 2026-03-18 following live incident. Triggered by the
+> fundamental problem identified: the current system treats engine state as primary truth
+> with the exchange as a correction layer. This is backwards for live trading.
 
-### 16.1 Why CSV Won't Scale
+### 16.1 Why the Current Architecture Cannot Scale
 
-The current `trades.csv` per-bot design works for single-instance paper/live bots.
-It breaks when scaling to multiple accounts:
+The current design has a structural flaw: **the engine is authoritative, the exchange is secondary**.
 
-| Limitation | Impact |
-|-----------|--------|
-| No concurrent writes | Multiple bot instances can't safely append to the same file |
-| No querying | Slicing by account, time range, coin, or P&L requires reading the entire file |
-| No atomicity | A crash mid-write can corrupt the CSV; databases handle this natively |
-| No cross-account reconciliation | Comparing positions across accounts needs joins, not file parsing |
-| No schema enforcement | Malformed rows silently corrupt data |
+| Current Problem | Impact |
+|----------------|--------|
+| Engine state (in-memory + JSON) is authoritative | Drift from actual exchange positions is possible at all times |
+| CSV records engine's TP-price fills, not exchange fills | Trade history reflects fictional prices, not actual execution |
+| Reconciliation runs periodically, not continuously | Window of incorrect state between reconciliation cycles |
+| No database — everything is JSON + CSV on disk | No atomic writes, no concurrent access, no audit queries |
+| Polls for TP fills every 65 seconds | 65-second window where exchange filled but engine doesn't know |
+| Single process, single machine | No redundancy; process death = blind spot until restart |
 
-### 16.2 Target Architecture
+This architecture works for paper bots (simulated, no real money). For live trading,
+the **exchange must be authoritative**, with the engine as a decision-maker only.
+
+### 16.2 Target Production Architecture
 
 ```
-trades.csv (per-bot)  →  trades table (shared database)
+Signal Engine (read-only)
+  → decides ENTRY signals + TP levels
+         ↓
+    Order Manager → Exchange API (REST + WebSocket)
+         ↓                    ↓
+    WebSocket fills ←── exchange pushes fills in real-time
+         ↓
+    PostgreSQL DB ← single source of truth
+    (trades, balances, positions, signals, audit log)
+         ↓
+    Dashboard API → reads from DB
+    Status/alerts → reads from DB
 ```
 
-**Schema extension:**
+**Key principles of the target architecture:**
+- **DB is truth** — not engine state, not CSV, not JSON files
+- **Exchange pushes fills via WebSocket** — not polling every 65 seconds
+- **Engine only decides entries** — all exits are exchange-driven (limit orders)
+- **Order Manager is separate from Signal Engine** — clear separation of concerns
+- **All prices are exchange prices** — engine never contributes fill price data
+- **Full audit trail in DB** — every order, fill, balance change is immutable
+
+### 16.3 Database Schema (Target)
+
 ```sql
-CREATE TABLE trades (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    account_id      TEXT NOT NULL,       -- e.g. 'paper-v14pm', 'live-hl-main'
-    deal_id         INTEGER NOT NULL,
+-- Positions (source of truth for open positions)
+CREATE TABLE positions (
+    id              SERIAL PRIMARY KEY,
+    account_id      TEXT NOT NULL,
     symbol          TEXT NOT NULL,
-    open_time       TEXT NOT NULL,
-    close_time      TEXT NOT NULL,
-    regime          TEXT,
+    side            TEXT NOT NULL,       -- 'long' | 'short'
+    layers          INTEGER,
+    avg_entry       REAL,
+    quantity        REAL,
+    tp_price        REAL,
+    tp_order_id     TEXT,               -- exchange order ID
+    opened_at       TIMESTAMPTZ,
+    updated_at      TIMESTAMPTZ
+);
+
+-- Fills (immutable exchange fill records)
+CREATE TABLE fills (
+    id              SERIAL PRIMARY KEY,
+    account_id      TEXT NOT NULL,
+    order_id        TEXT NOT NULL,
+    symbol          TEXT NOT NULL,
+    side            TEXT NOT NULL,
+    price           REAL NOT NULL,      -- actual exchange fill price
+    quantity        REAL NOT NULL,
+    fee             REAL,
+    filled_at       TIMESTAMPTZ NOT NULL,
+    raw_response    JSONB               -- full exchange API response
+);
+
+-- Trades (closed position records — derived from fills)
+CREATE TABLE trades (
+    id              SERIAL PRIMARY KEY,
+    account_id      TEXT NOT NULL,
+    symbol          TEXT NOT NULL,
+    open_time       TIMESTAMPTZ,
+    close_time      TIMESTAMPTZ,
     layers          INTEGER,
     invested        REAL,
-    pnl             REAL,
+    proceeds        REAL,               -- actual exchange proceeds
+    pnl             REAL,               -- proceeds - invested - fees
     return_pct      REAL,
-    duration_h      REAL,
-    recorded_at     TEXT,                -- wall-clock time of recording
-    UNIQUE(account_id, symbol, open_time, close_time)
+    duration_h      REAL
 );
 ```
 
-**Database choice:**
-- **SQLite** — simplest path. `candles.db` already uses it. Trades table could
-  live in the same file. Sufficient for single-server multi-account deployment.
-- **PostgreSQL** — required if multiple servers need write access to the same
-  trade ledger (e.g., cloud bot + local bot writing to central DB). Adds
-  operational complexity (backup, auth, networking).
+### 16.4 Migration Strategy: Aster Perps (Locked 2026-03-19)
 
-**Recommendation:** Start with SQLite (add `trades` table to `candles.db`).
-Migrate to Postgres only when multi-server writes become a requirement.
+Production exchange is **Aster DEX Perpetuals** at 1x leverage. Decision D1.
 
-### 16.3 Migration Path
+**Phase 1 (current):** V14PM Live on Aster Perps
+- Build `run_v14_portfolio_live_aster.py` from proven live Aster bot
+- Start with ~$340 capital, coin cap = 1, rotate after current ASTER TP
+- LIVE GUARD, resting limit orders, fill price handling already proven
+- Phase 2 execution: skip dry-run, go directly to small-capital live
 
-1. Add `trades` table to `candles.db` schema
-2. Create `TradeStore` class (read/write/query) replacing CSV file I/O
-3. Import existing CSV data into the table (one-time migration script)
-4. Update `_write_status()` to query `TradeStore` instead of reading CSV
-5. Update `TradeTracker` to write to DB instead of CSV
-6. Keep CSV export as a read-only convenience (dashboard, debugging)
-7. Add `account_id` to all trade records for multi-account isolation
+**Phase 2 (near-term):** Scale up on Aster
+- Increase capital → increase coin cap tier
+- Enable full portfolio rotation
+- Add regime monitor + wind-down + Telegram governance
 
-### 16.4 What This Enables
+**Phase 3 (medium-term):** Exchange-as-truth architecture — **PARTIALLY IMPLEMENTED (2026-03-21)**
+- ✅ Exchange API as single source of truth for positions and balances (implemented)
+- ✅ Engine position state overwritten from exchange every cycle (implemented)
+- ✅ Status.json fully derived from exchange data (implemented)
+- ⬜ WebSocket fill listener (replaces 65-second polling) — not yet
+- ⬜ Database as position truth (replaces state.json + trades.csv) — not yet
+- ⬜ Order Manager service (replaces engine-embedded order logic) — not yet
+- ⬜ Dashboard reads from DB instead of synced JSON files — not yet
 
-- **Multi-account dashboard:** Single query across all accounts for total P&L
-- **Cross-account analytics:** Which account/strategy performs best on which coins
-- **Audit trail:** Immutable trade records with `recorded_at` timestamps
-- **Reconciliation queries:** Compare DB trades vs exchange order history
-- **Portfolio-level risk:** Aggregate exposure across accounts in real time
+**Phase 4 (optional):** Cloud migration for reliability
+- Move proven bot to always-on cloud server
+- Same code, same config, systemd instead of Windows scheduled tasks
+
+**What this enables:**
+- Multi-account dashboard: single query across all accounts
+- True real-time fill processing: no polling latency
+- Immutable audit trail: every fill recorded at exchange time
+- Redundancy: DB survives process restarts; fills don't need re-processing
+
+### 16.5 CSV Migration Path
+
+When moving to PostgreSQL:
+1. Import all existing `trades.csv` files into `trades` table (one-time migration)
+2. Create `TradeStore` class replacing CSV file I/O
+3. Keep CSV export as read-only convenience (debugging, dashboards)
+4. Add `account_id` to all records for multi-account isolation
+
+---
+
+## 17. Incident Log
+
+### 17.1 2026-03-17: V14-ETF Retirement (Autonomous Direction Switch)
+
+**Component:** `run_v14etf_paper.py` (V14-ETF Paper Bot)
+**Severity:** High (demo bot capital lost; no real money)
+**Status:** ✅ Resolved — bot retired
+
+**What happened:** HBAR switched from LONG_DCA to SHORT_DCA autonomously without human approval.
+The SHORT_DCA grid was built as price continued rising, resulting in significant simulated losses.
+
+**Root cause:** No human-in-the-loop gate for Long↔Short direction changes.
+
+**Resolution:**
+- Bot stopped and scheduled task unregistered
+- `status.json` renamed to `status.json.retired`
+- Live trading rule added: Long↔Short direction flips require human approval (§6.8.6)
+- Lesson documented in §6.8.6
+
+### 17.2 2026-03-17: TP Fill Model Fix
+
+**Component:** `v14_dca_engine.py`, `v14_lifecycle_engine.py`
+**Severity:** Medium (missed TPs — opportunity cost)
+**Status:** ✅ Fixed
+
+**What happened:** TP detection checked candle **close** price, not high/low. Wicks that
+touched the TP price but closed below would not trigger a TP sell. Engine missed TPs that
+any exchange limit order would have filled.
+
+**Fix:** Engine now checks candle high (longs) / low (shorts) for TP detection. Fills at
+TP price on wick touch. See §5.2.
+
+### 17.3 2026-03-17: Resting Limit Orders on Aster
+
+**Component:** `run_v14_live_aster.py`, `exchange_client.py`
+**Severity:** Enhancement
+**Status:** ✅ Implemented
+
+**What happened:** Live bot relied on polling every 65 seconds to detect TP hits.
+Process death or API errors created windows where exchange filled but bot didn't know.
+
+**Fix:** Resting limit sell placed on exchange after every BUY. Exchange executes TP
+regardless of bot state. See §6.3.1, §6.8.2.
+
+### 17.4 2026-03-18: TP Catch-Up Bug Fix (Paper Bots)
+
+**Component:** `v14_lifecycle_engine.py`
+**Severity:** Medium (incorrect DCA behavior after price gap above TP)
+**Status:** ✅ Fixed
+
+**What happened:** Daily tick used previous-day OHLC. If price gapped above TP overnight
+but yesterday's high was below TP, engine would add a DCA layer instead of selling.
+
+**Fix:** "Live TP catch-up" block added after daily tick. Checks current candle against TP;
+if exceeded, runs TP tick with current data. Live mode only. See §6.9.
+
+### 17.5 2026-03-18: CRITICAL — Live Aster False TP Sell ($22 Loss)
+
+**Component:** `run_v14_live_aster.py`
+**Severity:** Critical (real capital loss)
+**Status:** ✅ Resolved — LIVE GUARD implemented
+
+**What happened:**
+1. Daily tick used previous-day OHLC (high ~$0.78)
+2. Previous-day high exceeded TP ($0.7436) → engine triggered internal TP sell
+3. Engine cancelled exchange limit order
+4. Market sell executed at ~$0.69 (below TP — price had already fallen back)
+5. Exchange API didn't return fill price → fill fell back to engine's TP price ($0.7436)
+6. Engine booked sell at $0.7436, actual proceeds ~$0.69 → $22 loss + incorrect PnL
+
+**Root cause:** Engine treated as authoritative over exchange. Daily tick could override
+active exchange limit orders via its internal TP detection.
+
+**Fix (LIVE GUARD — §6.8.1):**
+- Engine TP sells blocked when `_tp_order_id` is set
+- Engine state rolled back on blocked TP
+- Fill price fallback fixed: fetches ticker price, never falls back to engine price
+- PnL calculated from actual exchange proceeds
+- Engine capital corrected after sells
+- Startup reconciliation caught $22.73 drift and corrected
+
+### 17.6 2026-03-18: Scanner Summary Pick Fix
+
+**Component:** `v14_cycle_scanner.py`
+**Severity:** Low (incorrect summary labels)
+**Status:** ✅ Fixed
+
+**What happened:** Best/Fastest/Safest summary picks were derived from the full coin
+universe ranking, meaning poor-performing coins at the tail could appear as summary picks.
+
+**Fix:** Summary picks now derived from `scored_rankings[:5]` (top 5 only). See §4.1.
+
+### 17.7 2026-03-24: False "Bot Frozen" Alerts — PowerShell Timezone Parsing Bug
+
+**Component:** Heartbeat monitoring script (OpenClaw agent)
+**Severity:** Medium (unnecessary bot restarts, false critical alerts)
+**Status:** ✅ Root cause identified and fixed
+
+**What happened:** OpenClaw heartbeat checks reported V14PM Live as "frozen" with
+~25,200 seconds (7 hours) of staleness — matching the PDT/UTC offset exactly.
+The bot was restarted 6+ times in 24 hours due to false alerts. All restarts were
+unnecessary — the bot was running normally the entire time.
+
+**Root cause:** PowerShell's `[datetime]::Parse()` silently converts ISO timestamps
+with `+00:00` offset to local time (Kind=Local). When subtracted from `[datetime]::UtcNow`
+(Kind=Utc), the local-time value is treated as-is, creating a phantom 7-hour offset
+matching the PDT timezone.
+
+```powershell
+# BAD: [datetime]::Parse("2026-03-25T04:03:53+00:00") → 03/24 21:03 (Local, Kind=Local)
+# Subtracting UtcNow (04:04 UTC) from Local (21:03 "UTC") = 25,200 seconds
+
+# GOOD: [datetimeoffset]::Parse("2026-03-25T04:03:53+00:00").UtcDateTime → 04:03 (UTC)
+# Subtracting UtcNow (04:04 UTC) from UTC (04:03 UTC) = 42 seconds
+```
+
+**Fix:** Use `[datetimeoffset]::Parse($ts).UtcDateTime` instead of `[datetime]::Parse($ts)`
+when comparing ISO timestamps against `[datetime]::UtcNow`.
+
+**Impact:** No data loss or financial impact. Exchange-as-truth architecture ensured
+all positions and TP orders were preserved across unnecessary restarts. Upgrades 0–3
+deployed during the same session were unaffected.
+
+**Lesson:** Never use `[datetime]::Parse()` for UTC timestamp comparison in PowerShell.
+Always use `[datetimeoffset]` for timezone-aware parsing.
+
+---
+
+## 18. Code Audit & Gap Analysis (2026-03-21)
+
+Point-in-time audit of `run_v14_portfolio_live_aster.py` and supporting modules, conducted
+2026-03-21 during the exchange-as-truth refactor. 13 gaps were identified and resolved.
+Full per-function traces and detailed flow analysis: `V14PM_CODE_AUDIT_2026-03-21.md`.
+
+### 18.1 Gap Summary Table
+
+| Gap | Description | Severity | Status |
+|-----|-------------|----------|--------|
+| GAP-01 | `_handle_tp_fill`: broken orphaned order cleanup — `self.client.client` and `._to_ccxt_symbol()` don't exist; orphaned sell orders never cleaned up | P1 | ✅ FIXED |
+| GAP-02 | `CapitalRouter.rebalance_daily` silently changes pool split from 90/10 → 75/25 without adjusting cash amounts; docstring contradicted code | P1 | ✅ FIXED → superseded by Upgrade 0 (adaptive split) |
+| GAP-03 | `_last_rebalance_date` and `_regime_last_eval_date` not persisted in `state.json` — both reset to `None` on restart, triggering immediate rebalance | P2 | ✅ FIXED |
+| GAP-04 | `_reentry_cooldown_until` declared in `__init__` but never read or updated (dead code) | P2 | ✅ FIXED |
+| GAP-05 | `_force_close_coin` uses stale `eng.long_coins` instead of fetching current exchange position qty | P1 | ✅ FIXED |
+| GAP-06 | `_write_status` reads `trades.csv` N+1 times per 60s write (once per coin + once for aggregates) | P3 | ⏸️ DEFERRED |
+| GAP-07 | `V14LifecycleEngine.get_status()` hardcodes `'exchange': 'hyperliquid'` — wrong for live bot | P2 | 🚫 WON'T FIX |
+| GAP-08 | `msvcrt` file lock is Windows-only — crashes with `ModuleNotFoundError` on Linux/cloud | P1 | ✅ FIXED |
+| GAP-09 | `_compute_equity` potential double-count: `usdt_total + unrealized` — needed API verification | P1 | ✅ NOT A BUG |
+| GAP-10 | `SHORT_OPEN` / `SHORT_CLOSE` engine actions silently ignored in `_execute_action` — engine state drifts | P2 | ✅ FIXED |
+| GAP-11 | `_place_tp_order` makes redundant `fetch_open_positions` call immediately after a BUY | P3 | ⏸️ DEFERRED |
+| GAP-12 | `_recover_tp_orders` Phase 2 (orphan scan) runs on coins already fully handled by Phase 1 | P2 | ✅ FIXED |
+| GAP-13 | Engine capital depletes mid-DCA, potentially blocking further layers on restart with open position | P1 | ✅ FIXED |
+
+### 18.2 Gap Details
+
+**GAP-01 — FIXED (2026-03-21):** After a TP fill, the code attempted
+`self.client.client.fetch_open_orders()` and `self.client._to_ccxt_symbol()`.
+`AsterPerpClient` has no `.client` attribute (it has `._exchange`) and no `._to_ccxt_symbol()`
+method (the correct method is `._aster_symbol()`). Always raised `AttributeError`, silently
+swallowed by a bare `except`. Orphaned sell orders were never cleaned up after TP fills.
+**Fix:** Changed to `self.client.fetch_open_orders(sym)`.
+
+**GAP-02 — FIXED (2026-03-21), then SUPERSEDED (2026-03-24, Upgrade 0):** Originally
+`CapitalRouter.__init__` set 90/10 pool split; `rebalance_daily()` silently changed to 75/25.
+**2026-03-21 fix:** Both paths set to 75/25 consistently.
+**2026-03-24 (Upgrade 0):** Pool split is now adaptive and equity-tiered (90/10 → 80/20 → 75/25)
+via `EQUITY_TIER_SPLITS` lookup table. Both `__init__()` and `rebalance_daily()` use
+`_apply_hysteresis()` to determine the split, so the inconsistency can no longer recur.
+
+**GAP-03 — FIXED (2026-03-21):** `_last_rebalance_date` was not saved in `state.json` — always
+reset to `None` on restart, triggering an immediate rebalance on every restart regardless of
+whether it had already run that day. `_regime_last_eval_date` had the same issue.
+**Fix:** Both fields are now persisted in `state.json` and restored on startup.
+
+**GAP-04 — FIXED (2026-03-21):** `self._reentry_cooldown_until = 0.0` declared in `__init__`,
+never read or updated anywhere in the codebase. Was presumably superseded by the 30-second
+`ORDER_DEDUP_WINDOW` in `_execute_action`. **Fix:** Removed dead attribute.
+
+**GAP-05 — FIXED (2026-03-21):** `_force_close_coin` sold using `eng.long_coins` (last set by
+exchange sync, potentially stale if called soon after a buy). The `_execute_action` SELL path
+correctly fetches exchange position qty, but `_force_close_coin` did not.
+**Fix:** Now calls `client.fetch_open_positions()` first; falls back to `eng.long_coins` if
+exchange returns nothing.
+
+**GAP-06 — DEFERRED (P3):** `_write_status` re-reads `trades.csv` once per active coin (for
+per-coin realized PnL) and once more for aggregate stats — N+1 reads per 60-second cycle. At
+current coin counts (1–3) this is negligible. **Fix when needed:** Read once, compute all
+per-coin and aggregate stats in a single pass.
+
+**GAP-07 — WON'T FIX:** `V14LifecycleEngine.get_status()` returns `'exchange': 'hyperliquid'`
+(hardcoded from the paper bot template). Lives in shared `v14_lifecycle_engine.py` used by all
+bots — modifying it risks breaking paper bots without clear benefit. The main runner's
+`_write_status()` already overrides the top-level `"exchange"` field with `"aster_perp"`.
+The wrong value never reaches `status.json` uncorrected.
+
+**GAP-08 — FIXED (2026-03-21):** `import msvcrt; msvcrt.locking(...)` in the startup path is
+Windows-only. Would raise `ModuleNotFoundError` on any Linux/cloud deployment.
+**Fix:** Platform check — uses `msvcrt.locking` on `win32`, `fcntl.flock` on Linux.
+
+**GAP-09 — NOT A BUG:** `_compute_equity()` computes `equity = usdt_total + unrealized_pnl`.
+Concern was that `usdt_total` might already include unrealized PnL.
+**Verified via Aster API:** `usdt_total = free + used` where `used` = margin posted as
+collateral, NOT unrealized PnL. Adding engine-computed unrealized PnL on top is therefore
+correct — it does not double-count.
+
+**GAP-10 — FIXED (2026-03-21):** `_execute_action` only handled `"BUY"` and `"SELL"` action
+types. The engine can emit `"SHORT_OPEN"` and `"SHORT_CLOSE"` when a coin is in `SHORT_DCA`
+phase. These were silently dropped (no exchange order, no rollback), causing the engine's
+internal position state to drift into an inconsistent state.
+**Fix:** `SHORT_OPEN` and `SHORT_CLOSE` are now explicitly rejected via `engine.reject_action()`
+to prevent state drift. Short-side trading is not currently enabled.
+
+**GAP-11 — DEFERRED (P3):** `_place_tp_order` calls `client.fetch_open_positions()` to get the
+exchange qty for the TP order, even though positions were already fetched at the top of the
+cycle and the buy order result contains the filled qty.
+**Fix when needed:** Use `actual_qty` from the BUY result directly for TP placement.
+
+**GAP-12 — FIXED (2026-03-21):** `_recover_tp_orders` Phase 1 checks if known TP orders are
+still valid (filled or live). Phase 2 then scanned for orphan orders on all coins — including
+coins where Phase 1 had already confirmed the TP order was alive. Redundant exchange API calls
+and risk of mis-classifying a valid TP order as an orphan.
+**Fix:** Phase 2 now skips coins where Phase 1 confirmed the TP order is still valid.
+
+**GAP-13 — FIXED (2026-03-21):** The DCA engine's internal `capital` field is decremented
+each time a layer is added (part of the DCA sizing design). On restart with an open position,
+the engine could have near-zero capital, causing the `order > self.capital` guard to block
+further DCA layers — even though the `CapitalRouter` had real capital available.
+**Fix:** Engine capital is reset to `cs.allocated_capital` on every restart (for coins with
+open positions) AND after every confirmed BUY fill. The router manages real capital; the
+engine's capital is a sizing reference that resets each cycle.
+
+**GAP-14 — FIXED (2026-04-09):** `_execute_action` SELL path did not verify that a position
+actually existed on the exchange before attempting a market sell. During candle catch-up, the
+engine can generate BUY+SELL action pairs in a single tick. If the BUY is rejected (e.g.,
+insufficient USDT), the SELL proceeds with no position to close — exchange rejects with
+"ReduceOnly Order is rejected" (-2022).
+**Fix:** SELL path now calls `fetch_open_positions()` and skips the sell if no position exists
+for the coin. Engine state is rolled back via `reject_action(SELL)`.
+
+**GAP-15 — FIXED (2026-04-09):** `reject_action()` in `v14_lifecycle_engine.py` only supported
+BUY and SHORT_OPEN rollbacks. A rejected SELL (phantom TP with no exchange position) would
+log a warning but leave the engine in a dirty state (position zeroed, capital credited with
+phantom proceeds).
+**Fix:** `reject_action()` now handles SELL: reverses TP credit (capital, coins, avg_entry,
+layers, pnl, wins). In practice, `_sync_positions_from_exchange()` would also clean this up
+on the next cycle, but explicit rollback prevents transient state corruption.
+
+**GAP-16 — FIXED (2026-04-09):** Insufficient USDT Telegram alerts had no throttle. When the
+bot is cash-starved ($0 USDT), every candle tick triggers a BUY signal → balance check fails →
+Telegram alert. With duplicate candle processing (~20x per candle), this produces dozens of
+alerts per coin per hour.
+**Fix:** Alert throttled to once per coin per hour via `cs._last_insufficient_alert` timestamp.
+The actual `fetch_balance()` check still runs every time — only the Telegram notification is
+rate-limited.
 
 ---
 
 _Document generated by Gee Gee — 2026-03-09_
-_Updated: 2026-03-10 (v1.2 — CSV-as-truth for all bots, exchange API equity for live bot, --fresh loads existing trades, future trade DB architecture)_
-_Next: Cloud Migration Guide (Phase 5)_
-_Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_
+_Updated: 2026-03-10 (v1.2 — CSV-as-truth, exchange API equity, --fresh loads existing trades)_
+_Updated: 2026-03-18 (v1.3 — LIVE GUARD, resting limit orders, fill price fix, TP catch-up, V14-ETF retirement, production architecture target, incident log §17)_
+_Updated: 2026-03-19 (v1.4 — Production architecture locked: Aster Perps, 50-coin universe, unified profile, global direction, regime monitor §7.5, wind-down §7.6, PAUSE/RESUME §7.7, Telegram commands §7.8, funding rate §7.9, exchange client updates §8, env vars §12, CLI §13, migration strategy §16.4)_
+_Updated: 2026-03-21 (v1.5 — Exchange-as-truth architecture: removed LIVE GUARD, engine rollbacks, reconciliation. Exchange API is single source of truth for positions and balances. §6.8 rewritten, §7.1 architecture updated, §16.4 Phase 3 partially implemented.)_
+_Updated: 2026-03-21 (v1.6 — Code audit merge from V14PM\_CODE\_AUDIT\_2026-03-21.md: §1.5 Class & Module Quick Reference, §6.8.7 Data Source Map, §8.6 External API Dependencies, §18 Code Audit & Gap Analysis (13 gaps, all resolved). Architecture doc is now single source of truth for design-level findings.)_
+_Updated: 2026-04-09 (v1.7 — Pre-order exchange checks: SELL path verifies position exists via fetch_open_positions(), insufficient USDT alert throttle, SELL rollback in reject_action(). GAPs 14-16 added to §18.)_
+_Decisions reference: PRODUCTION_DECISIONS_2026-03-19.md_
+_Audit trail: V14PM_CHANGE_CONTROL.md (renamed from V14PM_UNIFIED_AUDIT.md 2026-03-24)_
