@@ -1,5 +1,5 @@
 # Basis Dev Plan
-_Updated: 2026-03-16 | Reference: project-plan.md_
+_Updated: 2026-04-16 | Reference: project-plan.md_
 
 ## Chain: BNB Chain (Mainnet)
 ## Test Currency: USDB (fake USDC, already deployed)
@@ -52,23 +52,26 @@ The platform is fully on-chain. All financial operations (token creation, tradin
 - Data indexer (candles, txns, syncs, leverage, prediction shares)
 - **SDK documentation** (full, 13 modules, Python + TypeScript) — received 2026-03-16
 - **All 7 core skill scripts wired to SDK API** (create-prediction, bet, create-token, trade, lend, vault, portfolio) — 2026-03-16
+- **SDK published on npm/PyPI** — live as of April 2026
+- **Points system backend** — live and running as of April 2026
+- **Points leaderboard** — live (part of points backend)
+- **Phase 1 LIVE with USDB** — agents earning real points
+- **DappBay BNB Chain listing** — submitted
 
 ### 🔧 IN PROGRESS
-- **SDK npm/PyPI publish** — Alex to publish when contracts finalized (beta). Docs are complete.
-- **Points system backend** — not started, no owner. Critical for `points.py` script.
+- **Agent onboarding** — driving users and agents into the live beta
+- **First agents earning real points on USDB** — active
 
 ### 📋 STILL TO BUILD
 
 | Item | Type | Priority | Blocks |
 |---|---|---|---|
-| Points system backend | New build (off-chain) | 🔴 Critical | Airdrop farming |
-| Points leaderboard | New build | 🟡 Important | Airdrop engagement |
-| Agent wallet registration system | New build | 🟡 Important | ACS scoring |
-| Shareable activity cards | New build | 🟡 Important | Social marketing |
-| Prediction market AI enhancements | Enhancement | 🟡 Important | Agent UX |
 | BASIS token staking contract (notice-based) | **New contract** | 🔴 Critical | TGE |
 | Airdrop haircut/distribution contract | **New contract** | 🔴 Critical | TGE |
 | Presale notice-based vesting contracts | **New contract** | 🔴 Critical | TGE |
+| Agent wallet registration system | New build | 🟡 Important | ACS scoring |
+| Shareable activity cards | New build | 🟡 Important | Social marketing |
+| Prediction market AI enhancements | Enhancement | 🟡 Important | Agent UX |
 | DEX/CEX liquidity deployment | Operations | 🔴 Critical | TGE |
 | Moltbook registry | New build | 🟡 Post-TGE | Agent social layer |
 
@@ -79,7 +82,7 @@ The platform is fully on-chain. All financial operations (token creation, tradin
 ### 0.1 Core Contracts ✅
 All 13 contracts deployed on BNB Chain mainnet. See contract list above.
 
-### 0.2 SDK ✅ DOCS RECEIVED (2026-03-16) — Awaiting npm/PyPI Publish
+### 0.2 SDK ✅ PUBLISHED (npm/PyPI live — April 2026)
 Alex delivered full SDK documentation on 2026-03-16: `sdk-docs-2026-03-16.md`
 
 **SDK capabilities (confirmed):**
@@ -93,7 +96,7 @@ Alex delivered full SDK documentation on 2026-03-16: `sdk-docs-2026-03-16.md`
 - Rate limits: 60 req/min (API key), 30 req/min (session)
 - ERC-8004 agent identity with auto-registration on `BasisClient.create(agent=True)`
 
-**npm/PyPI status:** NOT published yet. Alex confirmed contracts may get variable renames but no functionality changes. Will publish as beta when ready — no test contracts in version history. **All skill scripts wired to SDK API — will work as-is once package is installable.**
+**npm/PyPI status:** ✅ Published and live as of April 2026. All skill scripts wired to SDK API and fully functional.
 
 **Remaining questions answered by SDK docs:**
 - ✅ SDK exposes read-only functions (prices, volumes, balances, market data) — no API key needed
@@ -102,10 +105,10 @@ Alex delivered full SDK documentation on 2026-03-16: `sdk-docs-2026-03-16.md`
 - ✅ Tax rate queries (surge tax, base rates) available
 - ✅ USDC is 6 decimals, MAINTOKEN/factory tokens are 18 decimals
 
-### 0.3 Points System Backend 🔧 NEW BUILD
-**Priority:** 🔴 Critical — drives airdrop incentives.
+### 0.3 Points System Backend ✅ LIVE (April 2026)
+**Priority:** 🔴 Critical — drives airdrop incentives. **NOW LIVE.**
 
-This is an **off-chain system** that tracks on-chain events and computes points. Alex does NOT build this — we do.
+This is an **off-chain system** that tracks on-chain events and computes points.
 
 **Point-earning actions:**
 
@@ -143,8 +146,8 @@ This is an **off-chain system** that tracks on-chain events and computes points.
 
 **Read API needed:** `GET /api/v1/points/{wallet}` — full breakdown + rank + tier
 
-### 0.4 Points Leaderboard 🔧 NEW BUILD
-**Priority:** 🟡 Important
+### 0.4 Points Leaderboard ✅ LIVE (April 2026)
+**Priority:** 🟡 Important — **NOW LIVE** (part of points backend)
 - Public web page + API endpoint
 - Sortable by total points, category, tier
 - Agent vs Human tabs
@@ -289,16 +292,19 @@ Haircut table:
 ## BUILD ORDER
 
 ```
-CURRENT STATE:
+CURRENT STATE (as of 2026-04-16):
   ✅ All 13 core DeFi contracts (deployed)
   ✅ USDB test token (deployed)
   ✅ Metadata API + Indexer (running)
   ✅ SDK documentation (complete — 2026-03-16)
   ✅ All 7 core skill scripts wired to SDK API (2026-03-16)
-  🔧 SDK npm/PyPI publish (Alex — beta when contracts finalized)
+  ✅ SDK published on npm/PyPI (April 2026)
+  ✅ Points system backend + leaderboard (live — April 2026)
+  ✅ Phase 1 LIVE with USDB
+  ✅ DappBay BNB Chain listing submitted
 
-UNBLOCKING AGENT TESTING (Do now):
-  🔧 Points system backend + leaderboard ← CRITICAL BLOCKER
+AGENT TESTING UNBLOCKED — Phase 1 is LIVE:
+  ✅ Points system backend + leaderboard
   ✅ OpenClaw basis-defi skill (wired to SDK API — 2026-03-16)
   🔧 Agent wallet registration (ERC-8004 in SDK — backend registration TBD)
 
@@ -334,4 +340,3 @@ POST-TGE:
 3. Audit timeline and preferred auditor?
 4. Confirm: Is `mixedBuy` the only ASwap function not exposed on frontend? Any others agent-only?
 5. What's the current USDB faucet URL and rate limits for test participants?
-6. Points system backend — who owns this? Critical blocker for airdrop farming.

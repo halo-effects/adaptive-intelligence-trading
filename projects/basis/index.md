@@ -1,6 +1,6 @@
 # Basis Project — Quick Reference Index
 
-_Last updated: 2026-03-16 (v4 — SDK docs received, scripts wired up)_
+_Last updated: 2026-04-16 (v5 — Phase 1 live, SDK published, points system live)_
 
 ## Documents
 
@@ -15,7 +15,8 @@ _Last updated: 2026-03-16 (v4 — SDK docs received, scripts wired up)_
 | `gitbook-corrections-for-alex-2026-03-14.md` | 5 corrections for the live GitBook site (ready for Alex) |
 | `sdk-gap-analysis-2026-03-14.md` | Gap analysis of Alex's SDK reference |
 | `sdk-docs-2026-03-16.md` | **Full SDK documentation from Alex** — 13 modules, Python + TypeScript, all read/write methods, examples, error handling |
-| `standup-2026-03-17.md` | Tomorrow's standup — progress, blockers, questions for Alex, priorities |
+| `standup-2026-03-17.md` | Standup — progress, blockers, questions for Alex, priorities |
+| `standup-latest.md` | **Latest project state** (2026-04-16) — canonical status reference for standup generation |
 | `index.md` | This file — quick reference to sections |
 
 ### Polymarket Scout (`polymarket-scout/`)
@@ -52,7 +53,7 @@ _Last updated: 2026-03-16 (v4 — SDK docs received, scripts wired up)_
 | `scripts/lend.py` | Take, extend, repay loans — **wired to SDK** (`client.loans.*`) |
 | `scripts/vault.py` | STASIS vault — stake, borrow, refinance — **wired to SDK** (`client.staking.*`) |
 | `scripts/portfolio.py` | Portfolio + net P&L summary — **wired to SDK** (`client.api.*` + `client.trading.get_usd_price()`) |
-| `scripts/points.py` | Airdrop points, Molt tier, ACS score — stub (points backend not built yet) |
+| `scripts/points.py` | Airdrop points, Molt tier, ACS score — **wired to SDK** (points backend live) |
 | `references/api-reference.md` | Complete contract function reference — all 13 contracts (from Alex's SDK reference, 2026-03-14) |
 | `references/token-frameworks.md` | Stable+, Floor+, Predict+ token mechanics |
 | `references/earning-guide.md` | Quick reference: all earning paths + point values |
@@ -131,7 +132,7 @@ _Last updated: 2026-03-16 (v4 — SDK docs received, scripts wired up)_
 | Surge tax parameters | ⏳ | Feature exists, defaults TBD |
 | Oracle provider for BNB | ⏳ | Chainlink / API3 / custom |
 | Audit timeline | ⏳ | Before TGE, budget from raise |
-| Alex's preferred API stack | ✅ | Alex building SDK himself — contract reference delivered 2026-03-14, usage docs to follow |
+| Alex's preferred API stack | ✅ | Alex building SDK himself — SDK published on npm/PyPI (April 2026) |
 
 ---
 

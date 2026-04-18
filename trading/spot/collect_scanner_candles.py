@@ -2,14 +2,21 @@
 """
 Incremental 1h candle collector for V14 DCA Cycle Scanner.
 
-Pulls latest 1h candles from Aster DEX (perps) for all scanner coins,
-stores in candles.db. Only fetches from the last stored timestamp forward.
+INCREMENTAL 1h candle collector — runs hourly via scheduled task.
 
-Switched from Hyperliquid to Aster (2026-04-17) to match the production
-exchange. Several scanner coins (ORCA, TRUMP, BERA, VIRTUAL, etc.) are
-only available on Aster.
+Fetches latest 1h candles from Aster DEX (perps) for all 50 scanner
+coins, stores in candles.db. Only fetches from the last stored timestamp
+forward.
 
-Designed to run hourly via scheduled task.
+Architecture:
+  - Deep history (years): Binance backfill scripts (backfill_scanner_coins.py)
+  - Incremental updates (hourly): THIS script, from Aster DEX
+  - Aster is the production exchange — matches live bot data source
+  - New coins that need initial history should be backfilled from Binance
+    first, then this collector keeps them fresh.
+
+Switched from Hyperliquid to Aster (2026-04-17): several scanner coins
+(ORCA, TRUMP, BERA, VIRTUAL, GRASS, IP, etc.) only trade on Aster.
 """
 
 import ccxt
@@ -107,8 +114,10 @@ COINS = [
 # We divide by 1000 when storing so DB matches the standard symbol.
 PREFIX_1000_COINS = {"1000PEPE/USDT:USDT", "1000BONK/USDT:USDT", "1000FLOKI/USDT:USDT"}
 
-# Default lookback for first-time pull (days)
-DEFAULT_LOOKBACK_DAYS = 365 * 2  # 2 years
+# Default lookback for first-time pull (days).
+# Aster only has ~3-12 months of history depending on the coin.
+# For deep history (2+ years), run backfill_scanner_coins.py (Binance).
+DEFAULT_LOOKBACK_DAYS = 365  # 1 year (Aster max)
 # Incremental lookback buffer (hours) to catch any gaps
 INCREMENTAL_BUFFER_HOURS = 6
 
