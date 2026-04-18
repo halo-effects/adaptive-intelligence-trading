@@ -658,6 +658,32 @@ def compute_trend_scores(history_path: Path = SCORE_HISTORY_PATH) -> dict:
         t14 = slope_over_window(14)
         t30 = slope_over_window(30)
 
+        # Fallback: if no standard window has ≥2 points (e.g. gap in scanner
+        # runs), use the two most recent snapshots regardless of how far apart
+        # they are. This prevents trend_scores from going completely empty
+        # after a collection gap, which leaves dashboard Trend Mult columns
+        # blank and causes Trade Score to equal Base Score (1.0x default).
+        if t7 is None and t14 is None and t30 is None and len(series) >= 2:
+            # series is sorted oldest-first; [-1] is most recent, [-2] is prior
+            prev_score = series[-2][1]
+            curr_score = series[-1][1]
+            gap_days = series[-2][0]  # days_ago of the prior snapshot
+            if abs(prev_score) >= 0.01:
+                fallback_slope = (curr_score - prev_score) / abs(prev_score)
+            else:
+                fallback_slope = 0.0
+            # Assign to the window that best matches the actual gap
+            if gap_days <= 10:
+                t7 = fallback_slope
+            elif gap_days <= 21:
+                t14 = fallback_slope
+            else:
+                t30 = fallback_slope
+            logger.info(
+                f"  {coin}: gap fallback — {gap_days:.0f}d apart, "
+                f"slope={fallback_slope:+.3f} (prev={prev_score:.1f} → curr={curr_score:.1f})"
+            )
+
         # Composite trend multiplier: weighted average of available windows
         weights = []
         if t7 is not None:

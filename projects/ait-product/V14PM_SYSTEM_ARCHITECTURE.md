@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading — V14PM System Architecture
-_Version: 1.2 | Date: 2026-03-10 | Status: Cloud-Ready_
+_Version: 1.3 | Date: 2026-04-18 | Status: Cloud-Ready_
 
 ---
 
@@ -136,13 +136,13 @@ trading/
 
 **Entry point:** `run_candle_collector.ps1` (Windows) / `run_candle_collector.sh` (Linux)
 **Schedule:** Hourly via `AIT_CandleCollector` scheduled task
-**Exchange:** Hyperliquid perps (CCXT)
-**Coverage:** 66 symbol pairs (45 base coins × USDC/USDT), 1h timeframe, incremental
+**Exchange:** Aster DEX perps (CCXT) — switched from Hyperliquid 2026-04-17
+**Coverage:** 50 coins × USDT, 1h timeframe, incremental
 
 **Three-step hourly pipeline:**
 ```
 Step 1: collect_scanner_candles.py
-  Hyperliquid API
+  Aster DEX API
     └─ fetch_ohlcv(symbol, '1h', since=last_stored)
          └─ INSERT INTO candles (symbol, timeframe, timestamp, O/H/L/C/V)
 
@@ -232,7 +232,7 @@ There are two distinct processes that populate `candles_daily`:
 1. **`resample_daily.py`** (runs hourly in pipeline) — Simple 1h→daily OHLCV
    aggregation. Ensures all coins have daily candles regardless of whether they've
    been through the full indicator build. This is the **critical** path — without it,
-   coins only available on Hyperliquid have zero daily data, and their signal packs fail.
+   coins only available on Aster have zero daily data, and their signal packs fail.
 
 2. **`build_daily_candles.py`** (engine package) — Full aggregation + 26 indicator
    computation (SMA, ADX, RSI, etc.). Heavier operation, used for historical backfill
@@ -241,6 +241,34 @@ There are two distinct processes that populate `candles_daily`:
 The V13SignalPack computes its own indicators from raw daily OHLCV, so the
 `resample_daily.py` path is sufficient for live trading. The pre-computed indicators
 in `build_daily_candles.py` are primarily used by the scanner and dashboards.
+
+### 3.4 Exchange Migration: Hyperliquid → Aster (2026-04-17)
+
+The candle collector (`collect_scanner_candles.py`) was switched from Hyperliquid
+to Aster DEX:
+
+**Problem:** Production runs on Aster, but the hourly candle collector was pulling
+from Hyperliquid. Several scanner coins (ORCA, TRUMP, BERA, VIRTUAL, GRASS, IP,
+INIT, S, MOVE) only exist on Aster, not Hyperliquid. 24 of 50 scanner coins were
+stale (3-30 days old) because they had no Hyperliquid listing.
+
+**Fix:**
+- Exchange: `ccxt.hyperliquid` → `ccxt.aster`
+- Symbol format: `COIN/USDC:USDC` → `COIN/USDT:USDT`
+- Coin list: synced from 45 to 50 coins (matching scanner universe)
+- Added 1000-prefix handling for PEPE/BONK/FLOKI (Aster uses `1000PEPE/USDT:USDT`;
+  prices are scaled back to standard for DB storage)
+- Backfill run recovered 4,297 stale candles; all 50 coins current (0 stale)
+
+**Architecture:**
+- **Deep history (years):** Binance backfill scripts (`backfill_scanner_coins.py`)
+- **Incremental updates (hourly):** `collect_scanner_candles.py` from Aster DEX
+- New coins that need initial history should be backfilled from Binance first,
+  then the Aster collector keeps them fresh hourly.
+
+> **⚠ Merge revert (2026-04-18):** A `git merge` from remote `main` reverted the
+> Aster collector back to Hyperliquid. Detected and restored from commit `0d14afd81`.
+> The pipeline runner comment (`run_candle_collector.ps1`) was also corrected.
 
 ---
 
@@ -277,6 +305,9 @@ Taker fee:       0.025% (Hyperliquid)
 
 **Minimum history:** 6 months of 1h candles required to appear on dashboard rankings
 
+**Score History:** Each scanner run appends a snapshot to `trading/spot/data/score_history.json`
+(up to 180 days). Trend multipliers require this history — see §4.2.
+
 ### 4.2 Trend Multiplier
 
 Applied on top of the DCA Score to bias allocation toward momentum:
@@ -295,22 +326,36 @@ The trend multiplier is the weighted slope of the DCA Score time series:
 - Stable coin: ~1.0x
 - Declining coin: as low as **0.30x** (strongly penalized)
 
-Requires ≥3 historical snapshots. Without history, multiplier defaults to 1.0.
+Requires ≥3 historical snapshots in `score_history.json`. Without history,
+multiplier defaults to 1.0.
+
+**Gap resilience (2026-04-18):** If there are no snapshots within any standard
+window (7d/14d/30d) — e.g. after a gap in scanner runs — the function falls
+back to comparing the two most recent snapshots regardless of time gap. The
+resulting slope is assigned to the window that best matches the actual gap
+duration. This prevents dashboard Trend Mult columns from going blank after
+collection outages. Previously, a gap >30 days would leave `trend_scores`
+completely empty, causing all coins to show `--` and Trade Score = Base Score.
 
 ### 4.3 Coin Universe
 
-44 coins across Hyperliquid perps and Aster DEX (spot):
+50 coins on Aster DEX (perps):
 
 **Established (pre-2024):** BTC, ETH, SOL, XRP, LINK, DOGE, ADA, LTC, AVAX, DOT,
-UNI, ATOM, NEAR, HBAR, INJ, FIL, RUNE, CRV, SNX, COMP
+UNI, ATOM, NEAR, HBAR, INJ, FIL, RUNE, CRV, SNX, COMP, ZEC
 
-**DeFi/Mid-cap:** AAVE, ARB, GMX, JUP, PENDLE, STX, ZRO, ENS, GRT, BAL
+**DeFi/Mid-cap:** AAVE, ARB, JUP, PENDLE, STX, ZRO, ENS, ONDO, ENA, EIGEN
 
-**High-beta/Speculative:** PEPE, BONK, WIF, FLOKI, JTO, PYTH, TIA, SEI, APT, SUI
+**High-beta/Speculative:** PEPE, BONK, FLOKI, JTO, PYTH, TIA, SEI, APT, SUI,
+TRUMP, ORCA, BERA, W, KAS
 
-**AI/Infrastructure:** FET, TAO, HYPE
+**AI/Infrastructure:** FET, TAO, HYPE, RENDER, VIRTUAL
 
-**Legacy (still tracked):** ZEC, SAND, MANA
+**Newer additions:** INIT, IP, S, MOVE, GRASS, DYDX, LDO, OP, TON, ASTER
+
+> **History (2026-04-17):** Expanded from 45 coins (Hyperliquid) to 50 coins
+> (Aster DEX). 15 coins that only existed on Aster were being approved/traded
+> by the PM bot but never scored by the scanner. See §3.1 for exchange change.
 
 ### 4.4 Signal Stack (`trading.spot.engine`)
 
@@ -1111,5 +1156,6 @@ Migrate to Postgres only when multi-server writes become a requirement.
 
 _Document generated by Gee Gee — 2026-03-09_
 _Updated: 2026-03-10 (v1.2 — CSV-as-truth for all bots, exchange API equity for live bot, --fresh loads existing trades, future trade DB architecture)_
+_Updated: 2026-04-18 (v1.3 — Aster DEX collector, 50-coin universe, trend multiplier gap resilience, §3.4 exchange migration)_
 _Next: Cloud Migration Guide (Phase 5)_
 _Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_
