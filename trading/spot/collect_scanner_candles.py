@@ -2,13 +2,18 @@
 """
 Incremental 1h candle collector for V14 DCA Cycle Scanner.
 
-Pulls latest 1h candles from Hyperliquid (perps) for all scanner coins,
+Pulls latest 1h candles from Aster DEX (perps) for all scanner coins,
 stores in candles.db. Only fetches from the last stored timestamp forward.
+
+Switched from Hyperliquid to Aster (2026-04-17) to match the production
+exchange. Several scanner coins (ORCA, TRUMP, BERA, VIRTUAL, etc.) are
+only available on Aster.
 
 Designed to run hourly via scheduled task.
 """
 
 import ccxt
+import os
 import sqlite3
 import sys
 import io
@@ -32,74 +37,75 @@ logger = logging.getLogger("candle_collector")
 DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(Path(__file__).parent / "data" / "candles.db")))
 
 # ── Scanner universe ────────────────────────────────────────────────────────
-# Must match v14_cycle_scanner.py COINS list.
-# Format: (db_symbol, hyperliquid_perp_symbol)
-# Hyperliquid perps all trade as COIN/USDC:USDC
+# Must match v14_cycle_scanner.py COINS list exactly (50 coins).
+# Format: (db_symbol, aster_perp_symbol)
+# Aster perps trade as {COIN}/USDT:USDT.
+# PEPE, BONK, FLOKI use 1000-prefix on Aster (1000PEPE/USDT:USDT).
+# DB stores as standard symbol (PEPE/USDT) — prices are scaled back.
 
 COINS = [
-    # --- Established (pre-2024) ---
-    ("BTC/USDC",    "BTC/USDC:USDC"),
-    ("ETH/USDC",    "ETH/USDC:USDC"),
-    ("SOL/USDT",    "SOL/USDC:USDC"),    # DB stores as USDT, HL uses USDC perp
-    ("XRP/USDT",    "XRP/USDC:USDC"),
-    ("LINK/USDT",   "LINK/USDC:USDC"),
-    ("DOGE/USDT",   "DOGE/USDC:USDC"),
-    ("ADA/USDT",    "ADA/USDC:USDC"),
-    ("LTC/USDT",    "LTC/USDC:USDC"),
-    ("AVAX/USDT",   "AVAX/USDC:USDC"),
-    ("DOT/USDT",    "DOT/USDC:USDC"),
-    ("UNI/USDT",    "UNI/USDC:USDC"),
-    ("ATOM/USDT",   "ATOM/USDC:USDC"),
-    ("NEAR/USDT",   "NEAR/USDC:USDC"),
-    ("HBAR/USDT",   "HBAR/USDC:USDC"),
-    ("INJ/USDT",    "INJ/USDC:USDC"),
-    ("FIL/USDT",    "FIL/USDC:USDC"),
-    ("RUNE/USDT",   "RUNE/USDC:USDC"),
-    ("CRV/USDT",    "CRV/USDC:USDC"),
-    ("SNX/USDT",    "SNX/USDC:USDC"),
-    ("COMP/USDT",   "COMP/USDC:USDC"),
-    ("MKR/USDT",    "MKR/USDC:USDC"),
-    ("ENS/USDT",    "ENS/USDC:USDC"),
-    ("DYDX/USDT",   "DYDX/USDC:USDC"),
-    ("LDO/USDT",    "LDO/USDC:USDC"),
-    ("ARB/USDT",    "ARB/USDC:USDC"),
-    ("OP/USDT",     "OP/USDC:USDC"),
-    ("STX/USDT",    "STX/USDC:USDC"),
-    ("SEI/USDT",    "SEI/USDC:USDC"),
-    ("RENDER/USDT", "RENDER/USDC:USDC"),
-    # --- 2024 launches ---
-    ("SUI/USDT",    "SUI/USDC:USDC"),
-    ("FET/USDT",    "FET/USDC:USDC"),
-    ("TAO/USDT",    "TAO/USDC:USDC"),
-    ("TON/USDT",    "TON/USDC:USDC"),
-    ("JUP/USDT",    "JUP/USDC:USDC"),
-    ("KAS/USDT",    "KAS/USDC:USDC"),
-    ("PENDLE/USDT", "PENDLE/USDC:USDC"),
-    ("PYTH/USDT",   "PYTH/USDC:USDC"),
-    ("TIA/USDT",    "TIA/USDC:USDC"),
-    ("ONDO/USDT",   "ONDO/USDC:USDC"),
-    ("ENA/USDT",    "ENA/USDC:USDC"),
-    ("EIGEN/USDT",  "EIGEN/USDC:USDC"),
-    ("W/USDT",      "W/USDC:USDC"),
-    ("ZRO/USDT",    "ZRO/USDC:USDC"),
-    # --- Mid-cycle 2025 ---
-    ("HYPE/USDC",   "HYPE/USDC:USDC"),
-    # --- AAVE ---
-    ("AAVE/USDT",   "AAVE/USDC:USDC"),
+    # --- Established (pre-2024) — 19 coins ---
+    ("BTC/USDT",     "BTC/USDT:USDT"),
+    ("ETH/USDT",     "ETH/USDT:USDT"),
+    ("SOL/USDT",     "SOL/USDT:USDT"),
+    ("XRP/USDT",     "XRP/USDT:USDT"),
+    ("LINK/USDT",    "LINK/USDT:USDT"),
+    ("DOGE/USDT",    "DOGE/USDT:USDT"),
+    ("ADA/USDT",     "ADA/USDT:USDT"),
+    ("LTC/USDT",     "LTC/USDT:USDT"),
+    ("AVAX/USDT",    "AVAX/USDT:USDT"),
+    ("DOT/USDT",     "DOT/USDT:USDT"),
+    ("UNI/USDT",     "UNI/USDT:USDT"),
+    ("ATOM/USDT",    "ATOM/USDT:USDT"),
+    ("NEAR/USDT",    "NEAR/USDT:USDT"),
+    ("HBAR/USDT",    "HBAR/USDT:USDT"),
+    ("INJ/USDT",     "INJ/USDT:USDT"),
+    ("FIL/USDT",     "FIL/USDT:USDT"),
+    ("CRV/USDT",     "CRV/USDT:USDT"),
+    ("SNX/USDT",     "SNX/USDT:USDT"),
+    ("ZEC/USDT",     "ZEC/USDT:USDT"),
+    # --- DeFi / Mid-cap — 6 coins ---
+    ("AAVE/USDT",    "AAVE/USDT:USDT"),
+    ("ARB/USDT",     "ARB/USDT:USDT"),
+    ("JUP/USDT",     "JUP/USDT:USDT"),
+    ("PENDLE/USDT",  "PENDLE/USDT:USDT"),
+    ("STX/USDT",     "STX/USDT:USDT"),
+    ("ZRO/USDT",     "ZRO/USDT:USDT"),
+    # --- High-beta / Speculative — 9 coins ---
+    ("PEPE/USDT",    "1000PEPE/USDT:USDT"),
+    ("BONK/USDT",    "1000BONK/USDT:USDT"),
+    ("FLOKI/USDT",   "1000FLOKI/USDT:USDT"),
+    ("JTO/USDT",     "JTO/USDT:USDT"),
+    ("PYTH/USDT",    "PYTH/USDT:USDT"),
+    ("TIA/USDT",     "TIA/USDT:USDT"),
+    ("SEI/USDT",     "SEI/USDT:USDT"),
+    ("APT/USDT",     "APT/USDT:USDT"),
+    ("SUI/USDT",     "SUI/USDT:USDT"),
+    # --- AI / Infrastructure — 5 coins ---
+    ("FET/USDT",     "FET/USDT:USDT"),
+    ("TAO/USDT",     "TAO/USDT:USDT"),
+    ("HYPE/USDT",    "HYPE/USDT:USDT"),
+    ("VIRTUAL/USDT", "VIRTUAL/USDT:USDT"),
+    ("RENDER/USDT",  "RENDER/USDT:USDT"),
+    # --- New L1/L2 — 5 coins ---
+    ("BERA/USDT",    "BERA/USDT:USDT"),
+    ("MOVE/USDT",    "MOVE/USDT:USDT"),
+    ("INIT/USDT",    "INIT/USDT:USDT"),
+    ("S/USDT",       "S/USDT:USDT"),
+    ("IP/USDT",      "IP/USDT:USDT"),
+    # --- Yield / RWA — 3 coins ---
+    ("ONDO/USDT",    "ONDO/USDT:USDT"),
+    ("EIGEN/USDT",   "EIGEN/USDT:USDT"),
+    ("ENA/USDT",     "ENA/USDT:USDT"),
+    # --- DePIN / Other — 3 coins ---
+    ("GRASS/USDT",   "GRASS/USDT:USDT"),
+    ("ORCA/USDT",    "ORCA/USDT:USDT"),
+    ("TRUMP/USDT",   "TRUMP/USDT:USDT"),
 ]
 
-# ASTER is on a different exchange — handled separately by the live bot.
-# The scanner will use whatever ASTER data exists in the DB already.
-# If we need fresh ASTER candles, that requires the Aster exchange client.
-
-# Also pull USDC-quoted versions that may exist in the DB
-USDC_COINS = [
-    ("LINK/USDC",   "LINK/USDC:USDC"),
-    ("XRP/USDC",    "XRP/USDC:USDC"),
-    ("SOL/USDC",    "SOL/USDC:USDC"),
-    ("ETH/USDC",    "ETH/USDC:USDC"),
-    ("BTC/USDC",    "BTC/USDC:USDC"),
-]
+# 1000-prefix coins: prices on Aster are 1000x the "real" price.
+# We divide by 1000 when storing so DB matches the standard symbol.
+PREFIX_1000_COINS = {"1000PEPE/USDT:USDT", "1000BONK/USDT:USDT", "1000FLOKI/USDT:USDT"}
 
 # Default lookback for first-time pull (days)
 DEFAULT_LOOKBACK_DAYS = 365 * 2  # 2 years
@@ -128,8 +134,8 @@ def get_last_timestamp(conn: sqlite3.Connection, symbol: str) -> int | None:
     return row[0] if row and row[0] else None
 
 
-def fetch_candles(exchange, hl_symbol: str, since_ms: int) -> list:
-    """Fetch 1h candles from Hyperliquid, paginating forward."""
+def fetch_candles(exchange, aster_symbol: str, since_ms: int) -> list:
+    """Fetch 1h candles from Aster, paginating forward."""
     all_candles = []
     cursor = since_ms
     now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
@@ -139,16 +145,16 @@ def fetch_candles(exchange, hl_symbol: str, since_ms: int) -> list:
 
     while cursor < now_ms:
         try:
-            batch = exchange.fetch_ohlcv(hl_symbol, "1h", since=cursor, limit=1000)
+            batch = exchange.fetch_ohlcv(aster_symbol, "1h", since=cursor, limit=1000)
             retries = 0  # Reset on success
         except Exception as e:
             if "429" in str(e) and retries < max_retries:
                 retries += 1
                 wait = 5 * retries
-                logger.info(f"  Rate limited on {hl_symbol}, waiting {wait}s (retry {retries}/{max_retries})")
+                logger.info(f"  Rate limited on {aster_symbol}, waiting {wait}s (retry {retries}/{max_retries})")
                 time.sleep(wait)
                 continue
-            logger.warning(f"  Error fetching {hl_symbol} from {cursor}: {e}")
+            logger.warning(f"  Error fetching {aster_symbol} from {cursor}: {e}")
             break
 
         if not batch:
@@ -175,8 +181,12 @@ def fetch_candles(exchange, hl_symbol: str, since_ms: int) -> list:
     return unique
 
 
-def store_candles(conn: sqlite3.Connection, db_symbol: str, candles: list) -> int:
-    """Store 1h candles in DB. Returns count of new rows inserted."""
+def store_candles(conn: sqlite3.Connection, db_symbol: str, candles: list, scale: float = 1.0) -> int:
+    """Store 1h candles in DB. Returns count of new rows inserted.
+    
+    Args:
+        scale: Price scaling factor. 1/1000 for 1000PEPE etc.
+    """
     if not candles:
         return 0
 
@@ -188,7 +198,12 @@ def store_candles(conn: sqlite3.Connection, db_symbol: str, candles: list) -> in
     conn.executemany(
         "INSERT OR IGNORE INTO candles (symbol, timeframe, timestamp, open, high, low, close, volume) "
         "VALUES (?, '1h', ?, ?, ?, ?, ?, ?)",
-        [(db_symbol, c[0], c[1], c[2], c[3], c[4], c[5]) for c in candles]
+        [
+            (db_symbol, c[0],
+             c[1] * scale, c[2] * scale, c[3] * scale, c[4] * scale,
+             c[5])
+            for c in candles
+        ]
     )
     conn.commit()
 
@@ -208,39 +223,36 @@ def main():
     conn = sqlite3.connect(str(DB_PATH))
     init_db(conn)
 
-    # Build deduplicated coin list (avoid pulling same HL symbol twice)
-    seen_hl = set()
-    coin_list = []
-    for db_sym, hl_sym in COINS + USDC_COINS:
-        key = (db_sym, hl_sym)
-        if key not in seen_hl:
-            seen_hl.add(key)
-            coin_list.append((db_sym, hl_sym))
+    logger.info(f"Candle Collector — {len(COINS)} coins from Aster DEX")
 
-    logger.info(f"Candle Collector — {len(coin_list)} coins from Hyperliquid")
-
-    # Connect to Hyperliquid
-    hl = ccxt.hyperliquid()
+    # Connect to Aster
+    aster = ccxt.aster({
+        "apiKey": os.environ.get("ASTER_API_KEY", ""),
+        "secret": os.environ.get("ASTER_API_SECRET", ""),
+    })
     try:
-        hl.load_markets()
+        aster.load_markets()
     except Exception as e:
-        logger.error(f"Failed to connect to Hyperliquid: {e}")
+        logger.error(f"Failed to connect to Aster: {e}")
         sys.exit(1)
 
-    available_symbols = set(hl.symbols)
+    available_symbols = set(aster.symbols)
     total_new = 0
     coins_updated = 0
     coins_skipped = 0
     coins_failed = 0
 
-    for db_sym, hl_sym in coin_list:
+    for db_sym, aster_sym in COINS:
         short = db_sym.split("/")[0]
 
-        # Check if symbol exists on Hyperliquid
-        if hl_sym not in available_symbols:
-            logger.warning(f"  {short}: {hl_sym} not available on Hyperliquid, skipping")
+        # Check if symbol exists on Aster
+        if aster_sym not in available_symbols:
+            logger.warning(f"  {short}: {aster_sym} not available on Aster, skipping")
             coins_skipped += 1
             continue
+
+        # Price scaling for 1000-prefix coins
+        scale = 1.0 / 1000.0 if aster_sym in PREFIX_1000_COINS else 1.0
 
         # Determine start point
         last_ts = get_last_timestamp(conn, db_sym)
@@ -257,8 +269,8 @@ def main():
             mode = "full"
 
         try:
-            candles = fetch_candles(hl, hl_sym, since_ms)
-            new_count = store_candles(conn, db_sym, candles)
+            candles = fetch_candles(aster, aster_sym, since_ms)
+            new_count = store_candles(conn, db_sym, candles, scale=scale)
             total_new += new_count
 
             if new_count > 0:
