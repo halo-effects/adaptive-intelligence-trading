@@ -43,25 +43,36 @@ DCA_ALLOC = 0.90       # 90% allocated to DCA
 MIN_HISTORY_MONTHS = 6
 
 # Full Hyperliquid quality perp universe + ASTER (Aster exchange live bot).
+# 50-coin Aster Perps universe (updated 2026-04-17).
+# All coins trade as {COIN}USDT perpetual on Aster DEX.
+# Must match collect_scanner_candles.py coin list exactly.
 # Format: preferred symbol as found in candles.db.  The scanner will also
 # try the other quote (USDT↔USDC) if the primary isn't found.
 COINS = [
-    # --- Established (pre-2024) ---
-    'BTC/USDC',   'ETH/USDC',   'SOL/USDC',   'XRP/USDT',   'LINK/USDT',
+    # --- Established (pre-2024) — 19 coins ---
+    'BTC/USDT',   'ETH/USDT',   'SOL/USDT',   'XRP/USDT',   'LINK/USDT',
     'DOGE/USDT',  'ADA/USDT',   'LTC/USDT',   'AVAX/USDT',  'DOT/USDT',
     'UNI/USDT',   'ATOM/USDT',  'NEAR/USDT',  'HBAR/USDT',  'INJ/USDT',
-    'FIL/USDT',   'RUNE/USDT',  'CRV/USDT',   'SNX/USDT',   'COMP/USDT',
-    'MKR/USDT',   'ENS/USDT',   'DYDX/USDT',  'LDO/USDT',   'ARB/USDT',
-    'OP/USDT',    'STX/USDT',   'SEI/USDT',    'RENDER/USDT',
-    # --- 2024 launches ---
-    'SUI/USDT',   'FET/USDT',   'TAO/USDT',   'TON/USDT',   'JUP/USDT',
-    'KAS/USDT',   'PENDLE/USDT','PYTH/USDT',  'TIA/USDT',   'ONDO/USDT',
-    'ENA/USDT',   'EIGEN/USDT', 'W/USDT',     'ZRO/USDT',
-    # --- Mid-cycle 2025 (OK per Brett — launched before bear) ---
-    'HYPE/USDC',  'ASTER/USDT',
-    # --- AAVE (established but listed separately for clarity) ---
-    'AAVE/USDT',
+    'FIL/USDT',   'CRV/USDT',   'SNX/USDT',   'ZEC/USDT',
+    # --- DeFi / Mid-cap — 6 coins ---
+    'AAVE/USDT',  'ARB/USDT',   'JUP/USDT',   'PENDLE/USDT','STX/USDT',
+    'ZRO/USDT',
+    # --- High-beta / Speculative — 9 coins ---
+    'PEPE/USDT',  'BONK/USDT',  'FLOKI/USDT', 'JTO/USDT',   'PYTH/USDT',
+    'TIA/USDT',   'SEI/USDT',   'APT/USDT',   'SUI/USDT',
+    # --- AI / Infrastructure — 5 coins ---
+    'FET/USDT',   'TAO/USDT',   'HYPE/USDT',  'VIRTUAL/USDT','RENDER/USDT',
+    # --- New L1/L2 — 5 coins ---
+    'BERA/USDT',  'MOVE/USDT',  'INIT/USDT',  'S/USDT',     'IP/USDT',
+    # --- Yield / RWA — 3 coins ---
+    'ONDO/USDT',  'EIGEN/USDT', 'ENA/USDT',
+    # --- DePIN / Other — 3 coins ---
+    'GRASS/USDT', 'ORCA/USDT',  'TRUMP/USDT',
 ]
+# Note: PEPE, BONK, FLOKI use 1000-prefix on exchanges (1000PEPEUSDT, etc.)
+# The scanner handles this mapping when querying exchange APIs.
+# Dropped from previous scanner list: ASTER, COMP, DYDX, ENS, KAS, LDO,
+#   MKR, OP, RUNE, TON, W (not in Aster 50-coin production universe)
 
 # ─── Data Paths ─────────────────────────────────────────────────────────────
 
