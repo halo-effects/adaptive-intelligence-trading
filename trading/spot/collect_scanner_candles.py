@@ -4,7 +4,7 @@ Incremental 1h candle collector for V14 DCA Cycle Scanner.
 
 INCREMENTAL 1h candle collector — runs hourly via scheduled task.
 
-Fetches latest 1h candles from Aster DEX (perps) for all 50 scanner
+Fetches latest 1h candles from Aster DEX (perps) for all 60 scanner
 coins, stores in candles.db. Only fetches from the last stored timestamp
 forward.
 
@@ -15,8 +15,8 @@ Architecture:
   - New coins that need initial history should be backfilled from Binance
     first, then this collector keeps them fresh.
 
-Switched from Hyperliquid to Aster (2026-04-17): several scanner coins
-(ORCA, TRUMP, BERA, VIRTUAL, GRASS, IP, etc.) only trade on Aster.
+Switched from Hyperliquid to Aster (2026-04-17). Unified with scanner
+coin list (2026-04-19): 60 coins, Aster-only universe.
 """
 
 import ccxt
@@ -50,8 +50,10 @@ DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(Path(__file__).parent / "dat
 # PEPE, BONK, FLOKI use 1000-prefix on Aster (1000PEPE/USDT:USDT).
 # DB stores as standard symbol (PEPE/USDT) — prices are scaled back.
 
+# Unified Aster DEX perp universe — 60 coins (updated 2026-04-19).
+# Must match v14_cycle_scanner.py COINS list exactly.
 COINS = [
-    # --- Established (pre-2024) — 19 coins ---
+    # --- Established (pre-2024) — 22 coins ---
     ("BTC/USDT",     "BTC/USDT:USDT"),
     ("ETH/USDT",     "ETH/USDT:USDT"),
     ("SOL/USDT",     "SOL/USDT:USDT"),
@@ -68,16 +70,23 @@ COINS = [
     ("HBAR/USDT",    "HBAR/USDT:USDT"),
     ("INJ/USDT",     "INJ/USDT:USDT"),
     ("FIL/USDT",     "FIL/USDT:USDT"),
+    ("RUNE/USDT",    "RUNE/USDT:USDT"),
     ("CRV/USDT",     "CRV/USDT:USDT"),
     ("SNX/USDT",     "SNX/USDT:USDT"),
     ("ZEC/USDT",     "ZEC/USDT:USDT"),
-    # --- DeFi / Mid-cap — 6 coins ---
+    ("COMP/USDT",    "COMP/USDT:USDT"),
+    ("MKR/USDT",     "MKR/USDT:USDT"),
+    # --- DeFi / Mid-cap — 10 coins ---
     ("AAVE/USDT",    "AAVE/USDT:USDT"),
+    ("ENS/USDT",     "ENS/USDT:USDT"),
+    ("DYDX/USDT",    "DYDX/USDT:USDT"),
+    ("LDO/USDT",     "LDO/USDT:USDT"),
     ("ARB/USDT",     "ARB/USDT:USDT"),
-    ("JUP/USDT",     "JUP/USDT:USDT"),
-    ("PENDLE/USDT",  "PENDLE/USDT:USDT"),
+    ("OP/USDT",      "OP/USDT:USDT"),
     ("STX/USDT",     "STX/USDT:USDT"),
+    ("PENDLE/USDT",  "PENDLE/USDT:USDT"),
     ("ZRO/USDT",     "ZRO/USDT:USDT"),
+    ("JUP/USDT",     "JUP/USDT:USDT"),
     # --- High-beta / Speculative — 9 coins ---
     ("PEPE/USDT",    "1000PEPE/USDT:USDT"),
     ("BONK/USDT",    "1000BONK/USDT:USDT"),
@@ -100,14 +109,19 @@ COINS = [
     ("INIT/USDT",    "INIT/USDT:USDT"),
     ("S/USDT",       "S/USDT:USDT"),
     ("IP/USDT",      "IP/USDT:USDT"),
-    # --- Yield / RWA — 3 coins ---
+    # --- 2024 launches — 4 coins ---
+    ("KAS/USDT",     "KAS/USDT:USDT"),
+    ("TON/USDT",     "TON/USDT:USDT"),
     ("ONDO/USDT",    "ONDO/USDT:USDT"),
     ("EIGEN/USDT",   "EIGEN/USDT:USDT"),
+    # --- Yield / Other — 3 coins ---
     ("ENA/USDT",     "ENA/USDT:USDT"),
-    # --- DePIN / Other — 3 coins ---
     ("GRASS/USDT",   "GRASS/USDT:USDT"),
     ("ORCA/USDT",    "ORCA/USDT:USDT"),
+    # --- Meme / Speculative — 1 coin ---
     ("TRUMP/USDT",   "TRUMP/USDT:USDT"),
+    # --- Exchange native — 1 coin ---
+    ("ASTER/USDT",   "ASTER/USDT:USDT"),
 ]
 
 # 1000-prefix coins: prices on Aster are 1000x the "real" price.

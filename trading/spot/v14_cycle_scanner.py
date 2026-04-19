@@ -33,7 +33,7 @@ SO_STEP_MULT = 1.5     # Price step multiplier (each SO further apart)
 SO_VOL_MULT = 1.5      # Volume multiplier (each SO bigger)
 MAX_LAYERS = 12
 TP_PCT = 0.015         # 1.5% take profit from avg entry
-TAKER_FEE = 0.00025    # Hyperliquid taker fee
+TAKER_FEE = 0.00035    # Aster taker fee
 CAPITAL = 10_000.0     # Capital per coin
 DCA_ALLOC = 0.90       # 90% allocated to DCA
 
@@ -42,25 +42,36 @@ DCA_ALLOC = 0.90       # 90% allocated to DCA
 # flagged as immature and excluded from the dashboard feed.
 MIN_HISTORY_MONTHS = 6
 
-# Full Hyperliquid quality perp universe + ASTER (Aster exchange live bot).
-# Format: preferred symbol as found in candles.db.  The scanner will also
+# Aster DEX perp universe — 60 coins (updated 2026-04-19).
+# Unified with collector (collect_scanner_candles.py). Only coins that
+# exist on Aster perps are included. W (Wormhole) removed — not on Aster.
+# Format: preferred symbol as found in candles.db. The scanner will also
 # try the other quote (USDT↔USDC) if the primary isn't found.
 COINS = [
-    # --- Established (pre-2024) ---
-    'BTC/USDC',   'ETH/USDC',   'SOL/USDC',   'XRP/USDT',   'LINK/USDT',
+    # --- Established (pre-2024) — 22 coins ---
+    'BTC/USDT',   'ETH/USDT',   'SOL/USDT',   'XRP/USDT',   'LINK/USDT',
     'DOGE/USDT',  'ADA/USDT',   'LTC/USDT',   'AVAX/USDT',  'DOT/USDT',
     'UNI/USDT',   'ATOM/USDT',  'NEAR/USDT',  'HBAR/USDT',  'INJ/USDT',
-    'FIL/USDT',   'RUNE/USDT',  'CRV/USDT',   'SNX/USDT',   'COMP/USDT',
-    'MKR/USDT',   'ENS/USDT',   'DYDX/USDT',  'LDO/USDT',   'ARB/USDT',
-    'OP/USDT',    'STX/USDT',   'SEI/USDT',    'RENDER/USDT',
-    # --- 2024 launches ---
-    'SUI/USDT',   'FET/USDT',   'TAO/USDT',   'TON/USDT',   'JUP/USDT',
-    'KAS/USDT',   'PENDLE/USDT','PYTH/USDT',  'TIA/USDT',   'ONDO/USDT',
-    'ENA/USDT',   'EIGEN/USDT', 'W/USDT',     'ZRO/USDT',
-    # --- Mid-cycle 2025 (OK per Brett — launched before bear) ---
-    'HYPE/USDC',  'ASTER/USDT',
-    # --- AAVE (established but listed separately for clarity) ---
-    'AAVE/USDT',
+    'FIL/USDT',   'RUNE/USDT',  'CRV/USDT',   'SNX/USDT',   'ZEC/USDT',
+    'COMP/USDT',  'MKR/USDT',
+    # --- DeFi / Mid-cap — 10 coins ---
+    'AAVE/USDT',  'ENS/USDT',   'DYDX/USDT',  'LDO/USDT',   'ARB/USDT',
+    'OP/USDT',    'STX/USDT',   'PENDLE/USDT','ZRO/USDT',   'JUP/USDT',
+    # --- High-beta / Speculative — 9 coins ---
+    'PEPE/USDT',  'BONK/USDT',  'FLOKI/USDT', 'JTO/USDT',   'PYTH/USDT',
+    'TIA/USDT',   'SEI/USDT',   'APT/USDT',   'SUI/USDT',
+    # --- AI / Infrastructure — 5 coins ---
+    'FET/USDT',   'TAO/USDT',   'HYPE/USDT',  'VIRTUAL/USDT','RENDER/USDT',
+    # --- New L1/L2 — 5 coins ---
+    'BERA/USDT',  'MOVE/USDT',  'INIT/USDT',  'S/USDT',     'IP/USDT',
+    # --- 2024 launches — 4 coins ---
+    'KAS/USDT',   'TON/USDT',   'ONDO/USDT',  'EIGEN/USDT',
+    # --- Yield / Other — 3 coins ---
+    'ENA/USDT',   'GRASS/USDT', 'ORCA/USDT',
+    # --- Meme / Speculative — 1 coin ---
+    'TRUMP/USDT',
+    # --- Exchange native — 1 coin ---
+    'ASTER/USDT',
 ]
 
 # ─── Data Paths ─────────────────────────────────────────────────────────────
