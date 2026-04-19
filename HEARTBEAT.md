@@ -2,16 +2,20 @@
 
 ## Priority Checks (every heartbeat)
 
-### V14 Live Bot (Aster — ASTER/USDT) ⚠️ REAL MONEY
-- Check `trading/spot/live/v14/status.json` for bot health
+### V14 Live Bot (RETIRED 2026-04-19)
+# Superseded by V14PM Live (Aster Perps). Account emptied.
+# Scheduled task V14LiveAster still exists but should NOT be started.
+# Kept here for historical reference only.
+
+### V14PM Live Bot (Aster Perps) ⚠️ REAL MONEY
+- Check `trading/spot/live/v14pm/status.json` for bot health
 - Alert if: `running` is false, drawdown > 15%, or status.json stale (>65 min)
-- **Capital: $300** real USDT. Alert if balance drifts significantly.
-- Profile: High, 12 layers, 1.5% TP, 1.5x leverage
-- Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "V14LiveAster"`
-- Scheduled Task: `V14LiveAster` (at boot) — confirmed exists as of 2026-03-09
-- Manual restart: `python -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill`
-- Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
-- Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
+- **Capital: ~$375** real USDT. Alert if balance drifts significantly.
+- Profile: High, 12 layers, 1.0x leverage, Aster perps
+- Coins: Dynamically selected by cycle scanner (TAO, HYPE, JTO currently)
+- Scheduled Task: runs at login
+- Entry point: `python -u -m trading.spot.run_v14_portfolio_live_aster --capital 375 --confirm --skip-backfill`
+- Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/dashboardV14PM.html
 
 ### V14 Paper Bot (Aster — HBAR/ATOM/LINK/NEAR) — LIVE as of 2026-02-28
 - Check `trading/spot/paper/v14/status.json` for bot health
