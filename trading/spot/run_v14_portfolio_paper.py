@@ -41,6 +41,26 @@ DEFAULT_CAPITAL = 10000.0
 LIVE_POLL_INTERVAL = 60  # seconds
 SCANNER_PATH = Path(os.environ.get("AIT_SCANNER_JSON", str(_WORKSPACE / "docs" / "data" / "v14" / "cycle_scanner.json")))
 
+# ---------------------------------------------------------------------------
+# Aster symbol mapping (realtime candle source)
+# ---------------------------------------------------------------------------
+# Aster perps trade as {COIN}/USDT:USDT.
+# PEPE, BONK, FLOKI use 1000-prefix on Aster (1000PEPE/USDT:USDT).
+# Prices from 1000-prefix coins are divided by 1000 to match DB scale.
+
+_PREFIX_1000 = {"PEPE", "BONK", "FLOKI"}
+
+def _to_aster_sym(canonical: str) -> tuple:
+    """Convert canonical symbol (e.g. 'PEPE/USDT') to (aster_symbol, price_scale).
+    
+    Returns:
+        (aster_symbol, scale) where scale is 1/1000 for 1000-prefix coins, else 1.0
+    """
+    base = canonical.split('/')[0]
+    if base in _PREFIX_1000:
+        return f"1000{base}/USDT:USDT", 1.0 / 1000.0
+    return f"{base}/USDT:USDT", 1.0
+
 logger = logging.getLogger("v14_portfolio_paper")
 
 # ---------------------------------------------------------------------------
@@ -796,7 +816,11 @@ class V14PortfolioPaperBot:
         logger.info("Starting V14 Portfolio live trading loop")
         if self.fresh:
             logger.info("FRESH mode: will skip historical candles, trading from NOW only")
-        exchange = ccxt.hyperliquid()
+        # Aster DEX — production exchange (switched from Hyperliquid 2026-04-19)
+        exchange = ccxt.aster({
+            "apiKey": os.environ.get("ASTER_API_KEY", ""),
+            "secret": os.environ.get("ASTER_API_SECRET", ""),
+        })
         exchange.load_markets()
 
         last_candle_ts: Dict[str, int] = {}
@@ -806,10 +830,9 @@ class V14PortfolioPaperBot:
             now_ms = int(time.time() * 1000)
             # Pre-seed all engines: fetch latest candle for each coin and skip to it
             for sym in list(self.engines.keys()):
-                base = sym.split('/')[0]
-                hl_sym = f"{base}/USDC:USDC"
+                aster_sym, _scale = _to_aster_sym(sym)
                 try:
-                    ohlcv = exchange.fetch_ohlcv(hl_sym, self.timeframe, limit=2)
+                    ohlcv = exchange.fetch_ohlcv(aster_sym, self.timeframe, limit=2)
                     if ohlcv:
                         # Set to the second-to-last candle so we only process the current/latest
                         latest_closed = ohlcv[-2][0] if len(ohlcv) > 1 else ohlcv[-1][0]
@@ -826,13 +849,12 @@ class V14PortfolioPaperBot:
                 # (Rebalancing is triggered by the earliest unprocessed candle)
 
                 for sym in list(self.engines.keys()):
-                    base = sym.split('/')[0]
-                    hl_sym = f"{base}/USDC:USDC"
+                    aster_sym, scale = _to_aster_sym(sym)
                         
                     try:
-                        ohlcv = exchange.fetch_ohlcv(hl_sym, self.timeframe, limit=200)
+                        ohlcv = exchange.fetch_ohlcv(aster_sym, self.timeframe, limit=200)
                     except Exception as e:
-                        logger.error(f"Failed to fetch candles for {sym} ({hl_sym}): {e}")
+                        logger.error(f"Failed to fetch candles for {sym} ({aster_sym}): {e}")
                         continue
 
                     if not ohlcv:
@@ -865,10 +887,10 @@ class V14PortfolioPaperBot:
 
                         candle = {
                             "timestamp": ts_ms,
-                            "open": float(bar[1]),
-                            "high": float(bar[2]),
-                            "low": float(bar[3]),
-                            "close": float(bar[4]),
+                            "open": float(bar[1]) * scale,
+                            "high": float(bar[2]) * scale,
+                            "low": float(bar[3]) * scale,
+                            "close": float(bar[4]) * scale,
                             "volume": float(bar[5]),
                         }
 

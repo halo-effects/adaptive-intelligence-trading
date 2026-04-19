@@ -55,13 +55,14 @@ DB_SYMBOL_MAP = {
     "ADA/USDT": "ADA/USDT",
 }
 
-# Canonical -> Hyperliquid price feed ticker (all perps — no spot for these)
-HL_PRICE_MAP = {
-    "SOL/USDT": "SOL/USDC:USDC",
-    "XRP/USDT": "XRP/USDC:USDC",
-    "LTC/USDT": "LTC/USDC:USDC",
-    "HBAR/USDT": "HBAR/USDC:USDC",
-    "ADA/USDT": "ADA/USDC:USDC",
+# Canonical -> Aster perp price feed ticker (switched from Hyperliquid 2026-04-19)
+# All five coins trade as {COIN}/USDT:USDT on Aster perps.
+ASTER_PRICE_MAP = {
+    "SOL/USDT": "SOL/USDT:USDT",
+    "XRP/USDT": "XRP/USDT:USDT",
+    "LTC/USDT": "LTC/USDT:USDT",
+    "HBAR/USDT": "HBAR/USDT:USDT",
+    "ADA/USDT": "ADA/USDT:USDT",
 }
 
 DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(_WORKSPACE / "trading" / "spot" / "data" / "candles.db")))
@@ -611,7 +612,7 @@ class V14PaperBot:
     # -------------------------------------------------------------------
 
     def run_live(self):
-        """Main live loop — fetch 1h candles from Hyperliquid, tick engines."""
+        """Main live loop — fetch 1h candles from Aster DEX, tick engines."""
         import ccxt
 
         logger.info("Starting V14 live trading loop")
@@ -620,7 +621,11 @@ class V14PaperBot:
         except Exception:
             pass
 
-        exchange = ccxt.hyperliquid()
+        # Aster DEX — production exchange (switched from Hyperliquid 2026-04-19)
+        exchange = ccxt.aster({
+            "apiKey": os.environ.get("ASTER_API_KEY", ""),
+            "secret": os.environ.get("ASTER_API_SECRET", ""),
+        })
         exchange.load_markets()
 
         # Initialize last_candle_ts from state to avoid replaying old candles on restart
@@ -638,15 +643,15 @@ class V14PaperBot:
                 logger.debug(f"Live loop cycle starting at {datetime.now(timezone.utc).isoformat()}")
 
                 for sym in self.symbols:
-                    hl_sym = HL_PRICE_MAP.get(sym)
-                    if not hl_sym:
-                        logger.error(f"No HL price map entry for {sym}")
+                    aster_sym = ASTER_PRICE_MAP.get(sym)
+                    if not aster_sym:
+                        logger.error(f"No Aster price map entry for {sym}")
                         continue
 
                     try:
-                        ohlcv = exchange.fetch_ohlcv(hl_sym, self.timeframe, limit=200)
+                        ohlcv = exchange.fetch_ohlcv(aster_sym, self.timeframe, limit=200)
                     except Exception as e:
-                        logger.error(f"Failed to fetch candles for {sym} ({hl_sym}): {e}\n{traceback.format_exc()}")
+                        logger.error(f"Failed to fetch candles for {sym} ({aster_sym}): {e}\n{traceback.format_exc()}")
                         continue
 
                     if not ohlcv:
