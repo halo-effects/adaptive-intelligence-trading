@@ -1030,8 +1030,8 @@ def main():
     parser.add_argument("--profile", type=str, default="medium",
                         choices=["low", "medium", "high"],
                         help="Risk profile (default: medium)")
-    parser.add_argument("--exchange", type=str, default="hyperliquid",
-                        help="Exchange name (default: hyperliquid)")
+    parser.add_argument("--exchange", type=str, default="aster",
+                        help="Exchange name for metadata (default: aster)")
     parser.add_argument("--backfill-only", action="store_true",
                         help="Run backfill and exit (no live trading)")
     parser.add_argument("--skip-backfill", action="store_true",

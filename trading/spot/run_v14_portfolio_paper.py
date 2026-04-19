@@ -995,7 +995,7 @@ def main():
     parser.add_argument("--capital", type=float, default=DEFAULT_CAPITAL)
     parser.add_argument("--profile", type=str, default="medium")
     parser.add_argument("--leverage", type=float, default=None)
-    parser.add_argument("--exchange", type=str, default="hyperliquid")
+    parser.add_argument("--exchange", type=str, default="aster")
     parser.add_argument("--fresh", action="store_true", help="Start fresh — skip historical candles, trade from now only")
     args = parser.parse_args()
 
