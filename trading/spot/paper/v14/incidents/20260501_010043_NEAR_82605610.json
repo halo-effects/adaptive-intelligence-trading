@@ -1,0 +1,72 @@
+{
+  "incident_id": "82605610-16b2-4afd-ba8a-30bf95906fe3",
+  "timestamp": "2026-05-01T01:00:43.565932+00:00",
+  "schema_version": "1.0",
+  "account_id": "paper-v14",
+  "strategy_id": "v14-medium",
+  "trade": {
+    "deal_id": 472,
+    "symbol": "NEAR/USDT",
+    "open_time": "2026-04-24T16:00:00+00:00",
+    "close_time": "2026-05-01T00:00:00+00:00",
+    "regime": "LONG_DCA",
+    "layers": 4,
+    "invested": 10970.7,
+    "pnl": -963.0832,
+    "return_pct": -8.78,
+    "duration_h": 152.0,
+    "close_reason": "LONG_DCA_CLOSE (TOP_FALLBACK_OB85)"
+  },
+  "classification": "PHASE_TRANSITION",
+  "severity": "HIGH",
+  "recommendation": "Phase transition forced close on NEAR. Review signal timing \u2014 conviction/top detection may fire prematurely.",
+  "grid_utilization": {
+    "layers_filled": 4,
+    "max_layers": 10,
+    "utilization_pct": 40.0
+  },
+  "time_in_trade_hours": 152.0,
+  "context_at_exit": {
+    "phase": "SHORT_DCA",
+    "side": "none",
+    "current_price": 1.295,
+    "avg_entry": 0,
+    "cfgi": null,
+    "unrealized_pnl_at_close": 0.0
+  },
+  "market_context": {
+    "cfgi": 48.85,
+    "regime": "RANGING",
+    "trend_direction": null
+  },
+  "peer_coins": {
+    "HBAR/USDT": {
+      "phase": "LONG_DCA",
+      "side": "long",
+      "layers": 7,
+      "unrealized_pnl": -274.64
+    },
+    "ATOM/USDT": {
+      "phase": "LONG_DCA",
+      "side": "long",
+      "layers": 10,
+      "unrealized_pnl": -3259.92
+    },
+    "LINK/USDC": {
+      "phase": "LONG_DCA",
+      "side": "long",
+      "layers": 4,
+      "unrealized_pnl": -761.32
+    }
+  },
+  "config_snapshot": {
+    "profile": "medium",
+    "leverage": 1.5,
+    "capital": 10000.0,
+    "DCA_TP_PCT": 0.015,
+    "DCA_SO_DEVIATION": 0.02,
+    "DCA_SO_MULTIPLIER": 1.5,
+    "DCA_MAX_LAYERS": 10,
+    "DCA_BO_PCT": 0.4
+  }
+}
