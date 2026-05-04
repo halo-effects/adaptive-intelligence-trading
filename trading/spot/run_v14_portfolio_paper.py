@@ -41,26 +41,6 @@ DEFAULT_CAPITAL = 10000.0
 LIVE_POLL_INTERVAL = 60  # seconds
 SCANNER_PATH = Path(os.environ.get("AIT_SCANNER_JSON", str(_WORKSPACE / "docs" / "data" / "v14" / "cycle_scanner.json")))
 
-# ---------------------------------------------------------------------------
-# Aster symbol mapping (realtime candle source)
-# ---------------------------------------------------------------------------
-# Aster perps trade as {COIN}/USDT:USDT.
-# PEPE, BONK, FLOKI use 1000-prefix on Aster (1000PEPE/USDT:USDT).
-# Prices from 1000-prefix coins are divided by 1000 to match DB scale.
-
-_PREFIX_1000 = {"PEPE", "BONK", "FLOKI"}
-
-def _to_aster_sym(canonical: str) -> tuple:
-    """Convert canonical symbol (e.g. 'PEPE/USDT') to (aster_symbol, price_scale).
-    
-    Returns:
-        (aster_symbol, scale) where scale is 1/1000 for 1000-prefix coins, else 1.0
-    """
-    base = canonical.split('/')[0]
-    if base in _PREFIX_1000:
-        return f"1000{base}/USDT:USDT", 1.0 / 1000.0
-    return f"{base}/USDT:USDT", 1.0
-
 logger = logging.getLogger("v14_portfolio_paper")
 
 # ---------------------------------------------------------------------------
@@ -463,37 +443,6 @@ class V14PortfolioPaperBot:
             self.router.active_allocations = router_state.get("active_allocations", {})
             self.router.reserve_allocations = router_state.get("reserve_allocations", {})
 
-        # ── Reconcile router cash against actual engine state ──────────
-        # The router's pool cash can drift from reality (e.g., after fee
-        # refunds, state edits, or prior bugs).  Recompute from ground truth.
-        total_invested = sum(
-            (e._engine.long_cost + e._engine.short_cost)
-            for e in self.engines.values() if e._engine
-        )
-        total_realized = sum(
-            (e._engine.long_pnl + e._engine.short_pnl)
-            for e in self.engines.values() if e._engine
-        )
-        total_fees = sum(
-            e._engine.total_fees
-            for e in self.engines.values() if e._engine
-        )
-        true_available = self.capital + total_realized - total_fees
-        true_cash = true_available - total_invested
-        old_router_cash = self.router.active_pool_cash + self.router.reserve_pool_cash
-        if abs(true_cash - old_router_cash) > 10:  # >$10 drift
-            logger.warning(
-                f"Router cash reconciled: router thought ${old_router_cash:,.2f}, "
-                f"actual ${true_cash:,.2f} (drift ${old_router_cash - true_cash:,.2f})"
-            )
-            # Split true_cash into active/reserve pools (75/25 of available cash)
-            if true_cash > 0:
-                self.router.active_pool_cash = true_cash * 0.75
-                self.router.reserve_pool_cash = true_cash * 0.25
-            else:
-                self.router.active_pool_cash = 0.0
-                self.router.reserve_pool_cash = 0.0
-
         # Restore rebalance tracking
         last_reb = state.get("last_rebalance_date")
         if last_reb:
@@ -528,120 +477,9 @@ class V14PortfolioPaperBot:
         equity = self.capital + total_realized - total_fees + total_unrealized
         return equity if equity > 0 else self.capital
 
-    def _compute_portfolio_cash(self) -> float:
-        """Compute real available cash from ground truth: capital + realized - fees - invested.
-        
-        This is the single source of truth for how much money the portfolio
-        actually has available.  Never rely on the router's pool cash counters
-        for budget decisions — they can drift.
-        """
-        total_invested = 0.0
-        total_realized = 0.0
-        total_fees = 0.0
-        for eng in self.engines.values():
-            if eng._engine:
-                total_invested += eng._engine.long_cost + eng._engine.short_cost
-                total_realized += eng._engine.long_pnl + eng._engine.short_pnl
-                total_fees += eng._engine.total_fees
-        # Also count CSV-based realized PnL for accuracy across restarts
-        csv_path = self.output_dir / "trades.csv"
-        if csv_path.exists():
-            try:
-                with open(csv_path, 'r') as f:
-                    reader = csv.DictReader(f)
-                    csv_realized = sum(float(t.get('pnl', 0)) for t in reader)
-                # Use whichever is larger — CSV is truth for completed deals,
-                # engine counters are truth for in-flight deals
-                total_realized = max(total_realized, csv_realized)
-            except Exception:
-                pass
-        available = self.capital + total_realized - total_fees - total_invested
-        return available
-
-    # ── Scanner top-N check ───────────────────────────────────────────────
-
-    def _get_scanner_top_n_symbols(self) -> set:
-        """Return the set of symbols currently in the scanner top-N (N = tier_coin_cap).
-
-        Reads the latest cycle_scanner.json, applies the same hurdle rate
-        and trend multiplier logic as the CapitalRouter, and returns the
-        top-N symbol names.  Used to decide whether a coin that just
-        completed a trade should be allowed to re-enter.
-
-        Returns an empty set on any error (fail-open: caller should
-        default to keeping the coin if scanner data is unavailable).
-        """
-        try:
-            scanner_data = self.router.load_scanner_json(str(SCANNER_PATH))
-            if not scanner_data:
-                return set()
-
-            # Apply same hurdle + trend logic as CapitalRouter.rebalance_daily()
-            qualifying = []
-            for entry in scanner_data:
-                symbol = entry.get("symbol") or entry.get("coin")
-                base_score = float(entry.get("dca_score", 0))
-                trend_mult = float(entry.get("trend_multiplier", 1.0))
-                if base_score >= 5.0:
-                    qualifying.append((symbol, base_score * trend_mult))
-
-            qualifying.sort(key=lambda x: x[1], reverse=True)
-            cap = self.router.tier_coin_cap
-            top_n = qualifying[:cap]
-            return {sym for sym, _ in top_n}
-        except Exception as e:
-            logger.warning(f"Scanner top-N check failed (defaulting to keep): {e}")
-            return set()
-
-    def _prune_stale_coin_after_tp(self, symbol: str):
-        """After a TP closes a position, check if this coin is still in the
-        scanner top-N.  If not, remove it from _approved_symbols so the
-        T1 gatekeeper blocks re-entry.
-
-        This prevents the 'stale coin re-entry' bug where coins from prior
-        scanner cycles keep opening new positions even though they've fallen
-        out of the current top-N rankings.
-        """
-        top_n = self._get_scanner_top_n_symbols()
-        if not top_n:
-            # Scanner unavailable — fail-open, don't prune
-            logger.info(f"Scanner data unavailable — keeping {symbol} in approved set")
-            return
-
-        if symbol not in top_n:
-            if symbol in self._approved_symbols:
-                self._approved_symbols.discard(symbol)
-                logger.info(
-                    f"🔄 Stale coin pruned: {symbol} completed trade but is no longer "
-                    f"in scanner top-{self.router.tier_coin_cap}. "
-                    f"Blocked from re-entry until next rebalance promotes it."
-                )
-                send_telegram(
-                    f"🔄 [V14-PM] <b>Coin Pruned</b>\n"
-                    f"Symbol: {symbol}\n"
-                    f"Reason: Not in scanner top-{self.router.tier_coin_cap} after trade close\n"
-                    f"Action: T1 re-entry blocked until next qualifying rebalance"
-                )
-        else:
-            logger.info(f"{symbol} still in scanner top-{self.router.tier_coin_cap} — re-entry allowed")
-
-    # ── Daily rebalance ───────────────────────────────────────────────────────
-
     def _check_and_rebalance(self, current_date_utc: datetime):
         today = current_date_utc.date()
         if self._last_rebalance_date == today:
-            return
-
-        # ── SAFEGUARD: Skip stale catch-up rebalances ──────────────────
-        # On restart, the candle replay can trigger rebalances for every
-        # missed day.  Each one allocates fresh capital without accounting
-        # for prior replayed allocations, causing overspend.  Only run
-        # today's rebalance; skip anything older than 24 h.
-        from datetime import date as _date_type
-        real_today = datetime.now(timezone.utc).date()
-        if today < real_today:
-            logger.info(f"Skipping stale rebalance for {today} (today is {real_today})")
-            self._last_rebalance_date = today  # mark as done so we don't retry
             return
 
         logger.info(f"Triggering daily rebalance for {today}")
@@ -670,28 +508,8 @@ class V14PortfolioPaperBot:
         self._approved_symbols = set(allocations.keys())
         logger.info(f"Approved symbols for T1 entry: {sorted(self._approved_symbols)}")
 
-        # ── BUDGET-AWARE ALLOCATION ────────────────────────────────────
-        # Compute real available cash ONCE, then distribute allocations
-        # proportionally.  Engine capitals must never exceed what the
-        # portfolio actually has.  This prevents the old bug where daily
-        # rebalances inflated engine capitals beyond total portfolio value.
-        portfolio_cash = self._compute_portfolio_cash()
-        logger.info(f"Portfolio cash available for allocation: ${portfolio_cash:,.2f}")
-
-        # Total target allocation from the router (theoretical, based on equity)
-        total_target = sum(allocations.values())
-
         for sym, alloc in allocations.items():
-            # Scale allocation down if total targets exceed available cash
-            # (router targets are theoretical; real cash is the hard constraint)
-            if total_target > 0 and portfolio_cash < total_target:
-                alloc = alloc * (max(0, portfolio_cash) / total_target)
-
             if sym not in self.engines:
-                # Only create engine if there's actual cash for it
-                if alloc < 10:
-                    logger.info(f"Skipping {sym}: allocation ${alloc:.2f} below $10 minimum")
-                    continue
                 logger.info(f"Creating new V14Engine for {sym} (initial alloc=${alloc:.2f})")
                 self.engines[sym] = V14LifecycleEngine(
                     symbol=sym, capital=alloc, profile=self.profile, leverage=self.leverage
@@ -701,28 +519,8 @@ class V14PortfolioPaperBot:
                 eng = self.engines[sym]._engine
                 if eng:
                     invested = eng.long_cost + eng.short_cost
-                    # The engine's available cash should be: alloc - invested
-                    # (what the portfolio allocated minus what's already deployed)
                     new_cash = max(0.0, alloc - invested)
-                    # SET, not MAX — never inflate engine capital beyond allocation
-                    eng.capital = new_cash
-                    logger.debug(
-                        f"{sym}: alloc=${alloc:.2f}, invested=${invested:.2f}, "
-                        f"engine cash set to ${new_cash:.2f}"
-                    )
-
-        # ── Reconcile router pool cash to match reality ────────────────
-        # After setting engine capitals, sync the router's cash counters
-        # to actual portfolio cash so request_capital() stays accurate.
-        actual_cash = self._compute_portfolio_cash()
-        if actual_cash > 0:
-            self.router.active_pool_cash = actual_cash * 0.75
-            self.router.reserve_pool_cash = actual_cash * 0.25
-        else:
-            self.router.active_pool_cash = 0.0
-            self.router.reserve_pool_cash = 0.0
-        logger.info(f"Router cash synced: active=${self.router.active_pool_cash:,.2f}, "
-                    f"reserve=${self.router.reserve_pool_cash:,.2f}")
+                    eng.capital = max(eng.capital, new_cash)
 
         self._last_rebalance_date = today
 
@@ -760,20 +558,6 @@ class V14PortfolioPaperBot:
                         self.engines[symbol].reject_action(act)
                         continue
 
-                # ── HARD BUDGET GATE (belt-and-suspenders) ────────────
-                # Before even asking the router, verify the portfolio
-                # actually has cash for this trade.  This catches any
-                # scenario where router counters have drifted.
-                portfolio_cash = self._compute_portfolio_cash()
-                if cost > 0 and portfolio_cash < cost:
-                    logger.warning(
-                        f"BUDGET GATE: Portfolio cash ${portfolio_cash:,.2f} < "
-                        f"order cost ${cost:,.2f} for {symbol} {action_type}. "
-                        f"Blocking to prevent over-allocation."
-                    )
-                    self.engines[symbol].reject_action(act)
-                    continue
-
                 # Which layer is this?
                 layer = 1
                 key = f"{symbol}:long" if action_type == "BUY" else f"{symbol}:short"
@@ -808,11 +592,6 @@ class V14PortfolioPaperBot:
                 proceeds = qty * price if qty and price else 0
                 self.router.return_capital(symbol, proceeds)
                 valid_actions.append(act)
-
-                # Stale coin pruning: after a trade closes, check if this coin
-                # is still in the scanner top-N.  If not, remove from approved
-                # symbols so the T1 gate blocks re-entry.
-                self._prune_stale_coin_after_tp(symbol)
                 
             else:
                 valid_actions.append(act)
@@ -1017,11 +796,7 @@ class V14PortfolioPaperBot:
         logger.info("Starting V14 Portfolio live trading loop")
         if self.fresh:
             logger.info("FRESH mode: will skip historical candles, trading from NOW only")
-        # Aster DEX — production exchange (switched from Hyperliquid 2026-04-19)
-        exchange = ccxt.aster({
-            "apiKey": os.environ.get("ASTER_API_KEY", ""),
-            "secret": os.environ.get("ASTER_API_SECRET", ""),
-        })
+        exchange = ccxt.hyperliquid()
         exchange.load_markets()
 
         last_candle_ts: Dict[str, int] = {}
@@ -1031,9 +806,10 @@ class V14PortfolioPaperBot:
             now_ms = int(time.time() * 1000)
             # Pre-seed all engines: fetch latest candle for each coin and skip to it
             for sym in list(self.engines.keys()):
-                aster_sym, _scale = _to_aster_sym(sym)
+                base = sym.split('/')[0]
+                hl_sym = f"{base}/USDC:USDC"
                 try:
-                    ohlcv = exchange.fetch_ohlcv(aster_sym, self.timeframe, limit=2)
+                    ohlcv = exchange.fetch_ohlcv(hl_sym, self.timeframe, limit=2)
                     if ohlcv:
                         # Set to the second-to-last candle so we only process the current/latest
                         latest_closed = ohlcv[-2][0] if len(ohlcv) > 1 else ohlcv[-1][0]
@@ -1050,12 +826,13 @@ class V14PortfolioPaperBot:
                 # (Rebalancing is triggered by the earliest unprocessed candle)
 
                 for sym in list(self.engines.keys()):
-                    aster_sym, scale = _to_aster_sym(sym)
+                    base = sym.split('/')[0]
+                    hl_sym = f"{base}/USDC:USDC"
                         
                     try:
-                        ohlcv = exchange.fetch_ohlcv(aster_sym, self.timeframe, limit=200)
+                        ohlcv = exchange.fetch_ohlcv(hl_sym, self.timeframe, limit=200)
                     except Exception as e:
-                        logger.error(f"Failed to fetch candles for {sym} ({aster_sym}): {e}")
+                        logger.error(f"Failed to fetch candles for {sym} ({hl_sym}): {e}")
                         continue
 
                     if not ohlcv:
@@ -1088,10 +865,10 @@ class V14PortfolioPaperBot:
 
                         candle = {
                             "timestamp": ts_ms,
-                            "open": float(bar[1]) * scale,
-                            "high": float(bar[2]) * scale,
-                            "low": float(bar[3]) * scale,
-                            "close": float(bar[4]) * scale,
+                            "open": float(bar[1]),
+                            "high": float(bar[2]),
+                            "low": float(bar[3]),
+                            "close": float(bar[4]),
                             "volume": float(bar[5]),
                         }
 
@@ -1196,7 +973,7 @@ def main():
     parser.add_argument("--capital", type=float, default=DEFAULT_CAPITAL)
     parser.add_argument("--profile", type=str, default="medium")
     parser.add_argument("--leverage", type=float, default=None)
-    parser.add_argument("--exchange", type=str, default="aster")
+    parser.add_argument("--exchange", type=str, default="hyperliquid")
     parser.add_argument("--fresh", action="store_true", help="Start fresh — skip historical candles, trade from now only")
     args = parser.parse_args()
 

@@ -2,48 +2,44 @@
 
 ## Priority Checks (every heartbeat)
 
-### V14 Live Bot (RETIRED 2026-04-19)
-# Superseded by V14PM Live (Aster Perps). Account emptied.
-# Scheduled task V14LiveAster still exists but should NOT be started.
-# Kept here for historical reference only.
-
-### V14PM Live Bot (Aster Perps) ⚠️ REAL MONEY
-- Check `trading/spot/live/v14pm/status.json` for bot health
+### V14 Live Bot (Aster — ASTER/USDT) ⚠️ REAL MONEY
+- Check `trading/spot/live/v14/status.json` for bot health
 - Alert if: `running` is false, drawdown > 15%, or status.json stale (>65 min)
-- **Capital: ~$375** real USDT. Alert if balance drifts significantly.
-- Profile: High, 12 layers, 1.0x leverage, Aster perps
-- Coins: Dynamically selected by cycle scanner (TAO, HYPE, JTO currently)
-- Scheduled Task: runs at login
-- Entry point: `python -u -m trading.spot.run_v14_portfolio_live_aster --capital 375 --confirm --skip-backfill`
-- Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/dashboardV14PM.html
+- **Capital: $300** real USDT. Alert if balance drifts significantly.
+- Profile: High, 12 layers, 1.5% TP, 1.5x leverage
+- Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "V14LiveAster"`
+- Scheduled Task: `V14LiveAster` (at boot) — confirmed exists as of 2026-03-09
+- Manual restart: `python -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill`
+- Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
+- Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
 
-### V14 Paper Bot (Aster — HBAR/ATOM/LINK/NEAR) — LIVE as of 2026-02-28
+### V14 Paper Bot (Hyperliquid — HBAR/ATOM/LINK/NEAR) — LIVE as of 2026-02-28
 - Check `trading/spot/paper/v14/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
-- Coins: HBAR/USDT, ATOM/USDT, LINK/USDT, NEAR/USDT — 1h candles, daily signal ticks
+- Coins: HBAR/USDT, ATOM/USDT, LINK/USDC, NEAR/USDT — 1h candles, daily signal ticks
 - Profile: Medium (1.5x leverage), BO=40%, Dev=2%, Mult=1.5x, 10 layers, TP=1.5%
 - Engine: V14 DCA-only with ROUTER v2 signals
-- Entry point: `python -u -m trading.spot.run_v14_paper --capital 10000 --profile medium --exchange aster --skip-backfill`
+- Entry point: `python -u -m trading.spot.run_v14_paper --capital 10000 --profile medium --exchange hyperliquid --skip-backfill`
 - Scheduled Task: `V14PaperBot`
 - Backfill verified: +552% on $10K, matches standalone backtest
 
-### V14-ETF Paper Bot (Aster — SOL/XRP/LTC/HBAR/ADA) — LIVE as of 2026-03-02
+### V14-ETF Paper Bot (Hyperliquid — SOL/XRP/LTC/HBAR/ADA) — LIVE as of 2026-03-02
 - Check `trading/spot/paper/v14etf/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
 - Coins: SOL/USDT, XRP/USDT, LTC/USDT, HBAR/USDT, ADA/USDT — 1h candles, daily signal ticks
 - Profile: High (1.5x leverage), BO=40%, Dev=1.5%, Mult=1.5x, 12 layers, TP=1.5%
 - Engine: V14 DCA-only with ROUTER v2 signals
 - Fresh start (no backfill history) — started 2026-03-02 with $10K
-- Entry point: `python -u -m trading.spot.run_v14etf_paper --capital 10000 --profile high --exchange aster --fresh`
+- Entry point: `python -u -m trading.spot.run_v14etf_paper --capital 10000 --profile high --exchange hyperliquid --fresh`
 - Telegram: All notifications prefixed with `[V14-ETF]`
 - Scheduled Task: `V14ETFPaperBot` (created 2026-03-02)
 - Dashboard: `docs/dashboardV14ETF.html`
 
 ### V14 PM (Portfolio Manager) Paper Bot — LIVE as of 2026-03-05
 - **Capital**: $50K paper. 10 coin slots (equity-tiered). Dynamic allocation with trend multiplier.
-- **Profile**: High, 12 layers, **1.0x leverage** (no leverage), Aster perps (longs + shorts)
+- **Profile**: High, 12 layers, **1.0x leverage** (no leverage), Hyperliquid perps (longs + shorts)
 - **Allocation**: `Adjusted Score = Base DCA Score × Trend Multiplier` — accelerating coins boosted up to 1.5x, declining penalized down to 0.36x
-- **Coins**: Dynamically selected by cycle scanner daily (all 60 scanned Aster coins eligible)
+- **Coins**: Dynamically selected by cycle scanner daily (all 45 scanned coins eligible)
 - Check `trading/spot/paper/v14_portfolio/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
 - Scheduled Task: `V14PMPaperBot` (at login)

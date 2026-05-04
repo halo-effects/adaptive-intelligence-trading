@@ -50,13 +50,14 @@ DB_SYMBOL_MAP = {
     "NEAR/USDT": "NEAR/USDT",
 }
 
-# Canonical -> Aster perp price feed ticker (switched from Hyperliquid 2026-04-19)
-# All four coins trade as {COIN}/USDT:USDT on Aster perps.
-ASTER_PRICE_MAP = {
-    "HBAR/USDT": "HBAR/USDT:USDT",
-    "ATOM/USDT": "ATOM/USDT:USDT",
-    "LINK/USDC": "LINK/USDT:USDT",
-    "NEAR/USDT": "NEAR/USDT:USDT",
+# Canonical -> Hyperliquid price feed ticker
+# HBAR/ATOM/NEAR have NO spot on Hyperliquid — perps only
+# LINK has spot (LINK0/USDC) but perp works for price feed too
+HL_PRICE_MAP = {
+    "HBAR/USDT": "HBAR/USDC:USDC",
+    "ATOM/USDT": "ATOM/USDC:USDC",
+    "LINK/USDC": "LINK/USDC:USDC",
+    "NEAR/USDT": "NEAR/USDC:USDC",
 }
 
 DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(_WORKSPACE / "trading" / "spot" / "data" / "candles.db")))
@@ -561,7 +562,7 @@ class V14PaperBot:
     # -------------------------------------------------------------------
 
     def run_live(self):
-        """Main live loop — fetch 1h candles from Aster DEX, tick engines."""
+        """Main live loop — fetch 1h candles from Hyperliquid, tick engines."""
         import ccxt
 
         logger.info("Starting V14 live trading loop")
@@ -570,11 +571,7 @@ class V14PaperBot:
         except Exception:
             pass
 
-        # Aster DEX — production exchange (switched from Hyperliquid 2026-04-19)
-        exchange = ccxt.aster({
-            "apiKey": os.environ.get("ASTER_API_KEY", ""),
-            "secret": os.environ.get("ASTER_API_SECRET", ""),
-        })
+        exchange = ccxt.hyperliquid()
         exchange.load_markets()
 
         # Initialize last_candle_ts from state to avoid replaying old candles on restart
@@ -592,15 +589,15 @@ class V14PaperBot:
                 logger.debug(f"Live loop cycle starting at {datetime.now(timezone.utc).isoformat()}")
 
                 for sym in self.symbols:
-                    aster_sym = ASTER_PRICE_MAP.get(sym)
-                    if not aster_sym:
-                        logger.error(f"No Aster price map entry for {sym}")
+                    hl_sym = HL_PRICE_MAP.get(sym)
+                    if not hl_sym:
+                        logger.error(f"No HL price map entry for {sym}")
                         continue
 
                     try:
-                        ohlcv = exchange.fetch_ohlcv(aster_sym, self.timeframe, limit=200)
+                        ohlcv = exchange.fetch_ohlcv(hl_sym, self.timeframe, limit=200)
                     except Exception as e:
-                        logger.error(f"Failed to fetch candles for {sym} ({aster_sym}): {e}\n{traceback.format_exc()}")
+                        logger.error(f"Failed to fetch candles for {sym} ({hl_sym}): {e}\n{traceback.format_exc()}")
                         continue
 
                     if not ohlcv:
@@ -1030,8 +1027,8 @@ def main():
     parser.add_argument("--profile", type=str, default="medium",
                         choices=["low", "medium", "high"],
                         help="Risk profile (default: medium)")
-    parser.add_argument("--exchange", type=str, default="aster",
-                        help="Exchange name for metadata (default: aster)")
+    parser.add_argument("--exchange", type=str, default="hyperliquid",
+                        help="Exchange name (default: hyperliquid)")
     parser.add_argument("--backfill-only", action="store_true",
                         help="Run backfill and exit (no live trading)")
     parser.add_argument("--skip-backfill", action="store_true",
