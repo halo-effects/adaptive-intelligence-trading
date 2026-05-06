@@ -2310,7 +2310,7 @@ class V14PortfolioLiveAster:
             # Fetch tickers from exchange and filter out illiquid coins.
             # Existing open positions are exempt (they need to exit via TP).
             try:
-                tickers = self.client._exchange.fetch_tickers()
+                tickers = self.client.exchange.fetch_tickers()
                 filtered_allocs = {}
                 for sym, alloc in allocations.items():
                     # Always keep coins that already have open positions
@@ -2397,13 +2397,6 @@ class V14PortfolioLiveAster:
                             eng.capital = alloc
                             if abs(old_cap - alloc) > 1:
                                 logger.info(f"  {sym} engine capital synced: ${old_cap:.2f} -> ${alloc:.2f}")
-
-            # Sync router active_allocations with final allocations so T1 gate
-            # allows entries for the newly selected coins.
-            self.router.active_allocations = {
-                sym: alloc for sym, alloc in allocations.items()
-                if sym in self.coins
-            }
 
             self._last_rebalance_date = today
             self._last_rebalance_ts = time.time()

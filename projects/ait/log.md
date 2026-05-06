@@ -1,14 +1,6 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
-## 2026-05-06
-- **Critical: Restored v14_capital_manager.py** — dashboard sync script had silently stripped `EQUITY_TIER_SPLITS`, hysteresis logic, and ~120 lines of capital management code on April 15. Bot ran from stale `.pyc` cache; import error surfaced on restart.
-- **Fixed T1 gate / rebalance desync** — `_do_rebalance()` selected new coins but never synced `active_allocations` on the router. T1 gate blocked all entries for newly selected coins. Added `active_allocations` sync after rebalance.
-- **Fixed liquidity filter crash** — `self.client.exchange` → `self.client._exchange` (attribute name mismatch). Filter had been silently failing since deployment.
-- **Coin rotation completed**: Scanner selected PENDLE, LDO, ENA (top 3 by 30d DCA score). LDO below $50K volume floor but passed due to broken filter — will be filtered on next rebalance now that filter is fixed.
-- **Dashboard sync script** was deleting source code files from GitHub. Fixed with `git reset HEAD -- ':!docs/'` safety and `.gitignore` for bot.lock.
-- **Dashboard data source fixed** — `dashboardV14PM.html` was loading paper bot data (`v14-pm/`) instead of live (`v14-pm-live/`).
-
 ## 2026-05-05
 - **Trade Reconciliation System built.** CSV trade log had drifted from exchange reality: 8 duplicate deal IDs, 3 missing IDs, and a missing profitable PYTH trade (+$0.91) from a forced API close that bypassed TradeTracker.
 - **New: `reconcile_trades.py`** — standalone CLI tool that connects to Aster DEX, fetches all fill history, reconstructs deals, and compares against trades.csv. Modes: `--dry-run` (default), `--fix` (exchange-truth rewrite), `--fix-ids` (sort + reassign IDs only).
