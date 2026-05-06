@@ -1,5 +1,5 @@
 # AIT — Project Overview
-_Last updated: 2026-04-18_
+_Last updated: 2026-03-10_
 
 ## Product
 **Adaptive Intelligence Trading** — Automated crypto DCA trading system with signal-directed phase transitions and dynamic capital rotation.
@@ -9,11 +9,11 @@ _Last updated: 2026-04-18_
 - **V14PM Portfolio Manager**: Capital rotation across 10 coin slots using DCA Cycle Velocity scoring + trend multipliers
 - **Signal Stack**: V13SignalPack (StochRSI, ADX, structure), HybridDetector2D (top/bottom), Steve 3-Check, CFGI
 - **Exchange**: Hyperliquid perps (production), Aster DEX (proof-of-concept)
-- **Data Pipeline**: Hourly candle collection (Aster DEX) → daily resampling → DCA cycle scanner
-- **Dashboards**: GitHub Pages (2 dashboards, synced every 10 min)
+- **Data Pipeline**: Hourly candle collection → daily resampling → DCA cycle scanner
+- **Dashboards**: GitHub Pages (4 dashboards, synced every 10 min)
 
 ## Architecture Documents
-- `projects/ait-product/V14PM_SYSTEM_ARCHITECTURE.md` (v1.3) — Complete system reference
+- `projects/ait-product/V14PM_SYSTEM_ARCHITECTURE.md` (v1.1) — Complete system reference
 - `projects/ait-product/CLOUD_MIGRATION_GUIDE.md` (v1.1) — Linux deployment guide
 - `projects/ait-product/V14PM_FULL_AUDIT.md` — End-to-end code audit (2026-03-10)
 - `projects/ait-product/CODE_AUDIT_FINDINGS.md` — Bug tracker
@@ -37,18 +37,14 @@ _Last updated: 2026-04-18_
 | --fresh for first launch only | 2026-03-10 | Normal restarts use engine_state.json |
 | Macro conviction signals observational | 2026-03-08 | 6 index-level signals documented, not wired into bot logic |
 | Trend multiplier gates entry not exit | 2026-03-06 | Declining coins get less capital but existing positions stay |
-| Aster DEX for candle collection | 2026-04-17 | Switched from Hyperliquid; 15 scanner coins only exist on Aster |
-| 50-coin scanner universe | 2026-04-17 | Expanded from 45 to match PM bot's Aster universe |
-| Trend multiplier gap resilience | 2026-04-18 | Fallback to nearest-pair comparison when no standard window has data |
 
-## Current State (2026-04-18)
-- **V14PM**: Running, 10/10 coin slots, trend multipliers restored
-- **V14 Paper**: Running
-- **V14-ETF Paper**: Running
+## Current State (2026-03-10)
+- **V14PM**: $50,504 equity, 22 trades, 100% win rate, 10/10 coin slots
+- **V14 Paper**: $69K+ equity, 374+ deals, 97.6% win rate
+- **V14-ETF Paper**: $10K+, running
 - **V14 Live (Aster)**: $300 real, ASTER/USDT, running
-- **Candle collector**: Aster DEX, 50-coin universe, hourly
-- **Scanner**: 50 coins, trend scores active with gap-resilient fallback
-- **Dashboard sync**: Every 10 min via GitHub Pages
+- **All bots restarted post-OpenClaw 2026.3.8 upgrade** (March 9)
+- **Full audit complete** — 3 critical bugs found and fixed (DB path, state persistence, daily resampling)
 
 ## Next Steps
 1. Cloud migration (Linux server, Hyperliquid mainnet)
@@ -56,9 +52,3 @@ _Last updated: 2026-04-18_
 3. Centralize DB_PATH into single config module
 4. Correlation gate (halt new entries when >60% of coins at L4+)
 5. Rename V13SignalPack → SignalPack (maintenance window)
-
-## Recent Changes (2026-04-17/18)
-- **Candle collector switched to Aster DEX** from Hyperliquid. 15 coins only exist on Aster.
-- **Scanner expanded to 50 coins** to match PM bot's universe.
-- **Trend multiplier gap resilience**: `compute_trend_scores()` now falls back to comparing the two most recent snapshots when standard windows (7/14/30d) have insufficient data due to collection gaps. Previously, a >30-day gap left `trend_scores` empty, causing dashboard Trend Mult columns to show `--`.
-- **Merge revert fixed**: Git merge from remote reverted the Aster collector; detected and restored.

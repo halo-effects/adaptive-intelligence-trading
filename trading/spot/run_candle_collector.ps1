@@ -1,7 +1,7 @@
 # AIT Candle Collector + DCA Scanner Pipeline
 # Runs hourly via Scheduled Task "AIT_CandleCollector"
 #
-# Step 1: Pull latest 1h candles from Aster DEX for all scanner coins
+# Step 1: Pull latest 1h candles from Hyperliquid for all scanner coins
 # Step 2: Run V14 DCA Cycle Scanner to refresh DCA Scores
 #
 $pythonExe = "C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe"

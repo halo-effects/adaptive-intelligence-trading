@@ -33,7 +33,7 @@ SO_STEP_MULT = 1.5     # Price step multiplier (each SO further apart)
 SO_VOL_MULT = 1.5      # Volume multiplier (each SO bigger)
 MAX_LAYERS = 12
 TP_PCT = 0.015         # 1.5% take profit from avg entry
-TAKER_FEE = 0.00035    # Aster taker fee
+TAKER_FEE = 0.00025    # Hyperliquid taker fee
 CAPITAL = 10_000.0     # Capital per coin
 DCA_ALLOC = 0.90       # 90% allocated to DCA
 
@@ -42,36 +42,25 @@ DCA_ALLOC = 0.90       # 90% allocated to DCA
 # flagged as immature and excluded from the dashboard feed.
 MIN_HISTORY_MONTHS = 6
 
-# Aster DEX perp universe — 60 coins (updated 2026-04-19).
-# Unified with collector (collect_scanner_candles.py). Only coins that
-# exist on Aster perps are included. W (Wormhole) removed — not on Aster.
-# Format: preferred symbol as found in candles.db. The scanner will also
+# Full Hyperliquid quality perp universe + ASTER (Aster exchange live bot).
+# Format: preferred symbol as found in candles.db.  The scanner will also
 # try the other quote (USDT↔USDC) if the primary isn't found.
 COINS = [
-    # --- Established (pre-2024) — 22 coins ---
-    'BTC/USDT',   'ETH/USDT',   'SOL/USDT',   'XRP/USDT',   'LINK/USDT',
+    # --- Established (pre-2024) ---
+    'BTC/USDC',   'ETH/USDC',   'SOL/USDC',   'XRP/USDT',   'LINK/USDT',
     'DOGE/USDT',  'ADA/USDT',   'LTC/USDT',   'AVAX/USDT',  'DOT/USDT',
     'UNI/USDT',   'ATOM/USDT',  'NEAR/USDT',  'HBAR/USDT',  'INJ/USDT',
-    'FIL/USDT',   'RUNE/USDT',  'CRV/USDT',   'SNX/USDT',   'ZEC/USDT',
-    'COMP/USDT',  'MKR/USDT',
-    # --- DeFi / Mid-cap — 10 coins ---
-    'AAVE/USDT',  'ENS/USDT',   'DYDX/USDT',  'LDO/USDT',   'ARB/USDT',
-    'OP/USDT',    'STX/USDT',   'PENDLE/USDT','ZRO/USDT',   'JUP/USDT',
-    # --- High-beta / Speculative — 9 coins ---
-    'PEPE/USDT',  'BONK/USDT',  'FLOKI/USDT', 'JTO/USDT',   'PYTH/USDT',
-    'TIA/USDT',   'SEI/USDT',   'APT/USDT',   'SUI/USDT',
-    # --- AI / Infrastructure — 5 coins ---
-    'FET/USDT',   'TAO/USDT',   'HYPE/USDT',  'VIRTUAL/USDT','RENDER/USDT',
-    # --- New L1/L2 — 5 coins ---
-    'BERA/USDT',  'MOVE/USDT',  'INIT/USDT',  'S/USDT',     'IP/USDT',
-    # --- 2024 launches — 4 coins ---
-    'KAS/USDT',   'TON/USDT',   'ONDO/USDT',  'EIGEN/USDT',
-    # --- Yield / Other — 3 coins ---
-    'ENA/USDT',   'GRASS/USDT', 'ORCA/USDT',
-    # --- Meme / Speculative — 1 coin ---
-    'TRUMP/USDT',
-    # --- Exchange native — 1 coin ---
-    'ASTER/USDT',
+    'FIL/USDT',   'RUNE/USDT',  'CRV/USDT',   'SNX/USDT',   'COMP/USDT',
+    'MKR/USDT',   'ENS/USDT',   'DYDX/USDT',  'LDO/USDT',   'ARB/USDT',
+    'OP/USDT',    'STX/USDT',   'SEI/USDT',    'RENDER/USDT',
+    # --- 2024 launches ---
+    'SUI/USDT',   'FET/USDT',   'TAO/USDT',   'TON/USDT',   'JUP/USDT',
+    'KAS/USDT',   'PENDLE/USDT','PYTH/USDT',  'TIA/USDT',   'ONDO/USDT',
+    'ENA/USDT',   'EIGEN/USDT', 'W/USDT',     'ZRO/USDT',
+    # --- Mid-cycle 2025 (OK per Brett — launched before bear) ---
+    'HYPE/USDC',  'ASTER/USDT',
+    # --- AAVE (established but listed separately for clarity) ---
+    'AAVE/USDT',
 ]
 
 # ─── Data Paths ─────────────────────────────────────────────────────────────
@@ -657,32 +646,6 @@ def compute_trend_scores(history_path: Path = SCORE_HISTORY_PATH) -> dict:
         t7 = slope_over_window(7)
         t14 = slope_over_window(14)
         t30 = slope_over_window(30)
-
-        # Fallback: if no standard window has ≥2 points (e.g. gap in scanner
-        # runs), use the two most recent snapshots regardless of how far apart
-        # they are. This prevents trend_scores from going completely empty
-        # after a collection gap, which leaves dashboard Trend Mult columns
-        # blank and causes Trade Score to equal Base Score (1.0x default).
-        if t7 is None and t14 is None and t30 is None and len(series) >= 2:
-            # series is sorted oldest-first; [-1] is most recent, [-2] is prior
-            prev_score = series[-2][1]
-            curr_score = series[-1][1]
-            gap_days = series[-2][0]  # days_ago of the prior snapshot
-            if abs(prev_score) >= 0.01:
-                fallback_slope = (curr_score - prev_score) / abs(prev_score)
-            else:
-                fallback_slope = 0.0
-            # Assign to the window that best matches the actual gap
-            if gap_days <= 10:
-                t7 = fallback_slope
-            elif gap_days <= 21:
-                t14 = fallback_slope
-            else:
-                t30 = fallback_slope
-            logger.info(
-                f"  {coin}: gap fallback — {gap_days:.0f}d apart, "
-                f"slope={fallback_slope:+.3f} (prev={prev_score:.1f} → curr={curr_score:.1f})"
-            )
 
         # Composite trend multiplier: weighted average of available windows
         weights = []
