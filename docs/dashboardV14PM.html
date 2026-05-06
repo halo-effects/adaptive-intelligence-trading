@@ -1354,6 +1354,17 @@ function renderEquityChart(){
       var p=parseFloat(t.pnl||t.PnL||0)*lev;
       if(p){eq+=p;var tm=t.close_time||t.open_time;if(tm)pts.push({x:new Date(tm),y:eq})}
     });
+    // Scale curve to anchor at live equity. Raw cumulative PnL drifts from
+    // actual equity due to funding costs, fees, and deposits. Preserve the
+    // shape (relative movement) but map the range [seed, rawFinal] -> [seed, liveEquity].
+    var liveEq=S?S.equity||eq:eq;
+    var rawRange=eq-seed;
+    var trueRange=liveEq-seed;
+    if(rawRange>0 && Math.abs(rawRange-trueRange)>1){
+      var scale=trueRange/rawRange;
+      pts=pts.map(function(p){return{x:p.x,y:seed+(p.y-seed)*scale}});
+      eq=liveEq;
+    }
   }
   if(S)pts.push({x:new Date(),y:S.equity||eq});
   if(pts.length<2)pts.unshift({x:new Date(Date.now()-3600000),y:seed});

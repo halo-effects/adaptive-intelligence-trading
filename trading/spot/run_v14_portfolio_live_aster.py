@@ -2323,7 +2323,7 @@ class V14PortfolioLiveAster:
                             continue
 
                     # Look up 24h dollar volume from exchange ticker
-                    aster_sym = self._aster_symbol(sym)
+                    aster_sym = self.client._aster_symbol(sym)
                     ticker = tickers.get(aster_sym, {})
                     quote_vol = ticker.get("quoteVolume", 0) or 0
 
