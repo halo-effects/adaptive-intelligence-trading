@@ -809,8 +809,6 @@ These are one-time scripts used during initial setup, not part of the recurring 
 | Failed sell counted as completed deal | Engine/exchange cash divergence ($10.91) | **Fixed 2026-03-05** | Sell verification + rollback + startup reconciliation added |
 | trades.csv incomplete after restarts | Dashboard showed 1W instead of 3W | **Fixed 2026-03-05** | Dashboard falls back to status.json; trades reconstructed from bot.log |
 | `self.cash` tracker corruption (-$34.33) | Bot's independent cash tracker diverged from engine | **Fixed 2026-03-05** | Periodic reconciliation syncs self.cash to eng.capital every 5 min |
-| trades.csv drift from exchange (dupes, missing) | 8 duplicate deal IDs, missing trades from forced closes | **Fixed 2026-05-05** | Trade reconciliation system: startup 48h check, RECONCILE command, `reconcile_trades.py` CLI |
-| Aster DEX API fill retention ~30 days | Cannot fully rebuild trade history from exchange | Open | Reconciliation labels expired fills as "unverifiable"; CSV is kept as fallback |
 
 ---
 
@@ -821,4 +819,3 @@ These are one-time scripts used during initial setup, not part of the recurring 
 | 2026-03-05 | 1.0 | Initial V14 system spec. Documents full pipeline from candle collection through DCA scoring to dashboard sync. Includes cloud migration guide. |
 | 2026-03-05 | 1.1 | Added Section 5.4 (Exchange Interaction Safety): sell verification/rollback, startup + periodic balance reconciliation, order execution flow diagram. Added Section 6.3 (Dashboard Data Integrity): W/L counter fallback logic, trade log recovery procedures. Updated Appendix B with 3 resolved incidents from 2026-03-05. |
 | 2026-03-05 | 1.2 | Added Section 4.6 (DCA Trend Score): score history tracking, 7d/14d/30d trend computation, dashboard trend arrows (↗→↘). Updated Section 11 to reference portfolio-capital-management.md design doc. Added score_history.json to file layout. |
-| 2026-05-05 | 1.3 | Trade reconciliation system: standalone CLI tool (`reconcile_trades.py`), startup reconciliation (`_reconcile_trades_on_startup()`), RECONCILE Telegram command, deal ID assignment fix. Aster API has ~30-day fill retention; reconciliation handles gracefully. See V14PM_SYSTEM_ARCHITECTURE.md §6.8. |
