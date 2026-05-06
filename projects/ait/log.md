@@ -1,6 +1,17 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+## 2026-05-05
+- **Trade Reconciliation System built.** CSV trade log had drifted from exchange reality: 8 duplicate deal IDs, 3 missing IDs, and a missing profitable PYTH trade (+$0.91) from a forced API close that bypassed TradeTracker.
+- **New: `reconcile_trades.py`** — standalone CLI tool that connects to Aster DEX, fetches all fill history, reconstructs deals, and compares against trades.csv. Modes: `--dry-run` (default), `--fix` (exchange-truth rewrite), `--fix-ids` (sort + reassign IDs only).
+- **New: Startup reconciliation** — `_reconcile_trades_on_startup()` runs on every bot start, checks last 48h of exchange fills for missing deals, and appends any recovered trades to CSV. Sends Telegram alert on recovery.
+- **New: RECONCILE Telegram command** — on-demand 48h reconciliation.
+- **Fix: TradeTracker deal_id assignment** — changed from `max(deal_id)` to `len(trades)` to prevent duplicate ID collisions.
+- **`--fix-ids` applied:** All 70 trades sorted by close_time, deal IDs reassigned 1-70. Zero duplicates.
+- **Discovery:** Aster DEX API has ~30-day fill retention. Older fills are purged. Reconciliation tool handles this gracefully (labels as "unverifiable" instead of "phantom").
+- **5 missing trades found** on exchange but absent from CSV, including the PYTH +$0.91 trade and a DYDX -$41.14 loss.
+- Updated: `run_v14_portfolio_live_aster.py`, new `reconcile_trades.py`.
+
 ## 2026-05-04
 - **BUG FIX: Stale coin re-entry prevention.** Coins from prior scanner cycles could keep opening new positions after TP close even when no longer in the current top-N rankings. Root cause: `approved_symbols` was only updated during daily rebalance — if a coin closed a trade mid-day and was no longer top-N, it would immediately re-enter on the next candle.
 - **Fix (both live + paper bots):** Added `_prune_stale_coin_after_tp()` — after every TP fill, reads current scanner JSON, checks if the coin is still in the top-N (same hurdle + trend multiplier logic as CapitalRouter). If not, removes it from approved symbols / router allocations. T1 re-entry blocked until next daily rebalance promotes it. Fail-open: if scanner data is unavailable, coin is kept.

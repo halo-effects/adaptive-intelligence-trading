@@ -207,11 +207,11 @@ class TradeTracker:
             for row in rows:
                 key = f"{row['symbol']}|{row.get('open_time','')}|{row.get('close_time','')}"
                 self._existing_keys.add(key)
-                deal_id = int(row.get("deal_id", 0))
-                if deal_id > self._deal_counter:
-                    self._deal_counter = deal_id
             self.trades = [{k: v for k, v in r.items()} for r in rows]
-            logger.info(f"Loaded {len(self.trades)} existing trades from CSV")
+            # Use len(trades) as counter — not max(deal_id) — to avoid collisions
+            # when duplicate deal_ids exist in the CSV.
+            self._deal_counter = len(self.trades)
+            logger.info(f"Loaded {len(self.trades)} existing trades from CSV (counter={self._deal_counter})")
         except Exception as e:
             logger.error(f"Failed to load trades.csv: {e}")
 
@@ -731,6 +731,7 @@ class V14PortfolioLiveAster:
             raise ValueError("Must pass --confirm for live trading")
 
         self.capital = capital
+        self._seed_capital = capital  # Original CLI --capital, never overwritten
         self.skip_backfill = skip_backfill
         self.fresh = fresh
         self.profile = PRODUCTION_PROFILE
@@ -1554,6 +1555,195 @@ class V14PortfolioLiveAster:
 
             except Exception as e:
                 logger.warning(f"TP RECOVERY exchange scan failed for {sym}: {e}")
+
+    def _reconcile_trades_on_startup(self) -> int:
+        """
+        Lightweight startup reconciliation: check the last 48h of exchange fills
+        for any closed deals that are missing from trades.csv.
+
+        Runs after _load_state() and _recover_tp_orders() to fill gaps caused by:
+          - Force-closes that bypassed the TradeTracker flow
+          - Bot crashes during a TP fill
+          - Other edge cases where the trade was recorded on exchange but not in CSV
+
+        Returns the number of recovered trades.
+        """
+        RECONCILE_WINDOW_HOURS = 48
+        # Match window for close_time proximity.
+        # Note: _recover_tp_orders() records close_time as now(), which can
+        # differ from exchange fill timestamp if bot was down. We also
+        # match by invested amount to catch these wider-gap duplicates.
+        MATCH_WINDOW_SECS      = 300  # 5 minutes for close_time
+        THOUSAND_PREFIX_COINS  = {"PEPE", "BONK", "FLOKI"}
+
+        since_ms = int(
+            (datetime.now(timezone.utc) - timedelta(hours=RECONCILE_WINDOW_HOURS))
+            .timestamp() * 1000
+        )
+
+        # Collect all symbols to check (current coins + symbols from CSV history)
+        symbols_to_check: set = set(self.coins.keys())
+        for trade in self.tracker.trades:
+            sym = trade.get("symbol", "")
+            if sym and sym not in ("ASTER/USDT",):
+                symbols_to_check.add(sym)
+
+        recovered = 0
+
+        for db_sym in sorted(symbols_to_check):
+            try:
+                base     = db_sym.split("/")[0]
+                is_1000  = base in THOUSAND_PREFIX_COINS
+                aster_sym = f"1000{base}/USDT:USDT" if is_1000 else f"{base}/USDT:USDT"
+
+                fills = []
+                try:
+                    fills = self.client._exchange.fetch_my_trades(
+                        aster_sym, since=since_ms, limit=1000
+                    ) or []
+                except Exception as e:
+                    logger.debug(f"fetch_my_trades({db_sym}) failed: {e}")
+                time.sleep(0.5)
+
+                if not fills:
+                    continue
+
+                # Sort fills by timestamp
+                fills = sorted(fills, key=lambda f: f.get("timestamp", 0))
+
+                # Reconstruct closed deals from fills
+                ex_closed: list = []
+                open_deal: dict = None
+
+                for fill in fills:
+                    side   = (fill.get("side") or "").lower()
+                    ts_ms  = fill.get("timestamp") or 0
+                    raw_price  = float(fill.get("price")  or 0)
+                    price  = raw_price / 1000.0 if is_1000 else raw_price
+                    cost_usdt  = float(fill.get("cost") or 0)
+                    if not cost_usdt and raw_price:
+                        cost_usdt = raw_price * float(fill.get("amount") or 0)
+                    fee_info   = fill.get("fee") or {}
+                    fee_usdt   = float(fee_info.get("cost") or 0) if isinstance(fee_info, dict) else 0.0
+                    dt = datetime.fromtimestamp(ts_ms / 1000.0, tz=timezone.utc)
+
+                    if side == "buy":
+                        if open_deal is None:
+                            open_deal = {
+                                "open_time": dt.isoformat(),
+                                "layers":    0,
+                                "invested":  0.0,
+                                "total_fee": 0.0,
+                            }
+                        open_deal["layers"]    += 1
+                        open_deal["invested"]  += cost_usdt
+                        open_deal["total_fee"] += fee_usdt
+
+                    elif side == "sell" and open_deal is not None:
+                        proceeds   = cost_usdt
+                        total_fee  = open_deal["total_fee"] + fee_usdt
+                        pnl        = proceeds - open_deal["invested"] - total_fee
+                        ret_pct    = (pnl / open_deal["invested"] * 100) if open_deal["invested"] > 0 else 0.0
+                        open_ts    = datetime.fromisoformat(open_deal["open_time"])
+                        duration_h = (dt - open_ts).total_seconds() / 3600.0
+
+                        ex_closed.append({
+                            "symbol":      db_sym,
+                            "open_time":   open_deal["open_time"],
+                            "close_time":  dt.isoformat(),
+                            "close_ts_ms": ts_ms,
+                            "layers":      open_deal["layers"],
+                            "invested":    round(open_deal["invested"], 4),
+                            "proceeds":    round(proceeds, 4),
+                            "fee":         round(total_fee, 4),
+                            "pnl":         round(pnl, 4),
+                            "return_pct":  round(ret_pct, 2),
+                            "duration_h":  round(duration_h, 1),
+                            "fill_price":  round(price, 8),
+                            "recorded_at": datetime.now(timezone.utc).isoformat(),
+                        })
+                        open_deal = None
+
+                if not ex_closed:
+                    continue
+
+                # Build match data from CSV for this symbol
+                known_trades: list = []
+                for t in self.tracker.trades:
+                    if t.get("symbol") != db_sym:
+                        continue
+                    try:
+                        ct = datetime.fromisoformat(t["close_time"])
+                        if ct.tzinfo is None:
+                            ct = ct.replace(tzinfo=timezone.utc)
+                        inv = float(t.get("invested", 0))
+                        known_trades.append((ct, inv))
+                    except (ValueError, KeyError):
+                        pass
+
+                # Check each exchange deal for presence in CSV
+                # Match by close_time proximity (5 min) OR by invested amount
+                # within a wider time window (4 hours). The wider window
+                # catches cases where _recover_tp_orders() recorded close_time
+                # as now() but the exchange fill was hours earlier.
+                for ex_deal in ex_closed:
+                    close_dt = datetime.fromisoformat(ex_deal["close_time"])
+                    if close_dt.tzinfo is None:
+                        close_dt = close_dt.replace(tzinfo=timezone.utc)
+                    ex_invested = ex_deal["invested"]
+
+                    already_recorded = False
+                    for kdt, k_inv in known_trades:
+                        time_diff = abs((close_dt - kdt).total_seconds())
+                        # Primary match: close_time within 5 minutes
+                        if time_diff < MATCH_WINDOW_SECS:
+                            already_recorded = True
+                            break
+                        # Secondary match: same invested amount (within 5%)
+                        # within a 4-hour window. Catches TP recovery timing gap.
+                        if time_diff < 14400 and k_inv > 0:
+                            inv_diff = abs(ex_invested - k_inv) / k_inv
+                            if inv_diff < 0.05:
+                                already_recorded = True
+                                break
+
+                    if not already_recorded:
+                        # Missing deal — append to tracker
+                        self.tracker._deal_counter += 1
+                        ex_deal["deal_id"] = self.tracker._deal_counter
+                        # Remove internal-only field before appending
+                        ex_deal.pop("close_ts_ms", None)
+                        self.tracker.trades.append(ex_deal)
+                        # Add to _existing_keys to prevent duplicate recording via on_sell()
+                        dedup_key = f"{db_sym}|{ex_deal['open_time']}|{ex_deal['close_time']}"
+                        self.tracker._existing_keys.add(dedup_key)
+                        known_trades.append((close_dt, ex_invested))  # avoid double-adding if fetched twice
+                        # Update cumulative realized PnL for drift detection
+                        self._cumulative_realized_pnl += ex_deal["pnl"]
+                        recovered += 1
+                        logger.info(
+                            f"Reconcile: recovered {db_sym} deal "
+                            f"close={ex_deal['close_time'][:19]} "
+                            f"pnl=${ex_deal['pnl']:.4f}"
+                        )
+
+            except Exception as e:
+                logger.warning(f"Startup reconciliation failed for {db_sym}: {e}")
+
+        if recovered > 0:
+            # Re-anchor counter to actual count (clean monotonic baseline)
+            self.tracker._deal_counter = len(self.tracker.trades)
+            self.tracker.save_csv()
+            send_telegram(
+                f"\U0001f527 {TG_PREFIX} <b>Startup Reconciliation</b>\n"
+                f"Recovered {recovered} missing trade(s) from exchange fills (last 48h).\n"
+                f"trades.csv updated. Counter reset to {self.tracker._deal_counter}."
+            )
+            logger.info(f"Startup reconciliation complete: {recovered} trade(s) recovered")
+        else:
+            logger.info("Startup reconciliation: CSV is in sync with exchange (last 48h)")
+
+        return recovered
 
     def _handle_tp_fill(self, sym: str, cs: CoinState, fill_result: dict):
         """Handle a TP limit order that filled on the exchange."""
@@ -2661,6 +2851,18 @@ class V14PortfolioLiveAster:
                     f"{last_str}"
                 )
 
+        elif text == "RECONCILE":
+            send_telegram(f"🔄 {TG_PREFIX} Running trade reconciliation (last 48h)...")
+            try:
+                recovered = self._reconcile_trades_on_startup()
+                if recovered == 0:
+                    send_telegram(
+                        f"✅ {TG_PREFIX} Reconciliation complete — CSV is in sync with exchange."
+                    )
+            except Exception as e:
+                logger.error(f"RECONCILE command failed: {e}")
+                send_telegram(f"❌ {TG_PREFIX} Reconciliation failed: {e}")
+
         else:
             # Unknown command — silently ignore
             pass
@@ -2866,8 +3068,9 @@ class V14PortfolioLiveAster:
             "profile": self.profile,
             "leverage": self.leverage,
             "bot_state": self.bot_state,
-            "capital": round(self._tracked_capital, 2),  # Seed capital (no realized PnL)
+            "capital": round(self._tracked_capital, 2),
             "tracked_capital": round(self._tracked_capital, 2),
+            "seed_capital": round(getattr(self, '_seed_capital', self.capital), 2),
             "equity": equity,
             "cash": round(usdt_free, 2),
             "invested": invested,
@@ -3059,6 +3262,9 @@ class V14PortfolioLiveAster:
 
             # Audit #6: TP recovery — check if any TP orders filled while bot was down
             self._recover_tp_orders()
+
+            # Reconcile trades: recover any deals missed while bot was down (last 48h)
+            self._reconcile_trades_on_startup()
 
             # Announce startup
             mode_str = "PAUSED" if self.bot_state == BotState.PAUSED else "RUNNING"
