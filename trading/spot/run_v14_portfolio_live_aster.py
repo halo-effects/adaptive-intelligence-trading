@@ -231,12 +231,25 @@ class TradeTracker:
         deal["invested"] += qty * price
 
     def on_sell(self, symbol: str, qty: float, actual_price: float,
-                actual_proceeds: float, fee: float, ts: datetime) -> dict:
+                actual_proceeds: float, fee: float, ts: datetime,
+                exchange_entry_price: float = 0.0) -> dict:
         key = f"{symbol}:long"
         deal = self._open_deals.pop(key, None)
         if not deal:
             return {}
-        invested = deal["invested"]
+        # DEX-as-truth: if exchange entry price is available, calculate
+        # invested from exchange_entry × sell_qty.  This eliminates drift
+        # from order-fill qty rounding (Aster rounds position qty down,
+        # so on_buy may record more qty than the position actually holds).
+        if exchange_entry_price > 0:
+            invested = exchange_entry_price * qty
+            if abs(invested - deal["invested"]) > 0.01:
+                logger.info(
+                    f"Invested correction {symbol}: tracker=${deal['invested']:.4f}, "
+                    f"exchange=${invested:.4f} (entry ${exchange_entry_price:.6f} × {qty:.4f})"
+                )
+        else:
+            invested = deal["invested"]
         pnl = actual_proceeds - invested - fee
         ret_pct = (pnl / invested * 100) if invested > 0 else 0.0
         open_dt = datetime.fromisoformat(deal["open_time"])
@@ -680,6 +693,8 @@ class CoinState:
         self.coin_regime_signal: Optional[str] = None  # "TOP" or "BOTTOM"
         self.flagged_at: Optional[str] = None          # ISO timestamp when flagged
         self.regime_cooldown_until: float = 0.0        # Unix timestamp — no re-flag before this
+        # Exchange entry price (DEX source of truth for PnL)
+        self.exchange_entry_price: float = 0.0
         # Trailing stop TP fields
         self.tp_type: str = "trailing" if TRAILING_STOP_ENABLED else "limit"
         self.tp_activation_price: Optional[float] = None  # Price where trail activates
@@ -703,6 +718,7 @@ class CoinState:
             "coin_regime_signal": self.coin_regime_signal,
             "flagged_at": self.flagged_at,
             "regime_cooldown_until": self.regime_cooldown_until,
+            "exchange_entry_price": self.exchange_entry_price,
         }
 
 
@@ -893,6 +909,7 @@ class V14PortfolioLiveAster:
             cs.tp_type = cs_data.get("tp_type", "trailing" if TRAILING_STOP_ENABLED else "limit")
             cs.tp_activation_price = cs_data.get("tp_activation_price")
             cs.trailing_callback_pct = cs_data.get("trailing_callback_pct", TRAILING_CALLBACK_PCT)
+            cs.exchange_entry_price = cs_data.get("exchange_entry_price", 0.0)
 
             engine_state = cs_data.get("engine_state", {})
             if engine_state:
@@ -1049,6 +1066,7 @@ class V14PortfolioLiveAster:
                 eng.long_coins = ex_qty
                 eng.long_cost = ex_entry * ex_qty
                 eng.long_avg_entry = ex_entry
+                cs.exchange_entry_price = ex_entry  # Cache for PnL calc on sell
                 tp_pct = eng.cfg.DCA_TP_PCT if hasattr(eng, 'cfg') and hasattr(eng.cfg, 'DCA_TP_PCT') else 0.015
                 eng.long_tp = ex_entry * (1 + tp_pct)
                 # Sync layer count: ensure consistency between CoinState, engine, and exchange
@@ -1758,9 +1776,11 @@ class V14PortfolioLiveAster:
         )
 
         # Record trade from actual exchange fill
+        # Use cached exchange entry price for accurate PnL calculation
         ts = datetime.now(timezone.utc)
         record = self.tracker.on_sell(
-            sym, actual_qty, actual_price, actual_proceeds, fee, ts
+            sym, actual_qty, actual_price, actual_proceeds, fee, ts,
+            exchange_entry_price=cs.exchange_entry_price
         )
 
         # Calculate actual PnL
@@ -2145,6 +2165,11 @@ class V14PortfolioLiveAster:
 
                 self.tracker.on_buy(sym, actual_qty, actual_price,
                                     datetime.now(timezone.utc))
+                # Cache exchange entry price for PnL calc on sell.
+                # For L1 this is the fill price; for DCA layers the next
+                # _sync_positions_from_exchange() will overwrite with the
+                # exchange's blended avg entry.
+                cs.exchange_entry_price = actual_price
 
                 # Record buy timestamp for dedup guard
                 cs._last_buy_time = time.time()
@@ -2228,7 +2253,8 @@ class V14PortfolioLiveAster:
 
                 ts = datetime.now(timezone.utc)
                 record = self.tracker.on_sell(
-                    sym, actual_qty, actual_price, actual_proceeds, fee, ts
+                    sym, actual_qty, actual_price, actual_proceeds, fee, ts,
+                    exchange_entry_price=cs.exchange_entry_price
                 )
                 self.router.return_capital(sym, actual_proceeds)
                 # Engine position fields will be zeroed by next _sync_positions_from_exchange()
@@ -2905,7 +2931,8 @@ class V14PortfolioLiveAster:
 
             ts = datetime.now(timezone.utc)
             record = self.tracker.on_sell(
-                sym, actual_qty, actual_price, actual_proceeds, fee, ts
+                sym, actual_qty, actual_price, actual_proceeds, fee, ts,
+                exchange_entry_price=cs.exchange_entry_price
             )
             self.router.return_capital(sym, actual_proceeds)
 
