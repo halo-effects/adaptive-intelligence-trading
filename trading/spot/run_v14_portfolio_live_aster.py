@@ -2381,21 +2381,6 @@ class V14PortfolioLiveAster:
                     # exchange data, no need to wait for a daily boundary.
                     # The engine is initialized in LONG_DCA phase and ready to trade.
                     cs.engine._warmed_up = True
-                    # Skip historical candle replay: set last_candle_ts to
-                    # the most recent closed candle so the main loop only
-                    # processes NEW candles. The engine's signal state comes
-                    # from the scanner/DB — replaying 50h of candles causes
-                    # phantom orders at stale prices and corrupts avg_entry.
-                    try:
-                        recent = self._fetch_candles(sym)
-                        if recent:
-                            cs.last_candle_ts = recent[-1]["timestamp"]
-                            logger.info(
-                                f"  {sym} candle anchor set to "
-                                f"{datetime.fromtimestamp(cs.last_candle_ts/1000, tz=timezone.utc).strftime('%H:%M UTC')}"
-                            )
-                    except Exception:
-                        cs.last_candle_ts = int(time.time() * 1000) - 3600_000
                     self.coins[sym] = cs
                     active_count += 1  # Track newly added coin toward cap
                     # Set leverage on exchange for new coin
