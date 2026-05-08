@@ -47,6 +47,8 @@ _Non-negotiable rules from production incidents. Violating these causes real dam
 
 24. **In-memory state is not validation.** A bot "running fine" in memory can mask broken code/dependencies for days. The code on disk must always be import-clean. (2026-05-08)
 
+25. **All code changes must be committed and pushed.** Local-only file edits are not durable — any `git pull`, data sync, or rebase will overwrite them. If it's not on `origin/main`, it's not real. (2026-05-08)
+
 ## Communication
 
 15. **Don't build narratives from user prompts** — let data lead. If Brett asks about DeFi coins, check the data before recommending DeFi coins. (2026-03-03)
