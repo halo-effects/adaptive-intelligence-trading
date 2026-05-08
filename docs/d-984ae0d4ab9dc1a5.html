@@ -936,7 +936,10 @@ function renderAIPanel(){
 // COMPOUNDING TRACKER
 function renderCompounding(){
   var seed=S.seed_capital||S.capital||10000, cap=S.capital||10000, eq=S.equity||cap;
-  // Use seed_capital for growth calculation to avoid inflating from deposits
+  // Use seed_capital for starting capital display and growth calculation.
+  // S.capital is tracked_capital (includes deposits/realized PnL accumulation).
+  // S.seed_capital is the original CLI --capital value ($375).
+  var startCap=seed;
   var rpnl=0, deals=0, wins=0;
   if(trades.length>0){
     trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);rpnl+=p;deals++;if(p>0)wins++});
@@ -946,7 +949,7 @@ function renderCompounding(){
     wins=Math.round(deals*(S.win_rate||0)/100);
   }
   var wr=deals>0?(wins/deals*100):0;
-  var growth=cap>0?((eq-cap)/cap*100):0;
+  var growth=startCap>0?((eq-startCap)/startCap*100):0;
   var days=1;
   if(trades&&trades.length>1){
     var earliest=new Date(trades[0].open_time);
@@ -961,25 +964,25 @@ function renderCompounding(){
   } else if(S.uptime_hours>24){ days=S.uptime_hours/24; }
   var dailyRate=rpnl/days;
   var monthlyProj=dailyRate*30;
-  var dailyPct=cap>0?(dailyRate/cap):0;
-  var annualProj=dailyPct>0&&dailyPct<0.1?cap*(Math.pow(1+dailyPct,365)-1):dailyRate*365;
+  var dailyPct=startCap>0?(dailyRate/startCap):0;
+  var annualProj=dailyPct>0&&dailyPct<0.1?startCap*(Math.pow(1+dailyPct,365)-1):dailyRate*365;
 
   $('compCards').innerHTML=
-    '<div class="comp-card"><div class="cc-lbl">Starting Capital</div><div class="cc-val">'+fUsd(cap)+'</div></div>'+
-    '<div class="comp-card"><div class="cc-lbl">Current Equity</div><div class="cc-val" style="color:'+pC(eq-cap)+'">'+fUsd(eq)+'</div></div>'+
+    '<div class="comp-card"><div class="cc-lbl">Starting Capital</div><div class="cc-val">'+fUsd(startCap)+'</div></div>'+
+    '<div class="comp-card"><div class="cc-lbl">Current Equity</div><div class="cc-val" style="color:'+pC(eq-startCap)+'">'+fUsd(eq)+'</div></div>'+
     '<div class="comp-card"><div class="cc-lbl">Growth</div><div class="cc-val" style="color:'+pC(growth)+'">'+(growth>=0?'+':'')+fmt(growth)+'%</div></div>'+
     '<div class="comp-card"><div class="cc-lbl">Deals / Win Rate</div><div class="cc-val">'+deals+'</div><div class="cc-sub">'+fmt(wr,1)+'% win rate</div></div>';
 
   var milestones=[25000,50000,100000,250000,500000,1000000];
-  var target=cap*2;
+  var target=startCap*2;
   for(var mi=0;mi<milestones.length;mi++){if(milestones[mi]>eq){target=milestones[mi];break}}
   var fillPct=Math.min(Math.max((eq/target)*100,0),100);
   $('compFill').style.width=fillPct+'%';
-  $('compStart').textContent=fUsd(cap);
+  $('compStart').textContent=fUsd(startCap);
   $('compTarget').textContent='Next: '+fUsd(target);
 
   $('projCards').innerHTML=
-    '<div class="proj-card"><div class="pj-lbl">Daily Rate</div><div class="pj-val">'+fUsd(dailyRate)+'</div><div class="pj-sub">'+fmt(cap>0?(dailyRate/cap*100):0,3)+'% / day</div></div>'+
+    '<div class="proj-card"><div class="pj-lbl">Daily Rate</div><div class="pj-val">'+fUsd(dailyRate)+'</div><div class="pj-sub">'+fmt(startCap>0?(dailyRate/startCap*100):0,3)+'% / day</div></div>'+
     '<div class="proj-card"><div class="pj-lbl">Monthly Projection</div><div class="pj-val">'+fUsd(monthlyProj)+'</div><div class="pj-sub">Based on '+fmt(days,0)+' days data</div></div>'+
     '<div class="proj-card"><div class="pj-lbl">Annual Projection</div><div class="pj-val">'+fUsd(annualProj)+'</div><div class="pj-sub">Compound estimate</div></div>';
 }
