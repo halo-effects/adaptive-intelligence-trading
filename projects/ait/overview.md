@@ -38,17 +38,28 @@ _Last updated: 2026-03-10_
 | Macro conviction signals observational | 2026-03-08 | 6 index-level signals documented, not wired into bot logic |
 | Trend multiplier gates entry not exit | 2026-03-06 | Declining coins get less capital but existing positions stay |
 
-## Current State (2026-03-10)
-- **V14PM**: $50,504 equity, 22 trades, 100% win rate, 10/10 coin slots
-- **V14 Paper**: $69K+ equity, 374+ deals, 97.6% win rate
-- **V14-ETF Paper**: $10K+, running
-- **V14 Live (Aster)**: $300 real, ASTER/USDT, running
-- **All bots restarted post-OpenClaw 2026.3.8 upgrade** (March 9)
-- **Full audit complete** — 3 critical bugs found and fixed (DB path, state persistence, daily resampling)
+## Current State (2026-05-08)
+- **V14PM Live (Aster)**: $385 equity, 95 trades, 85.3% win rate, $96.74 realized PnL, 3 coin slots
+  - DEX-as-truth startup: reads wallet balance directly from exchange
+  - Reconciliation & auto deposit detection disabled (caused corruption)
+  - Candle replay guard active (4500s threshold for 1h candles)
+  - Positions: PENDLE 7.0 qty, TON 61.7 qty (oversized from churn, approved to hold)
+- **V14 Paper**: Running on Hyperliquid
+- **V14-ETF Paper**: Running
+- **V14 Live (Aster, single-coin)**: ASTER/USDT, running
+- **Data sync cron**: Fixed Windows pathspec bug that was overwriting source files
+
+## Key Decisions (Recent)
+| Decision | Date | Detail |
+|----------|------|--------|
+| DEX-as-truth for capital | 2026-05-08 | Exchange wallet balance IS capital. No more state.json/ledger/CLI for capital. |
+| Reconciliation disabled | 2026-05-08 | Heuristic fill-grouping creates phantom trades from churn. TP recovery handles missed fills. |
+| Auto deposit detection disabled | 2026-05-08 | Formula broken for DEX-as-truth. Manual DEPOSIT/WITHDRAW commands only. |
+| Candle replay guard 4500s | 2026-05-08 | 1h candles are ~60min old normally. 300s was too tight. |
 
 ## Next Steps
-1. Cloud migration (Linux server, Hyperliquid mainnet)
-2. Create `run_v14_portfolio_live.py` (live runner with real orders)
-3. Centralize DB_PATH into single config module
-4. Correlation gate (halt new entries when >60% of coins at L4+)
-5. Rename V13SignalPack → SignalPack (maintenance window)
+1. **Database migration**: Replace CSV with SQLite (proper deal IDs, ACID transactions, no corruption)
+2. **Cloud migration**: Linux server, Hyperliquid mainnet (Phase 1: 6-10 weeks)
+3. **Re-enable deposit detection**: Rewrite formula for DEX-as-truth (compare current vs previous balance, not complex PnL math)
+4. Centralize DB_PATH into single config module
+5. Correlation gate (halt new entries when >60% of coins at L4+)

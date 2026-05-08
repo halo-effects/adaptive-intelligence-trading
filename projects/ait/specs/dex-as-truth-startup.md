@@ -1,6 +1,6 @@
 # Spec: DEX-as-Truth Startup Sequence
 
-**Status**: DRAFT — needs approval before implementation
+**Status**: IMPLEMENTED (2026-05-08) — deployed and verified
 **Date**: 2026-05-08
 **Priority**: CRITICAL (bot can't start with correct capital)
 

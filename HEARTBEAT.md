@@ -5,13 +5,15 @@
 ### V14 Live Bot (Aster — ASTER/USDT) ⚠️ REAL MONEY
 - Check `trading/spot/live/v14/status.json` for bot health
 - Alert if: `running` is false, drawdown > 15%, or status.json stale (>65 min)
-- **Capital: $300** real USDT. Alert if balance drifts significantly.
+- **Capital: reads from DEX on startup** (was $300 seed, now ~$385 with PnL). Alert if status.json stale.
 - Profile: High, 12 layers, 1.5% TP, 1.5x leverage
 - Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "V14LiveAster"`
+- **PRE-FLIGHT REQUIRED**: `python -c "from trading.spot.run_v14_portfolio_live_aster import V14PortfolioLiveAster; print('OK')"` before every restart
 - Scheduled Task: `V14LiveAster` (at boot) — confirmed exists as of 2026-03-09
 - Manual restart: `python -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill`
 - Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
 - Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
+- **CHANGES 2026-05-08**: DEX-as-truth startup, reconciliation disabled, auto deposit detection disabled
 
 ### V14 Paper Bot (Hyperliquid — HBAR/ATOM/LINK/NEAR) — LIVE as of 2026-02-28
 - Check `trading/spot/paper/v14/status.json` for bot health
@@ -35,11 +37,19 @@
 - Scheduled Task: `V14ETFPaperBot` (created 2026-03-02)
 - Dashboard: `docs/dashboardV14ETF.html`
 
-### V14 PM (Portfolio Manager) Paper Bot — LIVE as of 2026-03-05
-- **Capital**: $50K paper. 10 coin slots (equity-tiered). Dynamic allocation with trend multiplier.
-- **Profile**: High, 12 layers, **1.0x leverage** (no leverage), Hyperliquid perps (longs + shorts)
-- **Allocation**: `Adjusted Score = Base DCA Score × Trend Multiplier` — accelerating coins boosted up to 1.5x, declining penalized down to 0.36x
-- **Coins**: Dynamically selected by cycle scanner daily (all 45 scanned coins eligible)
+### V14 PM (Portfolio Manager) Live Bot — Aster Perps
+- **Capital**: Reads from DEX on startup (~$385). 3 coin slots (equity-tiered at <$500).
+- **Profile**: High, 12 layers, **1.0x leverage** (no leverage), Aster Perps
+- **Positions**: PENDLE 7.0 qty, TON 61.7 qty (oversized, approved to hold)
+- **TP Orders**: PENDLE limit @ $2.0645, TON market sell
+- Check `trading/spot/live/v14pm/status.json` for bot health
+- Alert if: process not running or status.json stale (>65 min)
+- **PRE-FLIGHT REQUIRED before restart**: `python -c "from trading.spot.run_v14_portfolio_live_aster import V14PortfolioLiveAster; print('OK')"`
+- Entry point: `python -u -m trading.spot.run_v14_portfolio_live_aster --capital 300 --confirm --skip-backfill`
+- Dashboard: `docs/d-984ae0d4ab9dc1a5.html`
+- **CHANGES 2026-05-08**: DEX-as-truth startup, reconciliation disabled, auto deposit detection disabled, candle replay guard (4500s)
+
+### V14 PM Paper Bot (Hyperliquid)
 - Check `trading/spot/paper/v14_portfolio/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
 - Scheduled Task: `V14PMPaperBot` (at login)

@@ -1,6 +1,22 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+## 2026-05-08
+- **INCIDENT: Restart cascade from data sync cron overwriting `v14_capital_manager.py`.** Data sync cron on May 6 committed a truncated paper-bot version of the capital manager to git. Bot ran in memory (masking the break) until manual restart triggered ImportError. 113 spread-reject round trips during attempted restarts, $5.75 lost, CSV corrupted.
+- **Candle replay guard deployed** (`candle-replay-guard.md`): Suppresses order execution when candle timestamp >75 min old. Prevents spread-reject churn during restart catch-up. Initial threshold of 300s was too tight for 1h candles (fixed to 4500s).
+- **DEX-as-truth startup sequence** (`dex-as-truth-startup.md`): Exchange wallet balance is now the sole source of truth for capital on startup. Calculates seed, realized PnL, and unrealized from DEX + CSV. Eliminates dependency on state.json/ledger for capital.
+- **Auto deposit/withdrawal detection DISABLED.** Formula was fundamentally broken: subtracted realized PnL from exchange balance, causing every profitable trade to trigger a phantom withdrawal. Manual DEPOSIT/WITHDRAW Telegram commands still work.
+- **Startup reconciliation DISABLED.** Heuristic fill-grouping algorithm created phantom trades from spread-reject churn (-$94.79 TON, -$22.65 PENDLE). TP order recovery already handles missed fills.
+- **Data sync script fixed**: `git reset HEAD -- ':!docs/'` pathspec negation broken on Windows — replaced with explicit per-file unstage loop. Sync repo nuked for fresh clone.
+- **Capital ledger reset**: Purged 9 phantom deposit/withdrawal entries. Reset to clean seed=$300.
+- **Trade history corrected**: DEX-verified ENA (2 deals) and TON (5 deals) trades replaced bad reconciliation entries. 95 trades, 85.3% win rate, $96.74 realized PnL.
+- **Incident report**: `projects/ait/specs/incident-2026-05-08-restart.md`
+- **Bot-side trailing TP spec**: `projects/ait/specs/bot-side-trailing-tp.md` (deployed)
+- **Bot-side TP race fix spec**: `projects/ait/specs/bot-side-tp-race-fix.md` (deployed)
+- **Commercial readiness assessment v2**: `projects/ait/specs/commercial-readiness-assessment.md`
+- **Auto seed capital spec**: `projects/ait/specs/auto-seed-capital.md` (superseded by DEX-as-truth)
+- Updated: `run_v14_portfolio_live_aster.py`, `sync_dashboard.ps1`, `capital_ledger.json`, `state.json`
+
 ## 2026-05-05
 - **Trade Reconciliation System built.** CSV trade log had drifted from exchange reality: 8 duplicate deal IDs, 3 missing IDs, and a missing profitable PYTH trade (+$0.91) from a forced API close that bypassed TradeTracker.
 - **New: `reconcile_trades.py`** — standalone CLI tool that connects to Aster DEX, fetches all fill history, reconstructs deals, and compares against trades.csv. Modes: `--dry-run` (default), `--fix` (exchange-truth rewrite), `--fix-ids` (sort + reassign IDs only).

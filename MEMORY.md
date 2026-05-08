@@ -18,15 +18,16 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
-## AIT — Current State (2026-03-10)
-- **V14PM Paper (MVP)**: $50,440 equity, 30 trades, 100% win rate, $50K capital, 10 coin slots
-- **V14 Live (Aster)**: $311 real, ASTER/USDT
-- **V14 Paper**: $48K+ equity, 380 deals | **V14-ETF Paper**: $10.5K+ equity, fixed PID lock and equity sync issues.
-- **All 4 bots running** on Windows. Cloud migration pending.
-- **Full audit complete 2026-03-10**: Fixed critical DB path bug (blind top/bottom detection), added state persistence (no more phantom trades), added daily resampling (19 blind coins now have signal data).
-- **Dashboard Fixes (2026-03-10)**: Corrected V14 dashboards to show "Trade Score" (Base Score × Trend Mult) and sort by it to accurately reflect bot logic.
-- **CSV-as-truth fix applied** to all 4 runners. V14-ETF equity bug fixed to enforce capital + CSV logic strictly.
-- **Architecture doc v1.2, Migration doc v1.2, Audit doc §11** all updated.
+## AIT — Current State (2026-05-08)
+- **V14PM Live (Aster)**: $385 equity, 95 trades, 85.3% win rate, $96.74 realized PnL, 3 coin slots
+  - DEX-as-truth startup: reads wallet balance directly from exchange
+  - Reconciliation & auto deposit detection disabled (caused corruption)
+  - Positions: PENDLE 7.0, TON 61.7 (oversized from churn, approved to hold)
+- **V14 Live (Aster)**: ASTER/USDT single-coin, running
+- **V14 Paper**: Running on Hyperliquid
+- **V14-ETF Paper**: Running
+- **Major incident 2026-05-08**: Data sync cron overwrote capital_manager.py → restart cascade → 113 spread-reject round trips → CSV/capital corruption. Fixed with DEX-as-truth startup, disabled reconciliation/deposit detection, fixed sync script Windows pathspec bug.
+- **6 new hard rules** added (19-24) from incident. See `tacit/hard-rules.md`.
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.

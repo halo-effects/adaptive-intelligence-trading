@@ -62,6 +62,34 @@ _Hard-won knowledge from production incidents and development._
 - Ranging exit explicitly REMOVED in V14 (caused 4+ interruptions/coin in v0.1)
 - DCA naturally handles ranging (grid buys dips, TPs on bounces)
 
+### Data Sync Cron Can Overwrite Source Files (2026-05-08)
+- The dashboard sync script uses a separate temp repo with sparse checkout
+- It does `git add docs/` then `git reset HEAD -- ':!docs/'` to unstage non-docs files
+- The `':!docs/'` pathspec negation **doesn't work on Windows PowerShell**
+- Result: `v14_capital_manager.py` got committed in a "Data sync" commit and pushed to remote
+- Every `git pull` in the workspace then restored the bad version
+- **Fix**: Replaced pathspec negation with explicit per-file unstage loop
+- **Rule**: Always verify pathspec behavior on Windows. PowerShell quotes interact badly with git pathspecs.
+
+### DEX-as-Truth Eliminates Capital Corruption (2026-05-08)
+- The bot had 5 systems fighting over capital: CLI arg, state.json, ledger.json, reconciliation, deposit detection
+- Each restart compounded errors: reconciliation added phantom trades → deposit detection "corrected" by adding fake deposits → state file carried forward corrupted capital
+- DEX wallet balance ($385) vs bot's calculation ($597 or $288) — neither internal number was real
+- **Fix**: Read exchange balance on startup. Period. No other source of truth for capital.
+- **Rule**: When you have a single authoritative source (the exchange), USE IT. Don't build complex math to approximate what you can just ask.
+
+### Auto-Detection Heuristics Are Fragile (2026-05-08)
+- Reconciliation: groups DEX fills into "deals" using time windows and qty matching. Churn fills break the grouping.
+- Deposit detection: `exchange_total - unrealized - realized vs tracked_capital`. Works only when tracked_capital IS the seed. Breaks when tracked_capital is the exchange balance.
+- Both systems failed silently by doing the wrong thing confidently.
+- **Rule**: Heuristic systems need kill switches and manual overrides. "Auto" is not always better.
+
+### In-Memory State Masks Code Corruption (2026-05-08)
+- Bot ran fine in memory for hours after `v14_capital_manager.py` was overwritten on disk
+- Only failed when manually restarted (fresh import required)
+- A "running" process is not proof that code on disk is valid
+- **Rule**: Pre-flight import test before every restart. `python -c "from module import Class; print('OK')"`
+
 ## Operations
 
 ### Stop Gateway Before OpenClaw npm Install (2026-03-02, 2026-03-09)

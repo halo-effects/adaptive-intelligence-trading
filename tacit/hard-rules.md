@@ -35,6 +35,18 @@ _Non-negotiable rules from production incidents. Violating these causes real dam
 
 14. **Never silence error output** from git push, API calls, or critical operations. Log failures explicitly. (2026-03-09)
 
+19. **Never restart a live bot without pre-flight import test.** Run `python -c "from trading.spot.run_v14_portfolio_live_aster import V14PortfolioLiveAster; print('OK')"` before every restart. A running bot masks broken dependencies until restart forces fresh import. (2026-05-08)
+
+20. **Never batch unrelated fixes into one restart.** Dashboard HTML changes and code changes are separate operations. One fix per restart, verify each independently. (2026-05-08)
+
+21. **Never implement code changes without an explicit spec and approval.** Spec → approval → pre-flight → careful restart. Ad-hoc edits to production code cause cascading failures. (2026-05-08)
+
+22. **Data sync cron must NEVER commit source files.** The sync script stages `docs/` only. If non-docs files appear in staging, unstage them explicitly before committing. (2026-05-08)
+
+23. **DEX is the sole source of truth for capital.** Never trust state.json, ledger, or CLI args for capital on startup. Read the exchange wallet balance. (2026-05-08)
+
+24. **In-memory state is not validation.** A bot "running fine" in memory can mask broken code/dependencies for days. The code on disk must always be import-clean. (2026-05-08)
+
 ## Communication
 
 15. **Don't build narratives from user prompts** — let data lead. If Brett asks about DeFi coins, check the data before recommending DeFi coins. (2026-03-03)
