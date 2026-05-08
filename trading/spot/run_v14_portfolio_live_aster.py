@@ -1112,56 +1112,15 @@ class V14PortfolioLiveAster:
         if self._exchange_usdt_total <= 0:
             return  # No exchange data yet
 
-        # Compute drift: exchange total vs tracked capital
-        # Exchange total includes unrealized PnL, so subtract it for capital comparison
-        total_invested = sum(
-            cs.allocated_capital for cs in self.coins.values()
-            if cs.engine and cs.engine._engine and cs.engine._engine.long_coins > 0
-        )
-        total_unrealized = 0.0
-        for sym, cs in self.coins.items():
-            if not cs.engine or not cs.engine._engine:
-                continue
-            eng = cs.engine._engine
-            if eng.long_coins > 0 and sym in self._last_exchange_positions:
-                pos = self._last_exchange_positions.get(sym.split("/")[0], {})
-                mark = pos.get("mark_price") or pos.get("entry_price") or 0
-                if mark and eng.long_avg_entry:
-                    total_unrealized += (mark - eng.long_avg_entry) * eng.long_coins
+        # AUTO DEPOSIT/WITHDRAWAL DETECTION: DISABLED (2026-05-08)
+        # The heuristic formula (exchange_total - unrealized - realized vs tracked)
+        # creates phantom deposits/withdrawals because realized PnL changes the
+        # exchange balance without a real deposit/withdrawal.
+        # Use manual DEPOSIT/WITHDRAW Telegram commands instead.
+        # The bot reads capital from DEX on every startup (DEX-as-truth).
+        return
 
-        # Capital approximation: exchange total minus unrealized PnL minus realized PnL
-        # Without subtracting realized PnL, profits from TP fills would be
-        # misidentified as deposits (exchange balance rises from trading gains).
-        exchange_capital = self._exchange_usdt_total - total_unrealized - self._cumulative_realized_pnl
-        drift = exchange_capital - self._tracked_capital
-
-        # Threshold: max($5, 2% of tracked capital)
-        threshold = max(CAPITAL_DRIFT_MIN_USD,
-                        self._tracked_capital * CAPITAL_DRIFT_MIN_PCT)
-
-        if abs(drift) < threshold:
-            return  # Within normal range
-
-        # Determine type
-        tx_type = "deposit" if drift > 0 else "withdrawal"
-        tx_amount = abs(drift)
-        drift_pct = abs(drift) / max(self._tracked_capital, 1) * 100
-
-        # Safety: reject withdrawals that would drop capital below total invested
-        if tx_type == "withdrawal" and (self._tracked_capital - tx_amount) < total_invested:
-            logger.warning(
-                f"Withdrawal detected (${tx_amount:.2f}) but would drop capital below "
-                f"invested (${total_invested:.2f}). Alerting but not auto-adjusting."
-            )
-            send_telegram(
-                f"⚠️ {TG_PREFIX} <b>Balance drift: -{drift_pct:.1f}%</b>\n"
-                f"Exchange capital: ${exchange_capital:.2f}\n"
-                f"Tracked capital: ${self._tracked_capital:.2f}\n"
-                f"Cannot auto-adjust: invested=${total_invested:.2f}\n"
-                f"Use CLOSE positions first, or WITHDRAW {tx_amount:.0f} to force."
-            )
-            return
-
+        # --- DEAD CODE BELOW (preserved for reference) ---
         # Record to ledger
         note = f"Auto-detected via exchange sync ({drift_pct:.1f}% drift)"
         record_ledger_transaction(LEDGER_PATH, tx_type, tx_amount, note=note)
@@ -1568,7 +1527,7 @@ class V14PortfolioLiveAster:
 
         Returns the number of recovered trades.
         """
-        RECONCILE_WINDOW_HOURS = 48
+        RECONCILE_WINDOW_HOURS = 2  # Narrowed from 48h to skip churn artifacts from 2026-05-08 restart incident
         # Match window for close_time proximity.
         # Note: _recover_tp_orders() records close_time as now(), which can
         # differ from exchange fill timestamp if bot was down. We also
@@ -3263,8 +3222,46 @@ class V14PortfolioLiveAster:
             # Audit #6: TP recovery — check if any TP orders filled while bot was down
             self._recover_tp_orders()
 
-            # Reconcile trades: recover any deals missed while bot was down (last 48h)
-            self._reconcile_trades_on_startup()
+            # NOTE: Reconciliation DISABLED (2026-05-08). The heuristic fill-grouping
+            # algorithm creates phantom trades from spread-reject churn. TP recovery
+            # above already handles missed fills. DEX is source of truth.
+            # self._reconcile_trades_on_startup()
+
+            # ── DEX-as-Truth Capital ──────────────────────────────────────
+            # The exchange wallet balance IS the capital. Everything else
+            # (state.json, ledger, CLI arg) is secondary.
+            try:
+                dex_balance = self.client._exchange.fetch_balance()
+                dex_total = float(dex_balance.get("USDT", {}).get("total", 0))
+                if dex_total > 0:
+                    # Realized PnL from CSV (append-only trade log)
+                    csv_pnl = sum(float(t.get("pnl", 0)) for t in self.tracker.trades)
+
+                    # Unrealized PnL from current positions
+                    unrealized = 0.0
+                    for pos_data in self._last_exchange_positions.values():
+                        unrealized += float(pos_data.get("unrealized_pnl", 0) or 0)
+
+                    # Set all capital variables consistently
+                    self._tracked_capital = dex_total
+                    self.capital = dex_total
+                    self._cumulative_realized_pnl = csv_pnl
+                    self._seed_capital = dex_total - csv_pnl - unrealized
+                    self.router.resize(dex_total)
+
+                    # Suppress deposit detection for 3 cycles so it doesn't
+                    # "correct" the DEX-sourced capital on the first sync
+                    self._deposit_detect_suppress_until = time.time() + (LIVE_POLL_INTERVAL * 3)
+
+                    logger.info(
+                        f"DEX-as-truth: balance=${dex_total:.2f} "
+                        f"seed=${self._seed_capital:.2f} "
+                        f"realized=${csv_pnl:.2f} unrealized=${unrealized:.2f}"
+                    )
+                else:
+                    logger.warning("DEX balance is $0 — using state.json capital as fallback")
+            except Exception as e:
+                logger.warning(f"DEX capital read failed, using state.json fallback: {e}")
 
             # Announce startup
             mode_str = "PAUSED" if self.bot_state == BotState.PAUSED else "RUNNING"
