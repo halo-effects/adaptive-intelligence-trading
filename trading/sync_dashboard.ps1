@@ -150,7 +150,15 @@ if ((Test-Path $equityScript) -and (Test-Path $pythonExe)) {
 git add docs/
 # SAFETY: After soft-reset, non-docs files from merge commits may appear as
 # staged deletions. Unstage everything outside docs/ to prevent accidental deletion.
-git reset HEAD -- ':!docs/' --quiet 2>$null
+# The ':!docs/' pathspec negation is unreliable on Windows/sparse-checkout.
+# Instead, explicitly unstage any non-docs files that got pulled in.
+$staged = git diff --cached --name-only 2>$null
+foreach ($f in $staged) {
+    if ($f -and -not $f.StartsWith("docs/")) {
+        git reset HEAD -- $f --quiet 2>$null
+        Write-Host "SAFETY: unstaged non-docs file: $f"
+    }
+}
 $changes = git status --porcelain
 if ($changes) {
     $ts = Get-Date -Format "yyyy-MM-dd HH:mm"
