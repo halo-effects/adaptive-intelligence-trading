@@ -3342,30 +3342,55 @@ class V14PortfolioLiveAster:
                             logger.warning(f"No candle data for {sym}")
                             continue
 
-                        for candle in candles:
-                            ts_ms = candle["timestamp"]
-                            if ts_ms <= cs.last_candle_ts:
-                                continue  # Already processed
+                        # Filter to unprocessed candles only
+                        new_candles = [c for c in candles if c["timestamp"] > cs.last_candle_ts]
+                        if not new_candles:
+                            continue
 
-                            ts_dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
+                        # Identify the LAST (most recent) candle — only this one
+                        # may trigger real trades. All earlier candles are warmup-only
+                        # (indicators update, but no orders placed). This prevents
+                        # stale candle replay from executing real buys on old prices
+                        # after restarts or when new engines are created mid-session.
+                        last_candle_ts = new_candles[-1]["timestamp"]
+                        warmup_count = len(new_candles) - 1
+                        if warmup_count > 0:
                             logger.info(
-                                f"Candle {sym}: {ts_dt.strftime('%H:%M')} UTC | "
-                                f"O={candle['open']:.6f} H={candle['high']:.6f} "
-                                f"L={candle['low']:.6f} C={candle['close']:.6f}"
+                                f"Warming up {sym}: {warmup_count} candle(s) "
+                                f"(actions suppressed until current candle)"
                             )
 
-                            # Run engine tick
+                        for candle in new_candles:
+                            ts_ms = candle["timestamp"]
+                            is_current_candle = (ts_ms == last_candle_ts)
+
+                            ts_dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
+                            if is_current_candle or warmup_count <= 2:
+                                # Log all candles if few, or just the current one
+                                logger.info(
+                                    f"Candle {sym}: {ts_dt.strftime('%H:%M')} UTC | "
+                                    f"O={candle['open']:.6f} H={candle['high']:.6f} "
+                                    f"L={candle['low']:.6f} C={candle['close']:.6f}"
+                                )
+
+                            # Run engine tick (always — indicators need all candles)
                             try:
                                 actions = cs.engine.tick(candle, cash_available=cs.allocated_capital)
                             except Exception as e:
                                 logger.error(f"Engine tick failed for {sym}: {e}")
                                 continue
 
-                            if actions:
+                            # Only execute actions on the current (most recent) candle
+                            if actions and is_current_candle:
                                 logger.info(f"Engine actions for {sym}: {actions}")
                                 for action in actions:
                                     self._execute_action(sym, cs, action)
-                            else:
+                            elif actions and not is_current_candle:
+                                logger.info(
+                                    f"WARMUP SKIP {sym} @ {ts_dt.strftime('%H:%M')}: "
+                                    f"{len(actions)} action(s) suppressed"
+                                )
+                            elif is_current_candle:
                                 logger.info(
                                     f"Engine tick {sym}: no action "
                                     f"(warmed_up={cs.engine._warmed_up})"
