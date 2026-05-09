@@ -1716,6 +1716,26 @@ class V14PortfolioLiveAster:
             f"= ${actual_proceeds:.2f} (fee: ${fee:.4f})"
         )
 
+        # Exchange-truth: override deal invested with exchange entry × actual qty
+        # The tracker accumulates invested from on_buy using engine qty (which may
+        # differ from exchange filled qty due to lot-size rounding). The exchange
+        # entry price and actual sold qty are the authoritative numbers.
+        deal_key = f"{sym}:long"
+        if deal_key in self.tracker._open_deals:
+            base = sym.split("/")[0]
+            ex_pos = self._last_exchange_positions.get(base, {})
+            ex_entry = float(ex_pos.get("entry_price", 0) or 0)
+            if ex_entry > 0:
+                old_invested = self.tracker._open_deals[deal_key]["invested"]
+                new_invested = ex_entry * actual_qty
+                self.tracker._open_deals[deal_key]["invested"] = new_invested
+                if abs(old_invested - new_invested) > 0.01:
+                    logger.info(
+                        f"Exchange-truth invested for {sym}: "
+                        f"${old_invested:.4f} -> ${new_invested:.4f} "
+                        f"(entry=${ex_entry:.6f} x {actual_qty:.4f})"
+                    )
+
         # Record trade from actual exchange fill
         ts = datetime.now(timezone.utc)
         record = self.tracker.on_sell(
