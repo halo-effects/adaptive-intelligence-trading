@@ -787,11 +787,10 @@ function renderRiskProfile(){
 // PORTFOLIO ALLOCATION
 function renderPortfolioAlloc(){
   var allSyms=S.symbols||Object.keys(S.coins||{});
-  var approved=S.approved_symbols||[];
-  // Show only coins that are approved OR have capital invested (active positions)
+  // Show only coins with open positions (invested > 0)
   var syms=allSyms.filter(function(sym){
     var c=(S.coins||{})[sym]||{};
-    return (c.invested||0)>0 || approved.indexOf(sym)>=0;
+    return (c.invested||0)>0;
   });
   var eq=S.equity||0;
   var items=[];
