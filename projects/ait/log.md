@@ -2,6 +2,12 @@
 _Reverse chronological. Key events only._
 
 ## 2026-05-10
+- **V2 System Audit complete**: 60 findings across 11 phases (~15,000 lines reviewed). 2 CRITICAL + 1 HIGH fixed during audit, 10 more post-audit. See `specs/v2-audit-summary.md`.
+- **Post-audit Fix Now batch (6 items)**: #12 Steve symbol selection, #13 HybridDetector USDC preference, #21 scanner freshness warning, #24 candle quality validation, #49 stale task (needs admin), #51 stale lock recovery.
+- **Post-audit Quick Wins batch (4 items)**: #20 hurdle rate constant, #27 in-memory PnL reads, #43 phantom open_deal cleanup.
+- **Dashboard sync root cause fixed**: `sync_dashboard.ps1` used `git reset --soft origin/main` in sparse-checkout temp repo, populating index with full tree. Non-docs files committed/deleted in feedback loop. Fixed: fresh shallow clone per cycle.
+- **Trade history restored**: Git-recovered CSVs merged with current bot data. Paper: 671 + 79 new = 750 trades ($50,415 PnL). Live: 82 + 4 new = 86 trades ($13.96 PnL).
+- **seed_capital drift fixed**: DEX-as-truth startup derived seed from `balance - csv_pnl - unrealized`, which breaks on incomplete CSV. Drifted from $300 to $364. Fixed: seed_capital is immutable CLI --capital arg.
 - **Stale allocation cleanup deployed** (`stale-allocation-cleanup.md`): `router.active_allocations` accumulated coins forever — only removed on trade completion + not-in-top-N. Fix: reconcile against rebalance targets after each daily rebalance. Coins not in new targets with no open position are removed.
 - **Circular dependency fix**: Rebalance created engines for promoted coins (TON, JUP) but T1 gate blocked all entries because `active_allocations` wasn't populated until `request_capital()` ran inside `_execute_action()` — which the gate prevented. Fix: seed new coins into `active_allocations` from rebalance targets.
 - **Dashboard allocation filter**: Shows only coins with open positions (invested > 0). Removed stale `approved_symbols` reference that showed ghost coins.

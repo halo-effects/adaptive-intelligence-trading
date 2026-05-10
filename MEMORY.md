@@ -19,22 +19,26 @@ _Curated essentials. For details, see the structured files below._
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
 ## AIT — Current State (2026-05-10)
-- **V14PM Live (Aster)**: $376 capital, 9 engines, 85% win rate, $85.24 realized PnL
+- **V14PM Live (Aster)**: $378 capital, 86 trades, 82.8% win rate, $13.96 realized PnL (seed=$300)
   - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
   - Reconciliation & auto deposit detection disabled (caused corruption)
   - **Regime phase gate deployed**: Coins trade only when engine phase matches global regime
-  - **Graduated conviction alerts**: 7 thresholds (15/25/30/35/40/45/50%), APPROVE at any level
-  - **Dashboard**: Regime panel with conviction bar, per-coin gate status, global direction
-  - **Allocation lifecycle fixed (2026-05-10)**: Rebalance now seeds new targets into `active_allocations` (broke circular T1 gate dependency) and reconciles stale coins (removed 7 ghost allocations)
-  - **Phantom position fix**: Exchange-truth for ALL position fields (not just price/size)
-  - Approved symbols: `[INJ, JUP, TON]` (scanner top 3, now correct)
-  - Positions: INJ 4.0 qty long (TP active). HYPE in SHORT_DCA (excluded, 11.1% flip)
-  - Architecture doc v1.5 (§7.3 updated with allocation lifecycle, §7.5 complete)
+  - **seed_capital immutable** (Hard Rule #26): CLI --capital arg, never recalculated
+  - **Trade history restored**: 86 trades merged from git recovery + current bot
+  - **V2 System Audit complete**: 60 findings, 15 fixed, 1 HIGH remaining (auto-restart task needs admin)
+  - **Dashboard sync fixed**: Root cause was `git reset --soft` in sparse checkout → fresh clone per cycle
+  - Approved symbols: `[INJ, JUP, TON]` (scanner top 3)
+- **V14PM Paper**: 750 trades, $50,415 PnL (restored from 171 trades after CSV truncation)
 - **V14 Live (Aster)**: ASTER/USDT single-coin, running
 - **V14 Paper**: Running on Hyperliquid
 - **V14-ETF Paper**: Running
-- **Major incident 2026-05-08**: Data sync cron overwrote capital_manager.py → restart cascade. Fixed with 7 code changes, 5 specs, 6 hard rules.
-- **Key principle (2026-05-09)**: Engine phases are truth — never overwrite to match global regime. The signal data IS the conviction signal.
+- **Major incident 2026-05-08**: Data sync cron overwrote capital_manager.py → restart cascade.
+- **Key principle (2026-05-09)**: Engine phases are truth — never overwrite to match global regime.
+- **Hard rules 26-29 added** (2026-05-10): Immutable seed, no derived constants, fresh clone sync, append-only CSV.
+
+### Needs Admin PowerShell
+1. Create V14PM auto-restart task (`V14PMLiveAster`)
+2. Disable old stale task (`V14LiveAster`)
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.

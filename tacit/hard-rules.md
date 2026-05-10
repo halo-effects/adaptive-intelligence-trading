@@ -49,6 +49,14 @@ _Non-negotiable rules from production incidents. Violating these causes real dam
 
 25. **All code changes must be committed and pushed.** Local-only file edits are not durable — any `git pull`, data sync, or rebase will overwrite them. If it's not on `origin/main`, it's not real. (2026-05-08)
 
+26. **seed_capital is immutable.** It's the CLI `--capital` argument, set once in `__init__`, never recalculated. Deriving seed from `balance - csv_pnl` breaks whenever the CSV is incomplete (fills while bot was down, truncation, missed TPs). This caused seed to drift from $300 to $364 and broke the equity chart. (2026-05-10)
+
+27. **Never derive constants from other derived values.** If A depends on B being complete and B can be incomplete, A will be wrong silently. Use immutable anchors (CLI args, config files, first-write-wins) for foundational values. (2026-05-10)
+
+28. **Dashboard sync must use fresh clone, not soft-reset.** `git reset --soft` in a sparse-checkout repo populates the index with the FULL remote tree, not just the sparse paths. Non-docs files silently persist in the index and get committed/deleted in a feedback loop. Fresh shallow clone per cycle is the only safe approach. (2026-05-10)
+
+29. **Trade CSV is append-only.** Never truncate, overwrite, or rebuild trades.csv while a bot is running. If restoration is needed: stop bot → backup → merge → restart. Dedup by canonical key (symbol, open_time, close_time). (2026-05-10)
+
 ## Communication
 
 15. **Don't build narratives from user prompts** — let data lead. If Brett asks about DeFi coins, check the data before recommending DeFi coins. (2026-03-03)

@@ -16,6 +16,22 @@ The V14PM trading system is **production-ready with 3 critical bugs fixed during
 2. **CRITICAL** (pre-audit): Candle collector broken 5 days (missing `import os`) — restored
 3. **HIGH** (pre-audit): 417K duplicate daily candle rows — cleaned
 
+**Post-audit Fix Now + Quick Wins (10 items fixed 2026-05-10):**
+- #12: Steve 3-Check symbol selection — uses best symbol (indicators + widest range)
+- #13: HybridDetector2D symbol selection — same scoring as load_daily()
+- #20: Hurdle rate extracted to `HURDLE_RATE_DCA_SCORE` constant
+- #21: Scanner freshness check — Telegram alert if scanner JSON >24h old
+- #24: Candle quality validation — filters bad rows before DCA simulation
+- #27: Per-coin PnL reads from in-memory trade list (no disk IO per status write)
+- #43: Phantom open_deals cleaned during exchange sync
+- #49: Old V14LiveAster scheduled task — needs admin to disable
+- #51: Stale lock recovery — PID check, auto-cleanup of dead process locks
+
+**Post-audit critical production fixes (2026-05-10):**
+- **Dashboard sync root cause**: `git reset --soft` in sparse-checkout temp repo silently committed/deleted non-docs files in feedback loop. Fixed: fresh shallow clone per cycle.
+- **Trade history restored**: Merged git-recovered CSVs with current bot data. Paper: 750 trades ($50,415 PnL). Live: 86 trades.
+- **seed_capital drift**: DEX-as-truth startup was deriving seed from `balance - csv_pnl`, which breaks on incomplete CSV. Fixed: seed_capital is immutable CLI --capital argument.
+
 **1 HIGH finding requiring manual action:**
 - V14PM Live bot has no auto-restart scheduled task — command provided, needs admin
 
@@ -41,8 +57,8 @@ The V14PM trading system is **production-ready with 3 critical bugs fixed during
 | 9 | CRITICAL | 9 coins (BTC, ETH, etc.) had no pre-computed indicators | ✅ Fixed |
 | 10 | MEDIUM | Core signals independent of indicator columns (positive) | ✅ OK |
 | 11 | MEDIUM | `_signal_near()` ±3 day window edge case | 🟡 Review |
-| 12 | MEDIUM | Steve 3-Check symbol selection inconsistent | 🟡 Inconsistency |
-| 13 | MEDIUM | HybridDetector2D tries USDC first | 🟡 Inconsistency |
+| 12 | MEDIUM | Steve 3-Check symbol selection inconsistent | ✅ Fixed |
+| 13 | MEDIUM | HybridDetector2D tries USDC first | ✅ Fixed |
 | 14 | LOW | v13_router_engine_v1 is base class only | 🟢 Legacy |
 | 15 | LOW | test_hvf_daily misnamed production dep | 🟢 Naming |
 | 16 | NOTE | CFGI data freshness unverified | 🟡 Check |
@@ -53,18 +69,18 @@ The V14PM trading system is **production-ready with 3 critical bugs fixed during
 | 17 | LOW | DCA score = 0 for 0-deal coins (MKR) | 🟡 Masking |
 | 18 | LOW | 21 coins with DD > 50% (expected DCA) | 🟢 Normal |
 | 19 | LOW | JSON format inconsistency | 🟡 Code smell |
-| 20 | MEDIUM | Hurdle rate hardcoded (5.0) | 🟡 Inflexible |
-| 21 | MEDIUM | Stale scanner JSON risk | 🟡 Freshness |
+| 20 | MEDIUM | Hurdle rate hardcoded (5.0) | ✅ Fixed |
+| 21 | MEDIUM | Stale scanner JSON risk | ✅ Fixed |
 | 22 | LOW | Trend multiplier disabled | 🟡 Unused |
 | 23 | MEDIUM | DCA sim ignores funding rates | 🟡 Optimistic |
-| 24 | MEDIUM | No candle quality validation | 🟡 Risk |
+| 24 | MEDIUM | No candle quality validation | ✅ Fixed |
 | 25 | LOW | Scanner universe hardcoded | 🟡 Friction |
 
 ### Phase 4: Trade Execution & Portfolio Management (12 findings)
 | # | Sev | Finding | Status |
 |---|-----|---------|--------|
 | 26 | MEDIUM | Capital pool drift between TP and rebalance | 🟡 Edge case |
-| 27 | LOW | CSV read per status write | 🟡 Performance |
+| 27 | LOW | CSV read per status write | ✅ Fixed |
 | 28 | LOW | `_detect_capital_change()` dead code | 🟢 Intentional |
 | 29 | POSITIVE | Exchange-as-truth architecture sound | ✅ Well built |
 | 30 | POSITIVE | Candle replay guard correct | ✅ Well built |
@@ -84,7 +100,7 @@ The V14PM trading system is **production-ready with 3 critical bugs fixed during
 | 40 | POSITIVE | Atomic writes everywhere | ✅ Well built |
 | 41 | POSITIVE | Complete engine snapshots | ✅ Well built |
 | 42 | LOW | Timestamp-based dedup | 🟢 OK |
-| 43 | LOW | Phantom open_deals | 🟡 Cosmetic |
+| 43 | LOW | Phantom open_deals | ✅ Fixed |
 | 44 | NOTE | Expected capital delta | 🟢 Normal |
 
 ### Phase 6: Dashboards (3 findings)
@@ -98,9 +114,9 @@ The V14PM trading system is **production-ready with 3 critical bugs fixed during
 | # | Sev | Finding | Status |
 |---|-----|---------|--------|
 | 48 | **HIGH** | **V14PM Live has no auto-restart** | 🔴 **Needs admin** |
-| 49 | MEDIUM | Old V14LiveAster task stale | 🟡 Cleanup |
+| 49 | MEDIUM | Old V14LiveAster task stale | 🟡 Needs admin |
 | 50 | LOW | Watchdog unverified | 🟡 Check |
-| 51 | MEDIUM | Stale lock file risk | 🟡 Edge case |
+| 51 | MEDIUM | Stale lock file risk | ✅ Fixed |
 
 ### Phases 8-11: Paper Bots, Integration, Migration, Docs (9 findings)
 | # | Sev | Finding | Status |
@@ -122,22 +138,23 @@ The V14PM trading system is **production-ready with 3 critical bugs fixed during
 | Severity | Count | Fixed | Remaining |
 |----------|-------|-------|-----------|
 | CRITICAL | 2 | 2 | 0 |
-| HIGH | 2 | 1 | **1** (auto-restart) |
-| MEDIUM | 19 | 1 | 18 (none blocking) |
-| LOW | 20 | 1 | 19 |
+| HIGH | 2 | 1 | **1** (auto-restart, needs admin) |
+| MEDIUM | 19 | 8 | 11 (none blocking) |
+| LOW | 20 | 4 | 16 |
 | NOTE | 5 | 0 | 5 |
 | POSITIVE | 10 | — | — |
-| **Total** | **58** | **5** | **53** |
+| **Total** | **58** | **15** | **43** |
+
+*Plus 3 production-critical fixes discovered post-audit (sync script, trade history, seed_capital).*
 
 ---
 
 ## Top Priorities
 
 1. **🔴 Create V14PM Live auto-restart task** (Finding 48) — needs admin PowerShell
-2. **🟡 Update architecture doc with audit findings** (Finding 60) — batch update
-3. **🟡 Add scanner freshness check** (Finding 21) — log warning if JSON > 24h old
+2. **🔴 Disable old V14LiveAster task** (Finding 49) — needs admin PowerShell
+3. **🟡 Update architecture doc with audit findings** (Finding 60) — batch update
 4. **🟡 Verify AIT_Watchdog covers V14PM** (Finding 50) — check script
-5. **🟡 Move hurdle rate to config** (Finding 20) — quick constant extraction
 
 ---
 

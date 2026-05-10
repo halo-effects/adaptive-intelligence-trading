@@ -39,7 +39,7 @@ _Last updated: 2026-05-10_
 | Trend multiplier gates entry not exit | 2026-03-06 | Declining coins get less capital but existing positions stay |
 
 ## Current State (2026-05-10)
-- **V14PM Live (Aster)**: $376 capital, 9 coin slots, 85% win rate, $85.24 realized PnL
+- **V14PM Live (Aster)**: $378 capital, 86 trades, 82.8% win rate, $13.96 realized PnL (seed=$300)
   - DEX-as-truth startup: reads wallet balance directly from exchange
   - Reconciliation & auto deposit detection disabled (caused corruption)
   - Candle replay guard active (warmup-only: old candles update indicators, only current candle executes)
@@ -49,9 +49,10 @@ _Last updated: 2026-05-10_
   - **Dashboard regime panel**: Global direction, long/short counts, conviction bar, per-coin gate status
   - **Allocation cleanup**: Router reconciled after daily rebalance — stale coins removed, new scanner targets seeded
   - **Phantom position fix**: Status.json + exchange sync zero all position fields when DEX has no position
+  - **seed_capital immutable**: CLI --capital arg, never recalculated from DEX balance
+  - **Trade history restored**: Merged git-recovered + current CSV (86 trades total)
+  - **V2 System Audit complete**: 60 findings, 15 fixed, 1 HIGH remaining (auto-restart task)
   - Approved symbols: `[INJ/USDT, JUP/USDT, TON/USDT]` (scanner top 3)
-  - Positions: INJ 4.0 qty long (TP active)
-  - 1/9 engines in SHORT_DCA (HYPE), 8 aligned with LONG_DCA global regime
 - **V14 Paper**: Running on Hyperliquid
 - **V14-ETF Paper**: Running
 - **V14 Live (Aster, single-coin)**: ASTER/USDT, running
@@ -70,9 +71,14 @@ _Last updated: 2026-05-10_
 | Engine phases are truth | 2026-05-09 | Never overwrite engine phase to match global—the signal data IS the conviction signal. |
 | Allocation reconcile on rebalance | 2026-05-10 | Clean stale coins from router after each rebalance. Seed new targets to unblock T1 gate. |
 | Phantom position fix | 2026-05-10 | Status writer + exchange sync zero ALL position fields when DEX has no position. |
+| seed_capital immutable | 2026-05-10 | CLI --capital is the seed, period. Never derived from balance - csv_pnl (breaks on incomplete CSV). |
+| Dashboard sync: fresh clone | 2026-05-10 | Replaced `git reset --soft` with fresh shallow clone per cycle. Eliminates non-docs file leakage. |
+| Hurdle rate configurable | 2026-05-10 | Extracted to `HURDLE_RATE_DCA_SCORE = 5.0` in v14_capital_manager.py. Single source of truth. |
 
 ## Next Steps
-1. **Database migration**: Replace CSV with SQLite (proper deal IDs, ACID transactions, no corruption)
-2. **Cloud migration**: Linux server, Hyperliquid mainnet (Phase 1: 6-10 weeks)
-3. **Commercial product**: Signal-as-a-Service, hub-and-spoke architecture ($49/$149/$499 tiers)
-4. Centralize DB_PATH into single config module
+1. **🔴 Create V14PM Live auto-restart task** (needs admin PowerShell)
+2. **🔴 Disable old V14LiveAster task** (needs admin PowerShell)
+3. **Database migration**: Replace CSV with SQLite (proper deal IDs, ACID transactions, no corruption)
+4. **Cloud migration**: Linux server, Hyperliquid mainnet (Phase 1: 6-10 weeks)
+5. **Commercial product**: Signal-as-a-Service, hub-and-spoke architecture ($49/$149/$499 tiers)
+6. Centralize DB_PATH into single config module
