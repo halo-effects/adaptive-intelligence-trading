@@ -3454,6 +3454,11 @@ class V14PortfolioLiveAster:
             # ── DEX-as-Truth Capital ──────────────────────────────────────
             # The exchange wallet balance IS the capital. Everything else
             # (state.json, ledger, CLI arg) is secondary.
+            #
+            # CRITICAL: seed_capital is NEVER derived from (balance - csv_pnl).
+            # That formula breaks whenever the CSV is incomplete (fills while
+            # bot was down, CSV truncation, etc.). seed_capital is the CLI
+            # --capital argument, period. It's set in __init__ and preserved.
             try:
                 dex_balance = self.client._exchange.fetch_balance()
                 dex_total = float(dex_balance.get("USDT", {}).get("total", 0))
@@ -3461,16 +3466,12 @@ class V14PortfolioLiveAster:
                     # Realized PnL from CSV (append-only trade log)
                     csv_pnl = sum(float(t.get("pnl", 0)) for t in self.tracker.trades)
 
-                    # Unrealized PnL from current positions
-                    unrealized = 0.0
-                    for pos_data in self._last_exchange_positions.values():
-                        unrealized += float(pos_data.get("unrealized_pnl", 0) or 0)
-
-                    # Set all capital variables consistently
+                    # Set capital variables from DEX (source of truth)
                     self._tracked_capital = dex_total
                     self.capital = dex_total
                     self._cumulative_realized_pnl = csv_pnl
-                    self._seed_capital = dex_total - csv_pnl - unrealized
+                    # seed_capital stays as CLI --capital (set in __init__)
+                    # DO NOT recalculate: self._seed_capital = dex_total - csv_pnl - unrealized
                     self.router.resize(dex_total)
 
                     # Suppress deposit detection for 3 cycles so it doesn't
@@ -3479,8 +3480,8 @@ class V14PortfolioLiveAster:
 
                     logger.info(
                         f"DEX-as-truth: balance=${dex_total:.2f} "
-                        f"seed=${self._seed_capital:.2f} "
-                        f"realized=${csv_pnl:.2f} unrealized=${unrealized:.2f}"
+                        f"seed=${self._seed_capital:.2f} (CLI, immutable) "
+                        f"realized=${csv_pnl:.2f}"
                     )
                 else:
                     logger.warning("DEX balance is $0 — using state.json capital as fallback")
