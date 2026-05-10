@@ -2414,6 +2414,42 @@ class V14PortfolioLiveAster:
                             if abs(old_cap - alloc) > 1:
                                 logger.info(f"  {sym} engine capital synced: ${old_cap:.2f} -> ${alloc:.2f}")
 
+            # Reconcile router allocations: remove stale coins not in new targets
+            # that have no open position. Coins with open positions stay (need
+            # capital to defend DCA layers). See stale-allocation-cleanup.md.
+            new_target_syms = set(allocations.keys())
+            stale_syms = []
+            for sym_r in list(self.router.active_allocations.keys()):
+                if sym_r in new_target_syms:
+                    continue
+                cs_r = self.coins.get(sym_r)
+                has_position = (
+                    cs_r and cs_r.engine and cs_r.engine._engine
+                    and (cs_r.engine._engine.long_coins > 0 or cs_r.engine._engine.short_coins > 0)
+                )
+                if not has_position:
+                    stale_syms.append(sym_r)
+                    del self.router.active_allocations[sym_r]
+
+            for sym_r in list(self.router.reserve_allocations.keys()):
+                if sym_r in new_target_syms:
+                    continue
+                cs_r = self.coins.get(sym_r)
+                has_position = (
+                    cs_r and cs_r.engine and cs_r.engine._engine
+                    and (cs_r.engine._engine.long_coins > 0 or cs_r.engine._engine.short_coins > 0)
+                )
+                if not has_position:
+                    if sym_r not in stale_syms:
+                        stale_syms.append(sym_r)
+                    del self.router.reserve_allocations[sym_r]
+
+            if stale_syms:
+                logger.info(
+                    f"Allocation cleanup: removed {len(stale_syms)} stale coins "
+                    f"not in new targets and no open position: {sorted(stale_syms)}"
+                )
+
             self._last_rebalance_date = today
             self._last_rebalance_ts = time.time()
             logger.info(f"Rebalance complete: {len(self.coins)} active coins")
