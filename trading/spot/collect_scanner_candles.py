@@ -12,6 +12,7 @@ import ccxt
 import sqlite3
 import sys
 import io
+import os
 import time
 import logging
 from datetime import datetime, timezone, timedelta
