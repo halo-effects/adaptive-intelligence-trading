@@ -771,6 +771,7 @@ class V14PortfolioLiveAster:
         self._regime_signal_count: int = 0
         self._regime_signal_type: Optional[str] = None  # "TOP" or "BOTTOM"
         self._regime_alert_state: str = "NONE"  # NONE, AWAITING_APPROVAL
+        self._regime_last_alert_pct: float = 0.0  # Last conviction % that triggered an alert
         self._regime_last_eval_date: Optional[object] = None
 
         # Telegram command processing
@@ -844,6 +845,7 @@ class V14PortfolioLiveAster:
                 "signal_count": self._regime_signal_count,
                 "signal_type": self._regime_signal_type,
                 "alert_state": self._regime_alert_state,
+                "last_alert_pct": self._regime_last_alert_pct,
             },
             "tracked_capital": self._tracked_capital,
             "cumulative_realized_pnl": self._cumulative_realized_pnl,
@@ -989,6 +991,7 @@ class V14PortfolioLiveAster:
         self._regime_signal_type  = regime.get("signal_type")
         self._regime_alert_state  = regime.get("alert_state", "NONE")
         self._global_regime = regime.get("global_regime", "LONG_DCA")
+        self._regime_last_alert_pct = regime.get("last_alert_pct", 0.0)
         logger.info(f"Global regime: {self._global_regime}")
 
         # Restore tracked capital (Upgrade 1)
@@ -1203,19 +1206,28 @@ class V14PortfolioLiveAster:
                 f"Flipped coins: {len(flipped)}/{total_engines} ({', '.join(flipped)})"
             )
 
-            # Check conviction thresholds for macro regime flip
+            # Graduated conviction alerts — early warning + APPROVE at any level
+            # Thresholds: 15%, 25%, 30%, 35%, 50% (each fires once per climb)
+            CONVICTION_THRESHOLDS = [0.15, 0.25, 0.30, 0.35, 0.50]
             if total_engines > 0:
                 flip_pct = len(flipped) / total_engines
-                if flip_pct >= 0.5 and self._regime_alert_state != "AWAITING_APPROVAL":
-                    self._regime_alert_state = "AWAITING_APPROVAL"
-                    opposing = "SHORT_DCA" if self._global_regime == "LONG_DCA" else "LONG_DCA"
-                    send_telegram(
-                        f"\U0001f6a8 {TG_PREFIX} <b>REGIME CONVICTION: {len(flipped)}/{total_engines} coins flipped</b>\n"
-                        f"Current: {self._global_regime} \u2192 Suggested: {opposing}\n"
-                        f"Coins: {', '.join(flipped)}\n\n"
-                        f"Reply APPROVE to flip global regime\n"
-                        f"Reply DENY to dismiss"
-                    )
+                # Find the highest threshold we've crossed that we haven't alerted yet
+                for threshold in CONVICTION_THRESHOLDS:
+                    if flip_pct >= threshold and self._regime_last_alert_pct < threshold:
+                        self._regime_last_alert_pct = threshold
+                        opposing = "SHORT_DCA" if self._global_regime == "LONG_DCA" else "LONG_DCA"
+                        pct_display = int(threshold * 100)
+                        severity = "\U0001f6a8" if threshold >= 0.50 else "\u26a0\ufe0f" if threshold >= 0.30 else "\U0001f4ca"
+                        send_telegram(
+                            f"{severity} {TG_PREFIX} <b>Regime Conviction: {pct_display}% ({len(flipped)}/{total_engines} coins flipped)</b>\n"
+                            f"Current: {self._global_regime}\n"
+                            f"Coins: {', '.join(flipped)}\n\n"
+                            f"Reply APPROVE to flip to {opposing}\n"
+                            f"(Open positions ride to TP naturally)"
+                        )
+                        # Allow APPROVE at any conviction level
+                        self._regime_alert_state = "AWAITING_APPROVAL"
+                        break  # Only one alert per tick
 
             self._save_state()
 
@@ -1226,6 +1238,17 @@ class V14PortfolioLiveAster:
             cs.flagged_at = None
             coin_name = sym.split("/")[0]
             logger.info(f"REGIME UNFLAG: {sym} — engine back to {engine_phase} (matches global)")
+
+            # Recalculate conviction — may need to step down alert level
+            flipped_now = [s.split('/')[0] for s, c in self.coins.items() if c.regime_flagged]
+            total_now = sum(1 for c in self.coins.values() if c.engine)
+            if total_now > 0:
+                new_pct = len(flipped_now) / total_now
+                # Reset last_alert_pct to current level so alerts can re-fire if it climbs again
+                self._regime_last_alert_pct = new_pct
+                if len(flipped_now) == 0:
+                    self._regime_alert_state = "NONE"
+                    self._regime_last_alert_pct = 0.0
             self._save_state()
 
     def _clear_regime_flag_on_tp(self, sym: str, cs: 'CoinState'):
@@ -2612,6 +2635,7 @@ class V14PortfolioLiveAster:
                 f"Still excluded: {', '.join(still_excluded) if still_excluded else 'none'}\n\n"
                 f"No positions force-closed. Open TPs ride naturally."
             )
+            self._regime_last_alert_pct = 0.0  # Reset conviction tracker
             logger.info(f"APPROVE: global regime {old_regime} -> {self._global_regime}")
             self._save_state()
 
@@ -2621,10 +2645,11 @@ class V14PortfolioLiveAster:
                 return
             self._regime_alert_state = "NONE"
             self._regime_signal_count = 0
+            self._regime_last_alert_pct = 0.0  # Reset — alerts will re-fire if coins keep flipping
             send_telegram(
-                f"✅ {TG_PREFIX} Regime change denied. Continuing current strategy."
+                f"✅ {TG_PREFIX} Regime change denied. Conviction reset — alerts will re-fire if more coins flip."
             )
-            logger.info("DENY: regime change declined, resuming normal operation")
+            logger.info("DENY: regime change declined, conviction reset")
             self._save_state()
 
         elif text == "PAUSE" or text == "PAUSE TRADING":
