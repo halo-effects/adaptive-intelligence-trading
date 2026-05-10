@@ -3133,6 +3133,32 @@ class V14PortfolioLiveAster:
                 "alert_state":  self._regime_alert_state,
                 "signal_type":  self._regime_signal_type,
                 "signal_count": self._regime_signal_count,
+                "last_alert_pct": self._regime_last_alert_pct,
+                "flip_pct": round(
+                    sum(1 for c in self.coins.values() if c.regime_flagged)
+                    / max(1, sum(1 for c in self.coins.values() if c.engine))
+                    * 100, 1
+                ),
+                "flipped_coins": sorted(
+                    s.split('/')[0] for s, c in self.coins.items() if c.regime_flagged
+                ),
+                "aligned_coins": sorted(
+                    s.split('/')[0] for s, c in self.coins.items()
+                    if c.engine and not c.regime_flagged
+                ),
+                "long_count": sum(
+                    1 for c in self.coins.values()
+                    if c.engine and c.engine._engine
+                    and (c.engine._engine.phase.name if hasattr(c.engine._engine.phase, 'name')
+                         else str(c.engine._engine.phase)) == "LONG_DCA"
+                ),
+                "short_count": sum(
+                    1 for c in self.coins.values()
+                    if c.engine and c.engine._engine
+                    and (c.engine._engine.phase.name if hasattr(c.engine._engine.phase, 'name')
+                         else str(c.engine._engine.phase)) == "SHORT_DCA"
+                ),
+                "total_engines": sum(1 for c in self.coins.values() if c.engine),
             },
             "trend_direction": "bearish" if self._regime_signal_type == "TOP" else "bullish",
             "fear_greed_index": self._cfgi_market,

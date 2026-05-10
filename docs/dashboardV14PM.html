@@ -405,8 +405,10 @@ tr:hover td{background:rgba(99,102,241,.04)}
   <div class="header-right">
     <div class="header-meta">
       <span class="header-badge leverage" id="hdrLeverage">1.0&times; Leverage</span>
+      <span class="header-badge" id="hdrGlobalRegime">--</span>
       <span class="header-badge" id="hdrRegime">--</span>
       <span class="header-badge" id="hdrTrend">--</span>
+      <span class="header-badge" id="hdrConviction" style="display:none">--</span>
       <span class="header-badge tier" id="hdrTier">-- slots</span>
       <span class="header-badge" id="hdrTrailing" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2);display:none">🎯 Trail 0.2%</span>
     </div>
@@ -641,8 +643,13 @@ function render(){
   $('statusLabel').textContent=S.running?(S.halted?'Halted':'Running'):'Stopped';
   $('updateTime').textContent=S.last_update?new Date(S.last_update).toLocaleString():'--';
 
+  // Global regime badge
+  var gr=S.global_regime||'--';
+  var grIsLong=gr==='LONG_DCA';
+  $('hdrGlobalRegime').className='header-badge '+(grIsLong?'trend-bull':'trend-bear');
+  $('hdrGlobalRegime').textContent=(grIsLong?'\u25B2 LONG':'\u25BC SHORT');
+
   var rg=S.regime||'--';
-  // Handle regime as object (live bot) or string (paper bot)
   if(typeof rg==='object'&&rg!==null)rg=rg.alert_state||rg.signal_type||'--';
   var rgClass='regime-dist';
   if(rg==='ACCUMULATION'||rg==='RANGING')rgClass='regime-acc';
@@ -656,6 +663,18 @@ function render(){
   var tArrow=tr==='bullish'?'\u25B2 ':tr==='bearish'?'\u25BC ':'';
   $('hdrTrend').className='header-badge '+tCls;
   $('hdrTrend').textContent=tArrow+tr.charAt(0).toUpperCase()+tr.slice(1);
+
+  // Conviction badge in header
+  var rd=S.regime_detail||{};
+  var flipPct=rd.flip_pct||0;
+  if(flipPct>0){
+    var convCol=flipPct>=50?'var(--red)':flipPct>=30?'var(--amber)':'var(--text2)';
+    $('hdrConviction').style.display='inline-flex';
+    $('hdrConviction').style.background=flipPct>=50?'rgba(239,68,68,.12)':flipPct>=30?'rgba(245,158,11,.12)':'rgba(148,163,184,.12)';
+    $('hdrConviction').style.color=convCol;
+    $('hdrConviction').style.border='1px solid '+(flipPct>=50?'rgba(239,68,68,.25)':flipPct>=30?'rgba(245,158,11,.25)':'rgba(148,163,184,.25)');
+    $('hdrConviction').textContent='Flip: '+flipPct.toFixed(0)+'%';
+  } else { $('hdrConviction').style.display='none'; }
 
   var lev=S.leverage||1;
   $('hdrLeverage').textContent=lev.toFixed(1)+'\u00D7 Leverage';
@@ -1053,7 +1072,22 @@ function renderMacro(){
   $('macroGrid').innerHTML=
     '<div class="macro-card"><div class="mc-title">Fear &amp; Greed Index</div><div class="mc-val" style="color:'+fgiCol+'">'+fgiVal+'</div><div class="mc-label" style="color:'+fgiCol+'">'+fgiLabel+'</div><div class="fg-bar">'+(fgi!=null?'<div class="fg-dot" style="left:'+fgi+'%"></div>':'')+'</div><div class="fg-labels"><span>Extreme Fear</span><span>Neutral</span><span>Extreme Greed</span></div></div>'+
     '<div class="macro-card"><div class="mc-title">Coin Sentiment</div>'+cfgiHtml+'</div>'+
-    '<div class="macro-card"><div class="mc-title">Phase Status</div>'+gateHtml+'</div>';
+    (function(){
+      var rd3=S.regime_detail||{};
+      var gr3=rd3.global_regime||S.global_regime||'LONG_DCA';
+      var grIsL=gr3==='LONG_DCA';
+      var symsG=S.symbols||[];
+      var html='<div style="margin-bottom:8px;font-size:.8rem"><span style="font-weight:700;color:'+(grIsL?'var(--green)':'var(--red)')+'">Global: '+(grIsL?'\u25B2 LONG':'\u25BC SHORT')+'</span></div>';
+      symsG.forEach(function(sym){
+        var c=(S.coins||{})[sym]||{};
+        var phase=c.lifecycle_phase||c.state||'ROUTER';
+        var base=sym.split('/')[0];
+        var phCol=phase==='LONG_DCA'?'var(--green)':phase==='SHORT_DCA'?'var(--red)':'var(--accent2)';
+        var excluded=c.regime_flagged||false;
+        html+='<div style="margin:4px 0;display:flex;justify-content:space-between;align-items:center"><span><span style="font-weight:600">'+base+'</span> <span style="color:'+phCol+';font-weight:600;font-size:.8rem">'+phase.replace('_',' ')+'</span></span>'+(excluded?'<span style="font-size:.6rem;background:rgba(239,68,68,.15);color:var(--red);padding:1px 6px;border-radius:3px">EXCLUDED</span>':'<span style="font-size:.6rem;background:rgba(34,197,94,.15);color:var(--green);padding:1px 6px;border-radius:3px">ACTIVE</span>')+'</div>';
+      });
+      return '<div class="macro-card"><div class="mc-title">Regime Gate</div>'+html+'</div>';
+    })();
 }
 
 // CAP DONUT
