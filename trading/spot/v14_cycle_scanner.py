@@ -82,6 +82,38 @@ def load_candles(conn: sqlite3.Connection, symbol: str, start_ms: int, end_ms: i
     return cursor.fetchall()
 
 
+def _validate_candles(candles: list[tuple], symbol: str) -> list[tuple]:
+    """Validate and filter candles before simulation (Finding #24).
+    Removes rows with: negative prices, high < low, zero close, duplicate timestamps.
+    Logs warnings for anomalies."""
+    seen_ts = set()
+    clean = []
+    bad = 0
+    for ts, o, h, l, c, v in candles:
+        # Duplicate timestamp
+        if ts in seen_ts:
+            bad += 1
+            continue
+        seen_ts.add(ts)
+        # Basic OHLC sanity
+        if c <= 0 or o <= 0 or h <= 0 or l <= 0:
+            bad += 1
+            continue
+        if h < l:
+            bad += 1
+            continue
+        # Fat-finger detection: price 100x or 0.01x of neighbors
+        if clean:
+            prev_c = clean[-1][4]
+            if prev_c > 0 and (c > prev_c * 100 or c < prev_c * 0.01):
+                bad += 1
+                continue
+        clean.append((ts, o, h, l, c, v))
+    if bad > 0:
+        logger.warning(f"{symbol}: filtered {bad} bad candle(s) of {len(candles)}")
+    return clean
+
+
 def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
     """
     Run DCA simulation on a series of 1h candles.
@@ -403,6 +435,7 @@ def scan_all(coins: list[str], windows: list[str], top_n: Optional[int] = None, 
         for window in windows:
             start_ms, end_ms = get_window_range(window, now_ms)
             candles = load_candles(conn, symbol, start_ms, end_ms)
+            candles = _validate_candles(candles, symbol)  # Finding #24
 
             if len(candles) < 10:
                 logger.warning(f"  {window}: only {len(candles)} candles for {short_name}, skipping")

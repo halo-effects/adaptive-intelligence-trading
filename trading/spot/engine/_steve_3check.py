@@ -42,7 +42,18 @@ class Steve3CheckDetector:
         if not syms:
             db.close()
             return None
-        sym = syms[0][0]
+        # Pick best symbol: prefer symbols with indicators, then widest range
+        # (matches load_daily logic in v13_signals.py — Finding #12 fix)
+        def _score(s):
+            r = db.execute(
+                'SELECT MAX(timestamp) - MIN(timestamp), '
+                'SUM(CASE WHEN sma50 IS NOT NULL AND sma50 != 0 THEN 1 ELSE 0 END) '
+                'FROM candles_daily '
+                'WHERE symbol=? AND timestamp IS NOT NULL AND timestamp > 0', (s,)).fetchone()
+            date_range = r[0] or 0
+            has_indicators = 1 if (r[1] or 0) > 0 else 0
+            return (has_indicators * 10**15) + date_range
+        sym = max([s[0] for s in syms], key=_score)
         df = pd.read_sql(
             "SELECT timestamp, open, high, low, close, volume FROM candles_daily WHERE symbol=? ORDER BY timestamp",
             db, params=[sym]

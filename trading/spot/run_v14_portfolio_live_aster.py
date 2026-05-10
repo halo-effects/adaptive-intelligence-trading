@@ -2305,6 +2305,18 @@ class V14PortfolioLiveAster:
 
         logger.info(f"Daily rebalance for {today}")
         try:
+            # Scanner freshness check (Finding #21): warn if JSON > 24h old
+            if SCANNER_PATH.exists():
+                scanner_age_h = (time.time() - SCANNER_PATH.stat().st_mtime) / 3600
+                if scanner_age_h > 24:
+                    logger.warning(
+                        f"Scanner JSON is {scanner_age_h:.0f}h old — rankings may be stale. "
+                        f"Check if V14CycleScanner task is running."
+                    )
+                    send_telegram(
+                        f"⚠️ {TG_PREFIX} Scanner data is {scanner_age_h:.0f}h old\n"
+                        f"Rankings may be stale. Check V14CycleScanner scheduled task."
+                    )
             scanner_data = self.router.load_scanner_json(str(SCANNER_PATH))
             current_equity = self._compute_equity()
 
@@ -3330,6 +3342,7 @@ class V14PortfolioLiveAster:
         # Uses msvcrt on Windows, fcntl on Linux/Mac.
         # The lock is held for the entire lifetime of the process.
         # If another instance tries to start, it will fail immediately.
+        # Finding #51 fix: check for stale lock (dead PID) before giving up.
         lock_path = OUTPUT_DIR / "bot.lock"
         self._lock_fh = open(lock_path, "w")
         try:
@@ -3342,9 +3355,55 @@ class V14PortfolioLiveAster:
             self._lock_fh.write(f"{os.getpid()}:{int(time.time())}:v14pm\n")
             self._lock_fh.flush()
         except (OSError, IOError):
-            logger.error("Another V14PM instance is already running (file lock held). Exiting.")
-            self._lock_fh.close()
-            sys.exit(1)
+            # Lock failed — check if the holding process is still alive
+            stale = False
+            pid_path = OUTPUT_DIR / "bot.pid"
+            if pid_path.exists():
+                try:
+                    stored_pid = int(pid_path.read_text().strip().split(":")[0])
+                    # Check if PID is alive (signal 0 = existence check)
+                    if sys.platform == "win32":
+                        import ctypes
+                        kernel32 = ctypes.windll.kernel32
+                        handle = kernel32.OpenProcess(0x0400, False, stored_pid)  # PROCESS_QUERY_INFORMATION
+                        if handle == 0:
+                            stale = True  # Process doesn't exist
+                        else:
+                            kernel32.CloseHandle(handle)
+                    else:
+                        os.kill(stored_pid, 0)
+                except (ProcessLookupError, PermissionError, ValueError, OSError):
+                    stale = True
+
+            if stale:
+                logger.warning(
+                    f"Stale lock detected (PID {stored_pid} is dead). "
+                    f"Removing stale lock and retrying."
+                )
+                self._lock_fh.close()
+                try:
+                    lock_path.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                # Retry lock
+                self._lock_fh = open(lock_path, "w")
+                try:
+                    if sys.platform == "win32":
+                        import msvcrt
+                        msvcrt.locking(self._lock_fh.fileno(), msvcrt.LK_NBLCK, 1)
+                    else:
+                        import fcntl
+                        fcntl.flock(self._lock_fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    self._lock_fh.write(f"{os.getpid()}:{int(time.time())}:v14pm\n")
+                    self._lock_fh.flush()
+                except (OSError, IOError):
+                    logger.error("Lock retry failed after stale cleanup. Exiting.")
+                    self._lock_fh.close()
+                    sys.exit(1)
+            else:
+                logger.error("Another V14PM instance is already running (file lock held). Exiting.")
+                self._lock_fh.close()
+                sys.exit(1)
 
         # Also write PID file for monitoring/heartbeat (separate from lock)
         pid_path = OUTPUT_DIR / "bot.pid"

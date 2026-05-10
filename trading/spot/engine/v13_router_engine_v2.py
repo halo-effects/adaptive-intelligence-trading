@@ -80,20 +80,33 @@ class HybridDetector2D:
             return None
 
     def _load_full_daily(self):
-        """Load longest available daily history (tries USDC first, then USDT)."""
+        """Load best available daily history.
+        Uses same symbol selection as load_daily(): prefer symbols with
+        indicators, then widest range. (Finding #13 fix)"""
         try:
             db = sqlite3.connect(str(DB_PATH))
-            best_df = None
-            for quote in ['USDC', 'USDT']:
-                sym = f'{self.base}/{quote}'
-                df = pd.read_sql(
-                    "SELECT timestamp, open, high, low, close, volume FROM candles_daily WHERE symbol=? ORDER BY timestamp",
-                    db, params=[sym]
-                )
-                if len(df) > (len(best_df) if best_df is not None else 0):
-                    best_df = df
+            syms = [r[0] for r in db.execute(
+                'SELECT DISTINCT symbol FROM candles_daily WHERE symbol LIKE ?',
+                (f'{self.base}/%',)).fetchall()]
+            if not syms:
+                db.close()
+                return None
+            def _score(s):
+                r = db.execute(
+                    'SELECT MAX(timestamp) - MIN(timestamp), '
+                    'SUM(CASE WHEN sma50 IS NOT NULL AND sma50 != 0 THEN 1 ELSE 0 END) '
+                    'FROM candles_daily '
+                    'WHERE symbol=? AND timestamp IS NOT NULL AND timestamp > 0', (s,)).fetchone()
+                date_range = r[0] or 0
+                has_indicators = 1 if (r[1] or 0) > 0 else 0
+                return (has_indicators * 10**15) + date_range
+            best_sym = max(syms, key=_score)
+            best_df = pd.read_sql(
+                "SELECT timestamp, open, high, low, close, volume FROM candles_daily WHERE symbol=? ORDER BY timestamp",
+                db, params=[best_sym]
+            )
             db.close()
-            if best_df is None or len(best_df) == 0:
+            if len(best_df) == 0:
                 return None
             best_df['dt'] = pd.to_datetime(best_df['timestamp'], unit='ms')
             best_df = best_df.set_index('dt').sort_index()
