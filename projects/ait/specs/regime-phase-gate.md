@@ -126,7 +126,18 @@ Add to status.json:
 | Force close on flip | N/A | Never — positions ride to TP |
 | Regime change | Manual but didn't actually work | Manual APPROVE changes `_global_regime` |
 
-### 7. No Forced Closes
+### 7. Dashboard Must Show Exchange Positions Only
+
+The dashboard currently reads the engine's internal state (`short_coins`, `long_invested`, etc.) to display positions. This creates phantom positions when the engine tracks a theoretical position that doesn't exist on the exchange.
+
+**Example**: HYPE showed 3/12 layers, $75.12 invested, SHORT DCA on the live dashboard — but the exchange had zero HYPE position. The engine's internal state was corrupted from candle replay warmup.
+
+**Fix**: The dashboard's "position" display should come from exchange data only:
+- Position size, avg entry, unrealized PnL → from `_last_exchange_positions` (DEX sync)
+- Grid layers, phase, TP info → from engine state (these are engine metadata, not position data)
+- If exchange shows 0 position but engine shows layers, display a warning flag
+
+### 8. No Forced Closes
 
 When the global regime flips:
 - Open positions on excluded coins still have their TP orders on the exchange
