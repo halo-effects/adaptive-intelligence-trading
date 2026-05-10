@@ -1076,12 +1076,19 @@ class V14PortfolioLiveAster:
                     )
                 eng.long_layers = cs.layer_count
             else:
+                # No position on exchange — zero ALL position fields (long AND short)
+                # Engine phase/signals preserved, only position quantities zeroed
                 eng.long_coins = 0.0
                 eng.long_cost = 0.0
                 eng.long_avg_entry = 0.0
                 eng.long_layers = 0
                 eng.long_tp = 0.0
-                cs.layer_count = 0  # Reset when exchange has no position
+                eng.short_coins = 0.0
+                eng.short_cost = 0.0
+                eng.short_avg_entry = 0.0
+                eng.short_layers = 0
+                eng.short_tp = 0.0
+                cs.layer_count = 0
 
         self._last_exchange_positions = positions  # Cache for status write
         logger.debug(
@@ -3043,9 +3050,14 @@ class V14PortfolioLiveAster:
                     coin_data["unrealized_pnl"] = round(ex_unrealized, 4)
                     coin_data["position_size"]  = round(ex_qty, 8)
                 else:
+                    # Exchange says no position — zero ALL position display fields
+                    # (engine may track phantom shorts from SHORT_DCA phase)
                     coin_data["avg_entry"]      = 0
                     coin_data["unrealized_pnl"] = 0
                     coin_data["position_size"]  = 0
+                    coin_data["invested"]       = 0
+                    coin_data["layers"]         = 0
+                    coin_data["side"]           = "none"
 
                 # Live price for display (ticker — still needed for current_price display)
                 try:
