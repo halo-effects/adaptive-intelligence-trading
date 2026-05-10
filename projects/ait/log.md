@@ -1,6 +1,21 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+## 2026-05-09
+- **Regime phase gate deployed** (`regime-phase-gate.md`): Coins trade only when engine phase matches global regime. Engine phases are never overwritten — they reflect real signal data that feeds the conviction system.
+- **Graduated conviction alerts**: 7 thresholds (15/25/30/35/40/45/50%). Each fires once as conviction climbs. APPROVE available at any level. DENY resets tracker so alerts re-fire.
+- **APPROVE flips global regime**: No forced closes. Coins auto-unflag when their phase matches the new global. Open TPs ride naturally.
+- **Dashboard regime panel**: Replaced "Market Conditions" with "Portfolio Regime" showing global direction (▲ LONG / ▼ SHORT), long/short counts, conviction bar with %, flipped coin list.
+- **Dashboard regime gate card**: Replaced "Phase Status" in Macro Indicators with per-coin phase + ACTIVE/EXCLUDED status tags.
+- **Dashboard header badges**: Global regime badge + conviction % badge.
+- **Status.json regime data**: `flip_pct`, `flipped_coins`, `aligned_coins`, `long_count`, `short_count`, `total_engines`, `last_alert_pct` added to `regime_detail`.
+- **Exchange-truth trade recording deployed** (`exchange-truth-trade-recording.md`): Uses DEX entry price × actual qty, not engine's internal price tracking. Fixes inflated cost basis.
+- **Warmup-only candle replay deployed** (`candle-replay-guard.md`): Old candles processed for indicator warmup only; only current candle executes actions. Eliminated spread-reject spam on restart.
+- **HYPE engine state**: Restored to truthful SHORT_DCA (was forced to LONG_DCA, corrected per principle that engine phases reflect real signals).
+- **6 new hard rules** (#19-25) added to `tacit/hard-rules.md`.
+- **Architecture doc updated to v1.5**: §7.5 fully documented with graduated thresholds, dashboard display spec, status.json schema.
+- Updated: `run_v14_portfolio_live_aster.py`, `dashboardV14PM.html`, `V14PM_SYSTEM_ARCHITECTURE.md`, `overview.md`
+
 ## 2026-05-08
 - **INCIDENT: Restart cascade from data sync cron overwriting `v14_capital_manager.py`.** Data sync cron on May 6 committed a truncated paper-bot version of the capital manager to git. Bot ran in memory (masking the break) until manual restart triggered ImportError. 113 spread-reject round trips during attempted restarts, $5.75 lost, CSV corrupted.
 - **Candle replay guard deployed** (`candle-replay-guard.md`): Suppresses order execution when candle timestamp >75 min old. Prevents spread-reject churn during restart catch-up. Initial threshold of 300s was too tight for 1h candles (fixed to 4500s).

@@ -18,16 +18,20 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
-## AIT — Current State (2026-05-08)
-- **V14PM Live (Aster)**: $385 equity, 95 trades, 85.3% win rate, $96.74 realized PnL, 3 coin slots
-  - DEX-as-truth startup: reads wallet balance directly from exchange
+## AIT — Current State (2026-05-09)
+- **V14PM Live (Aster)**: $376 capital, 9 engines, 85% win rate, $85.24 realized PnL
+  - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
   - Reconciliation & auto deposit detection disabled (caused corruption)
-  - Positions: PENDLE 7.0, TON 61.7 (oversized from churn, approved to hold)
+  - **Regime phase gate deployed**: Coins trade only when engine phase matches global regime
+  - **Graduated conviction alerts**: 7 thresholds (15/25/30/35/40/45/50%), APPROVE at any level
+  - **Dashboard**: Regime panel with conviction bar, per-coin gate status, global direction
+  - Positions: INJ 4.0 qty long (TP active). HYPE in SHORT_DCA (excluded, 11.1% flip)
+  - Architecture doc v1.5 (§7.5 complete)
 - **V14 Live (Aster)**: ASTER/USDT single-coin, running
 - **V14 Paper**: Running on Hyperliquid
 - **V14-ETF Paper**: Running
-- **Major incident 2026-05-08**: Data sync cron overwrote capital_manager.py → restart cascade → 113 spread-reject round trips → CSV/capital corruption. Fixed with DEX-as-truth startup, disabled reconciliation/deposit detection, fixed sync script Windows pathspec bug.
-- **6 new hard rules** added (19-24) from incident. See `tacit/hard-rules.md`.
+- **Major incident 2026-05-08**: Data sync cron overwrote capital_manager.py → restart cascade. Fixed with 7 code changes, 5 specs, 6 hard rules.
+- **Key principle (2026-05-09)**: Engine phases are truth — never overwrite to match global regime. The signal data IS the conviction signal.
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.

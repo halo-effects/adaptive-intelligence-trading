@@ -1,5 +1,5 @@
 # AIT — Project Overview
-_Last updated: 2026-03-10_
+_Last updated: 2026-05-09_
 
 ## Product
 **Adaptive Intelligence Trading** — Automated crypto DCA trading system with signal-directed phase transitions and dynamic capital rotation.
@@ -38,16 +38,21 @@ _Last updated: 2026-03-10_
 | Macro conviction signals observational | 2026-03-08 | 6 index-level signals documented, not wired into bot logic |
 | Trend multiplier gates entry not exit | 2026-03-06 | Declining coins get less capital but existing positions stay |
 
-## Current State (2026-05-08)
-- **V14PM Live (Aster)**: $385 equity, 95 trades, 85.3% win rate, $96.74 realized PnL, 3 coin slots
+## Current State (2026-05-09)
+- **V14PM Live (Aster)**: $376 capital, 9 coin slots, 85% win rate, $85.24 realized PnL
   - DEX-as-truth startup: reads wallet balance directly from exchange
   - Reconciliation & auto deposit detection disabled (caused corruption)
-  - Candle replay guard active (4500s threshold for 1h candles)
-  - Positions: PENDLE 7.0 qty, TON 61.7 qty (oversized from churn, approved to hold)
+  - Candle replay guard active (warmup-only: old candles update indicators, only current candle executes)
+  - Exchange-truth trade recording: uses DEX entry price × actual qty, not engine price
+  - **Regime phase gate deployed (§7.5)**: Coins trade only when phase matches global regime
+  - **Graduated conviction alerts**: 7 thresholds (15/25/30/35/40/45/50%), APPROVE at any level
+  - **Dashboard regime panel**: Global direction, long/short counts, conviction bar, per-coin gate status
+  - Positions: INJ 4.0 qty long (TP active)
+  - 1/9 engines in SHORT_DCA (HYPE), 8 aligned with LONG_DCA global regime
 - **V14 Paper**: Running on Hyperliquid
 - **V14-ETF Paper**: Running
 - **V14 Live (Aster, single-coin)**: ASTER/USDT, running
-- **Data sync cron**: Fixed Windows pathspec bug that was overwriting source files
+- **Data sync cron**: Fixed Windows pathspec bug, runs every 10 min
 
 ## Key Decisions (Recent)
 | Decision | Date | Detail |
@@ -55,11 +60,15 @@ _Last updated: 2026-03-10_
 | DEX-as-truth for capital | 2026-05-08 | Exchange wallet balance IS capital. No more state.json/ledger/CLI for capital. |
 | Reconciliation disabled | 2026-05-08 | Heuristic fill-grouping creates phantom trades from churn. TP recovery handles missed fills. |
 | Auto deposit detection disabled | 2026-05-08 | Formula broken for DEX-as-truth. Manual DEPOSIT/WITHDRAW commands only. |
-| Candle replay guard 4500s | 2026-05-08 | 1h candles are ~60min old normally. 300s was too tight. |
+| Warmup-only candle replay | 2026-05-09 | Old candles update indicators only; only current candle executes actions. |
+| Exchange-truth trade recording | 2026-05-09 | Use DEX entry price × actual qty, not engine's internal price tracking. |
+| Regime phase gate | 2026-05-09 | Coins trade only when engine phase matches global regime. Engine phases never overwritten. |
+| Graduated conviction alerts | 2026-05-09 | 7 thresholds (15-50%), APPROVE at any level, DENY resets tracker. |
+| Engine phases are truth | 2026-05-09 | Never overwrite engine phase to match global—the signal data IS the conviction signal. |
 
 ## Next Steps
 1. **Database migration**: Replace CSV with SQLite (proper deal IDs, ACID transactions, no corruption)
 2. **Cloud migration**: Linux server, Hyperliquid mainnet (Phase 1: 6-10 weeks)
-3. **Re-enable deposit detection**: Rewrite formula for DEX-as-truth (compare current vs previous balance, not complex PnL math)
-4. Centralize DB_PATH into single config module
-5. Correlation gate (halt new entries when >60% of coins at L4+)
+3. **Commercial product**: Signal-as-a-Service, hub-and-spoke architecture ($49/$149/$499 tiers)
+4. **Dashboard position source**: Show exchange positions only, not engine internal state (phantom position fix)
+5. Centralize DB_PATH into single config module

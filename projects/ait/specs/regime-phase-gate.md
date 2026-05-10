@@ -1,7 +1,8 @@
 # Spec: Regime Phase Gate — Portfolio-Level Regime Controls Per-Coin Trading Eligibility
 
-**Status**: DRAFT — needs approval
+**Status**: DEPLOYED — Live on Aster (PID active)
 **Date**: 2026-05-09
+**Deployed**: 2026-05-09 20:30 PDT
 **Priority**: HIGH
 **Restart Required**: YES (both live and paper bots)
 **Architecture Reference**: V14PM_SYSTEM_ARCHITECTURE.md §7.5

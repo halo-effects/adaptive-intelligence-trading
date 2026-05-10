@@ -1,5 +1,5 @@
-# Adaptive Intelligence Trading — V14PM System Architecture
-_Version: 1.4 | Date: 2026-05-05 | Status: Cloud-Ready_
+# Adaptive Intelligence Trading - V14PM System Architecture
+_Version: 1.5 | Date: 2026-05-09 | Status: Production (Aster Perps)_
 
 ---
 
@@ -58,7 +58,7 @@ though the core engine is exchange-agnostic via a CCXT abstraction layer.
 trading/
 ├── requirements.txt              # Production deps: ccxt, numpy, pandas
 ├── requirements-dev.txt          # Dev/backtest extras
-├── openclaw_watchdog.ps1         # Bot watchdog (Windows — runs every 5 min)
+├── openclaw_watchdog.ps1         # Bot watchdog (Windows - runs every 5 min)
 ├── sync_dashboard.ps1            # GitHub Pages sync (Windows)
 ├── sync_dashboard_silent.vbs     # Silent launcher for sync task
 │
@@ -164,7 +164,7 @@ candles and their engines would run blind (no signals, no phase transitions).
 > coins had 1h data but zero daily candles. Their engines ran without signal packs.
 > `resample_daily.py` was created to close this gap.
 
-### 3.2 Database — `candles.db`
+### 3.2 Database - `candles.db`
 
 **Location:** `trading/spot/data/candles.db` (~225 MB, SQLite)
 **Env var override:** `AIT_CANDLES_DB`
@@ -180,7 +180,7 @@ candles and their engines would run blind (no signals, no phase transitions).
 | Table | Rows (approx) | Purpose |
 |-------|------|---------|
 | `candles` | 1,562,000+ | 1h OHLCV for 66 symbol pairs |
-| `candles_daily` | ~99,000 | Daily OHLCV (two sources — see below) |
+| `candles_daily` | ~99,000 | Daily OHLCV (two sources - see below) |
 | `cfgi_daily` | 23,846 | Fear & Greed Index per coin per day |
 | `signal_snapshots` | 376 | Daily signal state snapshots |
 | `phase_transitions` | 999 | Phase change events with trigger signals |
@@ -189,13 +189,13 @@ candles and their engines would run blind (no signals, no phase transitions).
 | `trade_context` | 3,782 | Per-trade signal context at entry/exit |
 
 **`candles_daily` has two data sources:**
-1. **`build_daily_candles.py`** — aggregates 1h candles AND computes 26 indicators
+1. **`build_daily_candles.py`** - aggregates 1h candles AND computes 26 indicators
    (SMA, ADX, RSI, etc.). These rows have all indicator columns populated.
-2. **`resample_daily.py`** — simple 1h → daily OHLCV aggregation only. These rows
+2. **`resample_daily.py`** - simple 1h → daily OHLCV aggregation only. These rows
    have indicator columns as NULL. Used for coins added via Hyperliquid collector
    that `build_daily_candles.py` hasn't processed yet.
 
-Both use `INSERT OR IGNORE` — they don't overwrite each other. The V13SignalPack
+Both use `INSERT OR IGNORE` - they don't overwrite each other. The V13SignalPack
 computes its own indicators from the raw OHLCV, so NULL indicator columns are fine.
 
 **Core schema:**
@@ -225,16 +225,16 @@ candles_daily (
 )
 ```
 
-### 3.3 Daily Data — Two Paths
+### 3.3 Daily Data - Two Paths
 
 There are two distinct processes that populate `candles_daily`:
 
-1. **`resample_daily.py`** (runs hourly in pipeline) — Simple 1h→daily OHLCV
+1. **`resample_daily.py`** (runs hourly in pipeline) - Simple 1h→daily OHLCV
    aggregation. Ensures all coins have daily candles regardless of whether they've
-   been through the full indicator build. This is the **critical** path — without it,
+   been through the full indicator build. This is the **critical** path - without it,
    coins only available on Hyperliquid have zero daily data, and their signal packs fail.
 
-2. **`build_daily_candles.py`** (engine package) — Full aggregation + 26 indicator
+2. **`build_daily_candles.py`** (engine package) - Full aggregation + 26 indicator
    computation (SMA, ADX, RSI, etc.). Heavier operation, used for historical backfill
    and when pre-computed indicators are needed by `candles_daily` consumers.
 
@@ -259,9 +259,9 @@ DCA Score = Realized_PnL × (1 - MaxDrawdown%) × Capital_Freedom / 100
 ```
 
 Where:
-- **Realized_PnL** — total closed profit across the simulation window
-- **MaxDrawdown%** — worst peak-to-trough during the window
-- **Capital_Freedom** — percentage of time capital was *not* trapped (available to redeploy)
+- **Realized_PnL** - total closed profit across the simulation window
+- **MaxDrawdown%** - worst peak-to-trough during the window
+- **Capital_Freedom** - percentage of time capital was *not* trapped (available to redeploy)
 
 **Simulation parameters (High Profile):**
 ```
@@ -315,7 +315,7 @@ UNI, ATOM, NEAR, HBAR, INJ, FIL, RUNE, CRV, SNX, COMP
 ### 4.4 Signal Stack (`trading.spot.engine`)
 
 > **Naming note:** The signal module is called `v13_signals.py` and the class is `V13SignalPack`
-> for historical reasons — it was written during V13 development. It is **not** V13 trading logic.
+> for historical reasons - it was written during V13 development. It is **not** V13 trading logic.
 > It's a shared signal/indicator library (StochRSI, ADX, structure detection) used by both V13 and V14
 > engines. Renaming to `SignalPack` is planned but deferred to avoid touching all importers while
 > bots are running.
@@ -328,13 +328,13 @@ All signals are computed from `candles_daily` data:
 | ADX + DI± | `v13_signals.py` | Trend strength / regime classification |
 | HH/HL, LH/LL | `v13_signals.py` | Higher highs/lows structure |
 | SMA50/200 slope | `v13_signals.py` | Macro trend direction |
-| HVF score | `test_hvf_daily.py` | High Volume Flush — exhaustion signal |
+| HVF score | `test_hvf_daily.py` | High Volume Flush - exhaustion signal |
 | 3-check detector | `_steve_3check.py` | Triple confirmation (price/volume/momentum) |
 | Fibonacci levels | `v13_router_engine_v1.py` | Support/resistance + extension targets |
 | HybridDetector2D | `v13_router_engine_v2.py` | Composite top/bottom detection |
 | Fear & Greed | `cfgi_client.py` | Macro sentiment gating |
 
-### 4.5 ROUTER v2 — Phase Transition Signal Stack
+### 4.5 ROUTER v2 - Phase Transition Signal Stack
 
 The V14DCAEngine uses a layered signal stack to detect tops and bottoms for phase
 transitions between `LONG_DCA` and `SHORT_DCA`.
@@ -344,7 +344,7 @@ transitions between `LONG_DCA` and `SHORT_DCA`.
 | Layer | Signal | Action |
 |-------|--------|--------|
 | 1: Early Warning | 1W StochRSI K crosses below 97 | Start unwinding (stop new DCA entries, let TPs hit) |
-| 2: OB93 Arm | 2W StochRSI K crosses below 93 | ARM — wait for divergence confirmation |
+| 2: OB93 Arm | 2W StochRSI K crosses below 93 | ARM - wait for divergence confirmation |
 | 2a: Divergence | 2D RSI bearish divergence detected | CONFIRM TOP: close all longs, switch to SHORT_DCA |
 | 2b: Timeout | 35 days armed, no divergence | TIMEOUT: close all longs, switch to SHORT_DCA |
 | 2c: OB85 Fallback | 1W K crosses below 85 (only if NOT armed) | Fallback top: close longs, switch to SHORT |
@@ -395,20 +395,20 @@ divergence dates and 3D death cross state from `candles_daily` data. The Steve
               ◀──────────(bottom signal)──────────────────┘
 ```
 
-**LONG_DCA** — Building a long position via DCA grid. Each layer triggered by
+**LONG_DCA** - Building a long position via DCA grid. Each layer triggered by
 price dropping `SO_DEVIATION` below previous layer. Takes profit when average
 entry rises to `TP_PCT` above average cost. Re-enters immediately after TP hit.
 
-**ROUTER** — Evaluating market regime. ROUTER v2 (HybridDetector2D) determines
+**ROUTER** - Evaluating market regime. ROUTER v2 (HybridDetector2D) determines
 whether the market is topping (→ SHORT_DCA) or false alarm (→ back to LONG_DCA).
 
-**SHORT_DCA** — Mirror of LONG_DCA for short positions (Hyperliquid perps only).
+**SHORT_DCA** - Mirror of LONG_DCA for short positions (Hyperliquid perps only).
 Triggered by confirmed top signal. Same grid mechanics, inverted direction.
 
 > **Regime Gate (§7.5):** Phase transitions happen autonomously at the engine level,
 > but the portfolio regime gate controls whether a coin in a given phase may actually
 > trade. A coin in SHORT_DCA while the global regime is LONG_DCA is excluded from
-> new entries — its open positions ride to TP naturally. See §7.5.2.
+> new entries - its open positions ride to TP naturally. See §7.5.2.
 
 ### 5.2 DCA Grid Mechanics
 
@@ -432,7 +432,7 @@ This ensures the grid reacts immediately to volatility and captures rapid dips
 for faster TP recovery.
 
 > **History (2026-03-11):** A legacy 1-day cooldown guard was discovered in
-> `v14_dca_engine.py` — originally a backtest artifact (daily candles = no effect)
+> `v14_dca_engine.py` - originally a backtest artifact (daily candles = no effect)
 > that silently throttled live bots running on 1h candles to one layer per day.
 > Removed as it was never part of the tested/documented grid design and actively
 > harmed DCA performance during volatile moves.
@@ -490,7 +490,7 @@ At midnight UTC (daily signal evaluation):
 
 The PM bot writes two state files every cycle (~60 seconds):
 
-**`engine_state.json`** — Complete engine state for restart recovery (PM-specific):
+**`engine_state.json`** - Complete engine state for restart recovery (PM-specific):
 ```json
 {
   "version": 1,
@@ -521,9 +521,9 @@ state (last daily date, live mode flag, last candle timestamp, warmup status).
 
 On startup, `_load_state()` reconstructs all engines from this file. If the signal
 pack fails to load for a coin (e.g., missing daily data), a bare engine is created
-and state is still restored — signals will refresh on the next daily boundary.
+and state is still restored - signals will refresh on the next daily boundary.
 
-**`status.json`** — Health metrics (read by heartbeat monitor and dashboard):
+**`status.json`** - Health metrics (read by heartbeat monitor and dashboard):
 ```json
 {
   "running": true,
@@ -543,7 +543,7 @@ and state is still restored — signals will refresh on the next daily boundary.
 ```
 
 > **Single-bot state.json:** The V14 Live bot (Aster) uses a simpler `state.json`
-> for its single engine. The PM bot does NOT use `state.json` — all its state is
+> for its single engine. The PM bot does NOT use `state.json` - all its state is
 > in `engine_state.json`, which covers all 10 engines, the router, and open deals.
 
 ### 6.3 Equity Calculation (All Bots)
@@ -554,7 +554,7 @@ and state is still restored — signals will refresh on the next daily boundary.
 Equity = Capital + CSV Realized PnL - Fees + Unrealized PnL
 ```
 
-- **Realized PnL** is **always** sourced from `trades.csv` — the CSV is the
+- **Realized PnL** is **always** sourced from `trades.csv` - the CSV is the
   single source of truth. Engine-internal PnL counters are never used for
   status reporting. This was standardized across all runners on 2026-03-10
   after engine counters were found to drift on restart (one bot reported
@@ -571,7 +571,7 @@ Equity = Capital + CSV Realized PnL - Fees + Unrealized PnL
 > **Bug history (fixed 2026-03-10):** Prior to this fix, equity and realized PnL
 > in status.json came from engine internal counters (`eng.long_pnl + eng.short_pnl`).
 > Deal counts and win rate were overridden from CSV, but equity and realized PnL
-> were not. On restart, engine counters could reset, inflate, or drift — producing
+> were not. On restart, engine counters could reset, inflate, or drift - producing
 > incorrect dashboard numbers while the CSV remained accurate. The fix applies to
 > all four runners: `run_v14_paper.py`, `run_v14etf_paper.py`,
 > `run_v14_portfolio_paper.py`, and `run_v14_live_aster.py`.
@@ -585,7 +585,7 @@ Live Equity = USDT Balance + (Base Coins × Current Price)
 ```
 
 This is fetched from the exchange API every cycle and overrides the CSV-based
-calculation. For a live bot, the exchange balance is the ultimate truth — it
+calculation. For a live bot, the exchange balance is the ultimate truth - it
 accounts for positions the engine may not know about (e.g., after a `--fresh`
 restart where the engine forgets old positions but the exchange still holds them).
 
@@ -628,13 +628,13 @@ The exchange balance is included in status.json as `exchange_balance`:
 ### 6.5 PM Startup Sequence
 
 On every PM bot restart:
-1. Acquire PID lock (`bot.pid`) — exit if another instance is running
+1. Acquire PID lock (`bot.pid`) - exit if another instance is running
 2. Load trade history from `trades.csv` (`TradeTracker.load_existing()`)
 3. If `--fresh`: skip state restore, proceed to step 5
 4. **State restore:** Load `engine_state.json` → reconstruct all engines with
    positions, phases, indicators, last candle timestamps. Restore router state
    (pool cash, allocations). Restore open deals.
-5. Run initial rebalance (`_check_and_rebalance()`) — if engines were restored,
+5. Run initial rebalance (`_check_and_rebalance()`) - if engines were restored,
    this updates allocations; if fresh start, this creates new engines.
 6. Enter live trading loop
 
@@ -648,7 +648,7 @@ On fresh starts, each `V14LifecycleEngine` requires a **warmup period** before t
 
 - Engines start with `_warmed_up = False`
 - During warmup: candles are accumulated and price is tracked, but **no DCA ticks fire** (no entries)
-- At the **first daily boundary** (midnight UTC): the full daily tick runs — signal pack refreshes,
+- At the **first daily boundary** (midnight UTC): the full daily tick runs - signal pack refreshes,
   ROUTER evaluates direction (long vs short), signals compute. `_warmed_up` flips to `True`.
 - After warmup: hourly DCA ticks run normally, entering positions based on router-directed phase
 
@@ -673,7 +673,7 @@ which would cause both to write phantom trades to the same `trades.csv`.
 
 ### 6.7 Trade Provenance (`recorded_at`)
 
-Every trade record includes a `recorded_at` UTC timestamp — the wall-clock time when the trade
+Every trade record includes a `recorded_at` UTC timestamp - the wall-clock time when the trade
 was actually written, distinct from `close_time` (when the trade claims to have closed).
 
 - **Real trade:** `recorded_at ≈ close_time` (within minutes)
@@ -738,12 +738,12 @@ Runs automatically after `_load_state()` and `_recover_tp_orders()` on every bot
 4. Appends any missing deals with new monotonic deal_ids
 5. Saves CSV and sends Telegram alert if trades were recovered
 
-This is lightweight — only checks recent history, not a full rebuild.
+This is lightweight - only checks recent history, not a full rebuild.
 
 #### 6.8.3 RECONCILE Telegram Command
 
 Operators can trigger on-demand reconciliation via Telegram:
-- `RECONCILE` — runs the 48h startup reconciliation and reports results
+- `RECONCILE` - runs the 48h startup reconciliation and reports results
 
 #### 6.8.4 Deal ID Assignment Fix
 
@@ -770,7 +770,7 @@ run_v14_portfolio_paper.py
          └─ Adjusted Score = DCA Score × Trend Multiplier
 ```
 
-### 7.2 CapitalRouter — Allocation Rules
+### 7.2 CapitalRouter - Allocation Rules
 
 **Pool split:**
 - **Active Pool (75%):** Deployed capital for DCA positions
@@ -781,11 +781,11 @@ run_v14_portfolio_paper.py
 | Portfolio Equity | Max Simultaneous Coins |
 |-----------------|------------------------|
 | $100,000+ | 10 |
-| $50,000 – $100,000 | 5 |
-| $30,000 – $50,000 | 4 |
-| $20,000 – $30,000 | 3 |
-| $10,000 – $20,000 | 2 |
-| $100 – $10,000 | 1 |
+| $50,000 - $100,000 | 5 |
+| $30,000 - $50,000 | 4 |
+| $20,000 - $30,000 | 3 |
+| $10,000 - $20,000 | 2 |
+| $100 - $10,000 | 1 |
 
 **Entry qualification:**
 - DCA Score ≥ 5.0 (hurdle rate)
@@ -817,16 +817,16 @@ At midnight UTC, the PM runner:
 - **Equity:** ~$50,627 (+1.25%)
 - **Realized PnL:** $608 | Win rate: 100% (30 deals) | Drawdown: 0.0%
 - **Active coins:** 10/10 slots (dynamically selected by cycle scanner)
-- **Regime:** RANGING — DCA grids cycling TPs in sideways market
-- **State persistence:** Verified — multiple restart cycles with zero phantom trades
+- **Regime:** RANGING - DCA grids cycling TPs in sideways market
+- **State persistence:** Verified - multiple restart cycles with zero phantom trades
 
 **Other bots (2026-03-10, CSV-truth verified):**
-- **V14 Paper:** $49,988 equity, 380 deals, 97.6% win rate (Oct 2024 – present)
-- **V14-ETF Paper:** $10,834 equity, 24 deals, 100% win rate (Mar 2 – present)
+- **V14 Paper:** $49,988 equity, 380 deals, 97.6% win rate (Oct 2024 - present)
+- **V14-ETF Paper:** $10,834 equity, 24 deals, 100% win rate (Mar 2 - present)
 - **V14 Live (Aster):** $314 equity on $300 capital, +4.7%, 1 deal (exchange-verified)
 
 > **Bug history:** Earlier equity figures were inflated by engine counter drift.
-> Engine-internal realized PnL could diverge from CSV on restart — one bot reported
+> Engine-internal realized PnL could diverge from CSV on restart - one bot reported
 > $65K when the CSV showed $44K. Fixed 2026-03-10 by making all runners use CSV
 > as the sole source of realized PnL. Full audit: `V14PM_FULL_AUDIT.md`.
 
@@ -859,11 +859,11 @@ autonomously; the portfolio layer decides whether those signals should be acted 
 ```
 
 **Global regime** is a portfolio-level state: either LONG_DCA or SHORT_DCA.
-It represents the operator’s view of the macro market direction. It is NOT
-automatically derived — it changes only when the operator manually approves
+It represents the operator's view of the macro market direction. It is NOT
+automatically derived - it changes only when the operator manually approves
 a regime flip via Telegram (APPROVE command).
 
-**Per-coin regime** is the engine’s autonomous phase based on its own signal stack
+**Per-coin regime** is the engine's autonomous phase based on its own signal stack
 (top detection, bottom conviction). Each coin independently detects tops and bottoms.
 
 #### 7.5.2 Regime Gate Rule
@@ -879,30 +879,44 @@ a regime flip via Telegram (APPROVE command).
 
 Key behaviors:
 - The engine still processes candles and updates indicators regardless of the gate.
-  Signals are tracked even when the coin is excluded — this is how the regime monitor
+  Signals are tracked even when the coin is excluded - this is how the regime monitor
   knows how many coins have flipped.
 - **No forced closes.** Open positions naturally hit TPs. The gate only blocks NEW entries.
-- When the global regime eventually flips to match the coin’s phase, the coin
+- When the global regime eventually flips to match the coin's phase, the coin
   automatically becomes eligible to trade again.
 
-#### 7.5.3 Regime Monitor — Conviction Signal for Macro Flip
+#### 7.5.3 Regime Monitor — Graduated Conviction Alerts
 
 The regime monitor counts how many active coins have individually flipped phase.
 This count is the conviction signal for whether the macro market has topped or bottomed.
 
+**Graduated thresholds** (each fires once as conviction climbs):
+
+| Threshold | Severity | Signal |
+|-----------|----------|--------|
+| 15% | 📊 Info | Early warning — first few coins flipping |
+| 25% | 📊 Info | Building momentum |
+| 30% | ⚠️ Warning | Significant — trend is real |
+| 35% | ⚠️ Warning | Strong conviction |
+| 40% | ⚠️ Warning | Accelerating |
+| 45% | ⚠️ Warning | Near-majority |
+| 50% | 🚨 Critical | Majority flipped |
+
+**Key behaviors:**
+- APPROVE is available at **any** conviction level (operator can flip early)
+- DENY resets the conviction tracker (alerts re-fire if more coins flip)
+- When coins unflag (flip back to match global), conviction steps down automatically
+- `last_alert_pct` is persisted in state.json to survive restarts
+
 ```
-Example (global regime = LONG_DCA):
+Example (global regime = LONG_DCA, 9 engines):
 
-  Coin signals:  3/10 coins detected TOP → flipped to SHORT_DCA
-  Alert:         ⚠️ Tier 1 — early warning, informational
-
-  Coin signals:  6/10 coins detected TOP → flipped to SHORT_DCA
-  Alert:         🚨 Tier 2 — strong signal, APPROVE/DENY prompt sent
-
-  Operator:      APPROVE → global regime flips to SHORT_DCA
-  Result:        All coins now in SHORT_DCA are eligible to trade.
-                 Coins still in LONG_DCA are excluded until they also flip.
-                 Open LONG positions ride to TP naturally.
+  1/9 flipped (11%) → No alert yet (below 15%)
+  2/9 flipped (22%) → 📊 15% alert: "HYPE, TAO flipped"
+  3/9 flipped (33%) → ⚠️ 25% + 30% alerts fire
+  Operator: APPROVE → global regime flips to SHORT_DCA
+  Result:   Flipped coins now eligible. LONG coins excluded.
+            No positions force-closed.
 ```
 
 The same logic works in reverse for bottoms during a SHORT_DCA global regime.
@@ -910,21 +924,46 @@ The same logic works in reverse for bottoms during a SHORT_DCA global regime.
 #### 7.5.4 Dashboard Display
 
 Each coin on the dashboard shows:
-- **Engine phase**: LONG_DCA or SHORT_DCA (the coin’s own signal-based state)
-- **Trading status**: Active (matches global) or Excluded (conflicts with global)
+- **Engine phase**: LONG_DCA or SHORT_DCA (the coin's own signal-based state)
+- **Trading status**: ACTIVE (green, matches global) or EXCLUDED (red, conflicts)
 - **Signal that triggered the flip**: Top detection method or bottom conviction score
 
-The portfolio summary shows:
-- **Global regime**: Current macro direction (LONG_DCA or SHORT_DCA)
-- **Regime signal count**: N/total coins that have flipped to the opposing phase
-- **Conviction tier**: Based on signal count thresholds
+The portfolio summary shows (Risk Profile → "Portfolio Regime" panel):
+- **Global regime**: Current macro direction (▲ LONG or ▼ SHORT)
+- **Engine counts**: N Long / N Short / N total
+- **Conviction bar**: Visual progress bar of flip % with color coding
+- **Flipped coin list**: Names of coins in opposing phase
 
-#### 7.5.5 Regime Flip Lifecycle
+The header shows:
+- **Global regime badge**: ▲ LONG (green) or ▼ SHORT (red)
+- **Conviction badge**: "Flip: X%" (appears when > 0%, color-coded by severity)
+
+Macro Indicators section shows:
+- **Regime Gate card**: Per-coin phase with ACTIVE/EXCLUDED status tags
+- **Global regime reference**: At top of card for context
+
+#### 7.5.5 Status.json Regime Data
+
+```json
+"regime_detail": {
+  "global_regime": "LONG_DCA",
+  "alert_state": "NONE",
+  "last_alert_pct": 0.0,
+  "flip_pct": 11.1,
+  "flipped_coins": ["HYPE"],
+  "aligned_coins": ["DYDX", "ENA", "INJ", "JTO", "JUP", "PEPE", "TAO", "TON"],
+  "long_count": 8,
+  "short_count": 1,
+  "total_engines": 9
+}
+```
+
+#### 7.5.6 Regime Flip Lifecycle
 
 ```
 1. Market starts topping
 2. Individual coins detect tops via signal stack (OB93+divergence, fallbacks, etc.)
-3. Each coin’s engine transitions to SHORT_DCA independently
+3. Each coin's engine transitions to SHORT_DCA independently
 4. Regime gate blocks these coins from opening SHORT positions (global is still LONG)
 5. Open LONG positions on these coins naturally hit TPs and close
 6. Dashboard shows increasing count of flipped coins
@@ -936,7 +975,7 @@ The portfolio summary shows:
 12. No positions are force-closed at any point
 ```
 
-#### 7.5.6 Implementation Notes
+#### 7.5.7 Implementation Notes
 
 - Global regime is stored in `state.json` as `global_regime: "LONG_DCA"` or `"SHORT_DCA"`
 - On startup, global regime is restored from state (not hardcoded)
@@ -962,12 +1001,12 @@ The portfolio summary shows:
 ### 8.2 Credential Resolution (Priority Order)
 
 1. **Explicit config dict** passed at construction
-2. **Environment variables** — `HYPERLIQUID_API_KEY` / `HYPERLIQUID_API_SECRET`
-3. **Windows Registry** (Windows-only fallback — silent no-op on Linux)
+2. **Environment variables** - `HYPERLIQUID_API_KEY` / `HYPERLIQUID_API_SECRET`
+3. **Windows Registry** (Windows-only fallback - silent no-op on Linux)
 
 **Critical:** On Linux/cloud servers, env vars **must** be set. The Windows Registry
 fallback is unavailable. If credentials are missing, the client raises `ValueError`
-at initialization (fail-fast — does not attempt to connect unauthenticated).
+at initialization (fail-fast - does not attempt to connect unauthenticated).
 
 ### 8.3 Exchange Defaults
 
@@ -1020,7 +1059,7 @@ sync_dashboard.ps1  (every 10 min via AIT_DashboardSync)
     │
     ├─ git sparse-checkout clone → $TEMP/ait-dashboard-sync
     ├─ Copy docs/ data files to clone
-    ├─ git add docs/   ← ONLY docs/ — never stages source files
+    ├─ git add docs/   ← ONLY docs/ - never stages source files
     ├─ git commit -m "Data sync YYYY-MM-DD HH:MM"
     └─ git push → GitHub Pages
          └─ Live at halo-effects.github.io
@@ -1093,24 +1132,24 @@ All bots send structured Telegram alerts for:
 
 `status.json` is written after every trading cycle (~60 min). The watchdog and
 heartbeat monitor check:
-- `running: true` — bot has not errored out
-- `last_update` timestamp — must be < 65 minutes old
-- `max_drawdown_pct` — alert if > 15% (live bot only)
+- `running: true` - bot has not errored out
+- `last_update` timestamp - must be < 65 minutes old
+- `max_drawdown_pct` - alert if > 15% (live bot only)
 
 ### 11.3 AIT_Watchdog
 
 Runs every 5 minutes. Monitors:
-1. **OpenClaw Gateway** — restarts if process not found
-2. **V14PaperBot** — restarts scheduled task if not running or status stale > 2h
-3. **V14ETFPaperBot** — same
-4. **V14PMPaperBot** — same
-5. **V14LiveAster** — same
+1. **OpenClaw Gateway** - restarts if process not found
+2. **V14PaperBot** - restarts scheduled task if not running or status stale > 2h
+3. **V14ETFPaperBot** - same
+4. **V14PMPaperBot** - same
+5. **V14LiveAster** - same
 
 Log: `~/.openclaw/watchdog.log`
 
 ---
 
-## 12. Environment Variables — Complete Reference
+## 12. Environment Variables - Complete Reference
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
@@ -1130,7 +1169,7 @@ be set explicitly in the systemd service environment or `.env` file.
 
 ---
 
-## 13. CLI Reference — Launch Commands
+## 13. CLI Reference - Launch Commands
 
 ### V14PM Paper Bot
 ```bash
@@ -1139,7 +1178,7 @@ python -u -m trading.spot.run_v14_portfolio_paper \
   --capital 50000 \
   --profile high \
   --leverage 1.0
-# Restores engine state from engine_state.json — no candle replay, no phantom trades.
+# Restores engine state from engine_state.json - no candle replay, no phantom trades.
 
 # First launch ONLY (new account, clean start):
 python -u -m trading.spot.run_v14_portfolio_paper \
@@ -1148,7 +1187,7 @@ python -u -m trading.spot.run_v14_portfolio_paper \
   --leverage 1.0 \
   --fresh
 # Skips state restore and candle backfill. Engines start trading from NOW only.
-# After first cycle, engine_state.json is saved — subsequent restarts don't need --fresh.
+# After first cycle, engine_state.json is saved - subsequent restarts don't need --fresh.
 ```
 
 ### V14PM Live Bot (production)
@@ -1160,7 +1199,7 @@ python -u -m trading.spot.run_v14_portfolio_live \
   --exchange hyperliquid \
   --confirm         # Required for live trading
 ```
-> Note: `run_v14_portfolio_live.py` does not yet exist — must be created as part
+> Note: `run_v14_portfolio_live.py` does not yet exist - must be created as part
 > of cloud migration. See Cloud Migration Guide.
 
 ### V14 Live Bot (Aster)
@@ -1272,9 +1311,9 @@ CREATE TABLE trades (
 ```
 
 **Database choice:**
-- **SQLite** — simplest path. `candles.db` already uses it. Trades table could
+- **SQLite** - simplest path. `candles.db` already uses it. Trades table could
   live in the same file. Sufficient for single-server multi-account deployment.
-- **PostgreSQL** — required if multiple servers need write access to the same
+- **PostgreSQL** - required if multiple servers need write access to the same
   trade ledger (e.g., cloud bot + local bot writing to central DB). Adds
   operational complexity (backup, auth, networking).
 
@@ -1301,9 +1340,9 @@ Migrate to Postgres only when multi-server writes become a requirement.
 
 ---
 
-_Document generated by Gee Gee — 2026-03-09_
-_Updated: 2026-03-10 (v1.2 — CSV-as-truth for all bots, exchange API equity for live bot, --fresh loads existing trades, future trade DB architecture)_
-_Updated: 2026-04-18 (v1.3 — Aster DEX collector, 50-coin universe, trend multiplier gap resilience, §3.4 exchange migration)_
-_Updated: 2026-05-05 (v1.4 — Trade reconciliation system: standalone CLI tool, startup reconciliation, RECONCILE command, deal ID fix. §6.8)_
+_Document generated by Gee Gee - 2026-03-09_
+_Updated: 2026-03-10 (v1.2 - CSV-as-truth for all bots, exchange API equity for live bot, --fresh loads existing trades, future trade DB architecture)_
+_Updated: 2026-04-18 (v1.3 - Aster DEX collector, 50-coin universe, trend multiplier gap resilience, §3.4 exchange migration)_
+_Updated: 2026-05-05 (v1.4 - Trade reconciliation system: standalone CLI tool, startup reconciliation, RECONCILE command, deal ID fix. §6.8)_
 _Next: Cloud Migration Guide (Phase 5)_
 _Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_
