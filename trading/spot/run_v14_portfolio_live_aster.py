@@ -763,6 +763,10 @@ class V14PortfolioLiveAster:
         self._cfgi_coins: Dict[str, float] = {}
         self._cfgi_last_poll: float = 0.0
 
+        # Global portfolio regime — changes ONLY via manual APPROVE command
+        # See V14PM_SYSTEM_ARCHITECTURE.md §7.5
+        self._global_regime: str = "LONG_DCA"  # Restored from state.json
+
         # Regime monitor state
         self._regime_signal_count: int = 0
         self._regime_signal_type: Optional[str] = None  # "TOP" or "BOTTOM"
@@ -836,6 +840,7 @@ class V14PortfolioLiveAster:
                 "split_tier_index": self.router._split_tier_index,
             },
             "regime": {
+                "global_regime": self._global_regime,
                 "signal_count": self._regime_signal_count,
                 "signal_type": self._regime_signal_type,
                 "alert_state": self._regime_alert_state,
@@ -983,6 +988,8 @@ class V14PortfolioLiveAster:
         self._regime_signal_count = regime.get("signal_count", 0)
         self._regime_signal_type  = regime.get("signal_type")
         self._regime_alert_state  = regime.get("alert_state", "NONE")
+        self._global_regime = regime.get("global_regime", "LONG_DCA")
+        logger.info(f"Global regime: {self._global_regime}")
 
         # Restore tracked capital (Upgrade 1)
         if "tracked_capital" in state:
@@ -1157,68 +1164,68 @@ class V14PortfolioLiveAster:
     REGIME_COOLDOWN_HOURS = 24  # Hours before a manually-resumed coin can be re-flagged
 
     def _check_coin_regime_conflict(self, sym: str, cs: 'CoinState'):
-        """Check if a coin's engine signals conflict with global direction.
-        Runs after each candle tick. Flags the coin if conflict detected.
+        """Check if a coin's engine phase conflicts with global regime (§7.5).
+        Runs after each candle tick. Flags the coin if phase ≠ global regime.
+        The engine phase is NEVER overwritten — it reflects real signal data.
         """
         if not cs.engine or not cs.engine._engine:
             return
-        if cs.regime_flagged:
-            return  # Already flagged
         if cs.paused:
-            return  # Don't flag paused coins
-
-        # Cooldown check (Q6: 24h after manual RESUME)
-        if time.time() < cs.regime_cooldown_until:
             return
 
         eng = cs.engine._engine
+        # Get engine phase as string
+        engine_phase = eng.phase.name if hasattr(eng.phase, 'name') else str(eng.phase)
 
-        # Global direction: currently always LONG (until full regime flip is implemented)
-        global_direction = "LONG"
+        # Check if phase conflicts with global regime
+        conflicts = (engine_phase != self._global_regime)
 
-        # Check if the engine detected a top (wants SHORT) while global is LONG
-        if global_direction == "LONG" and getattr(eng, 'top_detected', False):
+        if conflicts and not cs.regime_flagged:
+            # Newly flagged — engine just flipped to opposing phase
             cs.regime_flagged = True
-            cs.coin_regime_signal = "TOP"
+            cs.coin_regime_signal = "TOP" if engine_phase == "SHORT_DCA" else "BOTTOM"
             cs.flagged_at = datetime.now(timezone.utc).isoformat()
             coin_name = sym.split("/")[0]
-            logger.warning(f"REGIME FLAG: {sym} — top detected, conflicts with global LONG")
+            logger.warning(
+                f"REGIME FLAG: {sym} — engine={engine_phase}, "
+                f"global={self._global_regime} (excluded from trading)"
+            )
 
-            # Count total flagged coins for context
-            flagged_count = sum(1 for s, c in self.coins.items() if c.regime_flagged)
-            flagged_names = [s.split("/")[0] for s, c in self.coins.items() if c.regime_flagged]
+            # Count total flipped coins for regime monitor
+            flipped = [s.split('/')[0] for s, c in self.coins.items() if c.regime_flagged]
+            total_engines = sum(1 for c in self.coins.values() if c.engine)
 
             send_telegram(
                 f"\U0001f6a9 {TG_PREFIX} <b>Coin Regime Conflict: {coin_name}</b>\n"
-                f"Signal: TOP DETECTED (wants Short)\n"
-                f"Global direction: LONG\n"
-                f"Flagged coins: {flagged_count}/{len(self.coins)} ({', '.join(flagged_names)})\n\n"
-                f"Coin removed from active trading.\n"
-                f"Open positions can still hit TPs.\n"
-                f"Auto-resumes on global regime flip or RESUME {coin_name}."
+                f"Engine phase: {engine_phase}\n"
+                f"Global regime: {self._global_regime}\n"
+                f"Excluded from new entries (open positions ride to TP)\n\n"
+                f"Flipped coins: {len(flipped)}/{total_engines} ({', '.join(flipped)})"
             )
+
+            # Check conviction thresholds for macro regime flip
+            if total_engines > 0:
+                flip_pct = len(flipped) / total_engines
+                if flip_pct >= 0.5 and self._regime_alert_state != "AWAITING_APPROVAL":
+                    self._regime_alert_state = "AWAITING_APPROVAL"
+                    opposing = "SHORT_DCA" if self._global_regime == "LONG_DCA" else "LONG_DCA"
+                    send_telegram(
+                        f"\U0001f6a8 {TG_PREFIX} <b>REGIME CONVICTION: {len(flipped)}/{total_engines} coins flipped</b>\n"
+                        f"Current: {self._global_regime} \u2192 Suggested: {opposing}\n"
+                        f"Coins: {', '.join(flipped)}\n\n"
+                        f"Reply APPROVE to flip global regime\n"
+                        f"Reply DENY to dismiss"
+                    )
+
             self._save_state()
 
-        # Check for SHORT direction with bottom detection (future use)
-        elif global_direction == "SHORT" and getattr(eng, 'conviction_fired', False):
-            cs.regime_flagged = True
-            cs.coin_regime_signal = "BOTTOM"
-            cs.flagged_at = datetime.now(timezone.utc).isoformat()
+        elif not conflicts and cs.regime_flagged:
+            # Engine flipped back to match global — auto-unflag
+            cs.regime_flagged = False
+            cs.coin_regime_signal = None
+            cs.flagged_at = None
             coin_name = sym.split("/")[0]
-            logger.warning(f"REGIME FLAG: {sym} — bottom detected, conflicts with global SHORT")
-
-            flagged_count = sum(1 for s, c in self.coins.items() if c.regime_flagged)
-            flagged_names = [s.split("/")[0] for s, c in self.coins.items() if c.regime_flagged]
-
-            send_telegram(
-                f"\U0001f6a9 {TG_PREFIX} <b>Coin Regime Conflict: {coin_name}</b>\n"
-                f"Signal: BOTTOM DETECTED (wants Long)\n"
-                f"Global direction: SHORT\n"
-                f"Flagged coins: {flagged_count}/{len(self.coins)} ({', '.join(flagged_names)})\n\n"
-                f"Coin removed from active trading.\n"
-                f"Open positions can still hit TPs.\n"
-                f"Auto-resumes on global regime flip or RESUME {coin_name}."
-            )
+            logger.info(f"REGIME UNFLAG: {sym} — engine back to {engine_phase} (matches global)")
             self._save_state()
 
     def _clear_regime_flag_on_tp(self, sym: str, cs: 'CoinState'):
@@ -2579,15 +2586,33 @@ class V14PortfolioLiveAster:
             if self._regime_alert_state != "AWAITING_APPROVAL":
                 send_telegram(f"ℹ️ {TG_PREFIX} No pending regime change to approve.")
                 return
-            self.bot_state = BotState.WIND_DOWN
+            old_regime = self._global_regime
+            self._global_regime = "SHORT_DCA" if old_regime == "LONG_DCA" else "LONG_DCA"
             self._regime_alert_state = "NONE"
+
+            # Auto-unflag coins that now match the new global regime
+            unflipped = []
+            still_excluded = []
+            for s, c in self.coins.items():
+                if c.engine and c.engine._engine:
+                    ep = c.engine._engine.phase
+                    ep_str = ep.name if hasattr(ep, 'name') else str(ep)
+                    if ep_str == self._global_regime and c.regime_flagged:
+                        c.regime_flagged = False
+                        c.coin_regime_signal = None
+                        unflipped.append(s.split('/')[0])
+                    elif ep_str != self._global_regime:
+                        c.regime_flagged = True
+                        still_excluded.append(s.split('/')[0])
+
             send_telegram(
-                f"⏳ {TG_PREFIX} <b>Wind-Down Started</b>\n"
-                f"Grids frozen. Existing TPs active.\n"
-                f"No new entries or DCA layers until all positions close.\n"
-                f"I'll notify you when wind-down is complete."
+                f"\U0001f504 {TG_PREFIX} <b>Global Regime Flipped</b>\n"
+                f"{old_regime} \u2192 {self._global_regime}\n\n"
+                f"Now eligible: {', '.join(unflipped) if unflipped else 'none yet'}\n"
+                f"Still excluded: {', '.join(still_excluded) if still_excluded else 'none'}\n\n"
+                f"No positions force-closed. Open TPs ride naturally."
             )
-            logger.info("APPROVE: entering WIND_DOWN state")
+            logger.info(f"APPROVE: global regime {old_regime} -> {self._global_regime}")
             self._save_state()
 
         elif text == "DENY":
@@ -3074,10 +3099,12 @@ class V14PortfolioLiveAster:
                 if self.router._split_tier_index >= 0 else "90/10"
             ),
             "approved_symbols": sorted(self.router.active_allocations.keys()),
+            "global_regime": self._global_regime,
             "regime": (self._regime_alert_state
                        if self._regime_alert_state and self._regime_alert_state != "NONE"
                        else "RANGING"),
             "regime_detail": {
+                "global_regime": self._global_regime,
                 "alert_state":  self._regime_alert_state,
                 "signal_type":  self._regime_signal_type,
                 "signal_count": self._regime_signal_count,
@@ -3380,11 +3407,31 @@ class V14PortfolioLiveAster:
                                 logger.error(f"Engine tick failed for {sym}: {e}")
                                 continue
 
+                            # --- Regime Gate (§7.5.2) ---
+                            # Check if engine phase matches global regime.
+                            # If not, coin is excluded from trading (no new entries).
+                            # Engine state is preserved (reflects real signal data).
+                            engine_phase = None
+                            if cs.engine and cs.engine._engine:
+                                eng_phase_raw = cs.engine._engine.phase
+                                # Normalize phase to LONG_DCA / SHORT_DCA string
+                                engine_phase = eng_phase_raw.name if hasattr(eng_phase_raw, 'name') else str(eng_phase_raw)
+
+                            regime_excluded = (
+                                engine_phase is not None
+                                and engine_phase != self._global_regime
+                            )
+
                             # Only execute actions on the current (most recent) candle
-                            if actions and is_current_candle:
+                            if actions and is_current_candle and not regime_excluded:
                                 logger.info(f"Engine actions for {sym}: {actions}")
                                 for action in actions:
                                     self._execute_action(sym, cs, action)
+                            elif actions and is_current_candle and regime_excluded:
+                                logger.info(
+                                    f"REGIME GATE {sym}: {len(actions)} action(s) blocked "
+                                    f"(engine={engine_phase}, global={self._global_regime})"
+                                )
                             elif actions and not is_current_candle:
                                 logger.info(
                                     f"WARMUP SKIP {sym} @ {ts_dt.strftime('%H:%M')}: "
