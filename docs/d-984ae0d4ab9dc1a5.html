@@ -697,14 +697,12 @@ function render(){
 // STATS ROW
 function renderStats(){
   var cap=S.seed_capital||S.capital||0, eq=S.equity||0;
-  // Net PnL growth: realized - fees + unrealized (true trading performance)
+  // Growth: equity vs seed capital (DEX-sourced, always accurate).
+  // Old formula (realized - fees + unrealized) underreports when CSV is incomplete.
+  var growthPct=cap>0?((eq-cap)/cap*100):0;
   var _syms=S.symbols||Object.keys(S.coins||{});
-  var _rpnl=S.total_realized_pnl||0;
   var _coinFees=0; _syms.forEach(function(s){_coinFees+=((S.coins||{})[s]||{}).total_fees||0});
   var _fees=Math.max(S.total_fees||0, _coinFees);
-  var _upnl=0; _syms.forEach(function(s){_upnl+=((S.coins||{})[s]||{}).unrealized_pnl||0});
-  var netPnl=_rpnl-_fees+_upnl;
-  var growthPct=cap>0?(netPnl/cap*100):0;
 
   $('vEq').textContent=fUsd(eq);
   $('vEqSub').innerHTML='Capital: '+fUsd(cap)+' &middot; '+'<span style="color:'+pC(growthPct)+'">'+(growthPct>=0?'+':'')+fmt(growthPct)+'%</span>';
