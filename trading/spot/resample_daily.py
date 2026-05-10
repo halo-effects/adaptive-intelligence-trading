@@ -12,6 +12,7 @@ import sqlite3
 import sys
 import io
 import logging
+import numpy as np
 from pathlib import Path
 
 if sys.platform == "win32":
@@ -87,6 +88,165 @@ def resample_coin(conn: sqlite3.Connection, symbol: str) -> int:
     return conn.total_changes - before
 
 
+def compute_and_update_indicators(conn: sqlite3.Connection, symbol: str) -> int:
+    """Compute technical indicators for a symbol's daily candles and update in-place.
+
+    Reads all daily rows, computes SMA20/50/200, BB, ATR, ADX, RSI, HH/HL streaks,
+    slopes, and price-vs-SMA. Updates rows that are missing indicators.
+    Returns number of rows updated.
+    """
+    rows = conn.execute(
+        "SELECT timestamp, open, high, low, close, volume FROM candles_daily "
+        "WHERE symbol = ? ORDER BY timestamp",
+        (symbol,)
+    ).fetchall()
+    if len(rows) < 50:  # Need at least 50 rows for SMA50
+        return 0
+
+    ts = [r[0] for r in rows]
+    o = np.array([r[1] for r in rows], dtype=float)
+    h = np.array([r[2] for r in rows], dtype=float)
+    l = np.array([r[3] for r in rows], dtype=float)
+    c = np.array([r[4] for r in rows], dtype=float)
+
+    n = len(c)
+
+    def _rolling_mean(arr, w):
+        out = np.full(n, np.nan)
+        for i in range(w - 1, n):
+            out[i] = np.mean(arr[i - w + 1:i + 1])
+        return out
+
+    def _ewm(arr, alpha):
+        out = np.full(n, np.nan)
+        first_valid = None
+        for i in range(n):
+            if np.isnan(arr[i]):
+                continue
+            if first_valid is None:
+                first_valid = i
+                out[i] = arr[i]
+            else:
+                out[i] = alpha * arr[i] + (1 - alpha) * out[i - 1]
+        return out
+
+    # SMAs
+    sma20 = _rolling_mean(c, 20)
+    sma50 = _rolling_mean(c, 50)
+    sma200 = _rolling_mean(c, 200)
+
+    # Bollinger Bands
+    bb_width = np.full(n, np.nan)
+    bb_pct = np.full(n, np.nan)
+    for i in range(19, n):
+        window = c[i - 19:i + 1]
+        std = np.std(window, ddof=1)
+        mid = sma20[i]
+        if mid and mid > 0:
+            upper = mid + 2 * std
+            lower = mid - 2 * std
+            bb_width[i] = (upper - lower) / mid * 100
+            denom = upper - lower
+            if denom > 0:
+                bb_pct[i] = (c[i] - lower) / denom * 100
+
+    # ATR(14)
+    tr = np.full(n, np.nan)
+    tr[0] = h[0] - l[0]
+    for i in range(1, n):
+        tr[i] = max(h[i] - l[i], abs(h[i] - c[i - 1]), abs(l[i] - c[i - 1]))
+    atr14 = _ewm(tr, 1.0 / 14)
+    atr_pct = np.where(c > 0, atr14 / c * 100, np.nan)
+
+    # Directional Movement + ADX(14)
+    plus_dm = np.zeros(n)
+    minus_dm = np.zeros(n)
+    for i in range(1, n):
+        up = h[i] - h[i - 1]
+        down = l[i - 1] - l[i]
+        if up > down and up > 0:
+            plus_dm[i] = up
+        if down > up and down > 0:
+            minus_dm[i] = down
+    smooth_plus = _ewm(plus_dm, 1.0 / 14)
+    smooth_minus = _ewm(minus_dm, 1.0 / 14)
+    smooth_tr = _ewm(tr, 1.0 / 14)
+    plus_di = np.where(smooth_tr > 0, smooth_plus / smooth_tr * 100, np.nan)
+    minus_di = np.where(smooth_tr > 0, smooth_minus / smooth_tr * 100, np.nan)
+    dx = np.where(
+        (plus_di + minus_di) > 0,
+        np.abs(plus_di - minus_di) / (plus_di + minus_di) * 100,
+        np.nan
+    )
+    adx = _ewm(dx, 1.0 / 14)
+
+    # RSI(14)
+    delta = np.diff(c, prepend=np.nan)
+    gain = np.where(delta > 0, delta, 0.0)
+    loss = np.where(delta < 0, -delta, 0.0)
+    avg_gain = _ewm(gain, 1.0 / 14)
+    avg_loss = _ewm(loss, 1.0 / 14)
+    rsi14 = np.where(avg_loss > 0, 100 - (100 / (1 + avg_gain / avg_loss)), np.nan)
+
+    # Consecutive HH/HL and LH/LL
+    consec_hh_hl = np.zeros(n, dtype=int)
+    consec_lh_ll = np.zeros(n, dtype=int)
+    for i in range(1, n):
+        if h[i] > h[i - 1] and l[i] > l[i - 1]:
+            consec_hh_hl[i] = consec_hh_hl[i - 1] + 1
+        if h[i] < h[i - 1] and l[i] < l[i - 1]:
+            consec_lh_ll[i] = consec_lh_ll[i - 1] + 1
+
+    # Slopes and price vs SMA
+    sma50_slope = np.full(n, np.nan)
+    sma200_slope = np.full(n, np.nan)
+    for i in range(5, n):
+        if not np.isnan(sma50[i]) and not np.isnan(sma50[i - 5]):
+            sma50_slope[i] = sma50[i] - sma50[i - 5]
+        if not np.isnan(sma200[i]) and not np.isnan(sma200[i - 5]):
+            sma200_slope[i] = sma200[i] - sma200[i - 5]
+    price_vs_sma50 = np.where(sma50 > 0, (c - sma50) / sma50 * 100, np.nan)
+    price_vs_sma200 = np.where(sma200 > 0, (c - sma200) / sma200 * 100, np.nan)
+
+    # Update rows
+    updated = 0
+    for i in range(n):
+        vals = (
+            _f(sma20[i]), _f(sma50[i]), _f(sma200[i]),
+            _f(bb_width[i]), _f(bb_pct[i]),
+            _f(atr14[i]), _f(atr_pct[i]),
+            _f(adx[i]), _f(plus_di[i]), _f(minus_di[i]),
+            _f(rsi14[i]),
+            int(consec_hh_hl[i]), int(consec_lh_ll[i]),
+            _f(sma50_slope[i]), _f(sma200_slope[i]),
+            _f(price_vs_sma50[i]), _f(price_vs_sma200[i]),
+            symbol, ts[i]
+        )
+        conn.execute(
+            "UPDATE candles_daily SET "
+            "sma20=?, sma50=?, sma200=?, bb_width=?, bb_pct=?, "
+            "atr14=?, atr_pct=?, adx=?, plus_di=?, minus_di=?, rsi14=?, "
+            "consec_hh_hl=?, consec_lh_ll=?, sma50_slope=?, sma200_slope=?, "
+            "price_vs_sma50=?, price_vs_sma200=? "
+            "WHERE symbol=? AND timestamp=?",
+            vals
+        )
+        updated += 1
+    conn.commit()
+    return updated
+
+
+def _f(v):
+    """Convert numpy value to Python float or None."""
+    if v is None or (isinstance(v, float) and np.isnan(v)):
+        return None
+    try:
+        fv = float(v)
+        return None if np.isnan(fv) else fv
+    except (TypeError, ValueError):
+        return None
+
+
 def main():
     if not DB_PATH.exists():
         logger.error(f"Database not found: {DB_PATH}")
@@ -137,9 +297,24 @@ def main():
             logger.info(f"  {symbol}: +{new} daily candles ({status})")
 
     conn.commit()
-    conn.close()
 
-    logger.info(f"Done. {updated} symbols updated, {total_new} new daily candles.")
+    # Step 2: Compute/update indicators for all daily symbols
+    all_daily_syms = [r[0] for r in conn.execute(
+        "SELECT DISTINCT symbol FROM candles_daily ORDER BY symbol"
+    ).fetchall()]
+    logger.info(f"Computing indicators for {len(all_daily_syms)} daily symbols...")
+    ind_updated = 0
+    for symbol in all_daily_syms:
+        try:
+            n = compute_and_update_indicators(conn, symbol)
+            if n > 0:
+                ind_updated += 1
+        except Exception as e:
+            logger.warning(f"  {symbol}: indicator computation failed: {e}")
+    logger.info(f"Indicators updated for {ind_updated} symbols.")
+
+    conn.close()
+    logger.info(f"Done. {updated} symbols resampled ({total_new} new candles), {ind_updated} indicator sets updated.")
 
 
 if __name__ == "__main__":

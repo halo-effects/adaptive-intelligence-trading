@@ -86,14 +86,21 @@ def load_daily(coin, db_path=None):
     if not syms:
         db.close()
         return None
-    # Pick the symbol with the widest valid date range (best historical coverage)
-    # Filter out symbols with corrupt data (NaN timestamps, sub-daily leaks)
-    def _date_range(s):
+    # Pick the best symbol: prefer symbols WITH indicators (sma50 populated),
+    # then by widest valid date range. This fixes BTC/ETH where the USDC pair
+    # has wider range (from Binance backfill) but no indicators, while the
+    # USDT pair has indicators.
+    def _score(s):
         r = db.execute(
-            'SELECT MAX(timestamp) - MIN(timestamp) FROM candles_daily '
+            'SELECT MAX(timestamp) - MIN(timestamp), '
+            'SUM(CASE WHEN sma50 IS NOT NULL AND sma50 != 0 THEN 1 ELSE 0 END) '
+            'FROM candles_daily '
             'WHERE symbol=? AND timestamp IS NOT NULL AND timestamp > 0', (s,)).fetchone()
-        return r[0] or 0
-    best = max(syms, key=_date_range)
+        date_range = r[0] or 0
+        has_indicators = 1 if (r[1] or 0) > 0 else 0
+        # Prefer symbols with indicators (1e15 bonus), then by date range
+        return (has_indicators * 10**15) + date_range
+    best = max(syms, key=_score)
     df = pd.read_sql(
         'SELECT * FROM candles_daily WHERE symbol=? ORDER BY timestamp',
         db, params=[best])
