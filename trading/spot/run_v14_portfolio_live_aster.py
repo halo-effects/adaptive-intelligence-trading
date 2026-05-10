@@ -1208,7 +1208,7 @@ class V14PortfolioLiveAster:
 
             # Graduated conviction alerts — early warning + APPROVE at any level
             # Thresholds: 15%, 25%, 30%, 35%, 50% (each fires once per climb)
-            CONVICTION_THRESHOLDS = [0.15, 0.25, 0.30, 0.35, 0.50]
+            CONVICTION_THRESHOLDS = [0.15, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]
             if total_engines > 0:
                 flip_pct = len(flipped) / total_engines
                 # Find the highest threshold we've crossed that we haven't alerted yet
