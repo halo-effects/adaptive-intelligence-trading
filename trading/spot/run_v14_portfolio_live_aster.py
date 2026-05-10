@@ -62,9 +62,11 @@ sys.path.insert(0, str(_WORKSPACE))
 from trading.spot.v14_lifecycle_engine import V14LifecycleEngine
 from trading.spot.v14_capital_manager import (
     CapitalRouter, EQUITY_TIER_CAPS, EQUITY_TIER_SPLITS,
+    HURDLE_RATE_DCA_SCORE,
     load_capital_ledger, save_capital_ledger, record_ledger_transaction,
     get_ledger_summary,
 )
+HURDLE_RATE = HURDLE_RATE_DCA_SCORE  # Local alias for readability
 from trading.spot.exchange_client import SpotExchangeClient
 
 # ── Logging ─────────────────────────────────────────────────────────────────
@@ -1090,6 +1092,21 @@ class V14PortfolioLiveAster:
                 eng.short_tp = 0.0
                 cs.layer_count = 0
 
+        # Finding #43: clean up phantom open_deals for coins with no exchange position
+        # and no TP order (fully closed externally or via manual exchange action)
+        for deal_key in list(self.tracker._open_deals.keys()):
+            deal_sym = deal_key.split(":")[0]  # "SYM:long" → "SYM"
+            cs_deal = self.coins.get(deal_sym)
+            base_deal = deal_sym.split("/")[0]
+            has_exchange_pos = base_deal in positions and (positions[base_deal].get("qty", 0) or 0) > 0
+            has_tp = cs_deal and cs_deal.tp_order_id
+            if not has_exchange_pos and not has_tp:
+                stale_deal = self.tracker._open_deals.pop(deal_key)
+                logger.info(
+                    f"Cleaned phantom open_deal: {deal_key} "
+                    f"(invested=${stale_deal.get('invested', 0):.2f}, no exchange position)"
+                )
+
         self._last_exchange_positions = positions  # Cache for status write
         logger.debug(
             f"Exchange sync: free=${self._exchange_usdt_free:.2f} "
@@ -1914,7 +1931,7 @@ class V14PortfolioLiveAster:
                 symbol = entry.get("symbol") or entry.get("coin")
                 base_score = float(entry.get("dca_score", 0))
                 trend_mult = float(entry.get("trend_multiplier", 1.0))
-                if base_score >= 5.0:
+                if base_score >= HURDLE_RATE:
                     qualifying.append((symbol, base_score * trend_mult))
 
             qualifying.sort(key=lambda x: x[1], reverse=True)
@@ -3125,19 +3142,12 @@ class V14PortfolioLiveAster:
                     pass
 
                 # Per-coin realized PnL from CSV (survives restarts)
-                try:
-                    csv_path = OUTPUT_DIR / "trades.csv"
-                    if csv_path.exists():
-                        import csv as csv_mod
-                        with open(csv_path) as cf:
-                            reader = csv_mod.DictReader(cf)
-                            coin_pnl = sum(
-                                float(t.get("pnl", 0) or 0)
-                                for t in reader if t.get("symbol") == sym
-                            )
-                        coin_data["realized_pnl"] = round(coin_pnl, 4)
-                except Exception as csv_err:
-                    logger.warning(f"CSV PnL read failed for {sym}: {csv_err}")
+                # Per-coin realized PnL from in-memory trade list (no disk IO)
+                coin_pnl = sum(
+                    float(t.get("pnl", 0) or 0)
+                    for t in self.tracker.trades if t.get("symbol") == sym
+                )
+                coin_data["realized_pnl"] = round(coin_pnl, 4)
 
                 coin_data["cumulative_funding"] = round(cs.cumulative_funding, 6)
                 coin_data["tp_order_id"]  = cs.tp_order_id

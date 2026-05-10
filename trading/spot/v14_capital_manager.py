@@ -47,6 +47,12 @@ EQUITY_TIER_SPLITS = [
 # ---------------------------------------------------------------------------
 TIER_HYSTERESIS_PCT = 0.05  # 5%
 
+# ---------------------------------------------------------------------------
+# DCA Score hurdle rate — coins below this are excluded from allocation.
+# Adjust based on market conditions (higher = more selective).
+# ---------------------------------------------------------------------------
+HURDLE_RATE_DCA_SCORE = 5.0
+
 
 class CapitalRouter:
     """
@@ -297,7 +303,7 @@ class CapitalRouter:
         logger.info(f"Equity tier: ${self.total_equity:.2f} → max {self.tier_coin_cap} coins | "
                      f"split {active_pct*100:.0f}/{reserve_pct*100:.0f}")
 
-        # 1. Filter: hurdle rate >= 5.0, apply trend multiplier
+        # 1. Filter: hurdle rate >= HURDLE_RATE_DCA_SCORE, apply trend multiplier
         qualifying_coins = []
         for coin_data in scanner_rankings:
             symbol = coin_data.get("symbol") or coin_data.get("coin")
@@ -315,7 +321,7 @@ class CapitalRouter:
             # Collapsed scores (mult near 0) effectively gate entry
             adjusted_score = base_score_float * trend_mult_float
                 
-            if base_score_float >= 5.0:
+            if base_score_float >= HURDLE_RATE_DCA_SCORE:
                 qualifying_coins.append({
                     "symbol": symbol,
                     "dca_score": base_score_float,
