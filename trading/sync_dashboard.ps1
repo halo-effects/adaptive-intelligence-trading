@@ -14,25 +14,20 @@ if (-not $pat) { Write-Error "AIT_GITHUB_PAT env var not set"; exit 1 }
 $repoUrl = "https://halo-effects:$pat@github.com/halo-effects/adaptive-intelligence-trading.git"
 
 # Clone or pull (docs/ only ΓÇö never pulls source files into this working copy)
-if (Test-Path "$repoDir\.git") {
-    Set-Location $repoDir
-    # Fetch remote but do NOT checkout docs/ ΓÇö we are the sole writer.
-    # Checking out remote docs/ would overwrite fresh local data with stale remote data
-    # if any previous sync caught a bad snapshot.
-    git fetch --quiet 2>$null
-    # Only reset to remote HEAD to keep history clean (no file checkout)
-    git reset --soft origin/main 2>$null
-} else {
-    if (Test-Path $repoDir) { Remove-Item $repoDir -Recurse -Force }
-    # Sparse clone ΓÇö only checkout docs/ so git add can never stage source file deletions
-    git clone --no-checkout --depth=1 $repoUrl $repoDir 2>$null
-    Set-Location $repoDir
-    git config user.email "geegee@haloeffects.net"
-    git config user.name "Gee Gee"
-    git sparse-checkout init --cone 2>$null
-    git sparse-checkout set docs 2>$null
-    git checkout main --quiet 2>$null
-}
+# ROOT CAUSE FIX (2026-05-10, audit Finding #49/dashboard data loss):
+# Old approach used `git reset --soft origin/main` which populated the index
+# with the FULL tree from remote (including paper/, trading/, memory/ files).
+# This caused non-docs files to be committed/deleted in a feedback loop.
+# New approach: always nuke and shallow-clone fresh. 10-second overhead per
+# cycle is worth the guarantee that ONLY docs/ is ever staged.
+if (Test-Path $repoDir) { Remove-Item $repoDir -Recurse -Force }
+git clone --no-checkout --depth=1 --single-branch --branch main $repoUrl $repoDir 2>$null
+Set-Location $repoDir
+git config user.email "geegee@haloeffects.net"
+git config user.name "Gee Gee"
+git sparse-checkout init --cone 2>$null
+git sparse-checkout set docs 2>$null
+git checkout main --quiet 2>$null
 
 # Ensure docs/data subdirectories exist
 foreach ($sub in @("v14-live", "v14", "v14-pm")) {
@@ -148,16 +143,19 @@ if ((Test-Path $equityScript) -and (Test-Path $pythonExe)) {
 
 # Stage docs/ ONLY — never stage deletions of source files outside docs/
 git add docs/
-# SAFETY: After soft-reset, non-docs files from merge commits may appear as
-# staged deletions. Unstage everything outside docs/ to prevent accidental deletion.
-# The ':!docs/' pathspec negation is unreliable on Windows/sparse-checkout.
-# Instead, explicitly unstage any non-docs files that got pulled in.
+# SAFETY: Verify only docs/ files are staged (belt-and-suspenders).
+# Fresh clone + sparse checkout should guarantee this, but verify anyway.
 $staged = git diff --cached --name-only 2>$null
+$non_docs = @()
 foreach ($f in $staged) {
     if ($f -and -not $f.StartsWith("docs/")) {
+        $non_docs += $f
         git reset HEAD -- $f --quiet 2>$null
-        Write-Host "SAFETY: unstaged non-docs file: $f"
     }
+}
+if ($non_docs.Count -gt 0) {
+    Write-Host "CRITICAL: $($non_docs.Count) non-docs file(s) were staged despite fresh clone!"
+    foreach ($f in $non_docs) { Write-Host "  UNSTAGED: $f" }
 }
 $changes = git status --porcelain
 if ($changes) {
