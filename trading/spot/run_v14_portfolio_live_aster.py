@@ -2414,6 +2414,15 @@ class V14PortfolioLiveAster:
                             if abs(old_cap - alloc) > 1:
                                 logger.info(f"  {sym} engine capital synced: ${old_cap:.2f} -> ${alloc:.2f}")
 
+            # Seed active_allocations from rebalance targets.
+            # Without this, the T1 gate blocks entry for newly promoted coins
+            # because active_allocations only gets populated via request_capital()
+            # which runs inside _execute_action() — creating a circular dependency.
+            for sym_s, alloc_s in allocations.items():
+                if sym_s not in self.router.active_allocations:
+                    self.router.active_allocations[sym_s] = 0.0
+                    logger.info(f"  Seeded {sym_s} into active_allocations (from rebalance target)")
+
             # Reconcile router allocations: remove stale coins not in new targets
             # that have no open position. Coins with open positions stay (need
             # capital to defend DCA layers). See stale-allocation-cleanup.md.
