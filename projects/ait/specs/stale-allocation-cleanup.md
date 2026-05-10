@@ -1,6 +1,6 @@
 # Spec: Stale Allocation Cleanup — Reconcile Router After Daily Rebalance
 
-**Status**: DRAFT — needs approval
+**Status**: DEPLOYED
 **Date**: 2026-05-10
 **Priority**: MEDIUM
 **Restart Required**: YES

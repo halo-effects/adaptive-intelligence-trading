@@ -18,15 +18,18 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
-## AIT — Current State (2026-05-09)
+## AIT — Current State (2026-05-10)
 - **V14PM Live (Aster)**: $376 capital, 9 engines, 85% win rate, $85.24 realized PnL
   - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
   - Reconciliation & auto deposit detection disabled (caused corruption)
   - **Regime phase gate deployed**: Coins trade only when engine phase matches global regime
   - **Graduated conviction alerts**: 7 thresholds (15/25/30/35/40/45/50%), APPROVE at any level
   - **Dashboard**: Regime panel with conviction bar, per-coin gate status, global direction
+  - **Allocation lifecycle fixed (2026-05-10)**: Rebalance now seeds new targets into `active_allocations` (broke circular T1 gate dependency) and reconciles stale coins (removed 7 ghost allocations)
+  - **Phantom position fix**: Exchange-truth for ALL position fields (not just price/size)
+  - Approved symbols: `[INJ, JUP, TON]` (scanner top 3, now correct)
   - Positions: INJ 4.0 qty long (TP active). HYPE in SHORT_DCA (excluded, 11.1% flip)
-  - Architecture doc v1.5 (§7.5 complete)
+  - Architecture doc v1.5 (§7.3 updated with allocation lifecycle, §7.5 complete)
 - **V14 Live (Aster)**: ASTER/USDT single-coin, running
 - **V14 Paper**: Running on Hyperliquid
 - **V14-ETF Paper**: Running

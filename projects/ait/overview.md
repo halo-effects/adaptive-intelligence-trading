@@ -1,5 +1,5 @@
 # AIT — Project Overview
-_Last updated: 2026-05-09_
+_Last updated: 2026-05-10_
 
 ## Product
 **Adaptive Intelligence Trading** — Automated crypto DCA trading system with signal-directed phase transitions and dynamic capital rotation.
@@ -38,7 +38,7 @@ _Last updated: 2026-05-09_
 | Macro conviction signals observational | 2026-03-08 | 6 index-level signals documented, not wired into bot logic |
 | Trend multiplier gates entry not exit | 2026-03-06 | Declining coins get less capital but existing positions stay |
 
-## Current State (2026-05-09)
+## Current State (2026-05-10)
 - **V14PM Live (Aster)**: $376 capital, 9 coin slots, 85% win rate, $85.24 realized PnL
   - DEX-as-truth startup: reads wallet balance directly from exchange
   - Reconciliation & auto deposit detection disabled (caused corruption)
@@ -47,6 +47,9 @@ _Last updated: 2026-05-09_
   - **Regime phase gate deployed (§7.5)**: Coins trade only when phase matches global regime
   - **Graduated conviction alerts**: 7 thresholds (15/25/30/35/40/45/50%), APPROVE at any level
   - **Dashboard regime panel**: Global direction, long/short counts, conviction bar, per-coin gate status
+  - **Allocation cleanup**: Router reconciled after daily rebalance — stale coins removed, new scanner targets seeded
+  - **Phantom position fix**: Status.json + exchange sync zero all position fields when DEX has no position
+  - Approved symbols: `[INJ/USDT, JUP/USDT, TON/USDT]` (scanner top 3)
   - Positions: INJ 4.0 qty long (TP active)
   - 1/9 engines in SHORT_DCA (HYPE), 8 aligned with LONG_DCA global regime
 - **V14 Paper**: Running on Hyperliquid
@@ -65,10 +68,11 @@ _Last updated: 2026-05-09_
 | Regime phase gate | 2026-05-09 | Coins trade only when engine phase matches global regime. Engine phases never overwritten. |
 | Graduated conviction alerts | 2026-05-09 | 7 thresholds (15-50%), APPROVE at any level, DENY resets tracker. |
 | Engine phases are truth | 2026-05-09 | Never overwrite engine phase to match global—the signal data IS the conviction signal. |
+| Allocation reconcile on rebalance | 2026-05-10 | Clean stale coins from router after each rebalance. Seed new targets to unblock T1 gate. |
+| Phantom position fix | 2026-05-10 | Status writer + exchange sync zero ALL position fields when DEX has no position. |
 
 ## Next Steps
 1. **Database migration**: Replace CSV with SQLite (proper deal IDs, ACID transactions, no corruption)
 2. **Cloud migration**: Linux server, Hyperliquid mainnet (Phase 1: 6-10 weeks)
 3. **Commercial product**: Signal-as-a-Service, hub-and-spoke architecture ($49/$149/$499 tiers)
-4. **Dashboard position source**: Show exchange positions only, not engine internal state (phantom position fix)
-5. Centralize DB_PATH into single config module
+4. Centralize DB_PATH into single config module

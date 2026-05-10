@@ -810,6 +810,16 @@ At midnight UTC, the PM runner:
 5. Identifies coins that no longer qualify (score dropped below hurdle)
 6. Identifies new entrants above hurdle
 7. Adjusts allocations proportionally
+8. **Seeds `active_allocations`** from new targets (unblocks T1 gate for promoted coins)
+9. **Reconciles stale allocations**: removes coins from `active_allocations` that are not in new targets AND have no open position
+
+> **Allocation lifecycle (2026-05-10):** Previously, `active_allocations` only grew
+> (via `request_capital()` on buys) and only shrank when a coin completed a trade AND
+> fell out of top-N (via `_maybe_prune_stale_coin()`). This caused stale coins to
+> accumulate forever. Additionally, new coins promoted by rebalance couldn't trade
+> because the T1 gate checked `active_allocations` before allowing entries, but
+> `request_capital()` only ran inside `_execute_action()` — a circular dependency.
+> Both issues fixed: rebalance now seeds new targets and cleans stale entries.
 
 ### 7.4 Current Paper Performance (2026-03-10)
 

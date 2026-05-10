@@ -1,6 +1,15 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+## 2026-05-10
+- **Stale allocation cleanup deployed** (`stale-allocation-cleanup.md`): `router.active_allocations` accumulated coins forever — only removed on trade completion + not-in-top-N. Fix: reconcile against rebalance targets after each daily rebalance. Coins not in new targets with no open position are removed.
+- **Circular dependency fix**: Rebalance created engines for promoted coins (TON, JUP) but T1 gate blocked all entries because `active_allocations` wasn't populated until `request_capital()` ran inside `_execute_action()` — which the gate prevented. Fix: seed new coins into `active_allocations` from rebalance targets.
+- **Dashboard allocation filter**: Shows only coins with open positions (invested > 0). Removed stale `approved_symbols` reference that showed ghost coins.
+- **Phantom position fix deployed** (`phantom-position-fix.md`): Status.json writer and exchange sync now zero all position fields when exchange reports no position. HYPE shows invested=0, layers=0, side=none while preserving phase=SHORT_DCA.
+- **Cron healthcheck fix**: Disabled broken `healthcheck.py` script (job 55882b5c). Updated LLM health check (job ef85844d) to include regime gate status.
+- **Verified**: `approved_symbols` now correctly `['INJ/USDT', 'JUP/USDT', 'TON/USDT']` — matches scanner top 3.
+- Updated: `run_v14_portfolio_live_aster.py`, `dashboardV14PM.html`, `d-984ae0d4ab9dc1a5.html`, `stale-allocation-cleanup.md`
+
 ## 2026-05-09
 - **Regime phase gate deployed** (`regime-phase-gate.md`): Coins trade only when engine phase matches global regime. Engine phases are never overwritten — they reflect real signal data that feeds the conviction system.
 - **Graduated conviction alerts**: 7 thresholds (15/25/30/35/40/45/50%). Each fires once as conviction climbs. APPROVE available at any level. DENY resets tracker so alerts re-fire.
