@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AIT V14-PM - Live Trading Dashboard</title>
+<title>AIT V14-PM Live - Portfolio Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -38,7 +38,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .header-badge.trend-bull{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
 .header-badge.trend-bear{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
 .header-badge.leverage{background:rgba(99,102,241,.12);color:var(--accent2);border:1px solid rgba(99,102,241,.25)}
-.header-coins{font-size:.7rem;color:var(--text2)}
+.header-badge.tier{background:rgba(168,85,247,.12);color:#c084fc;border:1px solid rgba(168,85,247,.25)}
 .header-status-col{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .header-status{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:500}
 .status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
@@ -53,6 +53,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .sc-label{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
 .sc-value{font-size:1.7rem;font-weight:700;word-break:break-word}
 .sc-rpnl .sc-value,.sc-upnl .sc-value,.sc-eq .sc-value{font-size:clamp(1.1rem,2.5vw,1.7rem)}
+.sc-roi .sc-value{font-size:clamp(.95rem,2vw,1.4rem);white-space:nowrap}
 .sc-sub{font-size:.73rem;color:var(--text2);margin-top:4px}
 
 /* -- Coin Cards -- */
@@ -62,10 +63,25 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .cc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .cc-id{display:flex;align-items:center;gap:10px}
 .coin-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:#fff;flex-shrink:0}
+.coin-icon.sol{background:linear-gradient(135deg,#9945FF,#14F195)}
+.coin-icon.xrp{background:linear-gradient(135deg,#23292F,#4A5568)}
+.coin-icon.ltc{background:linear-gradient(135deg,#BFBBBB,#D4D4D4)}
 .coin-icon.hbar{background:linear-gradient(135deg,#3A3A3A,#5A5A5A)}
-.coin-icon.atom{background:linear-gradient(135deg,#6F7390,#9A9DBF)}
-.coin-icon.link{background:linear-gradient(135deg,#2A5ADA,#5A8DEE)}
-.coin-icon.near{background:linear-gradient(135deg,#00C08B,#00E6A7)}
+.coin-icon.ada{background:linear-gradient(135deg,#0033AD,#1A53FF)}
+/* New coins added 2026-03-19 � Aster 50-coin universe */
+.coin-icon.ondo{background:linear-gradient(135deg,#1A1A2E,#4A4AFF)}
+.coin-icon.render{background:linear-gradient(135deg,#FF6B35,#FF9A5C)}
+.coin-icon.virtual{background:linear-gradient(135deg,#00D4FF,#0066FF)}
+.coin-icon.bera{background:linear-gradient(135deg,#8B4513,#D2691E)}
+.coin-icon.move{background:linear-gradient(135deg,#2C5F2E,#66BB6A)}
+.coin-icon.init{background:linear-gradient(135deg,#1A237E,#5C6BC0)}
+.coin-icon.ip{background:linear-gradient(135deg,#4A0080,#AA00FF)}
+.coin-icon.s{background:linear-gradient(135deg,#FF2D55,#FF6B80)}
+.coin-icon.eigen{background:linear-gradient(135deg,#0D0D1A,#3D3D6B)}
+.coin-icon.ena{background:linear-gradient(135deg,#00BFA5,#00796B)}
+.coin-icon.grass{background:linear-gradient(135deg,#1B5E20,#4CAF50)}
+.coin-icon.orca{background:linear-gradient(135deg,#0D47A1,#1976D2)}
+.coin-icon.trump{background:linear-gradient(135deg,#B71C1C,#E53935)}
 .cc-name{font-weight:700;font-size:1.05rem}
 .cc-sym{font-size:.7rem;color:var(--text3);font-weight:400}
 
@@ -221,7 +237,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .pf-coins{display:flex;gap:3px;margin-top:6px;justify-content:center;flex-wrap:wrap}
 .pf-arrow{font-size:1.2rem;color:var(--text3);align-self:center;margin:0 8px;opacity:.5}
 .fc-dot{width:18px;height:18px;border-radius:50%;font-size:.5rem;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center}
-.fc-dot.hbar{background:#3A3A3A}.fc-dot.atom{background:#6F7390}.fc-dot.link{background:#2A5ADA}.fc-dot.near{background:#00C08B}
+.fc-dot.sol{background:#9945FF}.fc-dot.xrp{background:#23292F}.fc-dot.ltc{background:#BFBBBB}.fc-dot.hbar{background:#3A3A3A}.fc-dot.ada{background:#0033AD}
 
 /* -- Charts Row -- */
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
@@ -383,15 +399,18 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
     <div class="header-titles">
       <h1>Adaptive Intelligence Trading</h1>
-      <div class="sub" id="hdrSub"></div>
+      <div class="sub">V14 PM Live &mdash; Aster Perps</div>
     </div>
   </div>
   <div class="header-right">
     <div class="header-meta">
-      <span class="header-badge leverage" id="hdrLeverage">--</span>
+      <span class="header-badge leverage" id="hdrLeverage">1.0&times; Leverage</span>
+      <span class="header-badge" id="hdrGlobalRegime">--</span>
       <span class="header-badge" id="hdrRegime">--</span>
       <span class="header-badge" id="hdrTrend">--</span>
-      <span class="header-coins" id="hdrCoins">--</span>
+      <span class="header-badge" id="hdrConviction" style="display:none">--</span>
+      <span class="header-badge tier" id="hdrTier">-- slots</span>
+      <span class="header-badge" id="hdrTrailing" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2);display:none">🎯 Trail 0.2%</span>
     </div>
     <div class="header-status-col">
       <div class="header-status"><span id="statusDot" class="status-dot stopped"></span><span id="statusLabel">Loading...</span></div>
@@ -468,7 +487,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 <!-- 8. LIVE OPPORTUNITY DASHBOARD -->
 <div class="flow-section">
   <h2 style="text-align:center;font-size:1.15rem;color:var(--text);margin-bottom:4px">&#x1F4CA; Live Opportunity Dashboard</h2>
-  <div class="flow-sub" style="text-align:center">Each coin operates independently through V14 DCA phases � long grids, short grids, and routing evaluation</div>
+  <div class="flow-sub" style="text-align:center">Capital is centrally routed to top coins based on live Trade Scores</div>
 
   <!-- Phase Flow Diagram -->
   <div class="phase-flow" id="phaseFlow"></div>
@@ -488,7 +507,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="oppTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th title="Base Score = Realized PnL � (1 - DD%) � Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5�) &#x2192; stable (1.0�) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score � Trend Multiplier � the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="24h trading volume on Aster (quote currency)" style="cursor:help">24h VOL</th><th title="Base Score = Realized PnL × (1 - DD%) × Liquid Capital" style="cursor:help">BASE SCORE</th><th title="Trend multiplier applied to Base Score: &#x2197; accelerating (up to 1.5×) &#x2192; stable (1.0×) &#x2198; declining" style="cursor:help">TREND MULT</th><th title="Trade Score = Base Score × Trend Multiplier — the ranking the bot uses to select and allocate coins" style="cursor:help;color:var(--accent2)">TRADE SCORE</th><th>DEALS/WK</th><th>AVG CYCLE</th><th>LIQUID CAP</th><th>DD%</th></tr></thead>
     <tbody id="oppBody"></tbody>
   </table>
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
@@ -524,7 +543,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
 
 <!-- FOOTER -->
 <div class="footer">
-  Powered by <strong>AIT</strong> &middot; Adaptive Intelligence Trading V14 Live &middot;
+  Powered by <strong>AIT</strong> &middot; Adaptive Intelligence Trading V14-PM &middot;
   <a href="index.html">Product Page</a><br>
   Auto-refreshes every 60s &middot; Next refresh in <span id="countdown">60</span>s
 </div>
@@ -594,12 +613,12 @@ var COIN_BASE = {
   XRP:{icon:'xrp',label:'XRP',name:'XRP',color:'#00AAE4'},
   ZRO:{icon:'zro',label:'ZRO',name:'LayerZero',color:'#E8D5B7'}
 };
-function cm(sym){var b=sym.split('/')[0];return COIN_BASE[b]||{icon:b.toLowerCase(),label:b,name:b,color:'#6366f1'}}
+function cm(sym){var b=sym.split('/')[0];return COIN_BASE[b]||{icon:'coin',label:b,name:b,color:'#888'}}
 
 var PHASE_DESC = {
-  LONG_DCA:'Long grid active � buying dips, cycling TPs',
-  SHORT_DCA:'Short grid active � selling rallies, cycling TPs',
-  ROUTER:'Evaluating direction � waiting for signal confirmation'
+  LONG_DCA:'Long grid active - buying dips, cycling TPs',
+  SHORT_DCA:'Short grid active - selling rallies, cycling TPs',
+  ROUTER:'Evaluating direction - waiting for signal confirmation'
 };
 var PHASES = ['LONG_DCA','ROUTER','SHORT_DCA'];
 var REGIME_CLS = {ACCUMULATION:'rb-ACCUMULATION',ACC:'rb-ACC',TRENDING:'rb-TRENDING',TREND:'rb-TREND',RANGING:'rb-RANGING',EXTREME:'rb-EXTREME',CRASH:'rb-CRASH',CHOPPY:'rb-CHOPPY',DISTRIBUTION:'rb-DISTRIBUTION',LONG_DCA:'rb-ACC',SHORT_DCA:'rb-EXTREME',ROUTER:'rb-RANGING'};
@@ -624,10 +643,14 @@ function render(){
   $('statusLabel').textContent=S.running?(S.halted?'Halted':'Running'):'Stopped';
   $('updateTime').textContent=S.last_update?new Date(S.last_update).toLocaleString():'--';
 
-  var lev=S.leverage||1;
-  $('hdrLeverage').textContent=lev+'\u00D7 Leverage';
+  // Global regime badge
+  var gr=S.global_regime||'--';
+  var grIsLong=gr==='LONG_DCA';
+  $('hdrGlobalRegime').className='header-badge '+(grIsLong?'trend-bull':'trend-bear');
+  $('hdrGlobalRegime').textContent=(grIsLong?'\u25B2 LONG':'\u25BC SHORT');
 
   var rg=S.regime||'--';
+  if(typeof rg==='object'&&rg!==null)rg=rg.alert_state||rg.signal_type||'--';
   var rgClass='regime-dist';
   if(rg==='ACCUMULATION'||rg==='RANGING')rgClass='regime-acc';
   else if(rg==='EXTREME'||rg==='CRASH')rgClass='regime-ext';
@@ -641,8 +664,31 @@ function render(){
   $('hdrTrend').className='header-badge '+tCls;
   $('hdrTrend').textContent=tArrow+tr.charAt(0).toUpperCase()+tr.slice(1);
 
-  var syms=S.symbols||Object.keys(S.coins||{});
-  $('hdrCoins').textContent=syms.join(', ')+' \u00B7 '+(S.timeframe||'1h');
+  // Conviction badge in header
+  var rd=S.regime_detail||{};
+  var flipPct=rd.flip_pct||0;
+  if(flipPct>0){
+    var convCol=flipPct>=50?'var(--red)':flipPct>=30?'var(--amber)':'var(--text2)';
+    $('hdrConviction').style.display='inline-flex';
+    $('hdrConviction').style.background=flipPct>=50?'rgba(239,68,68,.12)':flipPct>=30?'rgba(245,158,11,.12)':'rgba(148,163,184,.12)';
+    $('hdrConviction').style.color=convCol;
+    $('hdrConviction').style.border='1px solid '+(flipPct>=50?'rgba(239,68,68,.25)':flipPct>=30?'rgba(245,158,11,.25)':'rgba(148,163,184,.25)');
+    $('hdrConviction').textContent='Flip: '+flipPct.toFixed(0)+'%';
+  } else { $('hdrConviction').style.display='none'; }
+
+  var lev=S.leverage||1;
+  $('hdrLeverage').textContent=lev.toFixed(1)+'\u00D7 Leverage';
+
+  var tierCap=S.tier_coin_cap||'--';
+  var activeCoinCount=(S.symbols||Object.keys(S.coins||{})).length;
+  $('hdrTier').textContent=activeCoinCount+'/'+tierCap+' coin slots';
+
+  // Show trailing stop badge if any coin has trailing TP
+  var hasTrailing=false;
+  var coins=S.coins||{};
+  for(var ck in coins){if(coins[ck].tp_type==='trailing'){hasTrailing=true;break}}
+  var trailEl=$('hdrTrailing');
+  if(trailEl){trailEl.style.display=hasTrailing?'inline-flex':'none'}
 
   var fns=[renderStats,renderRiskProfile,renderPortfolioAlloc,renderPositions,renderAIPanel,renderCompounding,renderMacro,renderCapDonut,renderFlowDiagram,renderBottomBar];
   fns.forEach(function(fn){try{fn()}catch(e){console.warn(fn.name,e)}});
@@ -678,10 +724,10 @@ function renderStats(){
   $('vUPnlSub').textContent=fmt(upnlPct,2)+'% on '+fUsd(totalInv)+' invested';
 
   var wins=0, losses=0;
-  var dc=S.deals_completed||0, wr0=S.win_rate||0;
-  if(trades.length>0 && trades.length>=dc){
+  if(trades.length>0){
     trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);if(p>0)wins++;else if(p!==0)losses++});
   } else {
+    var dc=S.deals_completed||0, wr0=S.win_rate||0;
     wins=Math.round(dc*wr0/100);losses=dc-wins;
   }
   var totalTrades=wins+losses;
@@ -722,12 +768,12 @@ function renderRiskProfile(){
       '<h3>Risk Profile</h3>'+
       '<div class="risk-badge '+badgeCls+'">'+profile.toUpperCase()+'</div>'+
       '<div class="risk-params">'+
-        '<div class="risk-param"><div class="rp-label">BO</div><div class="rp-val">40%</div></div>'+
+        '<div class="risk-param"><div class="rp-label">BO</div><div class="rp-val">30%</div></div>'+
         '<div class="risk-param"><div class="rp-label">DEV</div><div class="rp-val">'+(profile==='high'?'1.5%':'2.0%')+'</div></div>'+
         '<div class="risk-param"><div class="rp-label">LAYERS</div><div class="rp-val">'+(profile==='high'?'12':'10')+'</div></div>'+
         '<div class="risk-param"><div class="rp-label">TP</div><div class="rp-val">1.5%</div></div>'+
         '<div class="risk-param"><div class="rp-label">MULT</div><div class="rp-val">1.5&times;</div></div>'+
-        '<div class="risk-param"><div class="rp-label">LEVERAGE</div><div class="rp-val">'+(S.leverage||1)+'&times;</div></div>'+
+        '<div class="risk-param"><div class="rp-label">LEVERAGE</div><div class="rp-val">'+(S.leverage||1).toFixed(1)+'&times;</div></div>'+
       '</div>'+
     '</div>'+
     '<div class="risk-col" style="text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px 20px">'+
@@ -740,7 +786,13 @@ function renderRiskProfile(){
 
 // PORTFOLIO ALLOCATION
 function renderPortfolioAlloc(){
-  var syms=S.symbols||Object.keys(S.coins||{});
+  var allSyms=S.symbols||Object.keys(S.coins||{});
+  var approved=S.approved_symbols||[];
+  // Show only coins that are approved OR have capital invested (active positions)
+  var syms=allSyms.filter(function(sym){
+    var c=(S.coins||{})[sym]||{};
+    return (c.invested||0)>0 || approved.indexOf(sym)>=0;
+  });
   var eq=S.equity||0;
   var items=[];
   var totalInv=0;
@@ -785,7 +837,7 @@ function renderPortfolioAlloc(){
 // POSITIONS
 function renderPositions(){
   var allSyms=S.symbols||Object.keys(S.coins||{});
-  // Only show coins with active positions (invested > 0)
+  // Show only coins with actual open positions (invested > 0)
   var syms=allSyms.filter(function(sym){
     var c=(S.coins||{})[sym]||{};
     return (c.invested||0)>0;
@@ -808,10 +860,6 @@ function renderPositions(){
     var rpnl=c.realized_pnl||0;
     var layers=c.layers||0;
     var maxLayers=(S.profile==='high')?12:10;
-    var tpType=c.tp_type||'limit';
-    var isTrailing=tpType==='trailing';
-    var tpActivation=c.tp_activation_price||null;
-    var tpCallback=c.trailing_callback_pct||0;
 
     html+='<div class="position-card">';
     html+='<div class="position-head"><div class="position-head-left">';
@@ -820,6 +868,8 @@ function renderPositions(){
     html+='<span class="dir-badge '+side+'">'+side.toUpperCase()+'</span>';
     html+='</div>';
     html+='<span class="pb pb-'+phase+'">'+phase.replace('_',' ')+'</span>';
+    if(c.paused){html+='<span class="pb" style="background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3);margin-left:6px">⏸ PAUSED</span>';}
+    if(c.regime_flagged){html+='<span class="pb" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);margin-left:6px">🚩 REGIME CONFLICT</span>';}
     html+='</div>';
 
     // Stats
@@ -828,8 +878,11 @@ function renderPositions(){
     html+='<div class="position-stat"><div class="ps-label">Avg Entry</div><div class="ps-val">'+fUsd(entry,pd_)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Invested</div><div class="ps-val">'+fUsd(inv)+'</div></div>';
     html+='<div class="position-stat"><div class="ps-label">Grid Layers</div><div class="ps-val">'+layers+' / '+maxLayers+'</div></div>';
+    var isTrailing=c.tp_type==='trailing';
+    var tpActivation=c.tp_activation_price||null;
+    var tpCallback=c.trailing_callback_pct||0;
     if(isTrailing){
-      html+='<div class="position-stat"><div class="ps-label">🎯 Trail TP</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+'</div></div>';
+      html+='<div class="position-stat"><div class="ps-label">\ud83c\udfaf Trail TP</div><div class="ps-val" style="color:var(--green)">'+fUsd(tp,pd_)+'</div></div>';
       html+='<div class="position-stat"><div class="ps-label">Activation</div><div class="ps-val" style="color:var(--accent2)">'+(tpActivation?fUsd(tpActivation,pd_):'--')+'</div></div>';
       html+='<div class="position-stat"><div class="ps-label">Callback</div><div class="ps-val" style="color:var(--accent2)">'+fmt(tpCallback,1)+'%</div></div>';
     } else {
@@ -936,10 +989,7 @@ function renderAIPanel(){
 // COMPOUNDING TRACKER
 function renderCompounding(){
   var seed=S.seed_capital||S.capital||10000, cap=S.capital||10000, eq=S.equity||cap;
-  // Use seed_capital for starting capital display and growth calculation.
-  // S.capital is tracked_capital (includes deposits/realized PnL accumulation).
-  // S.seed_capital is the original CLI --capital value ($375).
-  var startCap=seed;
+  // Use seed_capital for growth calculation to avoid inflating from deposits
   var rpnl=0, deals=0, wins=0;
   if(trades.length>0){
     trades.forEach(function(t){var p=parseFloat(t.pnl||t.PnL||0);rpnl+=p;deals++;if(p>0)wins++});
@@ -949,7 +999,7 @@ function renderCompounding(){
     wins=Math.round(deals*(S.win_rate||0)/100);
   }
   var wr=deals>0?(wins/deals*100):0;
-  var growth=startCap>0?((eq-startCap)/startCap*100):0;
+  var growth=seed>0?((eq-seed)/seed*100):0;
   var days=1;
   if(trades&&trades.length>1){
     var earliest=new Date(trades[0].open_time);
@@ -964,25 +1014,27 @@ function renderCompounding(){
   } else if(S.uptime_hours>24){ days=S.uptime_hours/24; }
   var dailyRate=rpnl/days;
   var monthlyProj=dailyRate*30;
-  var dailyPct=startCap>0?(dailyRate/startCap):0;
-  var annualProj=dailyPct>0&&dailyPct<0.1?startCap*(Math.pow(1+dailyPct,365)-1):dailyRate*365;
+  // True compound daily rate: r = (equity/capital)^(1/days) - 1
+  var compoundDailyPct=(cap>0&&eq>0&&days>0)?Math.pow(eq/cap,1/days)-1:0;
+  var simpleDailyPct=cap>0?(dailyRate/cap):0;
+  var annualProj=compoundDailyPct>0&&compoundDailyPct<0.1?cap*(Math.pow(1+compoundDailyPct,365)):simpleDailyPct>0?cap*(Math.pow(1+simpleDailyPct,365)):dailyRate*365;
 
   $('compCards').innerHTML=
-    '<div class="comp-card"><div class="cc-lbl">Starting Capital</div><div class="cc-val">'+fUsd(startCap)+'</div></div>'+
-    '<div class="comp-card"><div class="cc-lbl">Current Equity</div><div class="cc-val" style="color:'+pC(eq-startCap)+'">'+fUsd(eq)+'</div></div>'+
+    '<div class="comp-card"><div class="cc-lbl">Starting Capital</div><div class="cc-val">'+fUsd(cap)+'</div></div>'+
+    '<div class="comp-card"><div class="cc-lbl">Current Equity</div><div class="cc-val" style="color:'+pC(eq-cap)+'">'+fUsd(eq)+'</div></div>'+
     '<div class="comp-card"><div class="cc-lbl">Growth</div><div class="cc-val" style="color:'+pC(growth)+'">'+(growth>=0?'+':'')+fmt(growth)+'%</div></div>'+
     '<div class="comp-card"><div class="cc-lbl">Deals / Win Rate</div><div class="cc-val">'+deals+'</div><div class="cc-sub">'+fmt(wr,1)+'% win rate</div></div>';
 
   var milestones=[25000,50000,100000,250000,500000,1000000];
-  var target=startCap*2;
+  var target=cap*2;
   for(var mi=0;mi<milestones.length;mi++){if(milestones[mi]>eq){target=milestones[mi];break}}
   var fillPct=Math.min(Math.max((eq/target)*100,0),100);
   $('compFill').style.width=fillPct+'%';
-  $('compStart').textContent=fUsd(startCap);
+  $('compStart').textContent=fUsd(cap);
   $('compTarget').textContent='Next: '+fUsd(target);
 
   $('projCards').innerHTML=
-    '<div class="proj-card"><div class="pj-lbl">Daily Rate</div><div class="pj-val">'+fUsd(dailyRate)+'</div><div class="pj-sub">'+fmt(startCap>0?(dailyRate/startCap*100):0,3)+'% / day</div></div>'+
+    '<div class="proj-card"><div class="pj-lbl">Daily Rate</div><div class="pj-val">'+fUsd(dailyRate)+'</div><div class="pj-sub">'+fmt(compoundDailyPct*100,3)+'% / day (CAGR)</div></div>'+
     '<div class="proj-card"><div class="pj-lbl">Monthly Projection</div><div class="pj-val">'+fUsd(monthlyProj)+'</div><div class="pj-sub">Based on '+fmt(days,0)+' days data</div></div>'+
     '<div class="proj-card"><div class="pj-lbl">Annual Projection</div><div class="pj-val">'+fUsd(annualProj)+'</div><div class="pj-sub">Compound estimate</div></div>';
 }
@@ -1020,7 +1072,22 @@ function renderMacro(){
   $('macroGrid').innerHTML=
     '<div class="macro-card"><div class="mc-title">Fear &amp; Greed Index</div><div class="mc-val" style="color:'+fgiCol+'">'+fgiVal+'</div><div class="mc-label" style="color:'+fgiCol+'">'+fgiLabel+'</div><div class="fg-bar">'+(fgi!=null?'<div class="fg-dot" style="left:'+fgi+'%"></div>':'')+'</div><div class="fg-labels"><span>Extreme Fear</span><span>Neutral</span><span>Extreme Greed</span></div></div>'+
     '<div class="macro-card"><div class="mc-title">Coin Sentiment</div>'+cfgiHtml+'</div>'+
-    '<div class="macro-card"><div class="mc-title">Phase Status</div>'+gateHtml+'</div>';
+    (function(){
+      var rd3=S.regime_detail||{};
+      var gr3=rd3.global_regime||S.global_regime||'LONG_DCA';
+      var grIsL=gr3==='LONG_DCA';
+      var symsG=S.symbols||[];
+      var html='<div style="margin-bottom:8px;font-size:.8rem"><span style="font-weight:700;color:'+(grIsL?'var(--green)':'var(--red)')+'">Global: '+(grIsL?'\u25B2 LONG':'\u25BC SHORT')+'</span></div>';
+      symsG.forEach(function(sym){
+        var c=(S.coins||{})[sym]||{};
+        var phase=c.lifecycle_phase||c.state||'ROUTER';
+        var base=sym.split('/')[0];
+        var phCol=phase==='LONG_DCA'?'var(--green)':phase==='SHORT_DCA'?'var(--red)':'var(--accent2)';
+        var excluded=c.regime_flagged||false;
+        html+='<div style="margin:4px 0;display:flex;justify-content:space-between;align-items:center"><span><span style="font-weight:600">'+base+'</span> <span style="color:'+phCol+';font-weight:600;font-size:.8rem">'+phase.replace('_',' ')+'</span></span>'+(excluded?'<span style="font-size:.6rem;background:rgba(239,68,68,.15);color:var(--red);padding:1px 6px;border-radius:3px">EXCLUDED</span>':'<span style="font-size:.6rem;background:rgba(34,197,94,.15);color:var(--green);padding:1px 6px;border-radius:3px">ACTIVE</span>')+'</div>';
+      });
+      return '<div class="macro-card"><div class="mc-title">Regime Gate</div>'+html+'</div>';
+    })();
 }
 
 // CAP DONUT
@@ -1033,7 +1100,8 @@ function renderCapDonut(){
     if(phase==='LONG_DCA')longInv+=(c.invested||0);
     else if(phase==='SHORT_DCA')shortInv+=(c.invested||0);
   });
-  var cash=S.cash||0;
+  var rtr=S.router||{};
+  var cash=S.cash||(rtr.active_cash||0)+(rtr.reserve_cash||0)||0;
   var total=longInv+shortInv+cash||1;
   var utilPct=((total-cash)/total*100);
 
@@ -1117,7 +1185,7 @@ function renderFlowDiagram(){
     if(tp.best_score)tpParts.push('\uD83C\uDFC6 Best: '+tp.best_score+' ('+findCoinScore(tp.best_score,'dca_score')+')');
     if(tp.fastest_cycler)tpParts.push('\u26A1 Fastest: '+tp.fastest_cycler+' ('+findCoinScore(tp.fastest_cycler,'deals_per_week')+'/wk)');
     if(tp.lowest_dd)tpParts.push('\uD83D\uDEE1\uFE0F Lowest DD: '+tp.lowest_dd+' ('+findCoinScore(tp.lowest_dd,'max_drawdown_pct')+'%)');
-    if(tp.most_capital_free){var cfVal=findCoinScore(tp.most_capital_free,'capital_freedom');tpParts.push('\uD83D\uDCB0 Most Free: '+tp.most_capital_free+' ('+(cfVal?Math.round(cfVal*100)+'%':'')+')');} 
+    if(tp.most_capital_free){var cfVal=findCoinScore(tp.most_capital_free,'capital_freedom');tpParts.push('\uD83D\uDCB0 Most Free: '+tp.most_capital_free+' ('+(cfVal?Math.round(cfVal*100)+'%':'')+')');}
     tpEl.innerHTML=tpParts.join(' &nbsp;|&nbsp; ');
     tpEl.style.display=tpParts.length?'block':'none';
   }else if(tpEl){tpEl.style.display='none'}
@@ -1176,10 +1244,19 @@ function renderFlowDiagram(){
     var trendMult=trendData?trendData.trend_multiplier:1.0;
     var tradeScore=dcaScore!=null?dcaScore*trendMult:null;
 
-    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData});
+    var isPaused=c.paused||false;
+    var isRegimeFlagged=c.regime_flagged||false;
+    var isExcluded=isPaused||isRegimeFlagged;
+    var liqStatus=scanCoinData?scanCoinData.liquidity_status:null;
+    var vol24h=scanCoinData?scanCoinData.volume_24h:null;
+    var volImpact=scanCoinData?scanCoinData.volume_impact_pct:null;
+    if(liqStatus==='LOW_LIQUIDITY')isExcluded=true;
+    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData,isPaused:isPaused,isRegimeFlagged:isRegimeFlagged,isExcluded:isExcluded,liqStatus:liqStatus,vol24h:vol24h,volImpact:volImpact});
   });
 
   rowData.sort(function(a,b){
+    // Excluded coins (paused/regime-flagged) sort to bottom
+    if(a.isExcluded!==b.isExcluded)return a.isExcluded?1:-1;
     var as=a.tradeScore!=null?a.tradeScore:-999;
     var bs=b.tradeScore!=null?b.tradeScore:-999;
     return bs-as;
@@ -1187,7 +1264,14 @@ function renderFlowDiagram(){
 
   var h='';
   rowData.forEach(function(rd){
-    var phaseHtml=rd.phase==='--'?'<span class="phase-pill" style="background:rgba(99,102,241,.1);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Scanner</span>':'<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[rd.phase]||'var(--text3)')+'"></span>'+rd.phase.replace('_',' ')+'</span>';
+    var phaseHtml;
+    if(rd.liqStatus==='LOW_LIQUIDITY'){
+      phaseHtml='<span class="phase-pill" style="background:rgba(245,158,11,.1);color:var(--amber)"><span class="pd" style="background:var(--amber)"></span>Low Liq</span>';
+    }else if(rd.phase==='--'){
+      phaseHtml='<span class="phase-pill" style="background:rgba(99,102,241,.1);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Watchlist</span>';
+    }else{
+      phaseHtml='<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[rd.phase]||'var(--text3)')+'"></span>'+rd.phase.replace('_',' ')+'</span>';
+    }
 
     var g=dcaGrade(rd.dcaScore);
     var scoreHtml=rd.dcaScore!=null?'<span style="font-weight:800;font-size:1.05rem;color:'+scoreColor(rd.dcaScore)+'">'+rd.dcaScore.toFixed(1)+'</span> <span style="font-size:.7rem;color:'+g.color+'">'+g.letter+'</span>':'<span style="color:var(--text3)">--</span>';
@@ -1197,16 +1281,28 @@ function renderFlowDiagram(){
     var capHtml=rd.capFree!=null?'<span style="color:'+capColor(rd.capFree)+'">'+Math.round(rd.capFree*100)+'%</span>':'--';
     var ddHtml=rd.ddPct!=null?'<span style="color:'+ddColor(rd.ddPct)+'">'+rd.ddPct.toFixed(1)+'%</span>':'--';
 
-    h+='<tr'+(rd.isActive?' style="background:rgba(99,102,241,.06)"':'')+'>';
-    h+='<td class="coin-name">'+rd.m.label+(rd.isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'')+'</td>';
+    var rowStyle=rd.isExcluded?'opacity:0.5;background:rgba(239,68,68,.03)':rd.isActive?'background:rgba(99,102,241,.06)':'';
+    h+='<tr'+(rowStyle?' style="'+rowStyle+'"':'')+'>';
+    var badges=rd.isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'';
+    if(rd.isRegimeFlagged)badges+=' <span style="font-size:.55rem;color:var(--red);vertical-align:middle">🚩 FLAGGED</span>';
+    if(rd.isPaused)badges+=' <span style="font-size:.55rem;color:var(--amber);vertical-align:middle">⏸ PAUSED</span>';
+    h+='<td class="coin-name">'+rd.m.label+badges+'</td>';
     h+='<td>'+phaseHtml+'</td>';
+    var volHtml='<span style="color:var(--text3)">--</span>';
+    if(rd.vol24h!=null){
+      var vc=rd.vol24h>=100000?'var(--green)':rd.vol24h>=50000?'var(--amber)':'var(--red)';
+      var vf=rd.vol24h>=1000000?'$'+(rd.vol24h/1000000).toFixed(1)+'M':'$'+(rd.vol24h/1000).toFixed(0)+'K';
+      var impTip=rd.volImpact!=null?' (L1='+rd.volImpact.toFixed(1)+'% of vol)':'';
+      volHtml='<span style="color:'+vc+'" title="'+vf+impTip+'">'+vf+'</span>';
+    }
+    h+='<td style="text-align:center">'+volHtml+'</td>';
     h+='<td style="text-align:center">'+scoreHtml+'</td>';
     var trendHtml='<span style="color:var(--text3)">--</span>';
     var tradeScoreHtml=rd.tradeScore!=null?'<span style="font-weight:800;font-size:1.05rem;color:var(--accent2)">'+rd.tradeScore.toFixed(1)+'</span>':'<span style="color:var(--text3)">--</span>';
     if(rd.trend){var td=rd.trend;var tdir=td.direction;var tmult=td.trend_multiplier;if(tdir==='accelerating'){trendHtml='<span style="color:var(--profit)">'+tmult.toFixed(2)+'&times; <span style="font-size:1.1rem">&#x2197;</span></span>'}else if(tdir==='declining'){trendHtml='<span style="color:var(--loss)">'+tmult.toFixed(2)+'&times; <span style="font-size:1.1rem">&#x2198;</span></span>'}else{trendHtml='<span style="color:var(--text2)">'+tmult.toFixed(2)+'&times; <span style="font-size:1.1rem">&#x2192;</span></span>'}}
     h+='<td style="text-align:center">'+trendHtml+'</td>';
     h+='<td style="text-align:center">'+tradeScoreHtml+'</td>';
-    h+='<td style="text-align:center">'+dealsHtml+'</td>';
+h+='<td style="text-align:center">'+dealsHtml+'</td>';
     h+='<td style="text-align:center">'+cycleHtml+'</td>';
     h+='<td style="text-align:center">'+capHtml+'</td>';
     h+='<td style="text-align:center">'+ddHtml+'</td>';
@@ -1219,7 +1315,7 @@ function renderFlowDiagram(){
   var oppMaxPage=Math.max(0,Math.ceil(oppRows.length/ops)-1);
   oppPage=Math.min(oppPage,oppMaxPage);
   var oppPageRows=oppRows.slice(oppPage*ops,(oppPage+1)*ops);
-  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
+  $('oppBody').innerHTML=oppPageRows.length?oppPageRows.join(''):'<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:30px">No coin data</td></tr>';
   if(oppRows.length>ops){
     $('oppPagBar').style.display='flex';
     $('oppPagInfo').textContent='Page '+(oppPage+1)+' of '+(oppMaxPage+1);
