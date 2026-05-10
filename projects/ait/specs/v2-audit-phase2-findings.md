@@ -190,7 +190,7 @@ Questions for production verification:
 
 | # | Severity | Finding | Status |
 |---|----------|---------|--------|
-| 9 | CRITICAL | 9 scanner coins (inc BTC, ETH) have no pre-computed indicators | 🔴 Active |
+| 9 | CRITICAL | 9 scanner coins (inc BTC, ETH) had no pre-computed indicators | ✅ Fixed |
 | 10 | MEDIUM | Core signals (StochRSI, BMSB, divergence) independent of indicator columns | ✅ OK |
 | 11 | MEDIUM | `_signal_near()` ±3 day window may cause edge cases | 🟡 Review |
 | 12 | MEDIUM | Steve 3-Check doesn't use widest-range symbol selection | 🟡 Inconsistency |
