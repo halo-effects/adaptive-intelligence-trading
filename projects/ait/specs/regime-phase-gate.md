@@ -1,119 +1,135 @@
-# Spec: Regime Phase Gate — Block Engine Phase Transitions That Conflict With Macro Regime
+# Spec: Regime Phase Gate — Portfolio-Level Regime Controls Per-Coin Trading Eligibility
 
 **Status**: DRAFT — needs approval
 **Date**: 2026-05-09
-**Priority**: HIGH (engine can enter SHORT DCA while macro says LONG)
+**Priority**: HIGH
 **Restart Required**: YES (both live and paper bots)
+**Architecture Reference**: V14PM_SYSTEM_ARCHITECTURE.md §7.5
 
 ## Problem
 
-The V14 DCA engine autonomously transitions between LONG_DCA and SHORT_DCA based on per-coin technical signals (top detection → SHORT, bottom conviction → LONG). The portfolio manager has a macro regime monitor that tracks the overall market direction.
+Individual coin engines autonomously transition between LONG_DCA and SHORT_DCA based
+on their own signal stack. There is no gate preventing a coin from trading when its
+phase conflicts with the global portfolio regime.
 
-**The gap**: There is no gate preventing an individual engine from transitioning to SHORT_DCA when the macro regime is LONG (or vice versa). The regime conflict checker (`_check_coin_regime_conflict`) only flags coins AFTER the phase transition already happened — it doesn't prevent the transition.
+HYPE entered SHORT_DCA (top signals fired) while the global regime is LONG_DCA. The
+engine is now running a short strategy against the macro trend direction.
 
-**Result**: HYPE entered SHORT_DCA (top signals fired for that coin individually) while the macro regime says the market is in LONG DCA. The engine is now running a short strategy against the macro trend.
+## Design (from §7.5)
 
-### Current Flow (broken)
+**A coin may only open new positions when its engine phase matches the global regime.**
+
+- Engine still processes candles and updates indicators (signals tracked even when excluded)
+- No forced closes — open positions ride to TP naturally
+- When global regime flips, coins that already match become immediately eligible
+- Global regime changes ONLY via manual APPROVE command
+
+## Implementation
+
+### 1. Global Regime State (replace hardcoded direction)
+
+**File**: `run_v14_portfolio_live_aster.py` (and paper equivalent)
+
+Replace:
+```python
+global_direction = "LONG"  # hardcoded on line 1176
 ```
-1. Engine processes candle
-2. Engine detects top signals → transitions to SHORT_DCA
-3. Engine generates SHORT_OPEN action
-4. _check_coin_regime_conflict runs AFTER tick → flags coin (too late)
-5. SHORT_OPEN rejected by "not supported in live mode" handler
-6. Engine is stuck in SHORT_DCA phase with no way to act
+
+With a persisted state variable:
+```python
+# In __init__:
+self._global_regime = "LONG_DCA"  # Default, overridden by state.json on restore
+
+# In _save_state / _load_state:
+state["global_regime"] = self._global_regime
+self._global_regime = state.get("global_regime", "LONG_DCA")
 ```
 
-### Why `global_direction = "LONG"` Is Hardcoded
-Line 1176: The regime flip mechanism requires manual APPROVE/DENY via Telegram. Until a full regime flip is approved, the global direction stays LONG. This is correct — but the engine doesn't know about it.
+### 2. Regime Gate in Candle Loop
 
-## Solution
-
-### Option A: Pre-tick Phase Lock (Recommended)
-Before calling `engine.tick()`, check if the engine's current phase conflicts with the macro regime. If the engine is about to process a candle that would generate SHORT actions while macro is LONG, override the engine phase back to LONG_DCA before the tick.
+After `engine.tick()` returns actions, before executing:
 
 ```python
-# Before engine.tick()
-if global_direction == "LONG" and cs.engine.phase == "SHORT_DCA":
-    cs.engine._engine.phase = Phase.LONG_DCA
-    cs.engine._engine.top_detected = False
-    logger.info(f"REGIME OVERRIDE: {sym} forced LONG_DCA (macro regime is LONG)")
-```
-
-**Pros**: Simple, deterministic. Engine never enters wrong phase.
-**Cons**: Overrides engine's signal-based decision. May miss genuine per-coin tops.
-
-### Option B: Post-tick Action Filter + Phase Rollback
-Let the engine tick normally, but if it transitions to a conflicting phase, roll it back immediately.
-
-```python
-# After engine.tick()
-if global_direction == "LONG" and cs.engine.phase == "SHORT_DCA":
-    cs.engine._engine.phase = Phase.LONG_DCA
-    cs.engine._engine.top_detected = False
-    # Discard any SHORT actions
-    actions = [a for a in actions if a["action"] not in ("SHORT_OPEN", "SHORT_CLOSE")]
-    logger.info(f"REGIME GATE: {sym} phase rollback SHORT_DCA → LONG_DCA (macro is LONG)")
-```
-
-**Pros**: Engine still processes signals (indicators stay accurate). Rollback is clean.
-**Cons**: Slightly more complex. Engine may re-trigger top detection on next candle.
-
-### Option C: Feed Macro Regime Into Engine (Long-term)
-Pass the macro regime direction as a parameter to `engine.tick()`. The engine itself respects it — top detection is suppressed when macro says LONG, bottom detection suppressed when macro says SHORT.
-
-**Pros**: Cleanest architecture. Engine is regime-aware.
-**Cons**: Requires engine code changes, not just portfolio manager changes.
-
-## Recommendation
-
-**Option B for now** (post-tick rollback) — it's the safest because indicators still process all signals correctly, we just prevent the phase change from taking effect. Option C as a future refactor.
-
-### Implementation (Option B)
-
-**Files**: `run_v14_portfolio_live_aster.py` and `run_v14_portfolio_paper.py`
-
-**Location**: In the candle processing loop, right after `engine.tick()` returns actions.
-
-```python
-# After: actions = cs.engine.tick(candle, cash_available=cs.allocated_capital)
-
-# Regime phase gate: prevent engine from entering a phase that
-# conflicts with the macro regime direction
-if actions:
-    engine_phase = cs.engine.phase if cs.engine else None
-    if global_direction == "LONG" and engine_phase == "SHORT_DCA":
-        # Roll back to LONG_DCA — macro says we're in a bull regime
-        cs.engine._engine.phase = Phase.LONG_DCA
-        cs.engine._engine.top_detected = False
-        cs.engine._engine.ob93_armed = False
-        cs.engine._engine.early_warning_date = None
-        cs.engine._engine.unwinding = False
-        actions = [a for a in actions if "SHORT" not in a.get("action", "")]
+# Regime gate: coin trades only when its phase matches global regime
+engine_phase = cs.engine.phase if cs.engine else None
+if engine_phase and engine_phase != self._global_regime:
+    # Coin's phase conflicts with global — exclude from trading
+    if actions:
         logger.info(
-            f"REGIME GATE: {sym} phase rollback SHORT_DCA → LONG_DCA "
-            f"(macro regime is LONG, top signals overridden)"
+            f"REGIME GATE: {sym} in {engine_phase} but global is "
+            f"{self._global_regime} — {len(actions)} action(s) blocked"
         )
-    elif global_direction == "SHORT" and engine_phase == "LONG_DCA":
-        # Future: roll back to SHORT_DCA when macro is bearish
-        pass
+    actions = []  # Block all new entries
+    # But DON'T rollback the engine phase — it reflects the coin's real signal state
 ```
 
-**Also needed**: Make `global_direction` dynamic instead of hardcoded. Read it from the regime monitor state:
+### 3. Regime Monitor Updates
+
+The existing `_check_coin_regime_conflict` is replaced by:
+- Counting coins whose phase differs from `self._global_regime`
+- Alerting at tier thresholds (informational, then APPROVE/DENY prompt)
+- Dashboard display of per-coin phase vs global regime
+
 ```python
-global_direction = "SHORT" if self._regime_signal_type == "TOP" else "LONG"
+def _update_regime_monitor(self):
+    """Count coins that have flipped and alert at thresholds."""
+    flipped = []
+    for sym, cs in self.coins.items():
+        if cs.engine and cs.engine.phase != self._global_regime:
+            flipped.append(sym.split("/")[0])
+
+    total = len([c for c in self.coins.values() if c.engine])
+    count = len(flipped)
+
+    # Tier thresholds (configurable)
+    if count >= total * 0.5 and self._regime_alert_state != "AWAITING_APPROVAL":
+        # Tier 2: strong signal
+        self._regime_alert_state = "AWAITING_APPROVAL"
+        opposing = "SHORT_DCA" if self._global_regime == "LONG_DCA" else "LONG_DCA"
+        send_telegram(
+            f"🚨 REGIME SIGNAL: {count}/{total} coins flipped to {opposing}\n"
+            f"Coins: {', '.join(flipped)}\n"
+            f"Reply APPROVE to flip global regime, DENY to dismiss."
+        )
+    elif count >= total * 0.3:
+        # Tier 1: early warning (informational)
+        ...
 ```
 
-## Why HYPE Flipped to SHORT_DCA
+### 4. APPROVE/DENY Flow
 
-HYPE's engine detected a "top" via one of these signals:
-1. **OB93 armed + divergence/timeout**: 2W StochRSI crossed 93, then either bearish divergence appeared or the 35-day timeout expired
-2. **1W OB85 fallback**: If 2W peak K was below OB threshold and 1W hit 85
-3. **1W K<50 failsafe**: If early warning fired and K dropped below 50 after the failsafe window
+Already exists in Telegram command handler. Update to:
+```python
+if text == "APPROVE":
+    opposing = "SHORT_DCA" if self._global_regime == "LONG_DCA" else "LONG_DCA"
+    self._global_regime = opposing
+    self._regime_alert_state = "NONE"
+    # Coins already in the new regime phase immediately become eligible
+    send_telegram(f"Global regime flipped to {opposing}. Matching coins now eligible.")
+```
 
-This is the engine working as designed for that specific coin's technicals. But the macro portfolio regime says "we're in a bull market, stay long." The engine doesn't know about the macro view — it only sees its own coin's signals.
+### 5. Dashboard Updates
 
-## What This Doesn't Fix
+Add to status.json:
+- `global_regime`: "LONG_DCA" or "SHORT_DCA"
+- Per-coin: `trading_status`: "active" or "excluded"
+- Per-coin: `regime_conflict`: true/false
 
-- The paper bot has the same issue (needs the same gate added to `run_v14_portfolio_paper.py`)
-- The hardcoded `global_direction = "LONG"` should eventually be dynamic based on the regime monitor
-- Existing SHORT_DCA positions (like HYPE in paper) need manual intervention or will resolve on their own when TP hits
+### 6. What Changes vs Current Code
+
+| Component | Before | After |
+|-----------|--------|-------|
+| Global direction | Hardcoded `"LONG"` | Persisted `_global_regime` in state.json |
+| Coin phase gate | Post-tick flag (too late) | Pre-action filter (blocks execution) |
+| Engine phase | Rolled back on conflict | Preserved (reflects real signal state) |
+| Regime monitor | Counts top/bottom signals | Counts phase mismatches vs global |
+| Force close on flip | N/A | Never — positions ride to TP |
+| Regime change | Manual but didn't actually work | Manual APPROVE changes `_global_regime` |
+
+### 7. No Forced Closes
+
+When the global regime flips:
+- Open positions on excluded coins still have their TP orders on the exchange
+- TPs fire naturally when price reaches them
+- No market sells, no position liquidation
+- The coin is simply excluded from opening NEW entries until its phase matches

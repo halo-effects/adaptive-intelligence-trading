@@ -405,6 +405,11 @@ whether the market is topping (→ SHORT_DCA) or false alarm (→ back to LONG_D
 **SHORT_DCA** — Mirror of LONG_DCA for short positions (Hyperliquid perps only).
 Triggered by confirmed top signal. Same grid mechanics, inverted direction.
 
+> **Regime Gate (§7.5):** Phase transitions happen autonomously at the engine level,
+> but the portfolio regime gate controls whether a coin in a given phase may actually
+> trade. A coin in SHORT_DCA while the global regime is LONG_DCA is excluded from
+> new entries — its open positions ride to TP naturally. See §7.5.2.
+
 ### 5.2 DCA Grid Mechanics
 
 ```
@@ -824,6 +829,124 @@ At midnight UTC, the PM runner:
 > Engine-internal realized PnL could diverge from CSV on restart — one bot reported
 > $65K when the CSV showed $44K. Fixed 2026-03-10 by making all runners use CSV
 > as the sole source of realized PnL. Full audit: `V14PM_FULL_AUDIT.md`.
+
+### 7.5 Portfolio Regime System
+
+The portfolio regime system connects the per-coin engine phase machine (§5.1) to a
+portfolio-level macro direction. Individual coins detect tops and bottoms
+autonomously; the portfolio layer decides whether those signals should be acted on.
+
+#### 7.5.1 Two-Level Regime Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  GLOBAL REGIME (portfolio level)                        │
+│  ──────────────────────────────────────                   │
+│  State: LONG_DCA or SHORT_DCA                           │
+│  Changed ONLY by manual approval (Telegram APPROVE)     │
+│  Persisted in state.json                                │
+└─────────────────────────────────────────────────────────────────┘
+        │                                           ▲
+        │  gates                            informs │
+        ▼                                           │
+┌─────────────────────────────────────────────────────────────────┐
+│  PER-COIN REGIME (engine level)                         │
+│  ──────────────────────────────────────                   │
+│  Each engine tracks its own phase: LONG_DCA / SHORT_DCA │
+│  Phase transitions driven by per-coin signals            │
+│  (top detection, bottom conviction)                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Global regime** is a portfolio-level state: either LONG_DCA or SHORT_DCA.
+It represents the operator’s view of the macro market direction. It is NOT
+automatically derived — it changes only when the operator manually approves
+a regime flip via Telegram (APPROVE command).
+
+**Per-coin regime** is the engine’s autonomous phase based on its own signal stack
+(top detection, bottom conviction). Each coin independently detects tops and bottoms.
+
+#### 7.5.2 Regime Gate Rule
+
+**A coin may only open new positions when its engine phase matches the global regime.**
+
+| Global Regime | Engine Phase | Result |
+|---------------|-------------|--------|
+| LONG_DCA | LONG_DCA | ✅ Coin trades normally (long entries, DCA layers, TPs) |
+| LONG_DCA | SHORT_DCA | ⛔ Coin excluded from trading. No new entries. Open positions ride to TP. |
+| SHORT_DCA | SHORT_DCA | ✅ Coin trades normally (short entries, DCA layers, TPs) |
+| SHORT_DCA | LONG_DCA | ⛔ Coin excluded from trading. No new entries. Open positions ride to TP. |
+
+Key behaviors:
+- The engine still processes candles and updates indicators regardless of the gate.
+  Signals are tracked even when the coin is excluded — this is how the regime monitor
+  knows how many coins have flipped.
+- **No forced closes.** Open positions naturally hit TPs. The gate only blocks NEW entries.
+- When the global regime eventually flips to match the coin’s phase, the coin
+  automatically becomes eligible to trade again.
+
+#### 7.5.3 Regime Monitor — Conviction Signal for Macro Flip
+
+The regime monitor counts how many active coins have individually flipped phase.
+This count is the conviction signal for whether the macro market has topped or bottomed.
+
+```
+Example (global regime = LONG_DCA):
+
+  Coin signals:  3/10 coins detected TOP → flipped to SHORT_DCA
+  Alert:         ⚠️ Tier 1 — early warning, informational
+
+  Coin signals:  6/10 coins detected TOP → flipped to SHORT_DCA
+  Alert:         🚨 Tier 2 — strong signal, APPROVE/DENY prompt sent
+
+  Operator:      APPROVE → global regime flips to SHORT_DCA
+  Result:        All coins now in SHORT_DCA are eligible to trade.
+                 Coins still in LONG_DCA are excluded until they also flip.
+                 Open LONG positions ride to TP naturally.
+```
+
+The same logic works in reverse for bottoms during a SHORT_DCA global regime.
+
+#### 7.5.4 Dashboard Display
+
+Each coin on the dashboard shows:
+- **Engine phase**: LONG_DCA or SHORT_DCA (the coin’s own signal-based state)
+- **Trading status**: Active (matches global) or Excluded (conflicts with global)
+- **Signal that triggered the flip**: Top detection method or bottom conviction score
+
+The portfolio summary shows:
+- **Global regime**: Current macro direction (LONG_DCA or SHORT_DCA)
+- **Regime signal count**: N/total coins that have flipped to the opposing phase
+- **Conviction tier**: Based on signal count thresholds
+
+#### 7.5.5 Regime Flip Lifecycle
+
+```
+1. Market starts topping
+2. Individual coins detect tops via signal stack (OB93+divergence, fallbacks, etc.)
+3. Each coin’s engine transitions to SHORT_DCA independently
+4. Regime gate blocks these coins from opening SHORT positions (global is still LONG)
+5. Open LONG positions on these coins naturally hit TPs and close
+6. Dashboard shows increasing count of flipped coins
+7. Operator receives Telegram alerts as thresholds are crossed
+8. When conviction is high enough, operator sends APPROVE
+9. Global regime flips to SHORT_DCA
+10. All coins already in SHORT_DCA immediately become eligible to trade (short entries)
+11. Coins still in LONG_DCA are now excluded until they also flip
+12. No positions are force-closed at any point
+```
+
+#### 7.5.6 Implementation Notes
+
+- Global regime is stored in `state.json` as `global_regime: "LONG_DCA"` or `"SHORT_DCA"`
+- On startup, global regime is restored from state (not hardcoded)
+- The regime gate check runs after each `engine.tick()` in the candle processing loop
+- If an engine transitions to a phase conflicting with the global regime:
+  - The phase transition is allowed (engine state reflects reality)
+  - The coin is marked as excluded from trading
+  - The regime monitor count increments
+  - An alert is sent if tier thresholds are crossed
+- The APPROVE/DENY flow changes only the global regime, never individual engine phases
 
 ---
 
