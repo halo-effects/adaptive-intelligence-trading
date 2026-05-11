@@ -74,6 +74,9 @@ _Last updated: 2026-05-10_
 | seed_capital immutable | 2026-05-10 | CLI --capital is the seed, period. Never derived from balance - csv_pnl (breaks on incomplete CSV). |
 | Dashboard sync: fresh clone | 2026-05-10 | Replaced `git reset --soft` with fresh shallow clone per cycle. Eliminates non-docs file leakage. |
 | Hurdle rate configurable | 2026-05-10 | Extracted to `HURDLE_RATE_DCA_SCORE = 5.0` in v14_capital_manager.py. Single source of truth. |
+| Auto deposit/withdrawal detection | 2026-05-11 | Consecutive balance comparison. No unrealized PnL (cascade risk). Threshold max($5, 2%). |
+| Dashboard growth excludes deposits | 2026-05-11 | `(equity - seed - net_deposits) / seed`. Isolates trading performance. |
+| Startup ledger reconciliation | 2026-05-11 | `dex_total - ledger_capital - csv_pnl`. Stable values only. No cascade. |
 
 ## Next Steps
 1. **🔴 Create V14PM Live auto-restart task** (needs admin PowerShell)

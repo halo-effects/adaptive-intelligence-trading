@@ -57,6 +57,10 @@ _Non-negotiable rules from production incidents. Violating these causes real dam
 
 29. **Trade CSV is append-only.** Never truncate, overwrite, or rebuild trades.csv while a bot is running. If restoration is needed: stop bot → backup → merge → restart. Dedup by canonical key (symbol, open_time, close_time). (2026-05-10)
 
+30. **Never use unrealized PnL in deposit/withdrawal detection or startup reconciliation.** Unrealized PnL is volatile between restarts. Using it creates false deposit/withdrawal triggers that cascade: each restart records a phantom transaction that shifts the baseline for the next restart. Use only stable values: ledger_capital + csv_pnl. (2026-05-11)
+
+31. **Deposit detection must be idempotent on restart.** If the bot crashes after recording a ledger transaction but before updating `_tracked_capital`, the next startup must not double-count. The startup reconciliation formula (`dex - ledger - pnl`) is self-correcting because `ledger.current_capital` already absorbed the transaction. (2026-05-11)
+
 ## Communication
 
 15. **Don't build narratives from user prompts** — let data lead. If Brett asks about DeFi coins, check the data before recommending DeFi coins. (2026-03-03)

@@ -1172,11 +1172,11 @@ class V14PortfolioLiveAster:
           If abs(drift) > threshold, it's a deposit (drift > 0) or
           withdrawal (drift < 0).
 
-        This is immune to unrealized PnL fluctuations because we compare
-        USDT total balance and only adjust for known cash flows (realized
-        trades + funding). Unrealized PnL is included in usdt_total by the
-        exchange, but it's included in BOTH the previous and current
-        snapshots, so it cancels out in the delta.
+        This is immune to unrealized PnL fluctuations because usdt_total
+        (from fetch_balance) is the USDT margin balance WITHOUT unrealized.
+        Unrealized PnL lives in position data, not in the balance.  We only
+        compare stable USDT balances and adjust for known cash flows
+        (realized trades + funding).
 
         Threshold: max($5, 2% of tracked capital) to filter noise/rounding.
         Suppressed for 3 cycles after startup (DEX-as-truth init).

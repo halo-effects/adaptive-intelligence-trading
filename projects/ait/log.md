@@ -1,6 +1,14 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+## 2026-05-11
+- **Auto deposit/withdrawal detection deployed** (`deposit-detection-audit.md`): Consecutive balance comparison approach. `expected = prev_balance + pnl_delta + funding_delta`. Immune to unrealized PnL. Fires within 60s of DEX balance change. Full system audit: 16 components traced, 7 findings (1 CRITICAL fixed — cascade from unrealized PnL).
+- **Startup reconciliation**: Compares `dex_total` to `ledger_capital + csv_pnl`. Uses only stable values (no unrealized). Cascade-safe: verified 3 consecutive restarts with delta=$0.00.
+- **Dashboard growth formula**: `(equity - seed - net_deposits) / seed`. Isolates trading performance from capital flows.
+- **Capital ledger baseline set**: seed=$300, deposit=$40, pnl_adjustment=$64.59 (dark PnL gap from CSV truncation).
+- **ccxt Aster fix**: Patched `fapiPublicGetV1ExchangeInfo` to filter markets with null baseAsset/quoteAsset. Aster API intermittently returns incomplete data.
+- Updated: `run_v14_portfolio_live_aster.py`, `d-984ae0d4ab9dc1a5.html`, `dashboardV14PM.html`, `capital_ledger.json`, `deposit-detection-audit.md`
+
 ## 2026-05-10
 - **V2 System Audit complete**: 60 findings across 11 phases (~15,000 lines reviewed). 2 CRITICAL + 1 HIGH fixed during audit, 10 more post-audit. See `specs/v2-audit-summary.md`.
 - **Post-audit Fix Now batch (6 items)**: #12 Steve symbol selection, #13 HybridDetector USDC preference, #21 scanner freshness warning, #24 candle quality validation, #49 stale task (needs admin), #51 stale lock recovery.
