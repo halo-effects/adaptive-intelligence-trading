@@ -1,0 +1,27 @@
+{
+  "seed_capital": 300.0,
+  "current_capital": 410.15,
+  "transactions": [
+    {
+      "timestamp": "2026-04-15T00:00:00",
+      "type": "seed",
+      "amount": 300.0,
+      "balance_after": 300.0,
+      "note": "Initial seed capital"
+    },
+    {
+      "timestamp": "2026-05-11T13:02:00",
+      "type": "deposit",
+      "amount": 40.0,
+      "balance_after": 340.0,
+      "note": "Manual deposit of 40 USDT to Aster account"
+    },
+    {
+      "timestamp": "2026-05-11T13:20:00",
+      "type": "pnl_adjustment",
+      "amount": 70.15,
+      "balance_after": 410.15,
+      "note": "Baseline adjustment: $70.15 trading gains from CSV truncation period not in trades.csv"
+    }
+  ]
+}

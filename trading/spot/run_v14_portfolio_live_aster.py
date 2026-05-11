@@ -317,6 +317,31 @@ class AsterPerpClient:
             "timeout": 15000,  # 15s hard timeout on all API calls (prevent hangs)
         })
         if not dry_run:
+            # Aster API sometimes returns markets with null baseAsset/quoteAsset.
+            # ccxt crashes with TypeError when building the symbol string.
+            # Monkey-patch the raw API call to filter out incomplete markets.
+            # Aster API can return markets with null baseAsset/quoteAsset.
+            # ccxt crashes building the symbol string (base + '/' + quote = TypeError).
+            # Patch both fapi and sapi exchange info endpoints to filter them out.
+            for endpoint_name in ('fapiPublicGetV1ExchangeInfo', 'sapiPublicGetV1ExchangeInfo'):
+                _orig = getattr(self._exchange, endpoint_name, None)
+                if _orig is None:
+                    continue
+                def _make_safe(orig_fn):
+                    def _safe(params={}):
+                        resp = orig_fn(params)
+                        if 'symbols' in resp:
+                            before = len(resp['symbols'])
+                            resp['symbols'] = [
+                                s for s in resp['symbols']
+                                if s.get('baseAsset') and s.get('quoteAsset')
+                            ]
+                            diff = before - len(resp['symbols'])
+                            if diff > 0:
+                                logger.info(f"Filtered {diff} markets with null base/quote from Aster API")
+                        return resp
+                    return _safe
+                setattr(self._exchange, endpoint_name, _make_safe(_orig))
             self._exchange.load_markets()
 
         # Track which symbols we've already set leverage for (avoid repeat API calls)
@@ -1135,28 +1160,85 @@ class V14PortfolioLiveAster:
                 )
 
     def _detect_capital_change(self):
-        """Detect deposits/withdrawals by comparing exchange balance to tracked capital.
+        """Detect deposits/withdrawals via consecutive balance comparison.
 
-        Runs every sync cycle. Uses threshold: max($5, 2% of tracked capital).
-        When detected:
-          - Records to capital ledger
-          - Calls router.resize() to adjust pools and tier
-          - Sends Telegram alert
+        Approach (2026-05-11 rewrite):
+          Compare current USDT balance to previous snapshot, accounting for
+          realized PnL and funding that occurred between snapshots.
+
+          expected = prev_balance + realized_pnl_delta + funding_delta
+          drift   = actual - expected
+
+          If abs(drift) > threshold, it's a deposit (drift > 0) or
+          withdrawal (drift < 0).
+
+        This is immune to unrealized PnL fluctuations because we compare
+        USDT total balance and only adjust for known cash flows (realized
+        trades + funding). Unrealized PnL is included in usdt_total by the
+        exchange, but it's included in BOTH the previous and current
+        snapshots, so it cancels out in the delta.
+
+        Threshold: max($5, 2% of tracked capital) to filter noise/rounding.
+        Suppressed for 3 cycles after startup (DEX-as-truth init).
         """
         if self._exchange_usdt_total <= 0:
             return  # No exchange data yet
 
-        # AUTO DEPOSIT/WITHDRAWAL DETECTION: DISABLED (2026-05-08)
-        # The heuristic formula (exchange_total - unrealized - realized vs tracked)
-        # creates phantom deposits/withdrawals because realized PnL changes the
-        # exchange balance without a real deposit/withdrawal.
-        # Use manual DEPOSIT/WITHDRAW Telegram commands instead.
-        # The bot reads capital from DEX on every startup (DEX-as-truth).
-        return
+        # Suppress during startup (DEX-as-truth sets this)
+        if time.time() < getattr(self, '_deposit_detect_suppress_until', 0):
+            # Still learning -- just snapshot current state
+            self._prev_usdt_balance = self._exchange_usdt_total
+            self._prev_realized_pnl = self._cumulative_realized_pnl
+            self._prev_cumulative_funding = sum(
+                cs.cumulative_funding for cs in self.coins.values()
+            )
+            return
 
-        # --- DEAD CODE BELOW (preserved for reference) ---
+        prev_bal = getattr(self, '_prev_usdt_balance', None)
+        if prev_bal is None:
+            # First cycle -- just record baseline
+            self._prev_usdt_balance = self._exchange_usdt_total
+            self._prev_realized_pnl = self._cumulative_realized_pnl
+            self._prev_cumulative_funding = sum(
+                cs.cumulative_funding for cs in self.coins.values()
+            )
+            return
+
+        # Calculate deltas since last snapshot
+        pnl_delta = self._cumulative_realized_pnl - getattr(
+            self, '_prev_realized_pnl', self._cumulative_realized_pnl
+        )
+        funding_now = sum(cs.cumulative_funding for cs in self.coins.values())
+        funding_delta = funding_now - getattr(
+            self, '_prev_cumulative_funding', funding_now
+        )
+
+        expected_balance = prev_bal + pnl_delta + funding_delta
+        actual_balance = self._exchange_usdt_total
+        drift = actual_balance - expected_balance
+
+        # Update snapshots for next cycle
+        self._prev_usdt_balance = actual_balance
+        self._prev_realized_pnl = self._cumulative_realized_pnl
+        self._prev_cumulative_funding = funding_now
+
+        # Apply threshold
+        threshold = max(CAPITAL_DRIFT_MIN_USD, self._tracked_capital * CAPITAL_DRIFT_MIN_PCT)
+        if abs(drift) < threshold:
+            return  # Normal fluctuation (rounding, micro-fees)
+
+        # Classify and record
+        if drift > 0:
+            tx_type = "deposit"
+            tx_amount = drift
+        else:
+            tx_type = "withdrawal"
+            tx_amount = abs(drift)
+
+        drift_pct = (drift / self._tracked_capital * 100) if self._tracked_capital > 0 else 0
+
         # Record to ledger
-        note = f"Auto-detected via exchange sync ({drift_pct:.1f}% drift)"
+        note = f"Auto-detected via balance comparison (drift ${drift:+.2f}, {drift_pct:+.1f}%)"
         record_ledger_transaction(LEDGER_PATH, tx_type, tx_amount, note=note)
 
         # Update tracked capital
@@ -1166,14 +1248,14 @@ class V14PortfolioLiveAster:
         else:
             self._tracked_capital -= tx_amount
 
-        # Resize router (adjusts pools, tier cap, split — all hysteresis-aware)
+        # Resize router (adjusts pools, tier cap, split -- all hysteresis-aware)
         self.router.resize(self._tracked_capital)
         self.capital = self._tracked_capital
 
-        emoji = "\U0001f4e5" if tx_type == "deposit" else "\U0001f4e4"  # 📥 / 📤
+        emoji = "\U0001f4e5" if tx_type == "deposit" else "\U0001f4e4"  # deposit / withdrawal
         send_telegram(
             f"{emoji} {TG_PREFIX} <b>{tx_type.capitalize()} detected: ${tx_amount:.2f}</b>\n"
-            f"Drift: {drift_pct:.1f}%\n"
+            f"Balance drift: ${drift:+.2f} ({drift_pct:+.1f}%)\n"
             f"Capital: ${old_capital:.2f} -> ${self._tracked_capital:.2f}\n"
             f"Tier: {self.router.tier_coin_cap} coins | "
             f"Split: {EQUITY_TIER_SPLITS[self.router._split_tier_index][1]*100:.0f}/"
@@ -3497,6 +3579,43 @@ class V14PortfolioLiveAster:
                         f"seed=${self._seed_capital:.2f} (CLI, immutable) "
                         f"realized=${csv_pnl:.2f}"
                     )
+
+                    # Reconcile ledger with DEX balance on startup.
+                    # The ledger tracks seed + deposits - withdrawals. The DEX
+                    # balance = ledger_capital + PnL + unrealized + deposits/withdrawals.
+                    # So: deposit_delta = DEX - ledger_capital - csv_pnl - unrealized
+                    try:
+                        ledger = load_capital_ledger(LEDGER_PATH)
+                        ledger_capital = ledger.get("current_capital", self._seed_capital)
+                        # Unrealized PnL from current positions
+                        unrealized = 0.0
+                        for pos_data in self._last_exchange_positions.values():
+                            unrealized += float(pos_data.get("unrealized_pnl", 0) or 0)
+                        # Expected balance = what the ledger knows + trading activity
+                        expected = ledger_capital + csv_pnl + unrealized
+                        capital_delta = dex_total - expected
+                        logger.info(
+                            f"Ledger reconciliation check: DEX=${dex_total:.2f} "
+                            f"expected=${expected:.2f} (ledger=${ledger_capital:.2f} + "
+                            f"pnl=${csv_pnl:.2f} + unrealized=${unrealized:.2f}) "
+                            f"delta=${capital_delta:.2f}"
+                        )
+                        if abs(capital_delta) > CAPITAL_DRIFT_MIN_USD:
+                            if capital_delta > 0:
+                                tx_type = "deposit"
+                            else:
+                                tx_type = "withdrawal"
+                            record_ledger_transaction(
+                                LEDGER_PATH, tx_type, abs(capital_delta),
+                                note=f"Startup reconciliation: DEX=${dex_total:.2f} vs ledger=${ledger_capital:.2f}"
+                            )
+                            logger.info(
+                                f"Startup ledger reconciliation: {tx_type} ${abs(capital_delta):.2f} "
+                                f"(DEX=${dex_total:.2f}, ledger was ${ledger_capital:.2f})"
+                            )
+                    except Exception as le:
+                        logger.warning(f"Ledger reconciliation failed (non-fatal): {le}")
+
                 else:
                     logger.warning("DEX balance is $0 — using state.json capital as fallback")
             except Exception as e:
