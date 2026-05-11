@@ -3286,6 +3286,20 @@ class V14PortfolioLiveAster:
         except Exception as e:
             logger.warning(f"CSV aggregate for status failed: {e}")
 
+        # Deposit/withdrawal totals from capital ledger — used by dashboard
+        # to separate trading performance from capital flows.
+        try:
+            ledger_summary = get_ledger_summary(LEDGER_PATH)
+            status["total_deposits"] = round(ledger_summary.get("total_deposits", 0), 2)
+            status["total_withdrawals"] = round(ledger_summary.get("total_withdrawals", 0), 2)
+            status["net_deposits"] = round(
+                ledger_summary.get("total_deposits", 0) - ledger_summary.get("total_withdrawals", 0), 2
+            )
+        except Exception:
+            status["total_deposits"] = 0
+            status["total_withdrawals"] = 0
+            status["net_deposits"] = 0
+
         # CANARY: Mark status with code version to detect stale code
         status["_code_version"] = "exchange-truth-v2"
 
