@@ -3581,24 +3581,23 @@ class V14PortfolioLiveAster:
                     )
 
                     # Reconcile ledger with DEX balance on startup.
-                    # The ledger tracks seed + deposits - withdrawals. The DEX
-                    # balance = ledger_capital + PnL + unrealized + deposits/withdrawals.
-                    # So: deposit_delta = DEX - ledger_capital - csv_pnl - unrealized
+                    # The ledger tracks seed + deposits - withdrawals.
+                    # dex_total (usdt_total) = USDT balance WITHOUT unrealized PnL.
+                    # So: dex_total = ledger_capital + csv_pnl + any unrecorded deposits
+                    #
+                    # DO NOT include unrealized PnL — it's volatile between restarts
+                    # and would cause false deposit/withdrawal detection (cascade risk).
+                    # Threshold max($5, 2%) absorbs rounding/fee noise.
                     try:
                         ledger = load_capital_ledger(LEDGER_PATH)
                         ledger_capital = ledger.get("current_capital", self._seed_capital)
-                        # Unrealized PnL from current positions
-                        unrealized = 0.0
-                        for pos_data in self._last_exchange_positions.values():
-                            unrealized += float(pos_data.get("unrealized_pnl", 0) or 0)
-                        # Expected balance = what the ledger knows + trading activity
-                        expected = ledger_capital + csv_pnl + unrealized
+                        # Expected USDT balance = ledger base + realized PnL
+                        expected = ledger_capital + csv_pnl
                         capital_delta = dex_total - expected
                         logger.info(
                             f"Ledger reconciliation check: DEX=${dex_total:.2f} "
                             f"expected=${expected:.2f} (ledger=${ledger_capital:.2f} + "
-                            f"pnl=${csv_pnl:.2f} + unrealized=${unrealized:.2f}) "
-                            f"delta=${capital_delta:.2f}"
+                            f"pnl=${csv_pnl:.2f}) delta=${capital_delta:.2f}"
                         )
                         if abs(capital_delta) > CAPITAL_DRIFT_MIN_USD:
                             if capital_delta > 0:

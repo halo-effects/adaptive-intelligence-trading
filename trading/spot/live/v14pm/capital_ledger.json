@@ -1,6 +1,6 @@
 {
   "seed_capital": 300.0,
-  "current_capital": 410.15,
+  "current_capital": 404.59,
   "transactions": [
     {
       "timestamp": "2026-04-15T00:00:00",
@@ -19,9 +19,9 @@
     {
       "timestamp": "2026-05-11T13:20:00",
       "type": "pnl_adjustment",
-      "amount": 70.15,
-      "balance_after": 410.15,
-      "note": "Baseline adjustment: $70.15 trading gains from CSV truncation period not in trades.csv"
+      "amount": 64.59,
+      "balance_after": 404.59,
+      "note": "Baseline: $64.59 unrecorded trading gains (CSV truncation gap)"
     }
   ]
 }
