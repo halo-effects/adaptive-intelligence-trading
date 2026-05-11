@@ -158,6 +158,21 @@ The V14PM trading system is **production-ready with 3 critical bugs fixed during
 
 ---
 
+## Post-Audit: Deposit Detection System (2026-05-11)
+
+Separate system audit conducted for auto deposit/withdrawal detection.
+See: `projects/ait/specs/deposit-detection-audit.md`
+
+- 16 components traced, 7 findings (2 critical fixed)
+- **D1 CRITICAL**: Unrealized PnL in reconciliation caused cascade on restart → removed
+- **D2 HIGH**: Dark PnL lumped with real deposit → pnl_adjustment ledger type
+- Runtime detection: consecutive balance comparison (60s cycle)
+- Startup reconciliation: `dex_total - ledger_capital - csv_pnl` (stable values only)
+- Dashboard growth: `(equity - seed - net_deposits) / seed`
+- Hard Rules #30-31 added
+
+---
+
 ## What's Working Well
 
 1. **Exchange-as-truth architecture** — eliminates phantom trades, crash-safe
@@ -168,3 +183,4 @@ The V14PM trading system is **production-ready with 3 critical bugs fixed during
 6. **Signal stack independence** — core signals (StochRSI, BMSB, death cross) compute from raw OHLCV, not pre-computed columns
 7. **Dashboard pipeline** — auto-syncs every 10 min to GitHub Pages
 8. **Architecture doc** — 1,358 lines covering all system domains
+9. **Auto deposit/withdrawal detection** — consecutive balance comparison, cascade-safe, full audit

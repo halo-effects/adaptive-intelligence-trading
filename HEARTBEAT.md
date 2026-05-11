@@ -13,7 +13,8 @@
 - Manual restart: `python -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill`
 - Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
 - Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
-- **CHANGES 2026-05-08**: DEX-as-truth startup, reconciliation disabled, auto deposit detection disabled
+- **CHANGES 2026-05-11**: Auto deposit/withdrawal detection RE-ENABLED (consecutive balance comparison). Dashboard growth excludes deposits. ccxt Aster null market patch.
+  - Prior: DEX-as-truth startup, reconciliation disabled
 
 ### V14 Paper Bot (Hyperliquid — HBAR/ATOM/LINK/NEAR) — LIVE as of 2026-02-28
 - Check `trading/spot/paper/v14/status.json` for bot health
@@ -47,7 +48,7 @@
 - **PRE-FLIGHT REQUIRED before restart**: `python -c "from trading.spot.run_v14_portfolio_live_aster import V14PortfolioLiveAster; print('OK')"`
 - Entry point: `python -u -m trading.spot.run_v14_portfolio_live_aster --capital 300 --confirm --skip-backfill`
 - Dashboard: `docs/d-984ae0d4ab9dc1a5.html`
-- **CHANGES 2026-05-08**: DEX-as-truth startup, reconciliation disabled, auto deposit detection disabled, candle replay guard (4500s)
+- **CHANGES 2026-05-08**: DEX-as-truth startup, reconciliation disabled, candle replay guard (4500s)
 
 ### V14 PM Paper Bot (Hyperliquid)
 - Check `trading/spot/paper/v14_portfolio/status.json` for bot health

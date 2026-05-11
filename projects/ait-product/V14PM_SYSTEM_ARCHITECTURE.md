@@ -840,6 +840,53 @@ At midnight UTC, the PM runner:
 > $65K when the CSV showed $44K. Fixed 2026-03-10 by making all runners use CSV
 > as the sole source of realized PnL. Full audit: `V14PM_FULL_AUDIT.md`.
 
+### 7.4 Deposit/Withdrawal Detection (2026-05-11)
+
+Auto-detects deposits and withdrawals via consecutive balance comparison.
+
+**Runtime detection** (every 60s cycle):
+```
+expected = prev_usdt_balance + realized_pnl_delta + funding_delta
+drift = actual_usdt_balance - expected
+if abs(drift) > max($5, 2% of tracked_capital) → deposit or withdrawal
+```
+
+**Key design decisions:**
+- `usdt_total` (from `fetch_balance()`) excludes unrealized PnL → stable
+- Unrealized PnL is **never** used in detection (Hard Rule #30 — cascade risk)
+- Threshold `max($5, 2%)` filters micro-fee noise and rounding
+- Suppressed for 3 cycles after startup (DEX-as-truth baseline)
+
+**On detection:**
+1. Records to capital ledger (`record_ledger_transaction()`)
+2. Updates `_tracked_capital` and `capital`
+3. Calls `router.resize()` → recalculates pool split, tier cap
+4. Sends Telegram alert
+5. Saves state (`_save_state()`)
+
+**Startup reconciliation:**
+```
+expected = ledger.current_capital + csv_pnl
+delta = dex_total - expected
+if abs(delta) > $5 → record deposit/withdrawal in ledger
+```
+- Uses only stable values (no unrealized PnL)
+- Idempotent: `record_ledger_transaction()` updates `current_capital`,
+  so next restart sees delta ≈ 0 (Hard Rule #31)
+
+**Capital ledger** (`capital_ledger.json`):
+- Transaction types: `seed`, `deposit`, `withdrawal`, `pnl_adjustment`
+- `current_capital` = seed + deposits - withdrawals + adjustments
+- `get_ledger_summary()` reports `total_deposits` (type=deposit only)
+- Dashboard uses `net_deposits` to isolate trading growth from capital flows
+
+**Dashboard growth formula:**
+```
+growth = (equity - seed_capital - net_deposits) / seed_capital × 100
+```
+
+Full system audit: `projects/ait/specs/deposit-detection-audit.md`
+
 ### 7.5 Portfolio Regime System
 
 The portfolio regime system connects the per-coin engine phase machine (§5.1) to a

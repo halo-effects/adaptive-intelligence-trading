@@ -18,23 +18,23 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
-## AIT — Current State (2026-05-10)
-- **V14PM Live (Aster)**: $378 capital, 86 trades, 82.8% win rate, $13.96 realized PnL (seed=$300)
+## AIT — Current State (2026-05-11)
+- **V14PM Live (Aster)**: $423 capital (seed=$300 + $40 deposit), 92 trades, ~83% win rate
   - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
-  - Reconciliation & auto deposit detection disabled (caused corruption)
+  - **Auto deposit/withdrawal detection ENABLED** (2026-05-11): Consecutive balance comparison, no unrealized PnL. Full system audit: `specs/deposit-detection-audit.md`
+  - Reconciliation disabled (caused corruption). TP recovery handles missed fills.
   - **Regime phase gate deployed**: Coins trade only when engine phase matches global regime
   - **seed_capital immutable** (Hard Rule #26): CLI --capital arg, never recalculated
-  - **Trade history restored**: 86 trades merged from git recovery + current bot
-  - **V2 System Audit complete**: 60 findings, 15 fixed, 1 HIGH remaining (auto-restart task needs admin)
-  - **Dashboard sync fixed**: Root cause was `git reset --soft` in sparse checkout → fresh clone per cycle
+  - **Dashboard growth**: `(equity - seed - net_deposits) / seed` — isolates trading from capital flows
+  - **Capital ledger baseline**: seed=$300, deposit=$40, pnl_adjustment=$64.59 (dark PnL gap)
+  - **ccxt Aster patch**: Filters null baseAsset markets from API (intermittent crash fix)
   - Approved symbols: `[INJ, JUP, TON]` (scanner top 3)
-- **V14PM Paper**: 750 trades, $50,415 PnL (restored from 171 trades after CSV truncation)
+- **V14PM Paper**: 750+ trades, $50K+ PnL (restored from CSV truncation)
 - **V14 Live (Aster)**: ASTER/USDT single-coin, running
 - **V14 Paper**: Running on Hyperliquid
 - **V14-ETF Paper**: Running
-- **Major incident 2026-05-08**: Data sync cron overwrote capital_manager.py → restart cascade.
-- **Key principle (2026-05-09)**: Engine phases are truth — never overwrite to match global regime.
-- **Hard rules 26-29 added** (2026-05-10): Immutable seed, no derived constants, fresh clone sync, append-only CSV.
+- **V2 System Audit** (2026-05-10): 60 findings, 15 fixed. Deposit detection audit (2026-05-11): 7 findings, 2 critical fixed.
+- **Hard rules 26-31**: Immutable seed, no derived constants, fresh clone sync, append-only CSV, no unrealized in detection, idempotent restart.
 
 ### Needs Admin PowerShell
 1. Create V14PM auto-restart task (`V14PMLiveAster`)
