@@ -1,5 +1,5 @@
 # AIT — Project Overview
-_Last updated: 2026-05-10_
+_Last updated: 2026-05-12_
 
 ## Product
 **Adaptive Intelligence Trading** — Automated crypto DCA trading system with signal-directed phase transitions and dynamic capital rotation.
@@ -28,7 +28,7 @@ _Last updated: 2026-05-10_
 | DCA Cycle Velocity scoring | 2026-03-03 | `Score = Realized_PnL × (1-MaxDD%) × Capital_Freedom / 100` |
 | PM capital = $50K, 10 coin slots | 2026-03-06 | Equity tier at $50K+ = 10 simultaneous coins |
 | Trend multiplier in allocation | 2026-03-06 | `Adjusted Score = DCA Score × Trend Multiplier` [0.30, 1.50] |
-| High profile, 1.0x leverage for PM | 2026-03-05 | 12 layers, 1.5% TP, 1.5% dev, 1.5x SO mult, no liquidation risk |
+| High profile, 1.0x leverage for PM | 2026-05-12 | **4 layers, 3.0% TP**, 1.5% dev, 1.5x SO mult, no liquidation risk (was 12L/1.5% TP before 2026-05-12) |
 | Conviction: 3D DX + 2W K≥5 + score≥3/4 | 2026-02-28 | Bottom detection locked |
 | Top: OB93 arm + 2D divergence (35d timeout) | 2026-02-28 | Top detection locked |
 | Ground-truth equity formula | 2026-03-08 | `Capital + Realized PnL - Fees + Unrealized PnL` |
@@ -39,20 +39,17 @@ _Last updated: 2026-05-10_
 | Trend multiplier gates entry not exit | 2026-03-06 | Declining coins get less capital but existing positions stay |
 
 ## Current State (2026-05-10)
-- **V14PM Live (Aster)**: $378 capital, 86 trades, 82.8% win rate, $13.96 realized PnL (seed=$300)
-  - DEX-as-truth startup: reads wallet balance directly from exchange
-  - Reconciliation & auto deposit detection disabled (caused corruption)
-  - Candle replay guard active (warmup-only: old candles update indicators, only current candle executes)
-  - Exchange-truth trade recording: uses DEX entry price × actual qty, not engine price
-  - **Regime phase gate deployed (§7.5)**: Coins trade only when phase matches global regime
-  - **Graduated conviction alerts**: 7 thresholds (15/25/30/35/40/45/50%), APPROVE at any level
-  - **Dashboard regime panel**: Global direction, long/short counts, conviction bar, per-coin gate status
-  - **Allocation cleanup**: Router reconciled after daily rebalance — stale coins removed, new scanner targets seeded
-  - **Phantom position fix**: Status.json + exchange sync zero all position fields when DEX has no position
-  - **seed_capital immutable**: CLI --capital arg, never recalculated from DEX balance
-  - **Trade history restored**: Merged git-recovered + current CSV (86 trades total)
+- **V14PM Live (Aster)**: $423 capital (seed=$300 + $40 deposit), 96 trades, ~84% win rate
+  - **Grid optimization (2026-05-12)**: TP 3.0%, Max 4 layers (was 1.5%/12L). Backtest: +26.3% PnL. Spec: `specs/grid-optimization-tp3-4layer.md`
+  - **Trailing stop**: Enabled, 0.2% callback. Activation at new 3.0% TP.
+  - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
+  - **Auto deposit/withdrawal detection ENABLED** (2026-05-11): Consecutive balance comparison, no unrealized PnL
+  - **Regime phase gate deployed**: Coins trade only when engine phase matches global regime
+  - **seed_capital immutable** (Hard Rule #26): CLI --capital arg, never recalculated
+  - **Dashboard growth**: `(equity - seed - net_deposits) / seed` — isolates trading from capital flows
+  - **Capital ledger baseline**: seed=$300, deposit=$40, pnl_adjustment=$64.59 (dark PnL gap)
   - **V2 System Audit complete**: 60 findings, 15 fixed, 1 HIGH remaining (auto-restart task)
-  - Approved symbols: `[INJ/USDT, JUP/USDT, TON/USDT]` (scanner top 3)
+  - Approved symbols: `[JUP/USDT, ONDO/USDT, PENDLE/USDT, TON/USDT]` (scanner top)
 - **V14 Paper**: Running on Hyperliquid
 - **V14-ETF Paper**: Running
 - **V14 Live (Aster, single-coin)**: ASTER/USDT, running
@@ -77,6 +74,9 @@ _Last updated: 2026-05-10_
 | Auto deposit/withdrawal detection | 2026-05-11 | Consecutive balance comparison. No unrealized PnL (cascade risk). Threshold max($5, 2%). |
 | Dashboard growth excludes deposits | 2026-05-11 | `(equity - seed - net_deposits) / seed`. Isolates trading performance. |
 | Startup ledger reconciliation | 2026-05-11 | `dex_total - ledger_capital - csv_pnl`. Stable values only. No cascade. |
+| Grid optimization: TP 3.0%, 4 layers | 2026-05-12 | Portfolio backtest +26.3% PnL. Layers 5-12 never fired in live data (avg 1.65). Higher return/deal beats higher deal count. |
+| Multiplier/deviation unchanged | 2026-05-12 | 1.5x mult and 1.5% dev — backtested 2.0x/2.0%, zero difference. Not worth the change risk. |
+| Grandfather open positions | 2026-05-12 | Existing TP orders on Aster untouched. New config applies to new deals only. DCA layers on existing deals recalculate TP at new rate. |
 
 ## Next Steps
 1. **🔴 Create V14PM Live auto-restart task** (needs admin PowerShell)

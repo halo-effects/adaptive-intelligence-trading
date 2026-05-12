@@ -191,8 +191,8 @@ DCA Score = Realized_PnL × (1 - MaxDD%) × Capital_Freedom / 100
 | `SO_DEV` | 1.5% | Safety order price deviation |
 | `SO_STEP_MULT` | 1.5x | Each SO placed further apart (geometric) |
 | `SO_VOL_MULT` | 1.5x | Each SO is larger (geometric) |
-| `MAX_LAYERS` | 12 | Maximum safety orders per deal |
-| `TP_PCT` | 1.5% | Take profit from weighted average entry |
+| `MAX_LAYERS` | 4 | Maximum safety orders per deal (was 12 before 2026-05-12) |
+| `TP_PCT` | 3.0% | Take profit from weighted average entry (was 1.5% before 2026-05-12) |
 | `TAKER_FEE` | 0.025% | Hyperliquid taker fee |
 | `CAPITAL` | $10,000 | Simulated capital per coin |
 | `DCA_ALLOC` | 90% | Percentage of capital allocated to DCA grid |
@@ -328,7 +328,7 @@ Coins with fewer than 6 months of 1h candle history are classified as **immature
 All three bots share the same V14 engine:
 - **Strategy:** DCA-only (long), no shorts in current configuration
 - **Signal Stack:** ROUTER v2 (StochRSI, structure analysis, trend detection)
-- **Lifecycle:** `IDLE → LONG_DCA (Layer 1..12) → TP Hit → IDLE`
+- **Lifecycle:** `IDLE → LONG_DCA (Layer 1..4) → TP Hit → IDLE`
 - **Tick Interval:** 65 seconds (live), 1h candle-driven (paper)
 
 ### 5.2 Risk Profiles
@@ -340,8 +340,8 @@ All three bots share the same V14 engine:
 | SO Deviation | 2.0% | 1.5% |
 | SO Step Mult | 1.5x | 1.5x |
 | SO Vol Mult | 1.5x | 1.5x |
-| Max Layers | 10 | 12 |
-| Take Profit | 1.5% | 1.5% |
+| Max Layers | 10 | 4 (was 12 pre-2026-05-12) |
+| Take Profit | 1.5% | 3.0% (was 1.5% pre-2026-05-12) |
 
 ### 5.3 Bot Status Files
 

@@ -22,7 +22,7 @@ Scale the V14 DCA grid strategy from a single-coin $300 live bot to a multi-coin
 |-----------|----------|-----------|
 | **Exchange** | Hyperliquid (perps) | Unified margin, short capability, no custody issues |
 | **Leverage** | 1.0x | Zero liquidation risk — same safety as spot |
-| **Grid profile** | High (12 layers, 1.5% dev, 1.5x mult, 1.5% TP) | Best tested profile on V14 |
+| **Grid profile** | High (4 layers, 1.5% dev, 1.5x mult, 3.0% TP) | Optimized 2026-05-12 (was 12L/1.5% TP). Portfolio backtest: +26.3% PnL. |
 | **Grid type** | Fixed (not adaptive) | Fixed beat adaptive on 4/5 coins in V13 sweep |
 | **Coin universe** | Hyperliquid perps only | Dynamic — selected daily by cycle scanner scores |
 | **Timeframe** | 1h candles | Dominated 15m on all coins tested |
@@ -35,26 +35,18 @@ Scale the V14 DCA grid strategy from a single-coin $300 live bot to a multi-coin
 ### Why 1.0x Leverage (No Liquidation)
 - At 1.0x: **zero liquidation risk, ever.** Position is fully collateralized.
 - At 1.5x: liquidation possible ~50%+ below L12 fill in a sustained crash. Unlikely but not impossible in crypto.
-- The High profile grid (12 layers, 1.5% dev) is already aggressive. Adding leverage on top compounds risk without proportional reward.
-- 1.5x was designed for the Medium profile (fewer layers, wider spacing). On High + 12 layers, 1.0x is the right call.
+- The High profile grid (4 layers, 1.5% dev, 3.0% TP) focuses capital on fast-cycling L1-L2 deals. Adding leverage on top compounds risk without proportional reward.
+- 1.5x was designed for the Medium profile (fewer layers, wider spacing). On High, 1.0x is the right call.
 
-### Grid Depth at 1.0x / High Profile
+### Grid Depth at 1.0x / High Profile (Updated 2026-05-12)
 | Layer | Drop from Entry | Notes |
 |-------|----------------|-------|
 | L1 | — | Base order (40% of allocation) |
-| L2 | -1.5% | |
-| L3 | -3.0% | |
-| L4 | -4.5% | |
-| L5 | -6.0% | |
-| L6 | -7.5% | |
-| L7 | -9.0% | |
-| L8 | -10.5% | |
-| L9 | -12.0% | |
-| L10 | -13.5% | |
-| L11 | -15.0% | |
-| **L12** | **-16.5%** | **Last safety order. Fully deployed beyond here.** |
+| L2 | -1.5% | 1.5x volume |
+| L3 | -3.0% | 2.25x volume |
+| **L4** | **-4.5%** | **3.375x volume (max layer)** |
 
-After L12, the bot holds and waits for TP (1.5% above weighted avg entry). In a 40% crash, capital is locked from -16.5% onward with no more layers to add.
+After L4, the bot holds and waits for TP (3.0% above weighted avg entry). No more layers added. Volume multiplier capped at layer 4. Live data (96 trades) showed avg layers used = 1.65 — layers 5-12 never fired, confirming the cap removes dead config without changing behavior.
 
 ---
 
@@ -273,13 +265,13 @@ This prevents the system from opening fresh L1 positions in new coins while most
 ### 6.2 Sustained Bear Market (-40% to -70% over weeks/months)
 
 **What happens:**
-- Coins fill all 12 layers over days/weeks
+- Coins fill all 4 layers over days/weeks
 - Grid is fully deployed at -16.5% from entry
 - Price continues dropping beyond grid range
 - Capital is 100% locked, no further averaging possible
 
 **Risk:**
-- Maximum unrealized loss: depends on how far below L12 price goes
+- Maximum unrealized loss: depends on how far below L4 price goes
 - No additional capital to average further
 - Recovery time measured in weeks or months
 
@@ -460,7 +452,7 @@ The Portfolio Manager is a **new layer** above the V14 DCA engines:
 | Exchange | Hyperliquid perps | 2026-03-05 |
 | Leverage | 1.0x (zero liquidation) | 2026-03-05 |
 | Grid type | Fixed (not adaptive) | 2026-02-28 |
-| Grid profile | High (12L, 1.5% dev, 1.5x mult, 1.5% TP) | 2026-02-28 |
+| Grid profile | High (4L, 1.5% dev, 1.5x mult, 3.0% TP) | 2026-05-12 (was 12L/1.5% TP) |
 | Pool split | 75% Active / 25% Reserve (no separate cash buffer) | 2026-03-05 |
 | Allocation method | DCA Score proportional, 20% max cap per coin | 2026-03-05 |
 | Hurdle rate | DCA Score ≥ 5.0 to qualify for allocation | 2026-03-05 |

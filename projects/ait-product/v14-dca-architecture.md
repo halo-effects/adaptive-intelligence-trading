@@ -1,6 +1,6 @@
-# V14 DCA-Only Engine — Architecture Specification
+# V14 DCA-Only Engine - Architecture Specification
 
-**Last Updated**: 2026-03-06  
+**Last Updated**: 2026-03-06
 **Status**: ✅ Live (ASTER/USDT spot) + 🔄 Paper (V14, V14-ETF, V14-PM on Hyperliquid)
 
 ---
@@ -8,7 +8,7 @@
 ## Why V14: The Pivot from Lump-Sum to DCA
 
 ### Problem Statement
-V13's ROUTER v2 combined backtest (bottom conviction + top detection) showed **+$2,905 (+2.6%)** vs baseline — far below the individual component tests (+$9,847 bottom, +$15,160 top). The systems interact in unexpected ways: bottom conviction changes phase sequences, which prevents top detection from firing. More fundamentally:
+V13's ROUTER v2 combined backtest (bottom conviction + top detection) showed **+$2,905 (+2.6%)** vs baseline - far below the individual component tests (+$9,847 bottom, +$15,160 top). The systems interact in unexpected ways: bottom conviction changes phase sequences, which prevents top detection from firing. More fundamentally:
 
 1. **Timing precision is the fragile point.** Our signals correctly identify tops and bottoms within a 20-50 day window, but lump-sum execution punishes timing errors severely (SOL conviction -$2,820, ETH top detection -$5,795).
 
@@ -71,7 +71,7 @@ LONG_DCA ←→ ROUTER ←→ SHORT_DCA
 - **Base Order**: 8% of available capital (90% utilized, 10% reserve)
 - **Fixed params beat adaptive** on 4/5 coins
 
-> **Note**: The above are sweep baseline values. Live deployment uses the **profile system** (see §Profiles below). The High profile (12 layers, 1.5% dev, 1.5x mult) is the current production choice across all live and paper bots.
+> **Note**: The above are sweep baseline values. Live deployment uses the **profile system** (see §Profiles below). The High profile (**4 layers, 3.0% TP**, 1.5% dev, 1.5x mult) is the current production choice. Updated 2026-05-12 from 12 layers / 1.5% TP based on portfolio-level backtest (+26.3% PnL). See `specs/grid-optimization-tp3-4layer.md`.
 
 ### Capital Flow
 ```
@@ -103,10 +103,10 @@ Let open TPs hit              Let open TPs hit
 ### V14 v0.1: -5.7% total (vs V13 +187%)
 Expected for first pass. Clear structural issues identified:
 
-1. **SHORT_DCA exits in 3-14 days** — HH_HL bullish structure fires immediately. V13's structure signals were tuned for lump-sum timing, not DCA persistence.
-2. **Ranging exit interrupts LONG_DCA** — ADX < 20 for 21d fires repeatedly, bouncing coins into ROUTER for 14-42d of dead time. DCA handles ranging naturally.
-3. **Capital utilization tiny** — 8% base order means most capital idle vs V13's 60% instant deployment.
-4. **Top/bottom conviction barely fires** — Most direction switches from ranging/structure, not our hardened signal stack.
+1. **SHORT_DCA exits in 3-14 days** - HH_HL bullish structure fires immediately. V13's structure signals were tuned for lump-sum timing, not DCA persistence.
+2. **Ranging exit interrupts LONG_DCA** - ADX < 20 for 21d fires repeatedly, bouncing coins into ROUTER for 14-42d of dead time. DCA handles ranging naturally.
+3. **Capital utilization tiny** - 8% base order means most capital idle vs V13's 60% instant deployment.
+4. **Top/bottom conviction barely fires** - Most direction switches from ranging/structure, not our hardened signal stack.
 
 ### Required Fixes
 - Remove ranging exit from DCA phases (DCA handles chop naturally)
@@ -122,20 +122,20 @@ The V14 engine uses a named profile system rather than hardcoded grid parameters
 |---------|--------|-----------|---------|-----|----------|----------|
 | **Low** | 6 | 1.0% | 1.2x | 1.0% | 1.0x | Conservative / small capital |
 | **Medium** | 10 | 1.5% | 1.5x | 1.5% | 1.5x | Standard paper testing |
-| **High** | 12 | 1.5% | 1.5x | 1.5% | 1.0x | **Production (all live/paper bots)** |
+| **High** | 4 | 1.5% | 1.5x | 3.0% | 1.0x | **Production (all live/paper bots)** (was 12L/1.5% TP pre-2026-05-12) |
 
 **High profile grid depth** (from L1 entry, 1.5% deviation):
 
 | Layer | Drop from Entry |
 |-------|----------------|
 | L1 | — (base order: 40% of allocation) |
-| L6 | -7.5% |
-| L9 | -12.0% |
-| **L12** | **-16.5% (fully deployed)** |
+| L2 | -1.5% |
+| L3 | -3.0% |
+| **L4** | **-4.5% (max layer)** |
 
-After L12, the bot holds and waits for TP (1.5% above weighted avg entry). No liquidation risk at 1.0x leverage.
+After L4, the bot holds and waits for TP (3.0% above weighted avg entry). No liquidation risk at 1.0x leverage. Volume multiplier capped at layer 4 (1.5^4 = 5.06x base). Live data showed avg layers used = 1.65; layers 5-12 never fired.
 
-**No layer cooldown (all profiles).** Layers fire as fast as price hits each deviation threshold — no artificial delay between them at any risk level. The grid is designed to react immediately to volatility.
+**No layer cooldown (all profiles).** Layers fire as fast as price hits each deviation threshold - no artificial delay between them at any risk level. The grid is designed to react immediately to volatility.
 
 ---
 
@@ -150,7 +150,7 @@ After L12, the bot holds and waits for TP (1.5% above weighted avg entry). No li
 
 ## Current Deployment
 
-### Live Bot — ASTER/USDT (Spot)
+### Live Bot - ASTER/USDT (Spot)
 | Field | Value |
 |-------|-------|
 | Exchange | Binance (spot) |
@@ -160,7 +160,7 @@ After L12, the bot holds and waits for TP (1.5% above weighted avg entry). No li
 | Scheduled Task | `V14LiveAster` |
 | Status file | `trading/spot/live/v14/status.json` |
 
-### Paper Bot — V14 (Hyperliquid — HBAR/ATOM/LINK/NEAR)
+### Paper Bot - V14 (Hyperliquid - HBAR/ATOM/LINK/NEAR)
 | Field | Value |
 |-------|-------|
 | Exchange | Hyperliquid (perps) |
@@ -171,7 +171,7 @@ After L12, the bot holds and waits for TP (1.5% above weighted avg entry). No li
 | Scheduled Task | `V14PaperBot` |
 | Status file | `trading/spot/paper/v14/status.json` |
 
-### Paper Bot — V14-ETF (Hyperliquid — SOL/XRP/LTC/HBAR/ADA)
+### Paper Bot - V14-ETF (Hyperliquid - SOL/XRP/LTC/HBAR/ADA)
 | Field | Value |
 |-------|-------|
 | Exchange | Hyperliquid (perps) |
@@ -183,20 +183,20 @@ After L12, the bot holds and waits for TP (1.5% above weighted avg entry). No li
 | Status file | `trading/spot/paper/v14etf/status.json` |
 | Dashboard | `docs/dashboardV14ETF.html` |
 
-### Paper Bot — V14-PM (Hyperliquid — Portfolio Manager)
+### Paper Bot - V14-PM (Hyperliquid - Portfolio Manager)
 | Field | Value |
 |-------|-------|
 | Exchange | Hyperliquid (perps) |
 | Capital | $50K paper (reset from $10K on 2026-03-06) |
 | Profile | High (1.0x leverage) |
-| Coins | Dynamic — up to 10, selected daily by cycle scanner |
+| Coins | Dynamic - up to 10, selected daily by cycle scanner |
 | Runner | `trading/spot/run_v14_portfolio_paper.py` |
 | Capital manager | `trading/spot/v14_capital_manager.py` (`CapitalRouter`) |
 | Scheduled Task | `V14PMPaperBot` |
 | Status file | `trading/spot/paper/v14_portfolio/status.json` |
 | Dashboard | `docs/dashboardV14PM.html` |
 
-The PM is a layer above the V14 engines — see `projects/ait-product/portfolio-capital-management.md` for the full PM spec including pool architecture, equity-tiered coin caps, daily rebalance logic, and graceful tier degradation rules.
+The PM is a layer above the V14 engines - see `projects/ait-product/portfolio-capital-management.md` for the full PM spec including pool architecture, equity-tiered coin caps, daily rebalance logic, and graceful tier degradation rules.
 
 ---
 
@@ -205,7 +205,7 @@ This engine stands on extensive V13 research:
 - 98 distinct signals tested
 - DCA timeframe comparison (1h >> 15m on all coins)
 - DCA parameter sweep (fixed TP=1.5%, dev=2.5%, mult=2.5x optimal)
-- DCA dual-track proven inferior (long-only DCA correct during DCA phases — V14 extends this insight by making the ENTIRE strategy directional DCA)
+- DCA dual-track proven inferior (long-only DCA correct during DCA phases - V14 extends this insight by making the ENTIRE strategy directional DCA)
 - Full bottom conviction stack locked (3D DX + 2W K≥5 + 3/4 score)
 - Full top detection system (OB93 arm + 2D divergence + 35d timeout)
 - 79% of V13 DCA phases exit to MARKUP → confirms structural long bias, supports directional DCA concept
@@ -216,12 +216,12 @@ This engine stands on extensive V13 research:
 - [x] Architecture spec (this document)
 - [x] V14 engine v0.1 built and tested
 - [x] Phase stickiness fixed (ranging exit removed, conviction-only switches)
-- [x] Capital utilization tuned (profile system — High profile, 12 layers)
-- [x] Live bot deployed — ASTER/USDT (2026-02-xx)
-- [x] Paper bot — V14 (HBAR/ATOM/LINK/NEAR) deployed (2026-02-28)
-- [x] Paper bot — V14-ETF (SOL/XRP/LTC/HBAR/ADA) deployed (2026-03-02)
-- [x] Paper bot — V14-PM (Portfolio Manager, dynamic coins) deployed (2026-03-05)
+- [x] Capital utilization tuned (profile system - High profile, 4 layers, 3.0% TP as of 2026-05-12)
+- [x] Live bot deployed - ASTER/USDT (2026-02-xx)
+- [x] Paper bot - V14 (HBAR/ATOM/LINK/NEAR) deployed (2026-02-28)
+- [x] Paper bot - V14-ETF (SOL/XRP/LTC/HBAR/ADA) deployed (2026-03-02)
+- [x] Paper bot - V14-PM (Portfolio Manager, dynamic coins) deployed (2026-03-05)
 - [x] Equity-tiered coin cap added to PM (2026-03-06)
-- [x] Trend Score multiplier wired into PM allocation (2026-03-06) — `Adjusted Score = Base × Trend Mult` in `rebalance_daily()`
+- [x] Trend Score multiplier wired into PM allocation (2026-03-06) - `Adjusted Score = Base × Trend Mult` in `rebalance_daily()`
 - [ ] Correlation gate for broad market stress *(planned pre-live)*
 - [ ] 30+ days paper data → evaluate live deployment at scale

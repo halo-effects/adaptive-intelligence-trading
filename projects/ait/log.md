@@ -1,6 +1,19 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+## 2026-05-12
+- **Grid optimization deployed**: TP 1.5% → 3.0%, Max Layers 12 → 4 (high profile only). Spec: `specs/grid-optimization-tp3-4layer.md`.
+- **Backtest evidence**: Portfolio-level sim (3 slots, 10 coins, 90 days, real candles, Hyperliquid fees): +26.3% PnL ($23,772 vs $18,824). Higher return per deal outweighs fewer deals. Capital efficiency +40%.
+- **Live data analysis**: 96 trades, avg layers used = 1.65. Layers 5-12 never fired. L4+ deals were forced closes from bugs, not grid failures.
+- **Per-coin backtest**: TP is the dominant lever. Multiplier (1.5x vs 2.0x) and deviation (1.5% vs 2.0%) made no difference. Layer cap identical to 12 layers (never reached).
+- **Open positions grandfathered**: TON (L3), JUP (L1), PENDLE (L2), ONDO (L2) — existing TP orders on Aster untouched. New deals get 3.0% TP.
+- **Files changed**: `v14_lifecycle_engine.py` (profile), `run_v14_portfolio_live_aster.py` (fallbacks + docstring), `d-984ae0d4ab9dc1a5.html` (dashboard display).
+- **Trailing stop unchanged**: Still enabled, 0.2% callback. Activation now at 3.0% instead of 1.5%.
+- **No impact on**: Tiers, capital router, scanner, signal stack, low/medium profiles, deviation, multiplier.
+- **Aster single-coin bot**: Dead, excluded from changes.
+- **Commit**: `62b26e15a`
+- Bot restarted at 16:20 PDT (PID 6600 → 9964). All 4 existing TP orders confirmed open on Aster. Pre-flight passed.
+
 ## 2026-05-11
 - **Auto deposit/withdrawal detection deployed** (`deposit-detection-audit.md`): Consecutive balance comparison approach. `expected = prev_balance + pnl_delta + funding_delta`. Immune to unrealized PnL. Fires within 60s of DEX balance change. Full system audit: 16 components traced, 7 findings (1 CRITICAL fixed — cascade from unrealized PnL).
 - **Startup reconciliation**: Compares `dex_total` to `ledger_capital + csv_pnl`. Uses only stable values (no unrealized). Cascade-safe: verified 3 consecutive restarts with delta=$0.00.

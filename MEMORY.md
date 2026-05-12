@@ -19,7 +19,8 @@ _Curated essentials. For details, see the structured files below._
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
 ## AIT — Current State (2026-05-11)
-- **V14PM Live (Aster)**: $423 capital (seed=$300 + $40 deposit), 92 trades, ~83% win rate
+- **V14PM Live (Aster)**: $423 capital (seed=$300 + $40 deposit), 96 trades, ~84% win rate
+  - **Grid optimization (2026-05-12)**: TP 3.0%, Max 4 layers (was 1.5%/12L). Backtest: +26.3% PnL. Trailing stop unchanged (0.2% callback).
   - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
   - **Auto deposit/withdrawal detection ENABLED** (2026-05-11): Consecutive balance comparison, no unrealized PnL. Full system audit: `specs/deposit-detection-audit.md`
   - Reconciliation disabled (caused corruption). TP recovery handles missed fills.
@@ -28,7 +29,7 @@ _Curated essentials. For details, see the structured files below._
   - **Dashboard growth**: `(equity - seed - net_deposits) / seed` — isolates trading from capital flows
   - **Capital ledger baseline**: seed=$300, deposit=$40, pnl_adjustment=$64.59 (dark PnL gap)
   - **ccxt Aster patch**: Filters null baseAsset markets from API (intermittent crash fix)
-  - Approved symbols: `[INJ, JUP, TON]` (scanner top 3)
+  - Approved symbols: `[JUP, ONDO, PENDLE, TON]` (scanner top)
 - **V14PM Paper**: 750+ trades, $50K+ PnL (restored from CSV truncation)
 - **V14 Live (Aster)**: ASTER/USDT single-coin, running
 - **V14 Paper**: Running on Hyperliquid

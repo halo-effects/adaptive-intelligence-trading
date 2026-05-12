@@ -1,7 +1,7 @@
 # Grid Optimization: TP 3.0% + 4-Layer Cap
 
 **Date**: 2026-05-12  
-**Status**: SPEC — awaiting approval  
+**Status**: DEPLOYED — 2026-05-12 16:20 PDT. Commit `62b26e15a`. Bot PID 9964.  
 **Risk**: Medium (modifies live trading parameters, open positions affected)  
 **Backtest**: Portfolio-level sim shows +26.3% PnL vs baseline ($23,772 vs $18,824 over 90 days)
 
