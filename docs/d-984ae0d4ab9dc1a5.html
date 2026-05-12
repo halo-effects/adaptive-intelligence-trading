@@ -769,8 +769,8 @@ function renderRiskProfile(){
       '<div class="risk-params">'+
         '<div class="risk-param"><div class="rp-label">BO</div><div class="rp-val">30%</div></div>'+
         '<div class="risk-param"><div class="rp-label">DEV</div><div class="rp-val">'+(profile==='high'?'1.5%':'2.0%')+'</div></div>'+
-        '<div class="risk-param"><div class="rp-label">LAYERS</div><div class="rp-val">'+(profile==='high'?'12':'10')+'</div></div>'+
-        '<div class="risk-param"><div class="rp-label">TP</div><div class="rp-val">1.5%</div></div>'+
+        '<div class="risk-param"><div class="rp-label">LAYERS</div><div class="rp-val">'+(profile==='high'?'4':'10')+'</div></div>'+
+        '<div class="risk-param"><div class="rp-label">TP</div><div class="rp-val">'+(profile==='high'?'3.0%':'1.5%')+'</div></div>'+
         '<div class="risk-param"><div class="rp-label">MULT</div><div class="rp-val">1.5&times;</div></div>'+
         '<div class="risk-param"><div class="rp-label">LEVERAGE</div><div class="rp-val">'+(S.leverage||1).toFixed(1)+'&times;</div></div>'+
       '</div>'+
@@ -857,7 +857,7 @@ function renderPositions(){
     var upnl=c.unrealized_pnl||0;
     var rpnl=c.realized_pnl||0;
     var layers=c.layers||0;
-    var maxLayers=(S.profile==='high')?12:10;
+    var maxLayers=(S.profile==='high')?4:10;
 
     html+='<div class="position-card">';
     html+='<div class="position-head"><div class="position-head-left">';
@@ -942,7 +942,7 @@ function renderAIPanel(){
     var cfgi=c.cfgi!=null?c.cfgi:null;
     var cfgiCol=cfgi!=null?(cfgi<=25?'var(--red)':cfgi<=45?'var(--amber)':cfgi<=55?'var(--text2)':'var(--green)'):'var(--text3)';
     var layers=c.layers||0;
-    var maxLayers=(S.profile==='high')?12:10;
+    var maxLayers=(S.profile==='high')?4:10;
     var gridPct=Math.min(layers/maxLayers*100,100);
     var side=(phase==='SHORT_DCA')?'short':'long';
     var dirText=side==='long'?'LONG \u25B2':'SHORT \u25BC';
