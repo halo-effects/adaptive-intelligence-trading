@@ -60,8 +60,8 @@ V14_PROFILES = {
         'DCA_BO_PCT': 0.40,
         'DCA_SO_DEVIATION': 0.015,
         'DCA_SO_MULTIPLIER': 1.5,
-        'DCA_MAX_LAYERS': 12,
-        'DCA_TP_PCT': 0.015,
+        'DCA_MAX_LAYERS': 4,
+        'DCA_TP_PCT': 0.030,
     },
 }
 

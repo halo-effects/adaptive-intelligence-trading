@@ -23,7 +23,7 @@ Architecture (2026-03-21):
 
 Unified production profile (locked 2026-03-19):
   - Exchange: Aster DEX Perpetuals (1x leverage, no liquidation risk)
-  - Grid: High (BO=40%, Dev=1.5%, Mult=1.5x, 12 layers, TP=1.5%)
+  - Grid: High (BO=40%, Dev=1.5%, Mult=1.5x, 4 layers, TP=3.0%)
   - Scanner: 30d window, Trend Multiplier
   - No --profile or --exchange flags: always Aster, always High
 
@@ -1086,7 +1086,7 @@ class V14PortfolioLiveAster:
                 eng.long_coins = ex_qty
                 eng.long_cost = ex_entry * ex_qty
                 eng.long_avg_entry = ex_entry
-                tp_pct = eng.cfg.DCA_TP_PCT if hasattr(eng, 'cfg') and hasattr(eng.cfg, 'DCA_TP_PCT') else 0.015
+                tp_pct = eng.cfg.DCA_TP_PCT if hasattr(eng, 'cfg') and hasattr(eng.cfg, 'DCA_TP_PCT') else 0.030
                 eng.long_tp = ex_entry * (1 + tp_pct)
                 # Sync layer count: ensure consistency between CoinState, engine, and exchange
                 if cs.layer_count == 0 and ex_qty > 0:
@@ -1437,7 +1437,7 @@ class V14PortfolioLiveAster:
         if not cs.engine or not cs.engine._engine:
             return
         eng = cs.engine._engine
-        tp_pct = eng.cfg.DCA_TP_PCT if hasattr(eng, 'cfg') and hasattr(eng.cfg, 'DCA_TP_PCT') else 0.015
+        tp_pct = eng.cfg.DCA_TP_PCT if hasattr(eng, 'cfg') and hasattr(eng.cfg, 'DCA_TP_PCT') else 0.030
 
         # Use actual exchange position for BOTH qty and entry price (exchange-as-truth).
         qty = eng.long_coins
