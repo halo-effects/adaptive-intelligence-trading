@@ -13,6 +13,8 @@ _Reverse chronological. Key events only._
 - **Aster single-coin bot**: Dead, excluded from changes.
 - **Commit**: `62b26e15a`
 - Bot restarted at 16:20 PDT (PID 6600 → 9964). All 4 existing TP orders confirmed open on Aster. Pre-flight passed.
+- **Scanner window analysis**: Walk-forward test across 6 windows (7d, 10d, 14d, 21d, 24d, 30d) over 60 days. 30d confirmed optimal: highest avg DCA score (31.6), lowest churn (13.0%), fewest false positives (20%). Shorter windows trade earlier detection for noise (7d: 32% FP rate). 14d is stability sweet-spot (22% FP) but same promotion timing as 30d on most coins. 30d window unchanged. Analysis: `trading/spot/_scanner_window_backtest.py`, results: `trading/spot/data/scanner_window_analysis.json`.
+- **Scanner updated**: `v14_cycle_scanner.py` params now match production (TP 3.0%, MAX_LAYERS 4). All future DCA scores reflect actual trading behavior. New 30d top-5: INJ (35.0), DYDX (34.7), PENDLE (31.6), ONDO (27.9), TON (27.4). Commit: `3c320a1cf`.
 
 ## 2026-05-11
 - **Auto deposit/withdrawal detection deployed** (`deposit-detection-audit.md`): Consecutive balance comparison approach. `expected = prev_balance + pnl_delta + funding_delta`. Immune to unrealized PnL. Fires within 60s of DEX balance change. Full system audit: 16 components traced, 7 findings (1 CRITICAL fixed — cascade from unrealized PnL).
