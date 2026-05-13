@@ -227,6 +227,41 @@ No data migration needed. Engine state persists `long_tp` per coin, and `_place_
 
 ---
 
+## Scanner Sync (2026-05-12 19:40 PDT)
+
+Scanner (`v14_cycle_scanner.py`) updated to match production grid params:
+- `MAX_LAYERS`: 12 → 4
+- `TP_PCT`: 0.015 → 0.030
+- Commit: `3c320a1cf`
+
+All future DCA scores now reflect actual trading behavior. Previous scores were inflated (12-layer sim accumulated more deals than the bot ever uses).
+
+**New 30d Top-5** (post-sync):
+| # | Coin | Score | Deals | MaxDD% |
+|---|------|-------|-------|--------|
+| 1 | INJ | 35.0 | 23 | 7.9% |
+| 2 | DYDX | 34.7 | 30 | 16.8% |
+| 3 | PENDLE | 31.6 | 26 | 13.8% |
+| 4 | ONDO | 27.9 | 26 | 13.6% |
+| 5 | TON | 27.4 | 25 | 17.3% |
+
+### Scanner Window Analysis
+
+Walk-forward analysis tested 6 lookback windows (7d, 10d, 14d, 21d, 24d, 30d) across 60 days to determine if shorter windows catch momentum moves earlier.
+
+**Findings:**
+- 30d window has the highest avg DCA score (31.6), lowest churn (13.0%), and fewest false positives (20%)
+- 7d caught TON 25 days earlier (Apr 12 vs May 7), but at cost of 32% false positive rate and 23% daily churn
+- 14d is the stability sweet-spot (22% FP, 15% churn) but offers no meaningful timing advantage over 30d
+- All windows 10d+ converged on the same promotion dates for key coins (within 1-2 days)
+
+**Verdict**: 30d window unchanged. The "late detection" concern is a data availability issue, not a window size issue.
+
+Analysis script: `trading/spot/_scanner_window_backtest.py`
+Results: `trading/spot/data/scanner_window_analysis.json`
+
+---
+
 ## Backtest Evidence
 
 Portfolio-level simulation (3 slots, 10 coins, 90 days, real candles, Hyperliquid fees):

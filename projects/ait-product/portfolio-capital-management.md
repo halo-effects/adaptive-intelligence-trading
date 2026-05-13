@@ -108,7 +108,7 @@ This measures *current* DCA cycle efficiency — how fast a coin completes profi
 
 | Component | What it measures | Timeframe |
 |-----------|-----------------|-----------|
-| **Base Score** | Current DCA cycle velocity | Rolling 30d/90d (scanner) |
+| **Base Score** | Current DCA cycle velocity | Rolling 30d (scanner, confirmed optimal via walk-forward analysis 2026-05-12) |
 | **Trend Score** | Rate of change of base score | 7d / 14d / 30d slope |
 
 ```
@@ -314,7 +314,7 @@ This prevents the system from opening fresh L1 positions in new coins while most
 **Mitigation:**
 - This is the scenario where SHORT_DCA becomes critical
 - If ROUTER correctly switches to SHORT_DCA before the grind, the short grid *profits* from the decline
-- Weekly portfolio review: if >80% of positions are at L12 for >14 days, escalate to manual review
+- Weekly portfolio review: if >80% of positions are at L4 for >14 days, escalate to manual review
 - The DCA Trend Score naturally rotates capital away from coins with collapsing scores, reducing future exposure
 - Consider: macro-level risk switch (e.g., CFGI <20 for >30 days → reduce Active Pool to 50%, increase Cash Buffer)
 

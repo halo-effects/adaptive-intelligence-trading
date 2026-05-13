@@ -1,4 +1,4 @@
-﻿# MEMORY.md - Long-Term Memory
+# MEMORY.md - Long-Term Memory
 
 _Curated essentials. For details, see the structured files below._
 
@@ -18,18 +18,19 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
-## AIT — Current State (2026-05-11)
+## AIT � Current State (2026-05-11)
 - **V14PM Live (Aster)**: $423 capital (seed=$300 + $40 deposit), 96 trades, ~84% win rate
-  - **Grid optimization (2026-05-12)**: TP 3.0%, Max 4 layers (was 1.5%/12L). Backtest: +26.3% PnL. Trailing stop unchanged (0.2% callback).
+  - **Grid optimization (2026-05-12)**: TP 3.0%, Max 4 layers (was 1.5%/12L). Backtest: +26.3% PnL.
+  - **Scanner synced (2026-05-12)**: Params match production (3.0% TP, 4L). 30d window confirmed via walk-forward analysis. INJ now #1 (score 35.0).
   - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
   - **Auto deposit/withdrawal detection ENABLED** (2026-05-11): Consecutive balance comparison, no unrealized PnL. Full system audit: `specs/deposit-detection-audit.md`
   - Reconciliation disabled (caused corruption). TP recovery handles missed fills.
   - **Regime phase gate deployed**: Coins trade only when engine phase matches global regime
   - **seed_capital immutable** (Hard Rule #26): CLI --capital arg, never recalculated
-  - **Dashboard growth**: `(equity - seed - net_deposits) / seed` — isolates trading from capital flows
+  - **Dashboard growth**: `(equity - seed - net_deposits) / seed` � isolates trading from capital flows
   - **Capital ledger baseline**: seed=$300, deposit=$40, pnl_adjustment=$64.59 (dark PnL gap)
   - **ccxt Aster patch**: Filters null baseAsset markets from API (intermittent crash fix)
-  - Approved symbols: `[JUP, ONDO, PENDLE, TON]` (scanner top)
+  - Approved symbols: `[INJ, JUP, TON]` (scanner top 3)
 - **V14PM Paper**: 750+ trades, $50K+ PnL (restored from CSV truncation)
 - **V14 Live (Aster)**: ASTER/USDT single-coin, running
 - **V14 Paper**: Running on Hyperliquid
@@ -43,7 +44,7 @@ _Curated essentials. For details, see the structured files below._
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.
-- **TrustedBusinessReviews.com**: WordPress â†’ static HTML. Malware cleanup.
+- **TrustedBusinessReviews.com**: WordPress → static HTML. Malware cleanup.
 - **ShadowQuery**: Deferred.
 
 ## LLM Config

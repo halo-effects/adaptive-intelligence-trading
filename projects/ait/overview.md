@@ -49,6 +49,7 @@ _Last updated: 2026-05-12_
   - **Dashboard growth**: `(equity - seed - net_deposits) / seed` — isolates trading from capital flows
   - **Capital ledger baseline**: seed=$300, deposit=$40, pnl_adjustment=$64.59 (dark PnL gap)
   - **V2 System Audit complete**: 60 findings, 15 fixed, 1 HIGH remaining (auto-restart task)
+  - **Scanner synced** (2026-05-12): Params match production (3.0% TP, 4L). 30d window confirmed optimal via walk-forward analysis.
   - Approved symbols: `[JUP/USDT, ONDO/USDT, PENDLE/USDT, TON/USDT]` (scanner top)
 - **V14 Paper**: Running on Hyperliquid
 - **V14-ETF Paper**: Running
@@ -77,6 +78,8 @@ _Last updated: 2026-05-12_
 | Grid optimization: TP 3.0%, 4 layers | 2026-05-12 | Portfolio backtest +26.3% PnL. Layers 5-12 never fired in live data (avg 1.65). Higher return/deal beats higher deal count. |
 | Multiplier/deviation unchanged | 2026-05-12 | 1.5x mult and 1.5% dev — backtested 2.0x/2.0%, zero difference. Not worth the change risk. |
 | Grandfather open positions | 2026-05-12 | Existing TP orders on Aster untouched. New config applies to new deals only. DCA layers on existing deals recalculate TP at new rate. |
+| Scanner synced to production | 2026-05-12 | `v14_cycle_scanner.py` updated: MAX_LAYERS 12→4, TP_PCT 0.015→0.030. DCA scores now reflect actual trading. |
+| 30d scanner window confirmed | 2026-05-12 | Walk-forward analysis (6 windows, 60 days). 30d: best score, lowest churn (13%), fewest false positives (20%). No change needed. |
 
 ## Next Steps
 1. **🔴 Create V14PM Live auto-restart task** (needs admin PowerShell)
