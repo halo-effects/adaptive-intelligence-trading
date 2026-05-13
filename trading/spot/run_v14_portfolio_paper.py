@@ -317,6 +317,11 @@ class V14PortfolioPaperBot:
         # Current equity snapshot (updated each write-status cycle)
         self._current_equity: float = self.capital
 
+        # Portfolio regime gate (§7.5.2)
+        # Global regime derived from engine phase majority vote.
+        # Coins whose phase != global regime are excluded from new entries.
+        self._global_regime: str = "LONG_DCA"
+
         # CFGI / Fear & Greed
         self._cfgi_market: Optional[float] = None
         self._cfgi_coins: Dict[str, float] = {}
@@ -326,6 +331,32 @@ class V14PortfolioPaperBot:
 
     def _capture_incident(self, trade: dict, symbol: str):
         pass # Simplified for brevity here
+
+    def _compute_global_regime(self):
+        """Update regime monitoring stats (§7.5.2).
+        Global regime is NOT auto-derived — it persists as set (default LONG_DCA).
+        Per the architecture spec, regime flips only via manual APPROVE.
+        This method logs conviction stats for monitoring."""
+        long_count = 0
+        short_count = 0
+        for sym, engine in self.engines.items():
+            if engine and engine._engine:
+                phase = engine._engine.phase
+                phase_str = phase.name if hasattr(phase, 'name') else str(phase)
+                if phase_str == "LONG_DCA":
+                    long_count += 1
+                elif phase_str == "SHORT_DCA":
+                    short_count += 1
+        total = long_count + short_count
+        if total > 0:
+            opposing = short_count if self._global_regime == "LONG_DCA" else long_count
+            flip_pct = opposing / total
+            if flip_pct >= 0.15:
+                logger.info(
+                    f"REGIME MONITOR: {opposing}/{total} coins ({flip_pct:.0%}) oppose "
+                    f"global {self._global_regime} (long={long_count}, short={short_count})"
+                )
+        return self._global_regime
 
     def _setup_logging(self):
         log_path = self.output_dir / "bot.log"
@@ -355,6 +386,7 @@ class V14PortfolioPaperBot:
             "engines": {},
             "last_candle_ts": {},
             "open_deals": dict(self.tracker._open_deals),
+            "global_regime": self._global_regime,
             "router": {
                 "active_pool_cash": self.router.active_pool_cash,
                 "reserve_pool_cash": self.router.reserve_pool_cash,
@@ -455,9 +487,10 @@ class V14PortfolioPaperBot:
 
         self._approved_symbols = set(state.get("approved_symbols", []))
         self._current_equity = state.get("current_equity", self.capital)
+        self._global_regime = state.get("global_regime", "LONG_DCA")
 
         logger.info(f"State restore complete. {len(self.engines)} engines, "
-                    f"equity=${self._current_equity:.2f}")
+                    f"equity=${self._current_equity:.2f}, regime={self._global_regime}")
         return True
 
     def _compute_current_equity(self) -> float:
@@ -758,6 +791,7 @@ class V14PortfolioPaperBot:
             "coins": coins,
             "symbols": symbols,
             "regime": regime,
+            "global_regime": self._global_regime,
             "trend_direction": trend_direction,
             "total_realized_pnl": round(total_realized, 2),
             "total_fees": round(total_fees, 2),
@@ -822,6 +856,8 @@ class V14PortfolioPaperBot:
         while not self._shutdown:
             try:
                 cycle_start = time.time()
+                # Compute global regime from engine phases before processing
+                self._compute_global_regime()
                 # Remove static check here since we'll check per candle
                 # (Rebalancing is triggered by the earliest unprocessed candle)
 
@@ -881,8 +917,26 @@ class V14PortfolioPaperBot:
                         
                         ts_dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
 
-                        if actions:
+                        # --- Regime Gate (§7.5.2) ---
+                        # Check if engine phase matches global regime.
+                        # If not, coin is excluded from new entries.
+                        engine_phase = None
+                        if engine and engine._engine:
+                            ep_raw = engine._engine.phase
+                            engine_phase = ep_raw.name if hasattr(ep_raw, 'name') else str(ep_raw)
+
+                        regime_excluded = (
+                            engine_phase is not None
+                            and engine_phase != self._global_regime
+                        )
+
+                        if actions and not regime_excluded:
                             self._process_actions(sym, actions, ts_dt)
+                        elif actions and regime_excluded:
+                            logger.info(
+                                f"REGIME GATE {sym}: {len(actions)} action(s) blocked "
+                                f"(engine={engine_phase}, global={self._global_regime})"
+                            )
 
                         last_candle_ts[sym] = ts_ms
                         engine._last_candle_ts = ts_ms
