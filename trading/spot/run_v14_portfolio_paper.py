@@ -919,24 +919,40 @@ class V14PortfolioPaperBot:
 
                         # --- Regime Gate (§7.5.2) ---
                         # Check if engine phase matches global regime.
-                        # If not, coin is excluded from new entries.
+                        # If mismatched: block ENTRY actions (BUY, SHORT_OPEN) and
+                        # roll back engine state; allow EXIT actions (SELL, SHORT_CLOSE,
+                        # TP) so positions can close naturally.
                         engine_phase = None
                         if engine and engine._engine:
                             ep_raw = engine._engine.phase
                             engine_phase = ep_raw.name if hasattr(ep_raw, 'name') else str(ep_raw)
 
-                        regime_excluded = (
+                        regime_mismatched = (
                             engine_phase is not None
                             and engine_phase != self._global_regime
                         )
 
-                        if actions and not regime_excluded:
+                        if actions and regime_mismatched:
+                            ENTRY_ACTIONS = {"BUY", "SHORT_OPEN"}
+                            exit_actions = []
+                            blocked_count = 0
+                            for act in actions:
+                                atype = act.get("action", "")
+                                if atype in ENTRY_ACTIONS:
+                                    # Roll back engine internal state so it stays in sync
+                                    engine.reject_action(act)
+                                    blocked_count += 1
+                                else:
+                                    exit_actions.append(act)
+                            if blocked_count:
+                                logger.info(
+                                    f"REGIME GATE {sym}: {blocked_count} entry action(s) blocked + rolled back "
+                                    f"(engine={engine_phase}, global={self._global_regime})"
+                                )
+                            if exit_actions:
+                                self._process_actions(sym, exit_actions, ts_dt)
+                        elif actions:
                             self._process_actions(sym, actions, ts_dt)
-                        elif actions and regime_excluded:
-                            logger.info(
-                                f"REGIME GATE {sym}: {len(actions)} action(s) blocked "
-                                f"(engine={engine_phase}, global={self._global_regime})"
-                            )
 
                         last_candle_ts[sym] = ts_ms
                         engine._last_candle_ts = ts_ms

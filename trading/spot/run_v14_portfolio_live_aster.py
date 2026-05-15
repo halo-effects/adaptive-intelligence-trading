@@ -3738,10 +3738,23 @@ class V14PortfolioLiveAster:
                                 for action in actions:
                                     self._execute_action(sym, cs, action)
                             elif actions and is_current_candle and regime_excluded:
-                                logger.info(
-                                    f"REGIME GATE {sym}: {len(actions)} action(s) blocked "
-                                    f"(engine={engine_phase}, global={self._global_regime})"
-                                )
+                                # Block entry actions and roll back engine state;
+                                # allow exit actions so positions can close naturally.
+                                ENTRY_ACTIONS = {"BUY", "SHORT_OPEN"}
+                                blocked_count = 0
+                                for action in actions:
+                                    atype = action.get("action", "")
+                                    if atype in ENTRY_ACTIONS:
+                                        cs.engine.reject_action(action)
+                                        blocked_count += 1
+                                    else:
+                                        # Exit/TP action — let it through
+                                        self._execute_action(sym, cs, action)
+                                if blocked_count:
+                                    logger.info(
+                                        f"REGIME GATE {sym}: {blocked_count} entry action(s) blocked + rolled back "
+                                        f"(engine={engine_phase}, global={self._global_regime})"
+                                    )
                             elif actions and not is_current_candle:
                                 logger.info(
                                     f"WARMUP SKIP {sym} @ {ts_dt.strftime('%H:%M')}: "
