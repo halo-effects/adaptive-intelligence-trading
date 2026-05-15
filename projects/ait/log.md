@@ -1,6 +1,17 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+## 2026-05-15
+- **Regime gate fix deployed** (paper + live): Two bugs in the §7.5.2 regime gate (added 2026-05-13):
+  1. Gate blocked ALL actions (including exits/TPs) when engine phase ≠ global regime — trapped positions couldn't close. Violated §7.5.2: "open positions ride to TP naturally."
+  2. No `reject_action()` rollback on blocked entries — `engine.tick()` mutates state before returning actions, so blocked entries left phantom positions in engine state every hour.
+- **Root cause of NEAR short in LONG regime**: NEAR's engine flipped to SHORT_DCA on 04-30 (top signal). SHORT_OPENs were blocked by tier gate and capital limits until 05-12 19:00 when NEAR was promoted to approved symbols and capital freed. No regime gate existed in the running code at that time (committed 05-13 06:42, but bot loaded old code).
+- **Fix**: Entry actions (BUY, SHORT_OPEN) blocked + rolled back via `reject_action()`. Exit actions (SELL, SHORT_CLOSE, TP) always pass through. Same `reject_action()` pattern already used by CapitalRouter.
+- **Deployed**: Paper bot restarted 06:15 PDT. Live bot restarted 06:29 PDT — pre-flight passed, all 5 TP orders verified open (INJ, TON, JUP, PENDLE, ONDO). Zero impact on open positions (all LONG in LONG_DCA matching global regime). HYPE (only SHORT_DCA engine) has no open position.
+- **Files changed**: `run_v14_portfolio_paper.py`, `run_v14_portfolio_live_aster.py`
+- **Docs updated**: `V14PM_SYSTEM_ARCHITECTURE.md` §7.5.7 (v1.7), `hard-rules.md` (#32, #33)
+- **Hard rules added**: #32 (post-tick gates must rollback + separate entries/exits), #33 (read arch spec before writing fix code)
+
 ## 2026-05-12
 - **Grid optimization deployed**: TP 1.5% → 3.0%, Max Layers 12 → 4 (high profile only). Spec: `specs/grid-optimization-tp3-4layer.md`.
 - **Backtest evidence**: Portfolio-level sim (3 slots, 10 coins, 90 days, real candles, Hyperliquid fees): +26.3% PnL ($23,772 vs $18,824). Higher return per deal outweighs fewer deals. Capital efficiency +40%.

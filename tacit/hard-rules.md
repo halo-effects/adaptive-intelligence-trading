@@ -61,6 +61,10 @@ _Non-negotiable rules from production incidents. Violating these causes real dam
 
 31. **Deposit detection must be idempotent on restart.** If the bot crashes after recording a ledger transaction but before updating `_tracked_capital`, the next startup must not double-count. The startup reconciliation formula (`dex - ledger - pnl`) is self-correcting because `ledger.current_capital` already absorbed the transaction. (2026-05-11)
 
+32. **Post-tick gates must roll back engine state and distinguish entries from exits.** `engine.tick()` mutates internal state (positions, layers, capital) before returning actions. Any gate that blocks actions after tick MUST call `reject_action()` to reverse the mutation — otherwise engine state drifts from reality every tick (phantom positions). Gates must also separate entry actions (BUY, SHORT_OPEN → blockable) from exit actions (SELL, SHORT_CLOSE, TP → always pass through). Blocking exits traps positions indefinitely. (2026-05-15, regime gate incident: NEAR short trapped in paper bot)
+
+33. **Read architecture specs before writing fix code.** The spec (§7.5.2) already said "gate only blocks NEW entries" and "open positions ride to TP naturally." The initial implementation violated both because the spec wasn't consulted. Spec → understand → implement → verify against spec. (2026-05-15)
+
 ## Communication
 
 15. **Don't build narratives from user prompts** — let data lead. If Brett asks about DeFi coins, check the data before recommending DeFi coins. (2026-03-03)

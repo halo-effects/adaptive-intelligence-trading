@@ -1034,7 +1034,7 @@ Macro Indicators section shows:
 
 #### 7.5.7 Implementation Notes
 
-- Global regime is stored in `state.json` as `global_regime: "LONG_DCA"` or `"SHORT_DCA"`
+- Global regime is stored in `engine_state.json` as `global_regime: "LONG_DCA"` or `"SHORT_DCA"`
 - On startup, global regime is restored from state (not hardcoded)
 - The regime gate check runs after each `engine.tick()` in the candle processing loop
 - If an engine transitions to a phase conflicting with the global regime:
@@ -1043,6 +1043,31 @@ Macro Indicators section shows:
   - The regime monitor count increments
   - An alert is sent if tier thresholds are crossed
 - The APPROVE/DENY flow changes only the global regime, never individual engine phases
+
+**Entry/exit separation (fixed 2026-05-15):**
+
+`engine.tick()` mutates engine internal state (positions, layers, capital) before
+returning actions to the runner. The regime gate must handle this mutation correctly:
+
+- **Entry actions** (BUY, SHORT_OPEN): Blocked AND rolled back via `reject_action()`.
+  This reverses the engine's internal state mutation (coins, layers, cost, capital)
+  so the engine stays in sync with reality. Without rollback, the engine accumulates
+  phantom positions that drift further from actual state every tick.
+- **Exit actions** (SELL, SHORT_CLOSE, TP): Always pass through regardless of regime
+  mismatch. This ensures open positions can close at TP naturally, matching §7.5.2:
+  *"No forced closes. Open positions naturally hit TPs."*
+
+The `reject_action()` pattern is the same mechanism used by the CapitalRouter when
+it denies capital for an entry — battle-tested and safe for both BUY and SHORT_OPEN.
+
+> **Bug history (fixed 2026-05-15):** The initial regime gate (2026-05-13) blocked
+> ALL actions when engine phase ≠ global regime, including exits/TPs. This trapped
+> positions indefinitely and violated §7.5.2. It also did not roll back engine state
+> on blocked entries, causing hourly phantom position drift. Both bugs were present
+> in paper and live runners. Fix: entry/exit separation + `reject_action()` rollback.
+> Incident: NEAR opened a short position in LONG_DCA global regime (paper bot)
+> because the gate was deployed after the position was already open, then the buggy
+> gate prevented it from closing.
 
 ---
 
@@ -1402,5 +1427,6 @@ _Updated: 2026-03-10 (v1.2 - CSV-as-truth for all bots, exchange API equity for 
 _Updated: 2026-04-18 (v1.3 - Aster DEX collector, 50-coin universe, trend multiplier gap resilience, §3.4 exchange migration)_
 _Updated: 2026-05-05 (v1.4 - Trade reconciliation system: standalone CLI tool, startup reconciliation, RECONCILE command, deal ID fix. §6.8)_
 _Updated: 2026-05-12 (v1.6 - Grid optimization: TP 3.0%, 4 layers for high profile. §5.3 profiles, §5.4 config, §4.1 sim params, §15 design decisions)_
+_Updated: 2026-05-15 (v1.7 - Regime gate fix: entry/exit separation + reject_action rollback. §7.5.7 implementation notes. Deployed to paper + live.)_
 _Next: Cloud Migration Guide (Phase 5)_
 _Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_

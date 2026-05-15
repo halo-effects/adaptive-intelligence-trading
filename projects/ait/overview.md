@@ -1,5 +1,5 @@
 # AIT — Project Overview
-_Last updated: 2026-05-12_
+_Last updated: 2026-05-15_
 
 ## Product
 **Adaptive Intelligence Trading** — Automated crypto DCA trading system with signal-directed phase transitions and dynamic capital rotation.
@@ -13,7 +13,7 @@ _Last updated: 2026-05-12_
 - **Dashboards**: GitHub Pages (4 dashboards, synced every 10 min)
 
 ## Architecture Documents
-- `projects/ait-product/V14PM_SYSTEM_ARCHITECTURE.md` (v1.1) — Complete system reference
+- `projects/ait-product/V14PM_SYSTEM_ARCHITECTURE.md` (v1.7) — Complete system reference
 - `projects/ait-product/CLOUD_MIGRATION_GUIDE.md` (v1.1) — Linux deployment guide
 - `projects/ait-product/V14PM_FULL_AUDIT.md` — End-to-end code audit (2026-03-10)
 - `projects/ait-product/CODE_AUDIT_FINDINGS.md` — Bug tracker
@@ -44,7 +44,7 @@ _Last updated: 2026-05-12_
   - **Trailing stop**: Enabled, 0.2% callback. Activation at new 3.0% TP.
   - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
   - **Auto deposit/withdrawal detection ENABLED** (2026-05-11): Consecutive balance comparison, no unrealized PnL
-  - **Regime phase gate deployed**: Coins trade only when engine phase matches global regime
+  - **Regime phase gate deployed + fixed (2026-05-15)**: Coins trade only when engine phase matches global regime. Gate blocks entries (BUY/SHORT_OPEN) with `reject_action()` rollback; exits (SELL/SHORT_CLOSE/TP) always pass through. Initial gate (05-13) had two bugs: blocked exits (trapping positions) and no rollback (phantom state drift).
   - **seed_capital immutable** (Hard Rule #26): CLI --capital arg, never recalculated
   - **Dashboard growth**: `(equity - seed - net_deposits) / seed` — isolates trading from capital flows
   - **Capital ledger baseline**: seed=$300, deposit=$40, pnl_adjustment=$64.59 (dark PnL gap)
