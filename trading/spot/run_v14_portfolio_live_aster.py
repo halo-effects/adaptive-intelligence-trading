@@ -3773,10 +3773,18 @@ class V14PortfolioLiveAster:
                             cs.engine._last_candle_ts = ts_ms
 
                         # Phase change detection (ported from old bot)
-                        # If phase changed during candle processing, cancel stale TP orders
+                        # If phase changed during candle processing, check for orphaned positions
                         current_phase = cs.engine.phase if cs.engine else None
                         if current_phase != prev_phase and prev_phase is not None:
-                            if cs.tp_order_id:
+                            # Don't cancel TP if position is orphaned — TP is how it closes
+                            has_orphan = False
+                            if cs.engine and cs.engine._engine:
+                                eng = cs.engine._engine
+                                if prev_phase == 'LONG_DCA' and eng.long_coins > 0:
+                                    has_orphan = True
+                                elif prev_phase == 'SHORT_DCA' and eng.short_coins > 0:
+                                    has_orphan = True
+                            if cs.tp_order_id and not has_orphan:
                                 logger.info(
                                     f"Phase change {prev_phase} → {current_phase}: "
                                     f"cancelling TP for {sym}"
@@ -3784,6 +3792,11 @@ class V14PortfolioLiveAster:
                                 self.client.cancel_tp_order(sym, cs.tp_order_id)
                                 cs.tp_order_id = None
                                 cs.tp_limit_price = None
+                            elif cs.tp_order_id and has_orphan:
+                                logger.info(
+                                    f"Phase change {prev_phase} → {current_phase}: "
+                                    f"keeping TP for {sym} (orphaned position will close at TP naturally)"
+                                )
 
                     # CFGI poll
                     try:

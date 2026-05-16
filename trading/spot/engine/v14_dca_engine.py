@@ -74,8 +74,12 @@ class V14Config:
     SMA200_OVEREXTENSION = 20
     PHASE_ADX_RANGING = 20
     PHASE_ADX_SUSTAINED_DAYS = 21
-    MARKUP_FAIL_DD_PCT = 0.25
-    MARKUP_FAIL_ADX = 25
+    MARKUP_FAIL_DD_PCT = 0.25      # DEPRECATED — legacy leverage safety net
+    MARKUP_FAIL_ADX = 25              # DEPRECATED — legacy leverage safety net
+
+    # -- Force-Close Behavior --
+    FORCE_CLOSE_ON_SIGNAL = False     # True = legacy (force-close on phase transition)
+                                      # False = orphan-TP (positions exit via TP only)
 
     # -- ROUTER Evaluation --
     ROUTER_MIN_EVAL_DAYS = 14
@@ -617,8 +621,9 @@ class V14DCAEngine:
                     'date': date, 'coin': self.coin, 'reason': reason,
                     'days_armed': days_armed, 'price': price
                 })
-                # Close any remaining long DCA positions
-                self._long_dca_close(date, f'TOP_OB93+{reason}')
+                # Legacy: force-close long positions on phase transition
+                if self.cfg.FORCE_CLOSE_ON_SIGNAL:
+                    self._long_dca_close(date, f'TOP_OB93+{reason}')
                 self._reset_top_state()
                 self.top_detected = True
                 self.conviction_fired = False
@@ -631,7 +636,8 @@ class V14DCAEngine:
             # Layer 2b: Fallback — 1W OB85
             if self.peak_2w_k < self.cfg.OB_THRESHOLD_2W and self.early_warning_date:
                 if signals['ob_1w_85']:
-                    self._long_dca_close(date, 'TOP_FALLBACK_OB85')
+                    if self.cfg.FORCE_CLOSE_ON_SIGNAL:
+                        self._long_dca_close(date, 'TOP_FALLBACK_OB85')
                     self._reset_top_state()
                     self.top_detected = True
                     self.conviction_fired = False
@@ -644,7 +650,8 @@ class V14DCAEngine:
                 if (date - self.early_warning_date).days >= self.cfg.FAILSAFE_WINDOW_WEEKS * 7:
                     self.failsafe_armed = True
             if self.failsafe_armed and signals['failsafe_1w']:
-                self._long_dca_close(date, 'TOP_FAILSAFE_K50')
+                if self.cfg.FORCE_CLOSE_ON_SIGNAL:
+                    self._long_dca_close(date, 'TOP_FAILSAFE_K50')
                 self._reset_top_state()
                 self.top_detected = True
                 self.conviction_fired = False
@@ -689,8 +696,10 @@ class V14DCAEngine:
         if score >= self.cfg.CONVICTION_MIN_SCORE:
             self.conviction_fired = True
 
-            # Close all short DCA positions (lock in profit)
-            short_pnl = self._short_dca_close(date, f'BOTTOM_CONVICTION_{score}/4')
+            # Legacy: force-close short positions on phase transition
+            short_pnl = 0
+            if self.cfg.FORCE_CLOSE_ON_SIGNAL:
+                short_pnl = self._short_dca_close(date, f'BOTTOM_CONVICTION_{score}/4')
 
             self.conviction_triggers.append({
                 'date': date, 'coin': self.coin, 'score': score,
@@ -763,12 +772,24 @@ class V14DCAEngine:
             if self.phase == Phase.LONG_DCA:
                 # Run long DCA grid
                 self._long_dca_tick(date, price)
+                # Check orphaned short TP (phase transitioned — close only, no new layers)
+                if not self.cfg.FORCE_CLOSE_ON_SIGNAL and self.short_coins > 0 and self.short_tp > 0 and price <= self.short_tp:
+                    old_unwinding = self.unwinding
+                    self.unwinding = True
+                    self._short_dca_tick(date, price)
+                    self.unwinding = old_unwinding
                 # Check for top signals
                 self._check_top_signals(date, price, signals)
 
             elif self.phase == Phase.SHORT_DCA:
                 # Run short DCA grid
                 self._short_dca_tick(date, price)
+                # Check orphaned long TP (phase transitioned — close only, no new layers)
+                if not self.cfg.FORCE_CLOSE_ON_SIGNAL and self.long_coins > 0 and self.long_tp > 0 and price >= self.long_tp:
+                    old_unwinding = self.unwinding
+                    self.unwinding = True
+                    self._long_dca_tick(date, price)
+                    self.unwinding = old_unwinding
                 # Check for bottom signals
                 self._check_bottom_signals(date, price, signals)
                 # Also check for structural bullish reversal (markdown → DCA transition)
@@ -800,11 +821,10 @@ class V14DCAEngine:
         return self._results()
 
     def _check_markdown_exit(self, date, price, signals):
-        """Check if SHORT_DCA should exit. V14 v0.2: conviction-only direction switches.
-        Only safety net (markdown failure) remains — structural exits removed."""
-        # Structure-based exit REMOVED in v0.2
-        # v0.1 showed HH_HL kicked shorts out in 3-14 days every time
-        # DCA shorts need to persist through the bear phase
+        """Check if SHORT_DCA should exit. DEPRECATED in orphan-TP mode.
+        Legacy safety net for leveraged trading — skipped when FORCE_CLOSE_ON_SIGNAL=False."""
+        if not self.cfg.FORCE_CLOSE_ON_SIGNAL:
+            return False  # Orphan-TP mode: no forced closes
 
         # Safety net: markdown failure (capital protection only)
         # If price rises 25%+ against our short grid with strong uptrend, bail out

@@ -271,6 +271,12 @@ class V14LifecycleEngine:
                             self._engine.unwinding = old_unwinding
                     elif self._engine.phase == Phase.SHORT_DCA:
                         self._engine._short_dca_tick(date_ts, price)
+                        # Check orphaned long TP (phase transitioned — close only, no new layers)
+                        if self._engine.long_coins > 0 and self._engine.long_tp > 0 and price >= self._engine.long_tp:
+                            old_unwinding = self._engine.unwinding
+                            self._engine.unwinding = True
+                            self._engine._long_dca_tick(date_ts, price)
+                            self._engine.unwinding = old_unwinding
 
                     actions.extend(self._extract_new_actions(old_trade_count))
                 elif self._live_mode and not self._warmed_up:
@@ -304,6 +310,14 @@ class V14LifecycleEngine:
             eng._check_top_signals(date, price, signals)
         elif eng.phase == Phase.SHORT_DCA:
             eng._short_dca_tick(date, price)
+            # Check orphaned long TP (phase transitioned — close only, no new layers)
+            if eng.long_coins > 0 and eng.long_tp > 0:
+                price_now = eng._price(date)
+                if not np.isnan(price_now) and price_now >= eng.long_tp:
+                    old_unwinding = eng.unwinding
+                    eng.unwinding = True
+                    eng._long_dca_tick(date, price)
+                    eng.unwinding = old_unwinding
             eng._check_bottom_signals(date, price, signals)
             eng._check_markdown_exit(date, price, signals)
         elif eng.phase == Phase.ROUTER:
