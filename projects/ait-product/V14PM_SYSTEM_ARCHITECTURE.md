@@ -365,9 +365,11 @@ Triple-gate prerequisite (ALL must pass before conviction scoring):
 
 On conviction: close all shorts, switch to LONG_DCA.
 
-**Safety net (markdown failure):**
-If price rises 25%+ against the short grid with ADX > 25, force-close shorts
-and switch to LONG_DCA regardless of conviction state.
+**Safety net (markdown failure) — DEPRECATED (2026-05-16):**
+~~If price rises 25%+ against the short grid with ADX > 25, force-close shorts
+and switch to LONG_DCA regardless of conviction state.~~
+Disabled via `FORCE_CLOSE_ON_SIGNAL=False`. On 1.0x leverage, no liquidation risk —
+the grid recovers naturally. Orphaned positions ride to TP. See §7.5.8.
 
 **Implementation:** `HybridDetector2D` in `v13_router_engine_v2.py` computes 2D
 divergence dates and 3D death cross state from `candles_daily` data. The Steve
@@ -1069,6 +1071,37 @@ it denies capital for an entry — battle-tested and safe for both BUY and SHORT
 > because the gate was deployed after the position was already open, then the buggy
 > gate prevented it from closing.
 
+#### 7.5.8 Orphan-TP Mode (No Forced Closes)
+
+**Added:** 2026-05-16 | **Config:** `FORCE_CLOSE_ON_SIGNAL=False`
+
+On 1.0x leverage, forced closes are counterproductive. The DCA grid is designed to
+recover from drawdowns without liquidation risk. Phase transitions change direction
+but never liquidate positions.
+
+**What changed:**
+- Signal handlers (`_check_top_signals`, `_check_bottom_signals`) no longer call
+  `_long_dca_close()` / `_short_dca_close()` on phase transition
+- `_check_markdown_exit()` (MARKDOWN_FAIL) returns early — deprecated leverage-era safety net
+- When a phase transition occurs, existing positions become **orphaned**
+- Orphaned position TP is checked every tick (both hourly and daily)
+- `unwinding=True` prevents new layers while allowing TP close
+- Live runner preserves exchange TP orders for orphaned positions (no cancel on phase change)
+
+**Orphaned position lifecycle:**
+```
+1. Engine detects top signal → phase flips LONG_DCA → SHORT_DCA
+2. Long position stays open (no force-close)
+3. Exchange TP order preserved (phase-change cancel guarded)
+4. Every tick: engine checks if price >= long_tp
+5. When TP hits: position closes normally via LONG_DCA_TP
+6. Capital freed for new short entries
+```
+
+**Hard Rule #34:** No forced closes on 1.0x leverage. Positions exit via TP only.
+
+> **Spec:** `projects/ait/specs/orphaned-position-tp-spec.md`
+
 ---
 
 ## 8. Exchange Client (`trading.spot.exchange_client`)
@@ -1427,6 +1460,6 @@ _Updated: 2026-03-10 (v1.2 - CSV-as-truth for all bots, exchange API equity for 
 _Updated: 2026-04-18 (v1.3 - Aster DEX collector, 50-coin universe, trend multiplier gap resilience, §3.4 exchange migration)_
 _Updated: 2026-05-05 (v1.4 - Trade reconciliation system: standalone CLI tool, startup reconciliation, RECONCILE command, deal ID fix. §6.8)_
 _Updated: 2026-05-12 (v1.6 - Grid optimization: TP 3.0%, 4 layers for high profile. §5.3 profiles, §5.4 config, §4.1 sim params, §15 design decisions)_
-_Updated: 2026-05-15 (v1.7 - Regime gate fix: entry/exit separation + reject_action rollback. §7.5.7 implementation notes. Deployed to paper + live.)_
+_Updated: 2026-05-16 (v1.8 - Orphan-TP mode: no forced closes on phase transition or MARKDOWN_FAIL. §7.5.8. Hard Rule #34. Deployed to paper + live.)_
 _Next: Cloud Migration Guide (Phase 5)_
 _Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_

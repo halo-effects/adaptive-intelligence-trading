@@ -1,6 +1,6 @@
 {
   "seed_capital": 300.0,
-  "current_capital": 404.59,
+  "current_capital": 401.63927531,
   "transactions": [
     {
       "timestamp": "2026-04-15T00:00:00",
@@ -22,6 +22,18 @@
       "amount": 64.59,
       "balance_after": 404.59,
       "note": "Baseline: $64.59 unrecorded trading gains (CSV truncation gap)"
+    },
+    {
+      "timestamp": "2026-05-16T01:01:35.249906+00:00",
+      "type": "withdrawal",
+      "amount": 12.331499710000003,
+      "note": "Auto-detected via balance comparison (drift $-12.33, -2.9%)"
+    },
+    {
+      "timestamp": "2026-05-16T15:25:58.383802+00:00",
+      "type": "deposit",
+      "amount": 9.380775020000044,
+      "note": "Startup reconciliation: DEX=$414.13 vs ledger=$392.26"
     }
   ]
 }

@@ -43,6 +43,7 @@ _Use this to find sections by line number. Read with `offset` and `limit` instea
 | 7.5.2 | Regime Gate Rule | 852–870 | | Phase match table, no forced closes |
 | 7.5.3 | Graduated Conviction Alerts | 872–900 | | 7 thresholds (15%–50%), APPROVE/DENY flow |
 | 7.5.4 | Dashboard Display | 902–920 | | Regime panel, gate card, header badges |
+| 7.5.8 | Orphan-TP Mode | ~1075–1105 | | No forced closes, orphaned position lifecycle, Hard Rule #34 |
 | 8 | **Exchange Client** | 935–975 | ~2KB | Supported exchanges, credential resolution, paper mode |
 | 9 | **Presentation Layer** | 977–1030 | ~3KB | Dashboard files, data flow, data file paths |
 | 10 | **Scheduled Tasks** | 1032–1060 | ~1.5KB | All Windows scheduled tasks table with triggers |

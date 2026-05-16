@@ -1,6 +1,32 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+## 2026-05-16
+- **Orphan-TP deployed** (paper + live): Phase transitions no longer force-close positions. Positions exit via TP only. MARKDOWN_FAIL safety net disabled (legacy leverage-era code). Deployed on `feature/orphan-tp-no-force-close`, merged to main, pushed to origin.
+- **Philosophy**: "No forced closes — ever." On 1.0x leverage, positions ride to TP naturally. Phase transitions change direction; they don't liquidate. Grid recovers from drawdowns via additional layers.
+- **MARKDOWN_FAIL removed**: `_check_markdown_exit()` disabled via `FORCE_CLOSE_ON_SIGNAL=False`. Was a capital protection safety net for leveraged trading (25%+ adverse move + high ADX → force-close). On 1.0x leverage this is counterproductive — locks in losses instead of letting the grid recover.
+- **Files changed**:
+  - `v14_dca_engine.py`: `FORCE_CLOSE_ON_SIGNAL=False` (default). Signal handlers no longer call `_long_dca_close()` / `_short_dca_close()` on phase transition. `_check_markdown_exit()` returns immediately. Orphan TP handling added to `run()` loop for both long/short directions. Config toggle preserved for A/B.
+  - `v14_lifecycle_engine.py`: Orphaned long TP handling in SHORT_DCA path (hourly + daily ticks). Mirrors existing short orphan pattern.
+  - `run_v14_portfolio_live_aster.py`: Phase-change TP cancel guarded — preserves exchange TP order when orphaned position exists.
+- **Spec**: `projects/ait/specs/orphaned-position-tp-spec.md` (Approved — deployed 2026-05-16)
+- **Hard rule added**: #34 — No forced closes on 1.0x leverage.
+- **Backtest** (single-coin, not portfolio-level): 8 coins tested. 5 improved or same, 2 regressed (INJ, NEAR — force-closes were well-timed there). ADA: -45.7% → +435.2%, PENDLE: -58.3% → +51.6%, ONDO: +20.3% → +88.0%. Avg ROI: 150.3% (legacy) vs 140.0% (orphan-TP). Portfolio-level dynamics differ significantly (idle capital rotates to other coins).
+- **Bots restarted**: V14 Paper (PID 11916), V14PM Paper (PID 12188), V14PM Live (PID 3648). Pre-flight passed for all.
+- **V14-ETF stale elevated PID 13940**: Pre-existing issue, access denied for kill. Will pick up new code on next natural restart.
+- **Incident context**: ONDO/USDT force-closed at -$12.47 on live bot (TOP_FALLBACK_OB85). ADA/USDT force-closed at -$38.01 on V14-ETF paper. Both prevented by this change.
+
+## 2026-05-16
+- **Orphan-TP deployed** (paper + live): No forced closes on phase transition or MARKDOWN_FAIL. Positions exit via TP only. Philosophy: "Phase transitions change direction; they don't liquidate."
+- **MARKDOWN_FAIL removed**: Legacy leverage-era safety net (force-close shorts at -25% with high ADX). On 1.0x leverage, no liquidation risk — grid recovers naturally. Disabled via `FORCE_CLOSE_ON_SIGNAL=False` config toggle.
+- **Orphaned position TP handling**: When phase flips, existing positions become "orphaned." Engine checks orphaned TP on every tick (both directions). `unwinding=True` prevents new layers while allowing TP close. Live runner preserves exchange TP orders for orphaned positions (no cancel on phase change).
+- **Files changed**: `v14_dca_engine.py` (config flag, conditional force-closes, orphan TP in run loop, MARKDOWN_FAIL gated), `v14_lifecycle_engine.py` (orphaned long TP in SHORT_DCA path — hourly + daily), `run_v14_portfolio_live_aster.py` (phase-change TP cancel guards orphans).
+- **Backtest comparison** (single-coin, 8 coins, High PM profile): 5/8 improved or same. ADA: -45.7% → +435.2%. PENDLE: -58.3% → +51.6%. ONDO: +20.3% → +88.0%. INJ and NEAR regressed (force-closes were well-timed). Portfolio-level dynamics differ significantly (idle capital rotates).
+- **Deployed**: Paper bots restarted 08:24 PDT. Live PM bot restarted 08:25 PDT — pre-flight passed. V14-ETF has stale elevated PID (pre-existing).
+- **Spec**: `projects/ait/specs/orphaned-position-tp-spec.md`
+- **Hard rule #34 added**: No forced closes on 1.0x leverage.
+- **Branch**: `feature/orphan-tp-no-force-close` merged to main, pushed.
+
 ## 2026-05-15
 - **Regime gate fix deployed** (paper + live): Two bugs in the §7.5.2 regime gate (added 2026-05-13):
   1. Gate blocked ALL actions (including exits/TPs) when engine phase ≠ global regime — trapped positions couldn't close. Violated §7.5.2: "open positions ride to TP naturally."

@@ -48,6 +48,7 @@
 - **PRE-FLIGHT REQUIRED before restart**: `python -c "from trading.spot.run_v14_portfolio_live_aster import V14PortfolioLiveAster; print('OK')"`
 - Entry point: `python -u -m trading.spot.run_v14_portfolio_live_aster --capital 300 --confirm --skip-backfill`
 - Dashboard: `docs/d-984ae0d4ab9dc1a5.html`
+- **CHANGES 2026-05-16**: Orphan-TP mode active (`FORCE_CLOSE_ON_SIGNAL=False`). No forced closes on phase transition or MARKDOWN_FAIL. Positions exit via TP only. Phase-change TP cancel guards orphans.
 - **CHANGES 2026-05-12**: Grid params now 3.0% TP, 4 max layers (via high profile). Existing positions grandfathered.
 
 ### V14 PM Paper Bot (Hyperliquid)

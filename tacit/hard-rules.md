@@ -65,6 +65,8 @@ _Non-negotiable rules from production incidents. Violating these causes real dam
 
 33. **Read architecture specs before writing fix code.** The spec (§7.5.2) already said "gate only blocks NEW entries" and "open positions ride to TP naturally." The initial implementation violated both because the spec wasn't consulted. Spec → understand → implement → verify against spec. (2026-05-15)
 
+34. **No forced closes on 1.0x leverage.** Phase transitions change direction but never liquidate positions. Positions exit via TP only. MARKDOWN_FAIL (25% drawdown force-close) and signal-driven force-closes (`_long_dca_close`/`_short_dca_close` on phase transition) are legacy leverage-era code — disabled via `FORCE_CLOSE_ON_SIGNAL=False`. Orphaned positions ride to TP naturally; the DCA grid is designed to recover from drawdowns without liquidation risk. (2026-05-16, ONDO incident: -$12.47 force-close loss on live bot)
+
 ## Communication
 
 15. **Don't build narratives from user prompts** — let data lead. If Brett asks about DeFi coins, check the data before recommending DeFi coins. (2026-03-03)
