@@ -129,6 +129,13 @@ MIN_VOLUME_MULTIPLIER  = 100    # 24h $ volume must be >= allocation * this
 MIN_VOLUME_FLOOR       = 50_000  # Absolute floor: $50K 24h volume regardless of allocation
 MAX_ENTRY_SPREAD_BPS   = 100    # 1.0% max entry slippage before rejecting order
 
+# ── Overflow Entry ──────────────────────────────────────────────────────────
+# When all existing positions are at max DCA layers, allow +1 coin
+# beyond the tier cap to deploy idle capital. Prevents capital from
+# sitting idle when existing positions can't absorb more.
+# Spec: projects/ait/specs/overflow-entry-maxed-positions-spec.md
+OVERFLOW_ENTRY_ENABLED = True
+
 # ── Unified production profile ────────────────────────────────────────────────
 PRODUCTION_PROFILE = "high"
 PRODUCTION_LEVERAGE = 1.0
@@ -2604,11 +2611,39 @@ class V14PortfolioLiveAster:
                         logger.info(f"Skipping new coin {sym} — bot state is {self.bot_state}")
                         continue
                     if tier_cap > 0 and active_count >= tier_cap:
-                        logger.info(
-                            f"Skipping new coin {sym} — at tier cap "
-                            f"({active_count}/{tier_cap} active positions)"
-                        )
-                        continue
+                        # Overflow exception: if ALL positions are at max layers
+                        # and idle capital exists, allow +1 coin (spec: overflow-entry)
+                        allow_overflow = False
+                        if (OVERFLOW_ENTRY_ENABLED
+                                and active_count == tier_cap):  # exactly at cap, not already overflowed
+                            max_layers = self._get_max_layers()
+                            positions_with_trades = [
+                                cs_ for cs_ in self.coins.values()
+                                if cs_.engine and cs_.engine._engine
+                                and (cs_.engine._engine.long_coins > 0
+                                     or cs_.engine._engine.short_coins > 0)
+                            ]
+                            all_maxed = (
+                                len(positions_with_trades) > 0
+                                and all(cs_.layer_count >= max_layers
+                                        for cs_ in positions_with_trades)
+                            )
+                            min_l1_capital = alloc * 0.4 if alloc > 0 else 10.0
+                            has_capital = self.router.active_pool_cash >= min_l1_capital
+                            if all_maxed and has_capital:
+                                allow_overflow = True
+                                logger.info(
+                                    f"OVERFLOW: all {len(positions_with_trades)} positions "
+                                    f"at L{max_layers} (max layers), idle cash "
+                                    f"${self.router.active_pool_cash:.2f} — "
+                                    f"allowing {sym} as +1 overflow"
+                                )
+                        if not allow_overflow:
+                            logger.info(
+                                f"Skipping new coin {sym} — at tier cap "
+                                f"({active_count}/{tier_cap} active positions)"
+                            )
+                            continue
                     logger.info(f"Creating engine for new coin {sym} (alloc=${alloc:.2f})")
                     cs = CoinState(sym, alloc)
                     cs.engine = V14LifecycleEngine(
