@@ -6,9 +6,9 @@
   "leverage": 1.0,
   "exchange": "aster",
   "capital": 50000.0,
-  "equity": 104938.37,
-  "cash": 61268.41,
-  "pnl_pct": 109.88,
+  "equity": 107221.08,
+  "cash": 56020.98,
+  "pnl_pct": 114.44,
   "coins": {
     "ZRO/USDT": {
       "state": "LONG_DCA",
@@ -383,7 +383,7 @@
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0,
+      "current_price": 6.9212,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -393,6 +393,38 @@
       "liquidation_price": null,
       "distance_to_liq_pct": null,
       "total_fees": 0.0
+    },
+    "EIGEN/USDT": {
+      "state": "LONG_DCA",
+      "side": "long",
+      "layers": 4,
+      "avg_entry": 0.243028,
+      "current_price": 0.2212,
+      "unrealized_pnl": -346.99,
+      "invested": 3863.37,
+      "realized_pnl": 0.0,
+      "lifecycle_phase": "LONG_DCA",
+      "cfgi": null,
+      "next_tp_price": 0.2503186206995634,
+      "liquidation_price": null,
+      "distance_to_liq_pct": null,
+      "total_fees": 0.77
+    },
+    "RENDER/USDT": {
+      "state": "LONG_DCA",
+      "side": "long",
+      "layers": 4,
+      "avg_entry": 2.151076,
+      "current_price": 2.0927,
+      "unrealized_pnl": -111.96,
+      "invested": 4125.72,
+      "realized_pnl": 0.0,
+      "lifecycle_phase": "LONG_DCA",
+      "cfgi": null,
+      "next_tp_price": 2.215608006322612,
+      "liquidation_price": null,
+      "distance_to_liq_pct": null,
+      "total_fees": 0.83
     }
   },
   "symbols": [
@@ -419,32 +451,38 @@
     "DOGE/USDT",
     "HYPE/USDC",
     "DYDX/USDT",
-    "INJ/USDT"
+    "INJ/USDT",
+    "EIGEN/USDT",
+    "RENDER/USDT"
   ],
   "regime": "RANGING",
   "global_regime": "LONG_DCA",
   "trend_direction": "bullish",
-  "total_realized_pnl": 71715.17,
-  "total_fees": 2550.04,
-  "deals_completed": 852,
-  "win_rate": 99.6,
+  "total_realized_pnl": 74458.43,
+  "total_fees": 2551.64,
+  "deals_completed": 871,
+  "win_rate": 99.7,
   "max_drawdown_pct": 17.41,
-  "uptime_hours": 2127.47,
+  "uptime_hours": 2127.85,
   "fear_greed_index": 37.3,
-  "last_update": "2026-05-30T15:28:24.829425+00:00",
+  "last_update": "2026-05-30T15:51:07.187589+00:00",
   "timeframe": "1h",
-  "tier_coin_cap": 5,
+  "tier_coin_cap": 10,
   "approved_symbols": [
     "DYDX/USDT",
+    "EIGEN/USDT",
     "HYPE/USDC",
     "INJ/USDT",
     "NEAR/USDT",
-    "ONDO/USDT"
+    "ONDO/USDT",
+    "RENDER/USDT",
+    "TIA/USDT",
+    "TON/USDT"
   ],
   "router": {
-    "active_cash": 21510.32,
+    "active_cash": 16276.53,
     "reserve_cash": 5436.02,
-    "total_active_allocated": 54908.41,
+    "total_active_allocated": 56583.08,
     "total_reserve_allocated": 4814.96
   }
 }
