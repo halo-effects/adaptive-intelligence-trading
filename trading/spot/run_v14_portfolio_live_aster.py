@@ -2043,14 +2043,26 @@ class V14PortfolioLiveAster:
             ):
                 coins_with_positions.add(s)
 
+        # Regime-flagged base symbols — exclude from rotation candidates
+        # (same logic as daily rebalance exclusion)
+        regime_blocked_bases = {
+            s.split("/")[0] for s, cs_ in self.coins.items()
+            if cs_.regime_flagged
+        }
+        if regime_blocked_bases:
+            logger.info(f"Rotation excluding regime-flagged bases: {regime_blocked_bases}")
+
         # Find the best coin that doesn't already have an open position
-        # Walk the ranked list top-down; first one without a position wins
+        # and isn't regime-blocked. Walk ranked list top-down.
         best_available = None
         best_score = 0.0
         incumbent_score = 0.0
         for ranked_sym, score in rankings:
             if ranked_sym == sym:
                 incumbent_score = score
+            ranked_base = ranked_sym.split("/")[0]
+            if ranked_base in regime_blocked_bases:
+                continue  # Skip regime-conflicted coins
             if ranked_sym not in coins_with_positions:
                 if best_available is None:
                     best_available = ranked_sym

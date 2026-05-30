@@ -17,7 +17,7 @@ import time
 import traceback
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -27,7 +27,7 @@ _WORKSPACE = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_WORKSPACE))
 
 from trading.spot.v14_lifecycle_engine import V14LifecycleEngine, V14_PROFILES
-from trading.spot.v14_capital_manager import CapitalRouter
+from trading.spot.v14_capital_manager import CapitalRouter, HURDLE_RATE_DCA_SCORE
 from trading.spot.incident_schema import create_incident_report
 
 # ---------------------------------------------------------------------------
@@ -619,12 +619,12 @@ class V14PortfolioPaperBot:
                 
             elif action_type in ("SELL", "SHORT_CLOSE"):
                 # Return capital to the router
-                # V14 engine passes `amount` representing original cost + pnl? 
-                # Proceeds = cost + pnl.
-                # However, the router `return_capital` function takes raw amount.
                 proceeds = qty * price if qty and price else 0
                 self.router.return_capital(symbol, proceeds)
                 valid_actions.append(act)
+
+                # Post-TP capital rotation: evaluate slot swap
+                self._rotate_after_tp(symbol)
                 
             else:
                 valid_actions.append(act)
@@ -632,6 +632,137 @@ class V14PortfolioPaperBot:
         # Only process valid actions into tracker
         if valid_actions:
             self.tracker.process_actions(symbol, valid_actions, ts)
+
+    # ── Post-TP capital rotation ──────────────────────────────────────────
+
+    def _get_scanner_rankings(self) -> List[Tuple[str, float]]:
+        """Return scanner rankings as (symbol, adjusted_score) sorted descending.
+
+        Applies hurdle rate and trend multiplier, same logic as
+        CapitalRouter.rebalance_daily(). Returns empty list on error (fail-open).
+        """
+        try:
+            scanner_data = self.router.load_scanner_json(str(SCANNER_PATH))
+            if not scanner_data:
+                return []
+
+            qualifying = []
+            for entry in scanner_data:
+                symbol = entry.get("symbol") or entry.get("coin")
+                base_score = float(entry.get("dca_score", 0))
+                trend_mult = float(entry.get("trend_multiplier", 1.0))
+                if base_score >= HURDLE_RATE_DCA_SCORE:
+                    adjusted = base_score * trend_mult
+                    qualifying.append((symbol, adjusted))
+
+            qualifying.sort(key=lambda x: x[1], reverse=True)
+            return qualifying
+        except Exception as e:
+            logger.warning(f"Scanner rankings load failed (fail-open): {e}")
+            return []
+
+    def _rotate_after_tp(self, sym: str):
+        """After TP close, evaluate whether this coin's slot should rotate
+        to a higher-ranked unallocated coin.
+
+        Rules:
+        - Freed slot goes to the highest-ranked coin without an active position
+        - If incumbent IS the highest-ranked available, it keeps the slot
+        - Fail-open: if scanner is unavailable, keep incumbent
+        """
+        rankings = self._get_scanner_rankings()
+        if not rankings:
+            logger.info(f"Scanner data unavailable — keeping {sym} in approved set (fail-open)")
+            return
+
+        # Coins with active open positions (exclude the coin that just closed)
+        coins_with_positions = set()
+        for s, engine in self.engines.items():
+            if s == sym:
+                continue
+            if engine and engine._engine and (
+                engine._engine.long_coins > 0 or engine._engine.short_coins > 0
+            ):
+                coins_with_positions.add(s)
+
+        # Regime-flagged base symbols — exclude from rotation candidates
+        # (same logic as daily rebalance exclusion)
+        regime_blocked_bases = set()
+        if hasattr(self, '_coin_regime_flags'):
+            regime_blocked_bases = {
+                s.split("/")[0] for s, flagged in self._coin_regime_flags.items()
+                if flagged
+            }
+        if regime_blocked_bases:
+            logger.info(f"Rotation excluding regime-flagged bases: {regime_blocked_bases}")
+
+        # Find the best coin that doesn't already have an open position
+        # and isn't regime-blocked
+        best_available = None
+        best_score = 0.0
+        incumbent_score = 0.0
+        for ranked_sym, score in rankings:
+            if ranked_sym == sym:
+                incumbent_score = score
+            ranked_base = ranked_sym.split("/")[0]
+            if ranked_base in regime_blocked_bases:
+                continue  # Skip regime-conflicted coins
+            if ranked_sym not in coins_with_positions:
+                if best_available is None:
+                    best_available = ranked_sym
+                    best_score = score
+                    break
+
+        if best_available is None:
+            logger.info(f"No qualifying replacement for {sym} — removing from approved set")
+            self._approved_symbols.discard(sym)
+            if sym in self.router.active_allocations:
+                del self.router.active_allocations[sym]
+            return
+
+        if best_available == sym:
+            logger.info(
+                f"{sym} is the top-ranked available coin (score {incumbent_score:.1f}) — keeping slot"
+            )
+            return
+
+        # ── Rotation: best_available != sym ──
+
+        # Transfer allocation
+        alloc = self.router.active_allocations.pop(sym, 0)
+        if sym in self.router.reserve_allocations:
+            del self.router.reserve_allocations[sym]
+        self._approved_symbols.discard(sym)
+
+        # Use a reasonable default if alloc was zero
+        if alloc <= 0:
+            alloc = self.router.active_pool_total / max(self.router.tier_coin_cap, 1)
+
+        logger.info(
+            f"🔄 Rotating slot: {sym} (score {incumbent_score:.1f}) → "
+            f"{best_available} (score {best_score:.1f}), alloc=${alloc:.2f}"
+        )
+
+        # Remove old engine (no open position — safe)
+        if sym in self.engines:
+            del self.engines[sym]
+
+        # Create new engine (same pattern as _check_and_rebalance)
+        self.engines[best_available] = V14LifecycleEngine(
+            symbol=best_available, capital=alloc, profile=self.profile, leverage=self.leverage
+        )
+        self.engines[best_available]._live_mode = True
+
+        # Seed allocation and approved set
+        self.router.active_allocations[best_available] = alloc
+        self._approved_symbols.add(best_available)
+
+        send_telegram(
+            f"🔄 [V14-PM] <b>Slot Rotated</b>\n"
+            f"Out: {sym} (score {incumbent_score:.1f})\n"
+            f"In: {best_available} (score {best_score:.1f})\n"
+            f"Capital: ${alloc:.2f}"
+        )
 
     def _poll_cfgi(self):
         """Poll CFGI API for market + per-coin sentiment (once per hour)."""
