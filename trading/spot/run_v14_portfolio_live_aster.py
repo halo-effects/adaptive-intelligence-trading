@@ -48,7 +48,7 @@ import time
 import traceback
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import ccxt
 
@@ -1965,11 +1965,11 @@ class V14PortfolioLiveAster:
         # Do NOT reset last_candle_ts — the old proven bot never does.
         # The engine naturally re-enters on the next complete candle.
         # Resetting to 0 caused the 635 GRASS incident (replayed 50 historical candles).
-        logger.info(f"TP fill complete for {sym} — checking scanner eligibility")
+        logger.info(f"TP fill complete for {sym} — checking capital rotation")
 
-        # Stale coin pruning: if this coin is no longer in scanner top-N,
-        # remove it from router allocations to block T1 re-entry.
-        self._prune_stale_coin_after_tp(sym, cs)
+        # Post-TP capital rotation: evaluate whether this coin's slot should
+        # rotate to a higher-ranked unallocated coin.
+        self._rotate_after_tp(sym, cs)
 
         # Orphaned TP order cleanup: cancel any stale sell orders on the exchange
         # that don't belong to our current state. This catches orders left behind
@@ -1989,74 +1989,178 @@ class V14PortfolioLiveAster:
         if self.bot_state == BotState.WIND_DOWN:
             self._check_wind_down_complete()
 
-    # ── Scanner top-N check ───────────────────────────────────────────────────
+    # ── Post-TP capital rotation ──────────────────────────────────────────────
 
-    def _get_scanner_top_n_symbols(self) -> set:
-        """Return the set of symbols currently in the scanner top-N (N = tier_coin_cap).
+    def _get_scanner_rankings(self) -> List[Tuple[str, float]]:
+        """Return scanner rankings as (symbol, adjusted_score) sorted descending.
 
-        Reads the latest cycle_scanner.json, applies the same hurdle rate
-        and trend multiplier logic as the CapitalRouter, and returns the
-        top-N symbol names.  Used to decide whether a coin that just
-        completed a trade should be allowed to re-enter.
-
-        Returns an empty set on any error (fail-open: caller should
-        default to keeping the coin if scanner data is unavailable).
+        Applies hurdle rate and trend multiplier, same logic as
+        CapitalRouter.rebalance_daily(). Returns empty list on error (fail-open).
         """
         try:
             scanner_data = self.router.load_scanner_json(str(SCANNER_PATH))
             if not scanner_data:
-                return set()
+                return []
 
-            # Apply same hurdle + trend logic as CapitalRouter.rebalance_daily()
             qualifying = []
             for entry in scanner_data:
                 symbol = entry.get("symbol") or entry.get("coin")
                 base_score = float(entry.get("dca_score", 0))
                 trend_mult = float(entry.get("trend_multiplier", 1.0))
                 if base_score >= HURDLE_RATE:
-                    qualifying.append((symbol, base_score * trend_mult))
+                    adjusted = base_score * trend_mult
+                    qualifying.append((symbol, adjusted))
 
             qualifying.sort(key=lambda x: x[1], reverse=True)
-            top_n = qualifying[:self.router.tier_coin_cap]
-            return {sym for sym, _ in top_n}
+            return qualifying
         except Exception as e:
-            logger.warning(f"Scanner top-N check failed (defaulting to keep): {e}")
-            return set()
+            logger.warning(f"Scanner rankings load failed (fail-open): {e}")
+            return []
 
-    def _prune_stale_coin_after_tp(self, sym: str, cs):
-        """After a TP closes a position, check if this coin is still in the
-        scanner top-N.  If not, remove it from router allocations so the
-        T1 gatekeeper blocks re-entry.
+    def _rotate_after_tp(self, sym: str, cs):
+        """After TP close, evaluate whether this coin's slot should rotate
+        to a higher-ranked unallocated coin.
 
-        This prevents the 'stale coin re-entry' bug where coins from prior
-        scanner cycles keep opening new positions even though they've fallen
-        out of the current top-N rankings.
+        Rules:
+        - Freed slot goes to the highest-ranked coin without an active position
+        - If incumbent IS the highest-ranked available, it keeps the slot
+        - Fail-open: if scanner is unavailable, keep incumbent
+        - Liquidity filter: new coin must pass MIN_VOLUME check
+        - Bot state check: no new engines in PAUSED or WIND_DOWN
         """
-        top_n = self._get_scanner_top_n_symbols()
-        if not top_n:
-            # Scanner unavailable — fail-open, don't prune
-            logger.info(f"Scanner data unavailable — keeping {sym} in approved set")
+        rankings = self._get_scanner_rankings()
+        if not rankings:
+            logger.info(f"Scanner data unavailable — keeping {sym} in approved set (fail-open)")
             return
 
-        if sym not in top_n:
-            # Remove from router allocations (this drives approved_symbols in status.json)
+        # Coins with active open positions (exclude the coin that just closed)
+        coins_with_positions = set()
+        for s, cs_ in self.coins.items():
+            if s == sym:
+                continue  # Just closed — not occupying a slot
+            if cs_.engine and cs_.engine._engine and (
+                cs_.engine._engine.long_coins > 0 or cs_.engine._engine.short_coins > 0
+            ):
+                coins_with_positions.add(s)
+
+        # Find the best coin that doesn't already have an open position
+        # Walk the ranked list top-down; first one without a position wins
+        best_available = None
+        best_score = 0.0
+        incumbent_score = 0.0
+        for ranked_sym, score in rankings:
+            if ranked_sym == sym:
+                incumbent_score = score
+            if ranked_sym not in coins_with_positions:
+                if best_available is None:
+                    best_available = ranked_sym
+                    best_score = score
+                    break  # Found the best — stop
+
+        if best_available is None:
+            # No qualifying coin available — remove incumbent allocation, shrink
+            logger.info(f"No qualifying replacement for {sym} — removing allocation")
             if sym in self.router.active_allocations:
                 del self.router.active_allocations[sym]
             if sym in self.router.reserve_allocations:
                 del self.router.reserve_allocations[sym]
+            return
+
+        if best_available == sym:
+            # Incumbent IS the best available — keep it
             logger.info(
-                f"🔄 Stale coin pruned: {sym} completed trade but is no longer "
-                f"in scanner top-{self.router.tier_coin_cap}. "
-                f"Blocked from re-entry until next rebalance promotes it."
+                f"{sym} is the top-ranked available coin (score {incumbent_score:.1f}) — keeping slot"
             )
-            send_telegram(
-                f"🔄 {TG_PREFIX} <b>Coin Pruned</b>\n"
-                f"Symbol: {sym}\n"
-                f"Reason: Not in scanner top-{self.router.tier_coin_cap} after trade close\n"
-                f"Action: T1 re-entry blocked until next qualifying rebalance"
+            return
+
+        # ── Rotation: best_available != sym ──
+
+        # Bot state gate: don't create new engines in PAUSED or WIND_DOWN
+        if self.bot_state in (BotState.PAUSED, BotState.WIND_DOWN):
+            logger.info(
+                f"Rotation {sym} → {best_available} blocked — bot state is {self.bot_state}"
             )
-        else:
-            logger.info(f"{sym} still in scanner top-{self.router.tier_coin_cap} — re-entry allowed")
+            return
+
+        # Liquidity filter for the new coin
+        try:
+            tickers = self.client.exchange.fetch_tickers()
+            aster_sym = self._aster_symbol(best_available)
+            ticker = tickers.get(aster_sym, {})
+            quote_vol = ticker.get("quoteVolume", 0) or 0
+            # Calculate fair-share allocation for the new coin
+            # (don't inherit incumbent's allocation — may be $0 if score decayed)
+            vol_ref_alloc = self.router.active_allocations.get(sym, cs.allocated_capital)
+            if vol_ref_alloc <= 0:
+                vol_ref_alloc = self.router.active_pool_total / max(self.router.tier_coin_cap, 1)
+            min_vol = max(vol_ref_alloc * MIN_VOLUME_MULTIPLIER, MIN_VOLUME_FLOOR)
+            if quote_vol < min_vol:
+                logger.info(
+                    f"Rotation {sym} → {best_available} blocked by liquidity filter — "
+                    f"24h vol ${quote_vol:,.0f} < required ${min_vol:,.0f}. Keeping {sym}."
+                )
+                return
+        except Exception as e:
+            logger.warning(f"Liquidity check failed for {best_available} (proceeding): {e}")
+
+        # Tier cap check: count active positions (excluding the one that just closed)
+        active_count = len(coins_with_positions)
+        tier_cap = self.router.tier_coin_cap
+        if tier_cap > 0 and active_count >= tier_cap:
+            # At cap — this is a 1:1 swap, so we're replacing not adding.
+            # Only block if we somehow exceeded cap (shouldn't happen).
+            pass  # 1:1 swap is within cap by definition
+
+        # Clean up incumbent allocation
+        alloc = self.router.active_allocations.pop(sym, cs.allocated_capital)
+        if sym in self.router.reserve_allocations:
+            del self.router.reserve_allocations[sym]
+
+        # If incumbent had $0 allocation (score decayed to 0), derive fair share
+        # from active pool. Daily rebalance will fine-tune with score weights.
+        if alloc <= 0:
+            alloc = self.router.active_pool_total / max(self.router.tier_coin_cap, 1)
+            logger.info(
+                f"Incumbent {sym} had $0 allocation — derived fair share: "
+                f"${alloc:.2f} (pool=${self.router.active_pool_total:.2f} / "
+                f"{self.router.tier_coin_cap} slots)"
+            )
+
+        logger.info(
+            f"🔄 Rotating slot: {sym} (score {incumbent_score:.1f}) → "
+            f"{best_available} (score {best_score:.1f}), alloc=${alloc:.2f}"
+        )
+
+        # Remove old coin's engine (no open position — safe to remove)
+        if sym in self.coins:
+            del self.coins[sym]
+
+        # Create new coin engine (same pattern as _do_rebalance)
+        new_cs = CoinState(best_available, alloc)
+        new_cs.engine = V14LifecycleEngine(
+            symbol=best_available,
+            capital=alloc,
+            profile=self.profile,
+            leverage=self.leverage,
+        )
+        new_cs.engine._live_mode = True
+        if new_cs.engine._engine:
+            new_cs.engine._engine.live_mode = True
+        new_cs.engine._warmed_up = True
+        self.coins[best_available] = new_cs
+
+        # Seed allocation so T1 gate allows entry
+        self.router.active_allocations[best_available] = alloc
+
+        # Set leverage on exchange for new coin
+        self.client.ensure_leverage(best_available, self.leverage)
+
+        send_telegram(
+            f"🔄 {TG_PREFIX} <b>Slot Rotated</b>\n"
+            f"Out: {sym} (score {incumbent_score:.1f})\n"
+            f"In: {best_available} (score {best_score:.1f})\n"
+            f"Capital: ${alloc:.2f}"
+        )
 
     # ── Candle processing ─────────────────────────────────────────────────────
 
