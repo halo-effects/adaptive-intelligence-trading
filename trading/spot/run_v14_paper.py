@@ -572,6 +572,35 @@ class V14PaperBot:
             pass
 
         exchange = ccxt.hyperliquid()
+        # Hyperliquid spot API sometimes returns markets with null base/quote tokens.
+        # ccxt crashes in fetch_spot_markets: mappedBase + '/' + mappedQuote -> TypeError.
+        # Monkey-patch publicPostInfo to filter out incomplete spot markets before ccxt processes them.
+        _orig_post_info = exchange.publicPostInfo
+        def _safe_post_info(params={}):
+            resp = _orig_post_info(params)
+            if params.get('type') == 'spotMetaAndAssetCtxs' and isinstance(resp, list) and len(resp) > 0:
+                first = resp[0]
+                if isinstance(first, dict):
+                    tokens = first.get('tokens', [])
+                    universe = first.get('universe', [])
+                    filtered = []
+                    for m in universe:
+                        try:
+                            tkns = m.get('tokens', [])
+                            b_idx = int(tkns[0]) if len(tkns) > 0 and tkns[0] is not None else None
+                            q_idx = int(tkns[1]) if len(tkns) > 1 and tkns[1] is not None else None
+                            b = tokens[b_idx].get('name') if b_idx is not None and b_idx < len(tokens) else None
+                            q = tokens[q_idx].get('name') if q_idx is not None and q_idx < len(tokens) else None
+                        except Exception:
+                            b, q = None, None
+                        if b and q:
+                            filtered.append(m)
+                    diff = len(universe) - len(filtered)
+                    if diff > 0:
+                        logger.info(f"Filtered {diff} spot markets with null base/quote from Hyperliquid API")
+                    first['universe'] = filtered
+            return resp
+        exchange.publicPostInfo = _safe_post_info
         exchange.load_markets()
 
         # Initialize last_candle_ts from state to avoid replaying old candles on restart
