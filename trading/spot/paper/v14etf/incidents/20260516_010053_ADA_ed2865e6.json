@@ -1,0 +1,78 @@
+{
+  "incident_id": "ed2865e6-bc56-4b1c-8bba-f81ab2784504",
+  "timestamp": "2026-05-16T01:00:53.548569+00:00",
+  "schema_version": "1.0",
+  "account_id": "paper-v14etf",
+  "strategy_id": "v14-high",
+  "trade": {
+    "deal_id": 80,
+    "symbol": "ADA/USDT",
+    "open_time": "2026-05-10T16:00:00+00:00",
+    "close_time": "2026-05-16T00:00:00+00:00",
+    "regime": "LONG_DCA",
+    "layers": 4,
+    "invested": 1823.29,
+    "pnl": -57.021,
+    "return_pct": -3.13,
+    "duration_h": 128.0,
+    "close_reason": "LONG_DCA_CLOSE (TOP_FALLBACK_OB85)"
+  },
+  "classification": "GRID_EXHAUSTION",
+  "severity": "LOW",
+  "recommendation": "Consider wider deviation or more layers for ADA longs. Price moved beyond grid coverage.",
+  "grid_utilization": {
+    "layers_filled": 4,
+    "max_layers": 4,
+    "utilization_pct": 100.0
+  },
+  "time_in_trade_hours": 128.0,
+  "context_at_exit": {
+    "phase": "SHORT_DCA",
+    "side": "none",
+    "current_price": 0.26151,
+    "avg_entry": 0,
+    "cfgi": null,
+    "unrealized_pnl_at_close": 0.0
+  },
+  "market_context": {
+    "cfgi": 48.45,
+    "regime": "RANGING",
+    "trend_direction": null
+  },
+  "peer_coins": {
+    "SOL/USDT": {
+      "phase": "LONG_DCA",
+      "side": "long",
+      "layers": 4,
+      "unrealized_pnl": -188.3
+    },
+    "XRP/USDT": {
+      "phase": "LONG_DCA",
+      "side": "long",
+      "layers": 4,
+      "unrealized_pnl": -105.84
+    },
+    "LTC/USDT": {
+      "phase": "LONG_DCA",
+      "side": "long",
+      "layers": 2,
+      "unrealized_pnl": -15.95
+    },
+    "HBAR/USDT": {
+      "phase": "LONG_DCA",
+      "side": "long",
+      "layers": 4,
+      "unrealized_pnl": -78.02
+    }
+  },
+  "config_snapshot": {
+    "profile": "high",
+    "leverage": 1.5,
+    "capital": 10000.0,
+    "DCA_TP_PCT": 0.03,
+    "DCA_SO_DEVIATION": 0.015,
+    "DCA_SO_MULTIPLIER": 1.5,
+    "DCA_MAX_LAYERS": 4,
+    "DCA_BO_PCT": 0.4
+  }
+}
