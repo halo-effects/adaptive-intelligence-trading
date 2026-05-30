@@ -1,0 +1,77 @@
+{
+  "analysis_date": "2026-05-13T02:41:22.389861+00:00",
+  "config": {
+    "windows": [
+      7,
+      10,
+      14,
+      21,
+      24,
+      30
+    ],
+    "grid": {
+      "tp_pct": 0.03,
+      "max_layers": 4,
+      "so_dev": 0.015
+    },
+    "top_n": 3,
+    "hurdle_rate": 5.0,
+    "days_analyzed": 60
+  },
+  "window_summaries": {
+    "7": {
+      "avg_score": 13.27217142857143,
+      "avg_pnl": 1650.8806285714286,
+      "avg_deals": 10.354285714285714,
+      "avg_cycle": 14.632,
+      "avg_layers": 1.9125714285714286,
+      "total_traps": 12,
+      "total_deep": 443
+    },
+    "10": {
+      "avg_score": 16.01463687150838,
+      "avg_pnl": 2035.0903351955308,
+      "avg_deals": 12.491620111731844,
+      "avg_cycle": 17.441899441340784,
+      "avg_layers": 1.9713966480446927,
+      "total_traps": 54,
+      "total_deep": 577
+    },
+    "14": {
+      "avg_score": 19.51827777777778,
+      "avg_pnl": 2542.185111111111,
+      "avg_deals": 15.21111111111111,
+      "avg_cycle": 19.824444444444445,
+      "avg_layers": 2.0375555555555556,
+      "total_traps": 100,
+      "total_deep": 756
+    },
+    "21": {
+      "avg_score": 25.083944444444445,
+      "avg_pnl": 3344.9068888888887,
+      "avg_deals": 19.255555555555556,
+      "avg_cycle": 23.275,
+      "avg_layers": 2.093722222222222,
+      "total_traps": 180,
+      "total_deep": 1078
+    },
+    "24": {
+      "avg_score": 27.3595,
+      "avg_pnl": 3687.7101666666667,
+      "avg_deals": 20.961111111111112,
+      "avg_cycle": 23.484444444444446,
+      "avg_layers": 2.1038888888888887,
+      "total_traps": 203,
+      "total_deep": 1223
+    },
+    "30": {
+      "avg_score": 31.610777777777777,
+      "avg_pnl": 4331.487388888889,
+      "avg_deals": 24.255555555555556,
+      "avg_cycle": 25.06222222222222,
+      "avg_layers": 2.1193333333333335,
+      "total_traps": 242,
+      "total_deep": 1474
+    }
+  }
+}
