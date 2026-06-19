@@ -45,6 +45,7 @@ _Last updated: 2026-05-16_
   - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
   - **Auto deposit/withdrawal detection ENABLED** (2026-05-11): Consecutive balance comparison, no unrealized PnL
   - **Orphan-TP mode (2026-05-16)**: No forced closes on phase transition or MARKDOWN_FAIL. Positions exit via TP only. `FORCE_CLOSE_ON_SIGNAL=False`. Orphaned positions ride to TP naturally. Spec: `specs/orphaned-position-tp-spec.md`
+  - **Layer reconstruction + Capital flow + Zombie slots (2026-06-19)**: Layer counts reconciled from `open_deals` on startup (fixes layer reset bug). Idle router cash flows to engines needing DCA capital. Zombie slots (max depth + not approved) excluded from tier cap. Spec: `specs/layer-reconstruction-capital-flow-zombie-slots.md`
   - **Regime phase gate deployed + fixed (2026-05-15)**: Coins trade only when engine phase matches global regime. Gate blocks entries (BUY/SHORT_OPEN) with `reject_action()` rollback; exits (SELL/SHORT_CLOSE/TP) always pass through. Initial gate (05-13) had two bugs: blocked exits (trapping positions) and no rollback (phantom state drift).
   - **seed_capital immutable** (Hard Rule #26): CLI --capital arg, never recalculated
   - **Dashboard growth**: `(equity - seed - net_deposits) / seed` — isolates trading from capital flows
@@ -83,6 +84,9 @@ _Last updated: 2026-05-16_
 | MARKDOWN_FAIL deprecated | 2026-05-16 | 25% drawdown force-close was for leveraged trading. On 1.0x, grid recovers naturally. No liquidation risk. |
 | Scanner synced to production | 2026-05-12 | `v14_cycle_scanner.py` updated: MAX_LAYERS 12→4, TP_PCT 0.015→0.030. DCA scores now reflect actual trading. |
 | 30d scanner window confirmed | 2026-05-12 | Walk-forward analysis (6 windows, 60 days). 30d: best score, lowest churn (13%), fewest false positives (20%). No change needed. |
+| open_deals is truth for layer count | 2026-06-19 | Engine snapshot `long_layers` resets to 0 on restart. `open_deals` tracks actual fills. Reconcile on startup (Hard Rule #35). |
+| Engine capital top-up from router | 2026-06-19 | When `invested > allocation` causes engine.capital=0, router idle cash must flow to engines. Prevents silent DCA grid freeze (Hard Rule #36). |
+| Zombie slots excluded from tier cap | 2026-06-19 | Positions at max depth + not approved don't count toward cap. Idle capital deploys to new opportunities. Zombies exit via TP (Hard Rule #34). |
 
 ## Next Steps
 1. **🔴 Create V14PM Live auto-restart task** (needs admin PowerShell)

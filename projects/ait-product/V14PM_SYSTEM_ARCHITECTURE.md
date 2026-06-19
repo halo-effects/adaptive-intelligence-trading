@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading - V14PM System Architecture
-_Version: 1.6 | Date: 2026-05-12 | Status: Production (Aster Perps)_
+_Version: 1.9 | Date: 2026-06-19 | Status: Production (Aster Perps)_
 
 ---
 
@@ -814,6 +814,8 @@ At midnight UTC, the PM runner:
 7. Adjusts allocations proportionally
 8. **Seeds `active_allocations`** from new targets (unblocks T1 gate for promoted coins)
 9. **Reconciles stale allocations**: removes coins from `active_allocations` that are not in new targets AND have no open position
+10. **Detects zombie slots** (2026-06-19): positions at max DCA depth that dropped from approved list are excluded from tier cap count, freeing slots for new approved coins (see §7.7)
+11. **Tops up engine capital** (2026-06-19): pushes idle `active_pool_cash` into engines with open positions below max layers, preventing DCA grid freeze (see §7.6)
 
 > **Allocation lifecycle (2026-05-10):** Previously, `active_allocations` only grew
 > (via `request_capital()` on buys) and only shrank when a coin completed a trade AND
@@ -1102,6 +1104,135 @@ but never liquidate positions.
 
 > **Spec:** `projects/ait/specs/orphaned-position-tp-spec.md`
 
+#### 7.5.9 Layer Count Reconstruction (2026-06-19)
+
+On every bot restart, `cs.layer_count` and `eng.long_layers` must be reconciled
+from the authoritative source: `tracker._open_deals[sym].layers`.
+
+**Bug history:** The exchange position sync (`_sync_positions_from_exchange()`) had
+a fallback path: `cs.layer_count = max(1, eng.long_layers)`. The engine snapshot's
+`long_layers` field would reset to 0 on certain restart paths, causing all positions
+to show layer_count=1 regardless of actual depth. This caused:
+
+1. **Dashboard wrong** — showed L1 instead of actual L4/L5
+2. **DCA grid frozen** — engine calculated next layer deviation from L1 baseline
+3. **Capital starved** — overflow check saw L1, not max layers, blocking new entries
+
+**Fix:** `_reconcile_layer_counts()` runs after `_load_state()`, before
+`_sync_positions_from_exchange()`. It reads `open_deals.layers` (which tracks
+every actual fill via `TradeTracker.on_buy()`) and overwrites `cs.layer_count`
+and `eng.long_layers` to match.
+
+The exchange sync fallback was also updated to consult `open_deals` before
+defaulting to `max(1, eng.long_layers)`:
+
+```python
+# Updated fallback in _sync_positions_from_exchange():
+if cs.layer_count == 0 and ex_qty > 0:
+    deal = self.tracker._open_deals.get(f"{sym}:long")
+    if deal and deal.get("layers", 0) > 0:
+        cs.layer_count = deal["layers"]  # Authoritative
+    else:
+        cs.layer_count = max(1, eng.long_layers)  # Legacy fallback
+```
+
+**Startup sequence** (updated):
+```
+1. _load_state() → restore engines, router, open_deals, coin states
+2. _reconcile_layer_counts() → fix cs.layer_count from open_deals
+3. _sync_positions_from_exchange() → sync position data from exchange
+4. _top_up_engine_capital() → push idle cash to engines (§7.6)
+5. _recover_tp_orders() → check/place TP orders
+6. DEX-as-truth capital setup
+```
+
+**Hard Rule #35:** `open_deals` is truth for layer count.
+
+#### 7.6 Engine Capital Flow (2026-06-19)
+
+The DCA engine requires `engine.capital > 0` to generate BUY actions. Engine capital
+is set as `max(0, allocated_capital - invested)`. When daily rebalances reduce a
+coin's allocation below its invested amount, `engine.capital` drops to 0 and the
+DCA grid freezes silently — no BUY actions are generated, no log warnings.
+
+Meanwhile, the router may have significant idle cash in `active_pool_cash` that
+cannot reach the starved engines.
+
+**Fix:** `_top_up_engine_capital()` pushes idle router cash into engines with
+open positions below max DCA depth.
+
+**When called:**
+- After `_reconcile_layer_counts()` on startup
+- After `_do_rebalance()` daily
+
+**Formula:**
+```
+For each coin with open position and layer_count < max_layers:
+    remaining_cost = sum of grid costs for unfilled layers
+    deficit = max(0, remaining_cost - engine.capital)
+    grant = min(deficit, active_pool_cash × 0.9)  # Keep 10% buffer
+    engine.capital += grant
+    active_pool_cash -= grant
+```
+
+**Grid cost per layer** (High profile: BO=40%, mult=1.5x):
+| Layer | Cost (× allocation) | Cumulative |
+|-------|---------------------|------------|
+| L1    | 0.40                | 0.40       |
+| L2    | 0.60                | 1.00       |
+| L3    | 0.90                | 1.90       |
+| L4    | 1.35                | 3.25       |
+
+**Capital return:** When a position TPs, `router.return_capital()` reclaims the
+granted amount. No special handling needed — the existing return flow covers it.
+
+**Hard Rule #36:** Idle router cash must flow to engines needing DCA capital.
+
+#### 7.7 Zombie Slot Detection (2026-06-19)
+
+A **zombie slot** is a position that:
+1. Is at **max DCA depth** (`cs.layer_count >= max_layers`)
+2. Has **dropped from the current approved list** (not in rebalance targets)
+3. Is waiting for TP to exit
+
+Zombie slots consume a tier cap position while contributing no capital velocity.
+The capital they hold is locked until TP, and the slot prevents new high-scoring
+coins from entering.
+
+**Rule:** Zombie slots do not count toward the tier coin cap for new T1 entries.
+
+```
+effective_active_count = positions - zombie_positions
+if effective_active_count < tier_cap:
+    allow new coin entry for approved coins
+```
+
+**Zombie lifecycle:**
+```
+1. Coin enters, DCA's to max layers
+2. Scanner scores decline → coin drops from approved list
+3. Coin becomes zombie: at max depth + not approved
+4. Zombie doesn't count toward cap → new approved coin enters
+5. Zombie eventually hits TP → closes naturally (Hard Rule #34)
+6. Capital returns to pool
+7. Stale allocation cleaned on next rebalance
+```
+
+**Key properties:**
+- Zombie status is **computed dynamically** at rebalance time — not persisted
+- If a coin's score recovers and it re-enters the approved list, it **un-zombifies**
+  automatically and counts toward the cap again
+- Zombie positions continue ticking (candles, signals, TP checks) — they just
+  can't open new entries (already at max layers)
+- Overflow (§7.5.9 overflow-entry spec) evaluates against `active_count`,
+  not `total_positions`
+
+**Status.json fields:**
+- Per-coin: `is_zombie` (boolean)
+- Top-level: `zombie_slots` (list of symbols)
+
+> **Spec:** `projects/ait/specs/layer-reconstruction-capital-flow-zombie-slots.md`
+
 ---
 
 ## 8. Exchange Client (`trading.spot.exchange_client`)
@@ -1379,6 +1510,9 @@ matplotlib, scipy, scikit-learn, plotly  # Backtest analysis only
 | Ground-truth equity calc | `Capital + Realized - Fees + Unrealized` from trades.csv; avoids engine internal drift. Live bot uses exchange API balances as ultimate truth. |
 | `load_existing()` on ALL startup paths | Trade history survives restarts including `--fresh`; prevents `save_csv()` from overwriting history with empty data |
 | `resample_daily.py` in hourly pipeline | Ensures all coins have daily candles for signal computation; closes gap between 1h collector and daily-dependent signal pack |
+| `open_deals` is truth for layer count | Engine snapshot `long_layers` can reset to 0 on restart. `open_deals` tracks every actual fill and is authoritative. Reconcile on startup. (Hard Rule #35) |
+| Engine capital top-up from router | When `invested > allocation` starves engine capital to $0, the DCA grid freezes silently. Router's idle `active_pool_cash` must flow to engines needing DCA layers. (Hard Rule #36) |
+| Zombie slots excluded from tier cap | Positions at max depth that dropped from approved list can't absorb capital. Counting them toward the cap traps idle capital. Zombies exit via TP naturally (Hard Rule #34). |
 
 ---
 
@@ -1461,5 +1595,6 @@ _Updated: 2026-04-18 (v1.3 - Aster DEX collector, 50-coin universe, trend multip
 _Updated: 2026-05-05 (v1.4 - Trade reconciliation system: standalone CLI tool, startup reconciliation, RECONCILE command, deal ID fix. §6.8)_
 _Updated: 2026-05-12 (v1.6 - Grid optimization: TP 3.0%, 4 layers for high profile. §5.3 profiles, §5.4 config, §4.1 sim params, §15 design decisions)_
 _Updated: 2026-05-16 (v1.8 - Orphan-TP mode: no forced closes on phase transition or MARKDOWN_FAIL. §7.5.8. Hard Rule #34. Deployed to paper + live.)_
+_Updated: 2026-06-19 (v1.9 - Layer reconstruction §7.5.9, engine capital flow §7.6, zombie slot detection §7.7. Hard Rules #35-36. §7.3 steps 10-11. §15 design decisions. Deployed to paper + live.)_
 _Next: Cloud Migration Guide (Phase 5)_
 _Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_
