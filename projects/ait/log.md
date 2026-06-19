@@ -1,6 +1,18 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+## 2026-06-19
+- **Layer reconstruction + Capital flow + Zombie slots deployed** (paper + live): Three cascading fixes for capital starvation bug.
+  - **Fix 1 — Layer Reconstruction**: `_reconcile_layer_counts()` restores `cs.layer_count` from `open_deals` on startup. Fixes bug where `eng.long_layers=0` caused `layer_count=1` on every restart. Exchange sync fallback also consults `open_deals`. Confirmed: JUP L5, PENDLE L4, INJ L4 (all showed L1 before).
+  - **Fix 2 — Capital Flow**: `_top_up_engine_capital()` pushes idle `active_pool_cash` into engines needing DCA capital. Prevents grid freeze when `invested > allocation`.
+  - **Fix 3 — Zombie Slots**: Positions at max DCA depth + dropped from approved list don't count toward tier cap. Frees slots for new approved coins. Exit via TP only.
+  - **Root cause**: `_sync_positions_from_exchange()` defaulted `layer_count = max(1, 0) = 1`. `open_deals` had correct data but was never consulted.
+  - **Impact**: $127 idle USDT trapped. 3 positions at L4-L5 showed as L1. Overflow/new coin entry blocked.
+  - **Validation**: Paper tested first (clean), then live. All 3 TP orders preserved, layer counts corrected.
+  - **Files**: `run_v14_portfolio_live_aster.py`, `run_v14_portfolio_paper.py`
+  - **Spec**: `projects/ait/specs/layer-reconstruction-capital-flow-zombie-slots.md`
+  - **Branch**: `feature/layer-recon-capital-flow-zombie-slots` merged to main
+
 ## 2026-05-16
 - **Orphan-TP deployed** (paper + live): Phase transitions no longer force-close positions. Positions exit via TP only. MARKDOWN_FAIL safety net disabled (legacy leverage-era code). Deployed on `feature/orphan-tp-no-force-close`, merged to main, pushed to origin.
 - **Philosophy**: "No forced closes — ever." On 1.0x leverage, positions ride to TP naturally. Phase transitions change direction; they don't liquidate. Grid recovers from drawdowns via additional layers.
