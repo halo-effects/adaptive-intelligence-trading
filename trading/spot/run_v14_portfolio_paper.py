@@ -557,6 +557,116 @@ class V14PortfolioPaperBot:
 
         self._last_rebalance_date = today
 
+        # Fix 2: After rebalance, top up engines needing DCA capital
+        self._top_up_engine_capital()
+
+    # ── Layer Reconstruction (Fix 1) ─────────────────────────────────────────
+
+    def _reconcile_layer_counts(self):
+        """Reconcile engine long_layers with open_deals (authoritative source).
+
+        Paper runner doesn't have CoinState.layer_count — engine internal
+        long_layers is used directly. Reconcile from open_deals on startup.
+        """
+        reconciled = 0
+        for sym, engine in self.engines.items():
+            if not engine or not engine._engine:
+                continue
+            eng = engine._engine
+            deal_key = f"{sym}:long"
+            deal = self.tracker._open_deals.get(deal_key)
+            if deal and deal.get("layers", 0) > 0:
+                true_layers = deal["layers"]
+                if eng.long_layers != true_layers:
+                    logger.warning(
+                        f"Layer reconciliation {sym}: eng.long_layers={eng.long_layers} "
+                        f"→ {true_layers} (from open_deals)"
+                    )
+                    eng.long_layers = true_layers
+                    reconciled += 1
+            # Short deals
+            short_key = f"{sym}:short"
+            short_deal = self.tracker._open_deals.get(short_key)
+            if short_deal and short_deal.get("layers", 0) > 0:
+                true_layers = short_deal["layers"]
+                if eng.short_layers != true_layers:
+                    logger.warning(
+                        f"Layer reconciliation {sym}: eng.short_layers={eng.short_layers} "
+                        f"→ {true_layers} (from open_deals, short)"
+                    )
+                    eng.short_layers = true_layers
+                    reconciled += 1
+        if reconciled:
+            logger.info(f"Layer reconciliation complete: {reconciled} engine(s) corrected")
+        else:
+            logger.info("Layer reconciliation: all layer counts match open_deals")
+
+    # ── Capital Flow (Fix 2) ─────────────────────────────────────────────────
+
+    def _get_max_layers(self) -> int:
+        """Return max DCA layers from the engine config."""
+        for engine in self.engines.values():
+            if engine and engine._engine and hasattr(engine._engine, 'cfg'):
+                return getattr(engine._engine.cfg, 'DCA_MAX_LAYERS', 4)
+        return 4
+
+    def _remaining_grid_cost(self, current_layers: int, max_layers: int,
+                              allocation: float) -> float:
+        """Calculate total cost of unfilled DCA layers."""
+        bo_pct = 0.40
+        mult = 1.5
+        total = 0.0
+        for layer in range(current_layers, max_layers):
+            if layer == 0:
+                total += allocation * bo_pct
+            else:
+                total += allocation * bo_pct * (mult ** min(layer, 4))
+        return total
+
+    def _top_up_engine_capital(self):
+        """Push idle router cash into engines that need capital for DCA layers."""
+        max_layers = self._get_max_layers()
+        topped_up = 0
+
+        for sym, engine in self.engines.items():
+            if not engine or not engine._engine:
+                continue
+            eng = engine._engine
+
+            has_position = eng.long_coins > 0 or eng.short_coins > 0
+            if not has_position:
+                continue
+
+            current_layers = eng.long_layers if eng.long_coins > 0 else eng.short_layers
+            if current_layers >= max_layers:
+                continue
+
+            alloc = engine.initial_capital
+            remaining_cost = self._remaining_grid_cost(current_layers, max_layers, alloc)
+            deficit = max(0, remaining_cost - eng.capital)
+            if deficit <= 0:
+                continue
+
+            grant = min(deficit, self.router.active_pool_cash * 0.9)
+            if grant < 5:
+                continue
+
+            eng.capital += grant
+            self.router.active_pool_cash -= grant
+            current_alloc = self.router.active_allocations.get(sym, 0)
+            self.router.active_allocations[sym] = current_alloc + grant
+
+            logger.info(
+                f"Capital top-up {sym}: +${grant:.2f} for layers "
+                f"{current_layers+1}→{max_layers} "
+                f"(engine.capital now ${eng.capital:.2f}, "
+                f"router.active_cash now ${self.router.active_pool_cash:.2f})"
+            )
+            topped_up += 1
+
+        if topped_up:
+            logger.info(f"Capital top-up complete: {topped_up} engine(s) funded")
+
     def _is_t1_entry(self, symbol: str, action_type: str) -> bool:
         """Return True if this BUY/SHORT_OPEN would be a layer-1 (first) entry for this symbol."""
         key = f"{symbol}:long" if action_type == "BUY" else f"{symbol}:short"
@@ -1150,6 +1260,9 @@ class V14PortfolioPaperBot:
         # Try to restore saved state (engines, router, open deals)
         if not self.fresh:
             restored = self._load_state()
+            # Fix 1: Reconcile layer counts from open_deals after state load
+            if restored and self.tracker._open_deals:
+                self._reconcile_layer_counts()
         else:
             restored = False
             logger.info("FRESH mode — skipping state restore")
@@ -1157,6 +1270,10 @@ class V14PortfolioPaperBot:
         # Rebalance immediately (if engines were restored, this updates allocations;
         # if fresh start, this creates new engines)
         self._check_and_rebalance(datetime.now(timezone.utc))
+
+        # Fix 2: Top up engines needing DCA capital after initial rebalance
+        if restored:
+            self._top_up_engine_capital()
         self.run_live()
 
 def _acquire_pid_lock(lock_path: Path) -> bool:

@@ -1097,8 +1097,17 @@ class V14PortfolioLiveAster:
                 eng.long_tp = ex_entry * (1 + tp_pct)
                 # Sync layer count: ensure consistency between CoinState, engine, and exchange
                 if cs.layer_count == 0 and ex_qty > 0:
-                    # Position exists but layer_count is 0 — derive from engine state
-                    cs.layer_count = max(1, eng.long_layers)
+                    # Position exists but layer_count is 0 — consult open_deals first,
+                    # then fall back to engine state. open_deals tracks actual fills
+                    # and is authoritative. eng.long_layers can be 0 from snapshot.
+                    deal_key = f"{sym}:long"
+                    deal = self.tracker._open_deals.get(deal_key)
+                    if deal and deal.get("layers", 0) > 0:
+                        cs.layer_count = deal["layers"]
+                        logger.info(f"Layer count {sym}: restored {cs.layer_count} from open_deals")
+                    else:
+                        cs.layer_count = max(1, eng.long_layers)
+                        logger.info(f"Layer count {sym}: defaulted to {cs.layer_count} (no open_deal)")
                 elif cs.layer_count > 0 and ex_qty == 0:
                     # No position but layer_count > 0 — stale, reset
                     cs.layer_count = 0
@@ -2024,6 +2033,141 @@ class V14PortfolioLiveAster:
             logger.warning(f"Scanner rankings load failed (fail-open): {e}")
             return []
 
+    def _get_max_layers(self) -> int:
+        """Return max DCA layers from the engine config (High profile default)."""
+        for cs_ in self.coins.values():
+            if cs_.engine and cs_.engine._engine and hasattr(cs_.engine._engine, 'cfg'):
+                return getattr(cs_.engine._engine.cfg, 'DCA_MAX_LAYERS', 4)
+        return 4  # High profile default
+
+    # ── Layer Reconstruction (Fix 1) ─────────────────────────────────────
+
+    def _reconcile_layer_counts(self):
+        """Reconcile cs.layer_count with open_deals (authoritative source).
+
+        open_deals tracks actual fills via TradeTracker.on_buy(). cs.layer_count
+        can drift on restart when eng.long_layers is 0 in the engine snapshot.
+        This reconciliation ensures the system knows the true depth of each position.
+
+        Spec: projects/ait/specs/layer-reconstruction-capital-flow-zombie-slots.md §4
+        """
+        reconciled = 0
+        for sym, cs in self.coins.items():
+            # Long deals
+            deal_key = f"{sym}:long"
+            deal = self.tracker._open_deals.get(deal_key)
+            if deal and deal.get("layers", 0) > 0:
+                true_layers = deal["layers"]
+                if cs.layer_count != true_layers:
+                    logger.warning(
+                        f"Layer reconciliation {sym}: cs.layer_count={cs.layer_count} "
+                        f"→ {true_layers} (from open_deals)"
+                    )
+                    cs.layer_count = true_layers
+                    if cs.engine and cs.engine._engine:
+                        cs.engine._engine.long_layers = true_layers
+                    reconciled += 1
+            # Short deals
+            short_key = f"{sym}:short"
+            short_deal = self.tracker._open_deals.get(short_key)
+            if short_deal and short_deal.get("layers", 0) > 0:
+                true_layers = short_deal["layers"]
+                if cs.layer_count != true_layers:
+                    logger.warning(
+                        f"Layer reconciliation {sym}: cs.layer_count={cs.layer_count} "
+                        f"→ {true_layers} (from open_deals, short)"
+                    )
+                    cs.layer_count = true_layers
+                    if cs.engine and cs.engine._engine:
+                        cs.engine._engine.short_layers = true_layers
+                    reconciled += 1
+        if reconciled:
+            logger.info(f"Layer reconciliation complete: {reconciled} coin(s) corrected")
+        else:
+            logger.info("Layer reconciliation: all layer counts match open_deals")
+
+    # ── Capital Flow (Fix 2) ─────────────────────────────────────────────
+
+    def _remaining_grid_cost(self, current_layers: int, max_layers: int,
+                              allocation: float) -> float:
+        """Calculate total cost of unfilled DCA layers.
+
+        Uses grid formula: layer_cost = allocation × BO_PCT × mult^layer.
+        High profile: BO=40%, mult=1.5x, capped at layer 4.
+        """
+        bo_pct = 0.40
+        mult = 1.5
+        total = 0.0
+        for layer in range(current_layers, max_layers):
+            if layer == 0:
+                layer_cost = allocation * bo_pct
+            else:
+                layer_cost = allocation * bo_pct * (mult ** min(layer, 4))
+            total += layer_cost
+        return total
+
+    def _top_up_engine_capital(self):
+        """Push idle router cash into engines that need capital for DCA layers.
+
+        When positions are at partial depth (< max_layers), the engine needs
+        capital to generate BUY actions. Without this, positions freeze when
+        invested > allocation (engine.capital = 0).
+
+        Called after layer reconciliation on startup and after each daily rebalance.
+
+        Spec: projects/ait/specs/layer-reconstruction-capital-flow-zombie-slots.md §5
+        """
+        max_layers = self._get_max_layers()
+        topped_up = 0
+
+        for sym, cs in self.coins.items():
+            if not cs.engine or not cs.engine._engine:
+                continue
+            eng = cs.engine._engine
+
+            # Only for coins with open positions below max depth
+            has_position = eng.long_coins > 0 or eng.short_coins > 0
+            if not has_position:
+                continue
+
+            if cs.layer_count >= max_layers:
+                continue  # Already at max depth — no capital needed
+
+            # Calculate capital needed for remaining layers
+            remaining_cost = self._remaining_grid_cost(
+                cs.layer_count, max_layers, cs.allocated_capital
+            )
+
+            # How much more does the engine actually need?
+            deficit = max(0, remaining_cost - eng.capital)
+            if deficit <= 0:
+                continue  # Engine already has enough
+
+            # Grant from active pool cash (keep 10% buffer)
+            grant = min(deficit, self.router.active_pool_cash * 0.9)
+            if grant < 5:  # Not worth granting < $5
+                continue
+
+            eng.capital += grant
+            self.router.active_pool_cash -= grant
+
+            # Track in active_allocations for accounting
+            current_alloc = self.router.active_allocations.get(sym, 0)
+            self.router.active_allocations[sym] = current_alloc + grant
+
+            logger.info(
+                f"Capital top-up {sym}: +${grant:.2f} for layers "
+                f"{cs.layer_count+1}→{max_layers} "
+                f"(engine.capital now ${eng.capital:.2f}, "
+                f"router.active_cash now ${self.router.active_pool_cash:.2f})"
+            )
+            topped_up += 1
+
+        if topped_up:
+            logger.info(f"Capital top-up complete: {topped_up} engine(s) funded")
+        else:
+            logger.info("Capital top-up: no engines need additional capital")
+
     def _rotate_after_tp(self, sym: str, cs):
         """After TP close, evaluate whether this coin's slot should rotate
         to a higher-ranked unallocated coin.
@@ -2596,14 +2740,55 @@ class V14PortfolioLiveAster:
             except Exception as e:
                 logger.warning(f"Liquidity filter failed (proceeding without filter): {e}")
 
-            # Enforce tier coin cap: count existing coins with open positions
-            active_count = sum(
-                1 for cs_ in self.coins.values()
-                if cs_.engine and cs_.engine._engine
-                and (cs_.engine._engine.long_coins > 0 or cs_.engine._engine.short_coins > 0)
-            )
+            # Enforce tier coin cap with zombie slot detection (Fix 3)
+            # A "zombie slot" is a position at max DCA depth that has dropped
+            # from the approved list. It can't absorb more capital and shouldn't
+            # count toward the tier cap, freeing slots for new approved coins.
+            # Spec: projects/ait/specs/layer-reconstruction-capital-flow-zombie-slots.md §6
+            max_layers = self._get_max_layers()
+            approved_set = set(allocations.keys())
+
+            active_coins = []
+            zombie_coins = []
+            for sym_, cs_ in self.coins.items():
+                if not (cs_.engine and cs_.engine._engine):
+                    continue
+                eng_ = cs_.engine._engine
+                has_position = eng_.long_coins > 0 or eng_.short_coins > 0
+                if not has_position:
+                    continue
+
+                is_zombie = (
+                    cs_.layer_count >= max_layers
+                    and sym_ not in approved_set
+                )
+                if is_zombie:
+                    zombie_coins.append(sym_)
+                else:
+                    active_coins.append(sym_)
+
+            active_count = len(active_coins)  # Zombies excluded from cap count
+            total_positions = len(active_coins) + len(zombie_coins)
             tier_cap = self.router.tier_coin_cap
-            logger.info(f"Rebalance gate: {active_count} active positions, tier cap = {tier_cap}")
+
+            if zombie_coins:
+                logger.info(
+                    f"Zombie slots detected: {zombie_coins} "
+                    f"(at L{max_layers} max, not in approved list). "
+                    f"Effective cap usage: {active_count}/{tier_cap} "
+                    f"(total positions: {total_positions})"
+                )
+                send_telegram(
+                    f"🧟 {TG_PREFIX} <b>Zombie Slots</b>\n"
+                    f"Positions at max depth, dropped from approved list:\n"
+                    f"{', '.join(s.split('/')[0] for s in zombie_coins)}\n"
+                    f"Effective cap: {active_count}/{tier_cap} "
+                    f"(freeing {len(zombie_coins)} slot(s) for new coins)"
+                )
+            logger.info(
+                f"Rebalance gate: {active_count} active + {len(zombie_coins)} zombie = "
+                f"{total_positions} total positions, tier cap = {tier_cap}"
+            )
 
             for sym, alloc in allocations.items():
                 if sym not in self.coins:
@@ -2611,29 +2796,29 @@ class V14PortfolioLiveAster:
                         logger.info(f"Skipping new coin {sym} — bot state is {self.bot_state}")
                         continue
                     if tier_cap > 0 and active_count >= tier_cap:
-                        # Overflow exception: if ALL positions are at max layers
+                        # Overflow exception: if ALL non-zombie positions are at max layers
                         # and idle capital exists, allow +1 coin (spec: overflow-entry)
                         allow_overflow = False
                         if (OVERFLOW_ENTRY_ENABLED
                                 and active_count == tier_cap):  # exactly at cap, not already overflowed
-                            max_layers = self._get_max_layers()
-                            positions_with_trades = [
-                                cs_ for cs_ in self.coins.values()
+                            non_zombie_positions = [
+                                cs_ for s_, cs_ in self.coins.items()
                                 if cs_.engine and cs_.engine._engine
                                 and (cs_.engine._engine.long_coins > 0
                                      or cs_.engine._engine.short_coins > 0)
+                                and s_ not in zombie_coins
                             ]
                             all_maxed = (
-                                len(positions_with_trades) > 0
+                                len(non_zombie_positions) > 0
                                 and all(cs_.layer_count >= max_layers
-                                        for cs_ in positions_with_trades)
+                                        for cs_ in non_zombie_positions)
                             )
                             min_l1_capital = alloc * 0.4 if alloc > 0 else 10.0
                             has_capital = self.router.active_pool_cash >= min_l1_capital
                             if all_maxed and has_capital:
                                 allow_overflow = True
                                 logger.info(
-                                    f"OVERFLOW: all {len(positions_with_trades)} positions "
+                                    f"OVERFLOW: all {len(non_zombie_positions)} active positions "
                                     f"at L{max_layers} (max layers), idle cash "
                                     f"${self.router.active_pool_cash:.2f} — "
                                     f"allowing {sym} as +1 overflow"
@@ -2723,6 +2908,10 @@ class V14PortfolioLiveAster:
 
             self._last_rebalance_date = today
             self._last_rebalance_ts = time.time()
+
+            # Fix 2: After rebalance, top up engines needing DCA capital
+            self._top_up_engine_capital()
+
             logger.info(f"Rebalance complete: {len(self.coins)} active coins")
         except Exception as e:
             logger.error(f"Rebalance failed: {e}")
@@ -3393,6 +3582,15 @@ class V14PortfolioLiveAster:
                 if cs.regime_flagged:
                     coin_data["coin_regime_signal"] = cs.coin_regime_signal
                     coin_data["flagged_at"] = cs.flagged_at
+                # Zombie status (Fix 3): at max depth + not in approved list
+                approved_alloc_keys = set(self.router.active_allocations.keys())
+                has_pos = coin_data.get("position_size", 0) > 0
+                max_l = self._get_max_layers()
+                coin_data["is_zombie"] = (
+                    has_pos
+                    and cs.layer_count >= max_l
+                    and sym not in approved_alloc_keys
+                )
                 if cs.tp_limit_price:
                     coin_data["next_tp_price"] = cs.tp_limit_price
                 if sym in self._cfgi_coins:
@@ -3436,6 +3634,10 @@ class V14PortfolioLiveAster:
                 if self.router._split_tier_index >= 0 else "90/10"
             ),
             "approved_symbols": sorted(self.router.active_allocations.keys()),
+            "zombie_slots": sorted(
+                sym_ for sym_, cd_ in coins.items()
+                if cd_.get("is_zombie", False)
+            ),
             "global_regime": self._global_regime,
             "regime": (self._regime_alert_state
                        if self._regime_alert_state and self._regime_alert_state != "NONE"
@@ -3686,9 +3888,19 @@ class V14PortfolioLiveAster:
             for sym in list(self.coins.keys()):
                 self.client.ensure_leverage(sym, self.leverage)
 
+            # Fix 1: Reconcile layer counts from open_deals BEFORE exchange sync
+            # open_deals tracks actual fills and is authoritative for layer depth.
+            # Must run before _sync_positions_from_exchange() which overwrites eng.long_layers.
+            if self.coins and self.tracker._open_deals:
+                self._reconcile_layer_counts()
+
             # Initial exchange sync (exchange-as-truth: overwrite engine state from exchange)
             self._sync_positions_from_exchange()
             logger.info("Initial exchange position sync complete.")
+
+            # Fix 2: Push idle router cash into engines needing DCA capital
+            # Must run AFTER exchange sync (positions confirmed) and layer reconciliation.
+            self._top_up_engine_capital()
 
             # Audit #6: TP recovery — check if any TP orders filled while bot was down
             self._recover_tp_orders()
@@ -3799,6 +4011,11 @@ class V14PortfolioLiveAster:
                     # Process Telegram commands
                     self._process_telegram_commands()
 
+                    # Sync positions from exchange FIRST (exchange-as-truth)
+                    # Must run before rebalance so active position count reflects
+                    # actual exchange state, not stale engine state from previous tick.
+                    self._sync_positions_from_exchange()
+
                     # Daily rebalance (midnight UTC)
                     self._do_rebalance(current_dt)
 
@@ -3810,9 +4027,6 @@ class V14PortfolioLiveAster:
                         self._check_tp_fills()
                         self._update_funding()
                         last_tp_check = time.time()
-
-                    # Sync positions from exchange (exchange-as-truth, every cycle)
-                    self._sync_positions_from_exchange()
 
                     # Detect deposits/withdrawals (Upgrade 1)
                     self._detect_capital_change()
@@ -3907,9 +4121,14 @@ class V14PortfolioLiveAster:
                                         f"(engine={engine_phase}, global={self._global_regime})"
                                     )
                             elif actions and not is_current_candle:
+                                # Roll back engine state for warmup actions to prevent
+                                # phantom positions between ticks (engine modifies state
+                                # during tick, but warmup actions must not persist).
+                                for action in actions:
+                                    cs.engine.reject_action(action)
                                 logger.info(
                                     f"WARMUP SKIP {sym} @ {ts_dt.strftime('%H:%M')}: "
-                                    f"{len(actions)} action(s) suppressed"
+                                    f"{len(actions)} action(s) suppressed + rolled back"
                                 )
                             elif is_current_candle:
                                 logger.info(
