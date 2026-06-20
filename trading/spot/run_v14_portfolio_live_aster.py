@@ -2310,6 +2310,8 @@ class V14PortfolioLiveAster:
         if new_cs.engine._engine:
             new_cs.engine._engine.live_mode = True
         new_cs.engine._warmed_up = True
+        # Skip historical candles for rotated engine
+        new_cs.engine._last_candle_ts = int(time.time() * 1000)
         self.coins[best_available] = new_cs
 
         # Seed allocation so T1 gate allows entry
@@ -2844,6 +2846,9 @@ class V14PortfolioLiveAster:
                     # exchange data, no need to wait for a daily boundary.
                     # The engine is initialized in LONG_DCA phase and ready to trade.
                     cs.engine._warmed_up = True
+                    # Skip historical candles for new engines (defense-in-depth
+                    # with warmup guard). Prevents any replay of old candles.
+                    cs.engine._last_candle_ts = int(time.time() * 1000)
                     self.coins[sym] = cs
                     active_count += 1  # Track newly added coin toward cap
                     # Set leverage on exchange for new coin

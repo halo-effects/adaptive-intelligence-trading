@@ -548,6 +548,11 @@ class V14PortfolioPaperBot:
                     symbol=sym, capital=alloc, profile=self.profile, leverage=self.leverage
                 )
                 self.engines[sym]._live_mode = True
+                # Skip historical candles: set _last_candle_ts to now so the engine
+                # only trades on NEW candles. Without this, the engine replays up to
+                # 200 historical candles from the exchange, buying at old prices and
+                # selling at current prices in a single loop — inflating PnL.
+                self.engines[sym]._last_candle_ts = int(time.time() * 1000)
             else:
                 eng = self.engines[sym]._engine
                 if eng:
@@ -862,6 +867,8 @@ class V14PortfolioPaperBot:
             symbol=best_available, capital=alloc, profile=self.profile, leverage=self.leverage
         )
         self.engines[best_available]._live_mode = True
+        # Skip historical candles (same guard as _check_and_rebalance)
+        self.engines[best_available]._last_candle_ts = int(time.time() * 1000)
 
         # Seed allocation and approved set
         self.router.active_allocations[best_available] = alloc
