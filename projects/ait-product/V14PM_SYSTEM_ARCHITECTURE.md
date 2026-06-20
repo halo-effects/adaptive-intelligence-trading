@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading - V14PM System Architecture
-_Version: 1.9 | Date: 2026-06-19 | Status: Production (Aster Perps)_
+_Version: 1.10 | Date: 2026-06-19 | Status: Production (Aster Perps)_
 
 ---
 
@@ -1233,6 +1233,45 @@ if effective_active_count < tier_cap:
 
 > **Spec:** `projects/ait/specs/layer-reconstruction-capital-flow-zombie-slots.md`
 
+#### 7.8 New Engine Candle Replay Guard (2026-06-19)
+
+When `_check_and_rebalance()` or `_rotate_after_tp()` creates a new engine mid-run,
+the engine has `_last_candle_ts = 0`. The main loop fetches up to 200 historical
+candles from the exchange and processes ALL of them sequentially. The engine buys at
+historical prices and sells at current prices in a single loop — producing inflated
+PnL (up to 64% observed on paper bot).
+
+**Fix:** Set `_last_candle_ts = int(time.time() * 1000)` on every new engine creation.
+The engine only processes candles newer than its creation time.
+
+**Applies to all engine creation sites:**
+- `_check_and_rebalance()` / `_do_rebalance()` — new coin enters allocation targets
+- `_rotate_after_tp()` — slot rotation after TP close
+
+**Defense-in-depth (live runner only):** The live runner also has a warmup guard that
+rolls back actions on non-current candles. The `_last_candle_ts` fix prevents the
+candles from even reaching the engine.
+
+#### 7.9 Paper vs Live TP Behavior
+
+The live bot and paper bot handle take-profit differently:
+
+| Aspect | Live (Aster) | Paper (Engine) |
+|--------|-------------|----------------|
+| TP mechanism | `TRAILING_STOP_MARKET` (exchange-native) | `price >= long_tp` (engine internal) |
+| Activation | At `avg_entry × 1.03` | At candle close ≥ `avg_entry × 1.03` |
+| Trailing | Exchange tracks peak, 0.2% callback from peak | None — sells immediately at candle close |
+| Fill price | Exchange fill (at callback level below peak) | Candle close price |
+| Upside capture | Can capture gains above 3% via trailing | Limited to candle close at TP trigger |
+
+**Known gap:** Paper bot does not simulate trailing TP behavior. This means paper
+returns per trade may differ from live in either direction:
+- Paper overstates when candle close is above what trailing callback would produce
+- Paper understates when price trails significantly above TP before callback triggers
+
+**Spec for simulation:** `projects/ait/specs/paper-trailing-tp-simulation.md`
+(requires backtest comparison before implementation)
+
 ---
 
 ## 8. Exchange Client (`trading.spot.exchange_client`)
@@ -1513,6 +1552,7 @@ matplotlib, scipy, scikit-learn, plotly  # Backtest analysis only
 | `open_deals` is truth for layer count | Engine snapshot `long_layers` can reset to 0 on restart. `open_deals` tracks every actual fill and is authoritative. Reconcile on startup. (Hard Rule #35) |
 | Engine capital top-up from router | When `invested > allocation` starves engine capital to $0, the DCA grid freezes silently. Router's idle `active_pool_cash` must flow to engines needing DCA layers. (Hard Rule #36) |
 | Zombie slots excluded from tier cap | Positions at max depth that dropped from approved list can't absorb capital. Counting them toward the cap traps idle capital. Zombies exit via TP naturally (Hard Rule #34). |
+| New engines skip historical candles | `_last_candle_ts = now` on creation. Prevents replay of 200 historical candles that buy at old prices and sell at current prices. Paper bot PnL was inflated up to 64% per trade. |
 
 ---
 
@@ -1596,5 +1636,6 @@ _Updated: 2026-05-05 (v1.4 - Trade reconciliation system: standalone CLI tool, s
 _Updated: 2026-05-12 (v1.6 - Grid optimization: TP 3.0%, 4 layers for high profile. §5.3 profiles, §5.4 config, §4.1 sim params, §15 design decisions)_
 _Updated: 2026-05-16 (v1.8 - Orphan-TP mode: no forced closes on phase transition or MARKDOWN_FAIL. §7.5.8. Hard Rule #34. Deployed to paper + live.)_
 _Updated: 2026-06-19 (v1.9 - Layer reconstruction §7.5.9, engine capital flow §7.6, zombie slot detection §7.7. Hard Rules #35-36. §7.3 steps 10-11. §15 design decisions. Deployed to paper + live.)_
+_Updated: 2026-06-19 (v1.10 - Candle replay guard §7.8, paper vs live TP behavior §7.9. New engines skip historical candles. Trailing TP simulation specced.)_
 _Next: Cloud Migration Guide (Phase 5)_
 _Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_

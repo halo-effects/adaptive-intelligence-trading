@@ -87,6 +87,7 @@ _Last updated: 2026-05-16_
 | open_deals is truth for layer count | 2026-06-19 | Engine snapshot `long_layers` resets to 0 on restart. `open_deals` tracks actual fills. Reconcile on startup (Hard Rule #35). |
 | Engine capital top-up from router | 2026-06-19 | When `invested > allocation` causes engine.capital=0, router idle cash must flow to engines. Prevents silent DCA grid freeze (Hard Rule #36). |
 | Zombie slots excluded from tier cap | 2026-06-19 | Positions at max depth + not approved don't count toward cap. Idle capital deploys to new opportunities. Zombies exit via TP (Hard Rule #34). |
+| New engines skip historical candles | 2026-06-19 | `_last_candle_ts = now` on mid-run engine creation. Prevents historical candle replay that inflated paper PnL by up to 64% per trade. |
 
 ## Next Steps
 1. **🔴 Create V14PM Live auto-restart task** (needs admin PowerShell)

@@ -2,6 +2,9 @@
 _Reverse chronological. Key events only._
 
 ## 2026-06-19
+- **Candle replay fix deployed** (paper + live): New engines created mid-run by `_check_and_rebalance()` or `_rotate_after_tp()` now set `_last_candle_ts = now` to skip historical candles. Without this, the engine replayed up to 200 historical candles from the exchange, buying at old prices and selling at current prices — inflating PnL by up to 64%. Root cause: HYPE paper trades showed 54-64% ROI on L1 (should be ~3%). Investigation traced to engines created for coins re-entering the approved list after weeks of absence. Verified all inflated trades (23 trades >10% return) correlated with engine creation gaps. Live runner has warmup guard as second defense; `_last_candle_ts` set for defense-in-depth.
+  - **Files changed**: `run_v14_portfolio_live_aster.py` (2 engine creation sites), `run_v14_portfolio_paper.py` (2 engine creation sites)
+- **Trailing TP simulation specced** (paper only): `projects/ait/specs/paper-trailing-tp-simulation.md`. Live bot uses exchange-native `TRAILING_STOP_MARKET` on Aster (activation at 3% TP, 0.2% callback). Paper bot has no trailing simulation — uses fixed `price >= long_tp` at candle close. Spec recommends backtest comparison before implementation (OHLC intra-candle ordering uncertainty may produce artifacts worse than fixed TP).
 - **Layer reconstruction + Capital flow + Zombie slots deployed** (paper + live): Three cascading fixes for capital starvation bug.
   - **Fix 1 — Layer Reconstruction**: `_reconcile_layer_counts()` restores `cs.layer_count` from `open_deals` on startup. Fixes bug where `eng.long_layers=0` caused `layer_count=1` on every restart. Exchange sync fallback also consults `open_deals`. Confirmed: JUP L5, PENDLE L4, INJ L4 (all showed L1 before).
   - **Fix 2 — Capital Flow**: `_top_up_engine_capital()` pushes idle `active_pool_cash` into engines needing DCA capital. Prevents grid freeze when `invested > allocation`.

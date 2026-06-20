@@ -38,6 +38,8 @@ _Curated essentials. For details, see the structured files below._
 - **V14-ETF Paper**: Running
 - **V2 System Audit** (2026-05-10): 60 findings, 15 fixed. Deposit detection audit (2026-05-11): 7 findings, 2 critical fixed.
 - **Hard rules 26-36**: Immutable seed, no derived constants, fresh clone sync, append-only CSV, no unrealized in detection, idempotent restart, post-tick gates must rollback + separate entries/exits (#32), read arch spec before writing fix code (#33), no forced closes on 1.0x leverage (#34), open_deals is truth for layer count (#35), idle router cash must flow to engines (#36).
+  - **Candle replay fix (2026-06-19)**: New engines created mid-run must set `_last_candle_ts = now`. Historical candle replay inflated paper PnL up to 64%.
+  - **Trailing TP gap**: Paper bot uses fixed TP (candle close). Live uses Aster trailing stop (0.2% callback). Spec pending backtest comparison.
 
 ### Needs Admin PowerShell
 1. Create V14PM auto-restart task (`V14PMLiveAster`)
