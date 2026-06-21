@@ -6,8 +6,8 @@
   "leverage": 1.0,
   "exchange": "aster",
   "capital": 50000.0,
-  "equity": 114762.04,
-  "cash": 48702.75,
+  "equity": 114761.97,
+  "cash": 48702.68,
   "pnl_pct": 129.52,
   "coins": {
     "ZRO/USDT": {
@@ -383,7 +383,7 @@
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0,
+      "current_price": 0.65046,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -492,14 +492,14 @@
   "regime": "RANGING",
   "global_regime": "LONG_DCA",
   "trend_direction": "bullish",
-  "total_realized_pnl": 94057.32,
+  "total_realized_pnl": 94057.25,
   "total_fees": 4174.43,
   "deals_completed": 924,
   "win_rate": 99.7,
   "max_drawdown_pct": 0.0,
-  "uptime_hours": 2642.06,
+  "uptime_hours": 2642.22,
   "fear_greed_index": 34.3,
-  "last_update": "2026-06-21T02:03:32.897331+00:00",
+  "last_update": "2026-06-21T02:13:08.716736+00:00",
   "timeframe": "1h",
   "tier_coin_cap": 10,
   "approved_symbols": [
@@ -514,9 +514,9 @@
     "RENDER/USDT"
   ],
   "router": {
-    "active_cash": 8858.61,
+    "active_cash": 8858.55,
     "reserve_cash": 5436.02,
-    "total_active_allocated": 57505.21,
+    "total_active_allocated": 57504.88,
     "total_reserve_allocated": 4814.96
   }
 }
