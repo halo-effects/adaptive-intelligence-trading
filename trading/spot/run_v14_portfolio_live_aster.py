@@ -1879,8 +1879,17 @@ class V14PortfolioLiveAster:
                 logger.warning(f"Startup reconciliation failed for {db_sym}: {e}")
 
         if recovered > 0:
-            # Re-anchor counter to actual count (clean monotonic baseline)
-            self.tracker._deal_counter = len(self.tracker.trades)
+            # Re-anchor counter: use max of trade count and highest existing deal_id
+            # to prevent collisions (same fix as load_existing, audit M3)
+            max_id = 0
+            for t in self.tracker.trades:
+                try:
+                    did = int(t.get("deal_id", 0))
+                    if did > max_id:
+                        max_id = did
+                except (ValueError, TypeError):
+                    pass
+            self.tracker._deal_counter = max(len(self.tracker.trades), max_id)
             self.tracker.save_csv()
             send_telegram(
                 f"\U0001f527 {TG_PREFIX} <b>Startup Reconciliation</b>\n"
