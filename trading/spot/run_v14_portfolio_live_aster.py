@@ -4310,6 +4310,16 @@ class V14PortfolioLiveAster:
             self._sync_positions_from_exchange()
             logger.info("Initial exchange position sync complete.")
 
+            # Reconcile router pools against DEX balance on startup (Rule #23)
+            total_invested = sum(
+                cs.engine._engine.long_cost
+                for cs in self.coins.values()
+                if cs.engine and cs.engine._engine and cs.engine._engine.long_coins > 0
+            )
+            self.router.reconcile_pools_from_exchange(
+                self._exchange_usdt_free, total_invested
+            )
+
             # Fix 2: Push idle router cash into engines needing DCA capital
             # Must run AFTER exchange sync (positions confirmed) and layer reconciliation.
             self._top_up_engine_capital()
@@ -4427,6 +4437,18 @@ class V14PortfolioLiveAster:
                     # Must run before rebalance so active position count reflects
                     # actual exchange state, not stale engine state from previous tick.
                     self._sync_positions_from_exchange()
+
+                    # Reconcile router pools against DEX balance (Rule #23)
+                    # Router's active_pool_cash drifts from reality due to
+                    # unrealized PnL, fees, and position value changes.
+                    total_invested = sum(
+                        cs.engine._engine.long_cost
+                        for cs in self.coins.values()
+                        if cs.engine and cs.engine._engine and cs.engine._engine.long_coins > 0
+                    )
+                    self.router.reconcile_pools_from_exchange(
+                        self._exchange_usdt_free, total_invested
+                    )
 
                     # Daily rebalance (midnight UTC)
                     self._do_rebalance(current_dt)

@@ -492,6 +492,43 @@ class CapitalRouter:
         )
 
 
+    def reconcile_pools_from_exchange(self, dex_free_usdt: float, total_invested: float):
+        """Reconcile router pool accounting against actual DEX balance.
+
+        The router's active_pool_cash drifts from reality because it's maintained
+        as an internal ledger (request/return capital) that doesn't track unrealized
+        PnL, fees, or position value changes. The DEX balance is truth (Rule #23).
+
+        Called every main-loop cycle after _sync_positions_from_exchange().
+
+        Args:
+            dex_free_usdt: Actual USDT free balance from exchange API
+            total_invested: Sum of all position costs (eng.long_cost across all coins)
+        """
+        old_cash = self.active_pool_cash
+        # Truth: free cash on the exchange IS the available pool cash
+        self.active_pool_cash = dex_free_usdt
+        # Reserve is always 0 below $10K (D-RESERVE)
+        self.reserve_pool_cash = 0.0
+        # Update pool totals from actual equity
+        actual_equity = dex_free_usdt + total_invested
+        if actual_equity > 0:
+            self.total_equity = actual_equity
+            # Maintain pool total for allocation math
+            if self._split_tier_index >= 0:
+                _, active_pct, _ = EQUITY_TIER_SPLITS[self._split_tier_index]
+            else:
+                active_pct = 1.0
+            self.active_pool_total = actual_equity * active_pct
+
+        drift = abs(old_cash - dex_free_usdt)
+        if drift > 1.0:
+            logger.info(
+                f"Pool reconciliation: active_cash ${old_cash:.2f} -> ${dex_free_usdt:.2f} "
+                f"(drift ${drift:.2f}, DEX truth)"
+            )
+
+
 # ---------------------------------------------------------------------------
 # Capital Ledger — tracks deposits, withdrawals, and seed capital
 # ---------------------------------------------------------------------------
