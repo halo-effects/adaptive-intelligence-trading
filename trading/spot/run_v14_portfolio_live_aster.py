@@ -3347,7 +3347,9 @@ class V14PortfolioLiveAster:
             if cs.engine and cs.engine._engine
             and (cs.engine._engine.long_coins > 0 or cs.engine._engine.short_coins > 0)
         )
-        idle_cash = self.router.active_pool_cash
+        # Use exchange USDT balance as truth for idle cash (Rule #23),
+        # not router.active_pool_cash which drifts from reality
+        idle_cash = self._exchange_usdt_free
         digest_lines.append(
             f"Book: {book}/{self.router.tier_coin_cap} (ceiling {soft_ceil}) "
             f"| Idle: ${idle_cash:.2f}"
