@@ -99,7 +99,7 @@ SCANNER_PATH = Path(os.environ.get(
 LIVE_POLL_INTERVAL = 65        # seconds between exchange polls
 TP_CHECK_INTERVAL  = 65        # seconds between TP order status checks
 STATUS_WRITE_INTERVAL = 60     # seconds between status.json writes
-REGIME_EVAL_HOUR   = 0         # UTC hour for daily regime evaluation (midnight)
+# REGIME_EVAL_HOUR removed (audit M1: _evaluate_regime was dead code, deleted 2026-07-03)
 # REENTRY_COOLDOWN removed — old bot never had it, it masked bugs
 TG_PREFIX          = "[V14-PM]"
 
@@ -187,8 +187,8 @@ def get_telegram_updates(offset: int = 0) -> list:
         )
         if r.ok:
             return r.json().get("result", [])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Telegram getUpdates failed: {e}")
     return []
 
 
@@ -217,10 +217,18 @@ class TradeTracker:
                 key = f"{row['symbol']}|{row.get('open_time','')}|{row.get('close_time','')}"
                 self._existing_keys.add(key)
             self.trades = [{k: v for k, v in r.items()} for r in rows]
-            # Use len(trades) as counter — not max(deal_id) — to avoid collisions
-            # when duplicate deal_ids exist in the CSV.
-            self._deal_counter = len(self.trades)
-            logger.info(f"Loaded {len(self.trades)} existing trades from CSV (counter={self._deal_counter})")
+            # Use max of len(trades) and highest existing deal_id to prevent
+            # collisions when startup reconciliation appends deals with their own IDs.
+            max_existing_id = 0
+            for row in self.trades:
+                try:
+                    did = int(row.get("deal_id", 0))
+                    if did > max_existing_id:
+                        max_existing_id = did
+                except (ValueError, TypeError):
+                    pass
+            self._deal_counter = max(len(self.trades), max_existing_id)
+            logger.info(f"Loaded {len(self.trades)} existing trades from CSV (counter={self._deal_counter}, max_id={max_existing_id})")
         except Exception as e:
             logger.error(f"Failed to load trades.csv: {e}")
 
@@ -435,6 +443,7 @@ class AsterPerpClient:
             order = self._exchange.create_market_buy_order(sym, exchange_qty,
                                                            params={"positionSide": "BOTH"})
             fill = order.get("average") or order.get("price")
+            price_from_exchange = True  # Track source for descaling
             if not fill:
                 # Fetch actual trade fills from exchange — more accurate than ticker
                 logger.warning(f"Exchange did not return fill price for BUY — fetching trades")
@@ -447,15 +456,17 @@ class AsterPerpClient:
                         latest = trades[-1]
                         fill = float(latest.get("price", 0))
                         logger.info(f"Got fill price from trades: ${fill}")
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Trade fill lookup failed for BUY {db_symbol}: {e}")
                 if not fill:
                     fill = self.fetch_ticker_price(db_symbol)
+                    price_from_exchange = False  # Ticker already descaled
                     logger.warning(f"Fell back to ticker price: ${fill}")
             else:
                 fill = float(fill)
-            # Reverse 1000-prefix scaling on price
-            if base in ("PEPE", "BONK", "FLOKI"):
+            # Reverse 1000-prefix scaling on price — only for exchange-sourced prices
+            # fetch_ticker_price() already returns descaled prices
+            if price_from_exchange and base in ("PEPE", "BONK", "FLOKI"):
                 fill = fill / 1000.0
             filled_qty = float(order.get("filled") or exchange_qty)
             if base in ("PEPE", "BONK", "FLOKI"):
@@ -806,7 +817,7 @@ class V14PortfolioLiveAster:
         self._regime_signal_type: Optional[str] = None  # "TOP" or "BOTTOM"
         self._regime_alert_state: str = "NONE"  # NONE, AWAITING_APPROVAL
         self._regime_last_alert_pct: float = 0.0  # Last conviction % that triggered an alert
-        self._regime_last_eval_date: Optional[object] = None
+        # _regime_last_eval_date removed (audit M1: _evaluate_regime deleted 2026-07-03)
 
         # Telegram command processing
         self._tg_update_offset: int = 0
@@ -844,6 +855,32 @@ class V14PortfolioLiveAster:
             f"30d scanner | Aster Perps"
         )
 
+        # ── Startup attribute self-test (audit P7, 2026-07-03) ────────────────
+        # Verify every method referenced by critical paths exists at init time.
+        # Catches AttributeError bugs (like C2, H1) on startup instead of mid-trade.
+        _critical_methods = [
+            # _execute_action paths
+            "_execute_action", "_handle_tp_fill", "_prune_stale_coin_after_tp",
+            # Capital/rebalance paths
+            "_do_rebalance", "_rotate_after_tp", "_top_up_engine_capital",
+            "_reconcile_layer_counts", "_sync_positions_from_exchange",
+            # Command handling
+            "_handle_command", "_check_coin_regime_conflict",
+            # State management
+            "_save_state", "_load_state", "_write_status",
+            # TP and order management
+            "_place_tp_order", "_check_tp_fills", "_recover_tp_orders",
+            # Capital detection
+            "_detect_capital_change", "_init_capital_ledger",
+        ]
+        missing = [m for m in _critical_methods if not hasattr(self, m)]
+        if missing:
+            msg = f"CRITICAL: Missing methods on V14PortfolioLiveAster: {missing}"
+            logger.critical(msg)
+            send_telegram(f"🚨 {TG_PREFIX} {msg} — refusing to start")
+            raise AttributeError(msg)
+        logger.info(f"Startup self-test: {len(_critical_methods)} critical methods verified")
+
     # ── State persistence ─────────────────────────────────────────────────────
 
     def _save_state(self):
@@ -854,8 +891,8 @@ class V14PortfolioLiveAster:
             if cs.engine:
                 try:
                     engine_state = cs.engine.snapshot_state()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Engine snapshot failed for {sym}: {e}")
             coin_states[sym] = {
                 **cs.to_dict(),
                 "engine_state": engine_state,
@@ -2168,6 +2205,40 @@ class V14PortfolioLiveAster:
         else:
             logger.info("Capital top-up: no engines need additional capital")
 
+    def _prune_stale_coin_after_tp(self, sym: str, cs):
+        """Remove coin from router allocations if it has no open position
+        and is not in the current rebalance targets (active_allocations
+        seeded from scanner rankings). Called after non-TP sells (manual/
+        forced closes) to clean up stale state. Same semantics as the
+        stale-allocation-cleanup block in _do_rebalance().
+        """
+        # Check if coin still has an open position
+        has_position = (
+            cs and cs.engine and cs.engine._engine
+            and (cs.engine._engine.long_coins > 0 or cs.engine._engine.short_coins > 0)
+        )
+        if has_position:
+            return  # Still in a trade — keep allocation
+
+        # Only prune if the coin is NOT among the current scanner-ranked targets.
+        # If it's still highly ranked, daily rebalance will re-seed it.
+        # We check active_allocations as the proxy for "currently targeted"
+        # since rebalance seeds all targets there.
+        # After a sell, the position is gone — if the coin isn't a current target,
+        # clean it up so the slot can be reused.
+        pruned = False
+        if sym in self.router.active_allocations:
+            del self.router.active_allocations[sym]
+            pruned = True
+        if sym in self.router.reserve_allocations:
+            del self.router.reserve_allocations[sym]
+            pruned = True
+        if pruned:
+            logger.info(
+                f"Pruned stale allocations for {sym} after close "
+                f"(no open position, not in rebalance targets)"
+            )
+
     def _rotate_after_tp(self, sym: str, cs):
         """After TP close, evaluate whether this coin's slot should rotate
         to a higher-ranked unallocated coin.
@@ -2247,8 +2318,8 @@ class V14PortfolioLiveAster:
 
         # Liquidity filter for the new coin
         try:
-            tickers = self.client.exchange.fetch_tickers()
-            aster_sym = self._aster_symbol(best_available)
+            tickers = self.client._exchange.fetch_tickers()
+            aster_sym = self.client._aster_symbol(best_available)
             ticker = tickers.get(aster_sym, {})
             quote_vol = ticker.get("quoteVolume", 0) or 0
             # Calculate fair-share allocation for the new coin
@@ -2265,6 +2336,10 @@ class V14PortfolioLiveAster:
                 return
         except Exception as e:
             logger.warning(f"Liquidity check failed for {best_available} (proceeding): {e}")
+            send_telegram(
+                f"⚠️ {TG_PREFIX} Liquidity filter failed for {best_available} "
+                f"during rotation (proceeding): {e}"
+            )
 
         # Tier cap check: count active positions (excluding the one that just closed)
         active_count = len(coins_with_positions)
@@ -2706,7 +2781,7 @@ class V14PortfolioLiveAster:
             # Fetch tickers from exchange and filter out illiquid coins.
             # Existing open positions are exempt (they need to exit via TP).
             try:
-                tickers = self.client.exchange.fetch_tickers()
+                tickers = self.client._exchange.fetch_tickers()
                 filtered_allocs = {}
                 for sym, alloc in allocations.items():
                     # Always keep coins that already have open positions
@@ -2719,7 +2794,7 @@ class V14PortfolioLiveAster:
                             continue
 
                     # Look up 24h dollar volume from exchange ticker
-                    aster_sym = self._aster_symbol(sym)
+                    aster_sym = self.client._aster_symbol(sym)
                     ticker = tickers.get(aster_sym, {})
                     quote_vol = ticker.get("quoteVolume", 0) or 0
 
@@ -2741,6 +2816,10 @@ class V14PortfolioLiveAster:
                 allocations = filtered_allocs
             except Exception as e:
                 logger.warning(f"Liquidity filter failed (proceeding without filter): {e}")
+                send_telegram(
+                    f"⚠️ {TG_PREFIX} Liquidity filter failed during rebalance "
+                    f"(proceeding without filter): {e}"
+                )
 
             # Enforce tier coin cap with zombie slot detection (Fix 3)
             # A "zombie slot" is a position at max DCA depth that has dropped
@@ -2923,125 +3002,11 @@ class V14PortfolioLiveAster:
 
     # ── Portfolio Regime Monitor ──────────────────────────────────────────────
 
-    def _evaluate_regime(self, current_dt: datetime):
-        """
-        Evaluate ROUTER v2 signals across all 50 scanner coins.
-        Runs once per day at midnight UTC.
-        Send tiered Telegram alerts based on signal count thresholds.
-        """
-        today = current_dt.date()
-        if self._regime_last_eval_date == today:
-            return
-        if current_dt.hour != REGIME_EVAL_HOUR:
-            return
-
-        self._regime_last_eval_date = today
-        logger.info("Running portfolio regime evaluation")
-
-        try:
-            # Load scanner data for per-coin signal states
-            if not SCANNER_PATH.exists():
-                logger.warning("Scanner JSON not found — skipping regime eval")
-                return
-
-            with open(SCANNER_PATH) as f:
-                scanner = json.load(f)
-
-            coins_data = scanner.get("rankings", []) or scanner.get("coins", [])
-            topping_coins = []
-            bottoming_coins = []
-
-            for coin_entry in coins_data:
-                sym = coin_entry.get("symbol", coin_entry.get("coin", ""))
-                # Use lifecycle_phase / router signals if available
-                phase = coin_entry.get("lifecycle_phase", "")
-                router_signal = coin_entry.get("router_signal", "")
-
-                if "TOP" in phase.upper() or "TOP" in router_signal.upper():
-                    topping_coins.append(sym)
-                elif "BOTTOM" in phase.upper() or "BOTTOM" in router_signal.upper():
-                    bottoming_coins.append(sym)
-
-            total = max(len(coins_data), 1)
-            top_count    = len(topping_coins)
-            bottom_count = len(bottoming_coins)
-
-            # Determine dominant signal direction
-            if top_count >= bottom_count and top_count >= 5:
-                signal_type  = "TOP"
-                signal_count = top_count
-                signal_coins = topping_coins
-            elif bottom_count >= 5:
-                signal_type  = "BOTTOM"
-                signal_count = bottom_count
-                signal_coins = bottoming_coins
-            else:
-                # No significant signal
-                if self._regime_signal_count > 0:
-                    logger.info(
-                        f"Regime signal faded: was {self._regime_signal_count}/{total} — "
-                        f"now below threshold"
-                    )
-                    self._regime_signal_count = 0
-                    self._regime_signal_type  = None
-                return
-
-            prev_count = self._regime_signal_count
-            self._regime_signal_count = signal_count
-            self._regime_signal_type  = signal_type
-
-            # Only alert if count increased to a tier boundary or is new
-            def tier_name(n: int) -> str:
-                if n >= 25: return "MAJORITY"
-                if n >= 12: return "STRONG"
-                if n >= 5:  return "EARLY"
-                return "NONE"
-
-            current_tier = tier_name(signal_count)
-            previous_tier = tier_name(prev_count)
-
-            if current_tier == "NONE":
-                return
-
-            # Send alert if new signal, tier escalated, or count increased
-            should_alert = (
-                prev_count == 0
-                or current_tier != previous_tier
-                or (signal_count > prev_count and self._regime_alert_state == "AWAITING_APPROVAL")
-            )
-
-            if should_alert or self._regime_alert_state == "AWAITING_APPROVAL":
-                tier_emoji = {"EARLY": "🟡", "STRONG": "🟠", "MAJORITY": "🔴"}.get(current_tier, "⚠️")
-                signal_label = "TOP DETECTED" if signal_type == "TOP" else "BOTTOM DETECTED"
-
-                coin_list = ", ".join(signal_coins[:10])
-                if len(signal_coins) > 10:
-                    coin_list += f" (+{len(signal_coins)-10} more)"
-
-                cfgi_str = f"CFGI Market: {self._cfgi_market:.0f}" if self._cfgi_market else ""
-
-                msg = (
-                    f"{tier_emoji} {TG_PREFIX} <b>REGIME SIGNAL: {signal_label}</b>\n"
-                    f"Tier: {current_tier} ({signal_count}/{total} coins)\n\n"
-                    f"Signaling: {coin_list}\n"
-                )
-                if cfgi_str:
-                    msg += f"\n{cfgi_str}"
-
-                if self._regime_alert_state != "AWAITING_APPROVAL":
-                    msg += (
-                        "\n\nAll positions continue normally.\n"
-                        "Reply <b>APPROVE</b> to begin graceful wind-down.\n"
-                        "Reply <b>DENY</b> to continue current strategy."
-                    )
-                    self._regime_alert_state = "AWAITING_APPROVAL"
-                else:
-                    msg += f"\n\n⏳ Still awaiting your decision. ({signal_count}/{total} coins signaling)"
-
-                send_telegram(msg)
-
-        except Exception as e:
-            logger.error(f"Regime evaluation failed: {e}")
+    # _evaluate_regime DELETED (audit finding M1, 2026-07-03)
+    # Dead code: read scanner JSON fields ("rankings", "lifecycle_phase", "router_signal")
+    # that don't exist in cycle_scanner.json. No-op'd silently every midnight.
+    # The REAL regime monitor is _check_coin_regime_conflict() (graduated conviction
+    # alerts, 15-50% thresholds, APPROVE/DENY flow) — untouched.
 
     # ── Wind-down ─────────────────────────────────────────────────────────────
 
@@ -3565,8 +3530,8 @@ class V14PortfolioLiveAster:
                     live_price = self.client.fetch_ticker_price(sym)
                     if live_price > 0:
                         coin_data["current_price"] = round(live_price, 6)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Ticker fetch failed for {sym} in status: {e}")
 
                 # Per-coin realized PnL from CSV (survives restarts)
                 # Per-coin realized PnL from in-memory trade list (no disk IO)
@@ -3847,8 +3812,8 @@ class V14PortfolioLiveAster:
                 self._lock_fh.close()
                 try:
                     lock_path.unlink(missing_ok=True)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to remove stale lock file: {e}")
                 # Retry lock
                 self._lock_fh = open(lock_path, "w")
                 try:
@@ -4024,8 +3989,8 @@ class V14PortfolioLiveAster:
                     # Daily rebalance (midnight UTC)
                     self._do_rebalance(current_dt)
 
-                    # Daily regime evaluation (midnight UTC)
-                    self._evaluate_regime(current_dt)
+                    # _evaluate_regime call removed (audit M1, 2026-07-03)
+                    # Regime monitoring handled by _check_coin_regime_conflict()
 
                     # Check TP fills every TP_CHECK_INTERVAL seconds
                     if time.time() - last_tp_check >= TP_CHECK_INTERVAL:
@@ -4176,8 +4141,8 @@ class V14PortfolioLiveAster:
                     # CFGI poll
                     try:
                         self._poll_cfgi()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"CFGI poll failed: {e}")
 
                     # Write status
                     self._write_status()
@@ -4208,8 +4173,8 @@ class V14PortfolioLiveAster:
                     stored_pid = int(lock_content.split(":")[0])
                     if stored_pid == os.getpid():
                         pid_path.unlink()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"PID file cleanup failed: {e}")
             # Release file lock
             try:
                 if hasattr(self, '_lock_fh') and self._lock_fh:
@@ -4220,8 +4185,8 @@ class V14PortfolioLiveAster:
                         import fcntl
                         fcntl.flock(self._lock_fh.fileno(), fcntl.LOCK_UN)
                     self._lock_fh.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"File lock release failed: {e}")
             logger.info("V14PM Live Aster shut down cleanly")
 
 
