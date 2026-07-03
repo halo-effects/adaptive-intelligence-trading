@@ -2245,6 +2245,237 @@ class V14PortfolioLiveAster:
                 f"(no open position, not in rebalance targets)"
             )
 
+    # ── Overflow Entry v2 (audit H4, spec: overflow-entry-v2-soft-ceiling.md v1.2) ────
+
+    def _next_tier_coin_cap(self, equity: float) -> int:
+        """Return the coin cap of the tier ONE STEP ABOVE the current tier.
+        If already at the top tier, returns the current cap (no overflow at max).
+        """
+        current_cap = self.router.tier_coin_cap
+        # Walk the tier table to find the next-higher cap
+        # EQUITY_TIER_CAPS is sorted descending by min_equity
+        caps_ascending = sorted(set(cap for _, cap in EQUITY_TIER_CAPS))
+        for cap in caps_ascending:
+            if cap > current_cap:
+                return cap
+        return current_cap  # Already at top tier
+
+    def _passes_liquidity_filter(self, sym: str, alloc: float) -> bool:
+        """Check if a coin has sufficient 24h volume for the given allocation.
+        Returns True if volume check passes or if the check fails (fail-open).
+        """
+        try:
+            tickers = self.client._exchange.fetch_tickers()
+            aster_sym = self.client._aster_symbol(sym)
+            ticker = tickers.get(aster_sym, {})
+            quote_vol = ticker.get("quoteVolume", 0) or 0
+            min_vol = max(alloc * MIN_VOLUME_MULTIPLIER, MIN_VOLUME_FLOOR)
+            if quote_vol < min_vol:
+                logger.info(
+                    f"Liquidity filter: {sym} blocked — "
+                    f"24h vol ${quote_vol:,.0f} < required ${min_vol:,.0f}"
+                )
+                return False
+            return True
+        except Exception as e:
+            logger.warning(f"Liquidity filter failed for {sym} (proceeding): {e}")
+            send_telegram(
+                f"\u26a0\ufe0f {TG_PREFIX} Liquidity filter failed for {sym} "
+                f"(proceeding): {e}"
+            )
+            return True  # Fail-open
+
+    def _overflow_conditions_met(self, new_engine_created: bool) -> bool:
+        """Check if overflow entry conditions 1-5, 7-8 are met.
+        Returns True if all pass. Candidate check (condition 6) is separate.
+        Spec: overflow-entry-v2-soft-ceiling.md §3.2
+        """
+        from trading.spot.engine.grid_model import L1_COST_FRACTION
+
+        # Condition 1: Feature flag
+        if not OVERFLOW_ENTRY_ENABLED:
+            return False
+
+        # Condition 2: Bot state
+        if self.bot_state != BotState.RUNNING:
+            return False
+
+        # Condition 8: Defers to normal entries
+        if new_engine_created:
+            logger.info("Overflow: deferred — normal path created an engine this rebalance")
+            return False
+
+        max_layers = self._get_max_layers()
+
+        # Condition 3: All non-zombie grids exhausted
+        non_zombie_positions = []
+        for sym, cs in self.coins.items():
+            if not cs.engine or not cs.engine._engine:
+                continue
+            eng = cs.engine._engine
+            if eng.long_coins <= 0 and eng.short_coins <= 0:
+                continue
+            # Check if zombie (maxed + not in active allocations)
+            is_zombie = (
+                cs.layer_count >= max_layers
+                and sym not in self.router.active_allocations
+            )
+            if not is_zombie:
+                non_zombie_positions.append(cs)
+
+        if not non_zombie_positions:
+            return False  # Need at least one non-zombie position
+
+        all_maxed = all(cs.layer_count >= max_layers for cs in non_zombie_positions)
+        if not all_maxed:
+            return False
+
+        # Condition 4: Soft ceiling (total positions < next tier cap)
+        total_positions = sum(
+            1 for cs in self.coins.values()
+            if cs.engine and cs.engine._engine
+            and (cs.engine._engine.long_coins > 0 or cs.engine._engine.short_coins > 0)
+        )
+        equity = self.router.total_equity or self._tracked_capital
+        soft_ceiling = self._next_tier_coin_cap(equity)
+        if total_positions >= soft_ceiling:
+            logger.info(
+                f"Overflow: blocked by soft ceiling — "
+                f"{total_positions} positions >= ceiling {soft_ceiling}"
+            )
+            return False
+
+        # Condition 5: Idle cash sufficient for L1
+        tier_cap = max(self.router.tier_coin_cap, 1)
+        fair_slot_alloc = self.router.active_pool_total / tier_cap
+        min_cash = fair_slot_alloc * L1_COST_FRACTION
+        available = self.router.active_pool_cash * 0.9
+        if available < min_cash:
+            return False
+
+        # Condition 7: Scanner freshness
+        if not SCANNER_PATH.exists():
+            logger.info("Overflow: blocked — scanner JSON missing (fail-closed)")
+            return False
+        scanner_age = time.time() - SCANNER_PATH.stat().st_mtime
+        if scanner_age > 86400:  # 24h
+            logger.info(
+                f"Overflow: blocked — scanner JSON is {scanner_age/3600:.0f}h old "
+                f"(fail-closed, max 24h)"
+            )
+            return False
+
+        return True
+
+    def _find_overflow_candidate(self) -> Optional[str]:
+        """Find the best overflow candidate from full scanner rankings.
+        Returns symbol or None. Spec §3.6.
+        """
+        rankings = self._get_scanner_rankings()
+        if not rankings:
+            return None  # Fail-closed
+
+        held = set(self.coins.keys())
+        # Exclude regime-flagged bases
+        flagged_bases = set()
+        for sym, cs in self.coins.items():
+            if hasattr(cs, 'regime_flagged') and cs.regime_flagged:
+                flagged_bases.add(sym.split("/")[0])
+
+        # Fair slot allocation for liquidity check
+        tier_cap = max(self.router.tier_coin_cap, 1)
+        fair_alloc = min(
+            self.router.active_pool_cash * 0.9,
+            self.router.active_pool_total / tier_cap
+        )
+
+        for sym, score in rankings:
+            if sym in held:
+                continue
+            if sym.split("/")[0] in flagged_bases:
+                continue
+            if not self._passes_liquidity_filter(sym, fair_alloc):
+                continue
+            return sym
+        return None
+
+    def _try_overflow_entry(self, new_engine_created: bool):
+        """Attempt overflow entry after top-up in _do_rebalance.
+        At most one admission per rebalance day.
+        Spec: overflow-entry-v2-soft-ceiling.md §3.5
+        """
+        if not self._overflow_conditions_met(new_engine_created):
+            return
+
+        candidate = self._find_overflow_candidate()
+        if not candidate:
+            # All conditions met but no candidate — idle capital is stranded
+            logger.warning(
+                f"Overflow: all grids maxed, idle cash "
+                f"${self.router.active_pool_cash:.2f}, but no qualifying candidate"
+            )
+            send_telegram(
+                f"\u26a0\ufe0f {TG_PREFIX} <b>Overflow: No Candidate</b>\n"
+                f"All grids maxed, ${self.router.active_pool_cash:.2f} idle — "
+                f"no qualifying coin found (scanner depleted or all held)"
+            )
+            return
+
+        # Allocation sizing (§3.4)
+        tier_cap = max(self.router.tier_coin_cap, 1)
+        fair_slot_alloc = self.router.active_pool_total / tier_cap
+        alloc = min(self.router.active_pool_cash * 0.9, fair_slot_alloc)
+
+        # Get current book state for logging
+        total_positions = sum(
+            1 for cs in self.coins.values()
+            if cs.engine and cs.engine._engine
+            and (cs.engine._engine.long_coins > 0 or cs.engine._engine.short_coins > 0)
+        )
+        equity = self.router.total_equity or self._tracked_capital
+        soft_ceiling = self._next_tier_coin_cap(equity)
+
+        # Find the candidate's score for logging
+        rankings = self._get_scanner_rankings()
+        rank = 0
+        cand_score = 0.0
+        for i, (sym, sc) in enumerate(rankings, 1):
+            if sym == candidate:
+                rank = i
+                cand_score = sc
+                break
+
+        logger.info(
+            f"OVERFLOW ENTRY: {candidate} (score {cand_score:.1f}, rank #{rank}) "
+            f"alloc=${alloc:.2f} | book: {total_positions}→{total_positions+1}/{tier_cap} "
+            f"(ceiling {soft_ceiling})"
+        )
+
+        # Create engine (proven pattern from _rotate_after_tp / _do_rebalance)
+        cs = CoinState(candidate, alloc)
+        cs.engine = V14LifecycleEngine(
+            symbol=candidate, capital=alloc,
+            profile=self.profile, leverage=self.leverage,
+        )
+        cs.engine._live_mode = True
+        if cs.engine._engine:
+            cs.engine._engine.live_mode = True
+            cs.engine._engine.allocated_capital = alloc
+        cs.engine._warmed_up = True
+        cs.engine._last_candle_ts = int(time.time() * 1000)  # Candle replay guard (§7.8)
+        self.coins[candidate] = cs
+        self.router.active_allocations[candidate] = 0.0  # Seed T1 gate
+        self.client.ensure_leverage(candidate, self.leverage)
+
+        send_telegram(
+            f"\U0001f4c8 {TG_PREFIX} <b>Overflow Entry</b>\n"
+            f"All {len([c for c in self.coins.values() if c.layer_count >= self._get_max_layers()])} "
+            f"grids at max depth \u2014 deploying idle capital\n"
+            f"In: {candidate} (score {cand_score:.1f}, rank #{rank})\n"
+            f"Allocation: ${alloc:.2f} | Book: {total_positions+1}/{tier_cap} "
+            f"(soft ceiling {soft_ceiling})"
+        )
+
     def _rotate_after_tp(self, sym: str, cs):
         """After TP close, evaluate whether this coin's slot should rotate
         to a higher-ranked unallocated coin.
@@ -2878,45 +3109,22 @@ class V14PortfolioLiveAster:
                 f"{total_positions} total positions, tier cap = {tier_cap}"
             )
 
+            # Track whether normal path creates a new engine (overflow condition 8)
+            new_engine_created_this_rebalance = False
+
             for sym, alloc in allocations.items():
                 if sym not in self.coins:
                     if self.bot_state != BotState.RUNNING:
                         logger.info(f"Skipping new coin {sym} — bot state is {self.bot_state}")
                         continue
                     if tier_cap > 0 and active_count >= tier_cap:
-                        # Overflow exception: if ALL non-zombie positions are at max layers
-                        # and idle capital exists, allow +1 coin (spec: overflow-entry)
-                        allow_overflow = False
-                        if (OVERFLOW_ENTRY_ENABLED
-                                and active_count == tier_cap):  # exactly at cap, not already overflowed
-                            non_zombie_positions = [
-                                cs_ for s_, cs_ in self.coins.items()
-                                if cs_.engine and cs_.engine._engine
-                                and (cs_.engine._engine.long_coins > 0
-                                     or cs_.engine._engine.short_coins > 0)
-                                and s_ not in zombie_coins
-                            ]
-                            all_maxed = (
-                                len(non_zombie_positions) > 0
-                                and all(cs_.layer_count >= max_layers
-                                        for cs_ in non_zombie_positions)
-                            )
-                            min_l1_capital = alloc * 0.4 if alloc > 0 else 10.0
-                            has_capital = self.router.active_pool_cash >= min_l1_capital
-                            if all_maxed and has_capital:
-                                allow_overflow = True
-                                logger.info(
-                                    f"OVERFLOW: all {len(non_zombie_positions)} active positions "
-                                    f"at L{max_layers} (max layers), idle cash "
-                                    f"${self.router.active_pool_cash:.2f} — "
-                                    f"allowing {sym} as +1 overflow"
-                                )
-                        if not allow_overflow:
-                            logger.info(
-                                f"Skipping new coin {sym} — at tier cap "
-                                f"({active_count}/{tier_cap} active positions)"
-                            )
-                            continue
+                        # Old overflow v1 block DELETED (audit H4, 2026-07-03).
+                        # Overflow v2 runs after top-up via _try_overflow_entry().
+                        logger.info(
+                            f"Skipping new coin {sym} — at tier cap "
+                            f"({active_count}/{tier_cap} active positions)"
+                        )
+                        continue
                     logger.info(f"Creating engine for new coin {sym} (alloc=${alloc:.2f})")
                     cs = CoinState(sym, alloc)
                     cs.engine = V14LifecycleEngine(
@@ -2938,6 +3146,7 @@ class V14PortfolioLiveAster:
                     cs.engine._last_candle_ts = int(time.time() * 1000)
                     self.coins[sym] = cs
                     active_count += 1  # Track newly added coin toward cap
+                    new_engine_created_this_rebalance = True
                     # Set leverage on exchange for new coin
                     self.client.ensure_leverage(sym, self.leverage)
                 else:
@@ -3004,6 +3213,11 @@ class V14PortfolioLiveAster:
 
             # Fix 2: After rebalance, top up engines needing DCA capital
             self._top_up_engine_capital()
+
+            # Overflow Entry v2: deploy idle capital when all grids maxed
+            # Priority: top-up → normal entries → overflow (one mechanism per day)
+            # Spec: overflow-entry-v2-soft-ceiling.md v1.2
+            self._try_overflow_entry(new_engine_created_this_rebalance)
 
             logger.info(f"Rebalance complete: {len(self.coins)} active coins")
         except Exception as e:
@@ -3616,6 +3830,16 @@ class V14PortfolioLiveAster:
             "zombie_slots": sorted(
                 sym_ for sym_, cd_ in coins.items()
                 if cd_.get("is_zombie", False)
+            ),
+            # Overflow Entry v2 status (computed dynamically, not persisted)
+            "overflow_active": OVERFLOW_ENTRY_ENABLED,
+            "soft_ceiling": self._next_tier_coin_cap(
+                self.router.total_equity or self._tracked_capital
+            ),
+            "book_size": sum(
+                1 for cs_ in self.coins.values()
+                if cs_.engine and cs_.engine._engine
+                and (cs_.engine._engine.long_coins > 0 or cs_.engine._engine.short_coins > 0)
             ),
             "global_regime": self._global_regime,
             "regime": (self._regime_alert_state
