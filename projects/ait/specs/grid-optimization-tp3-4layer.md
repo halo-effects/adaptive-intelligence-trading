@@ -2,7 +2,13 @@
 
 **Date**: 2026-05-12  
 **Status**: DEPLOYED — 2026-05-12 16:20 PDT. Commit `62b26e15a`. Bot PID 9964.  
-**Risk**: Medium (modifies live trading parameters, open positions affected)  
+**Risk**: Medium (modifies live trading parameters, open positions affected)
+
+> **2026-07-03 Update**: Layer *sizing* was re-specified by D-GRID(d) resolution.
+> TP 3.0% and 4-layer cap from this spec are unchanged. Layer volumes now use
+> fixed fractions of allocated capital (40/24/20/16%) via `GridModel` instead of
+> the Martingale formula. See `specs/fable-audit-2026-07-03.md` finding C1 and
+> `trading/spot/engine/grid_model.py`.  
 **Backtest**: Portfolio-level sim shows +26.3% PnL vs baseline ($23,772 vs $18,824 over 90 days)
 
 ---

@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading - V14PM System Architecture
-_Version: 1.10 | Date: 2026-06-19 | Status: Production (Aster Perps)_
+_Version: 1.11 | Date: 2026-07-03 | Status: Production (Aster Perps)_
 
 ---
 
@@ -414,17 +414,30 @@ Triggered by confirmed top signal. Same grid mechanics, inverted direction.
 
 ### 5.2 DCA Grid Mechanics
 
-```
-Base Order (BO) = capital × DCA_BO_PCT (40%)
+**Grid (d) — Bull-phase grid** (D-GRID resolved 2026-07-03):
 
-Layer 0 (Base): BO amount at entry price
-Layer 1: BO × SO_VOL_MULT at (entry × (1 - SO_DEV))
-Layer 2: Layer1_size × SO_VOL_MULT at (Layer1_price × (1 - SO_DEV × price_multiplier))
-...
-Layer N: where N = DCA_MAX_LAYERS
+Layer sizes are fixed fractions of **allocated capital** (not remaining capital):
 
-Take Profit: when avg_entry × (1 + DCA_TP_PCT) ≤ current_price → SELL ALL
+| Layer | Fraction | Cumulative | Avg Entry | TP Price | Bounce to TP |
+|-------|----------|------------|-----------|----------|-------------|
+| L1 | 40% | 40% | 100.00 | 103.00 | +3.0% |
+| L2 | 24% | 64% | 99.43 | 102.42 | +4.0% |
+| L3 | 20% | 84% | 98.84 | 101.81 | +5.0% |
+| L4 | 16% | 100% | 98.29 | 101.24 | +6.0% |
+
+Sum = 100% — fully self-funded, no top-up needed by construction.
+Deviation: 1.5% linear from volume-weighted average entry (unchanged).
+Source of truth: `trading/spot/engine/grid_model.py` (`GridModel`).
+
 ```
+Take Profit: when avg_entry × (1 + TP_PCT) ≤ current_price → SELL ALL
+```
+
+> **History (pre-2026-07-03):** The grid used a Martingale formula (`BO × mult^layer`)
+> with a `min(order, capital × 0.3)` cap that was never bypassed in live. The deployed
+> grid was actually an inverted Martingale (~30/21/15/10%). Audit C1 identified three
+> different grids in production (engine, scanner, docs). GridModel resolves this.
+> See `specs/fable-audit-2026-07-03.md` finding C1.
 
 **Layer timing:** There is no cooldown between layers at any risk profile (Low,
 Medium, or High). When price drops through multiple deviation thresholds, the
@@ -443,11 +456,11 @@ for faster TP recovery.
 
 All bots are launched with an explicit `--profile` flag:
 
-| Profile | Leverage | BO% | SO Dev | SO Mult | Max Layers | TP |
-|---------|----------|-----|--------|---------|------------|----|
-| `low` | 1.0x | 40% | 2.0% | 1.5x | 10 | 1.5% |
-| `medium` | 1.5x | 40% | 2.0% | 1.5x | 10 | 1.5% |
-| `high` | 1.5x | 40% | 1.5% | 1.5x | 4 | 3.0% |
+| Profile | Leverage | Grid Fractions | SO Dev | Max Layers | TP |
+|---------|----------|----------------|--------|------------|----|
+| `low` | 1.0x | (legacy Martingale) | 2.0% | 10 | 1.5% |
+| `medium` | 1.5x | (legacy Martingale) | 2.0% | 10 | 1.5% |
+| `high` | 1.5x | 40/24/20/16% (GridModel) | 1.5% | 4 | 3.0% |
 
 **V14PM live production uses:** `high` profile, `1.0x` leverage (no liquidation risk)
 
@@ -778,16 +791,16 @@ run_v14_portfolio_paper.py
 - **Active Pool (75%):** Deployed capital for DCA positions
 - **Reserve Pool (25%):** Held back for new opportunities and drawdown buffer
 
-**Equity-tiered coin cap:**
+**Equity-tiered coin cap** (matches `EQUITY_TIER_CAPS` in code, confirmed D-TIER 2026-07-03):
 
 | Portfolio Equity | Max Simultaneous Coins |
 |-----------------|------------------------|
 | $100,000+ | 10 |
-| $50,000 - $100,000 | 5 |
-| $30,000 - $50,000 | 4 |
-| $20,000 - $30,000 | 3 |
-| $10,000 - $20,000 | 2 |
-| $100 - $10,000 | 1 |
+| $20,000 - $100,000 | 5 |
+| $10,000 - $20,000 | 5 |
+| $5,000 - $10,000 | 5 |
+| $3,000 - $5,000 | 4 |
+| $100 - $3,000 | 3 |
 
 **Entry qualification:**
 - DCA Score ≥ 5.0 (hurdle rate)
@@ -1175,13 +1188,16 @@ For each coin with open position and layer_count < max_layers:
     active_pool_cash -= grant
 ```
 
-**Grid cost per layer** (High profile: BO=40%, mult=1.5x):
+**Grid cost per layer** (High profile: GridModel fractions, D-GRID d):
 | Layer | Cost (× allocation) | Cumulative |
 |-------|---------------------|------------|
 | L1    | 0.40                | 0.40       |
-| L2    | 0.60                | 1.00       |
-| L3    | 0.90                | 1.90       |
-| L4    | 1.35                | 3.25       |
+| L2    | 0.24                | 0.64       |
+| L3    | 0.20                | 0.84       |
+| L4    | 0.16                | 1.00       |
+
+Sum = 1.00 — fully self-funded. Top-up (`_top_up_engine_capital`) remains as a
+safety net for legacy positions opened under the old grid and allocation reductions.
 
 **Capital return:** When a position TPs, `router.return_capital()` reclaims the
 granted amount. No special handling needed — the existing return flow covers it.
@@ -1637,5 +1653,6 @@ _Updated: 2026-05-12 (v1.6 - Grid optimization: TP 3.0%, 4 layers for high profi
 _Updated: 2026-05-16 (v1.8 - Orphan-TP mode: no forced closes on phase transition or MARKDOWN_FAIL. §7.5.8. Hard Rule #34. Deployed to paper + live.)_
 _Updated: 2026-06-19 (v1.9 - Layer reconstruction §7.5.9, engine capital flow §7.6, zombie slot detection §7.7. Hard Rules #35-36. §7.3 steps 10-11. §15 design decisions. Deployed to paper + live.)_
 _Updated: 2026-06-19 (v1.10 - Candle replay guard §7.8, paper vs live TP behavior §7.9. New engines skip historical candles. Trailing TP simulation specced.)_
+_Updated: 2026-07-03 (v1.11 - External audit (Fable) remediation. GridModel: bull-phase grid D-GRID(d) 40/24/20/16% fixed fractions, single source of truth for engine+scanner+top-up. §5.2 grid table rewritten. §5.3 high profile updated. §7.2 tier table updated to match code EQUITY_TIER_CAPS (D-TIER confirmed). §7.6 grid cost table updated. Phase 0 fixes: C2 (\_prune\_stale), H1 (liquidity filter), H2 (1000-prefix), M1 (\_evaluate\_regime deleted), M3 (CSV repair), P7 (startup self-test). See specs/fable-audit-2026-07-03.md.)_
 _Next: Cloud Migration Guide (Phase 5)_
-_Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md_
+_Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md, fable-audit-2026-07-03.md_
