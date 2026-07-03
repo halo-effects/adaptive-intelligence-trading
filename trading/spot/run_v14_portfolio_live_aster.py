@@ -2136,21 +2136,15 @@ class V14PortfolioLiveAster:
 
     def _remaining_grid_cost(self, current_layers: int, max_layers: int,
                               allocation: float) -> float:
-        """Calculate total cost of unfilled DCA layers.
+        """Calculate total cost of unfilled DCA layers using GridModel.
 
-        Uses grid formula: layer_cost = allocation × BO_PCT × mult^layer.
-        High profile: BO=40%, mult=1.5x, capped at layer 4.
+        Under grid (d) (bull-phase, 40/24/20/16%), a fully-allocated coin
+        sums to 100% — no top-up needed by construction. This method remains
+        as a safety net for legacy positions opened under the old grid and
+        for allocation reductions.
         """
-        bo_pct = 0.40
-        mult = 1.5
-        total = 0.0
-        for layer in range(current_layers, max_layers):
-            if layer == 0:
-                layer_cost = allocation * bo_pct
-            else:
-                layer_cost = allocation * bo_pct * (mult ** min(layer, 4))
-            total += layer_cost
-        return total
+        from trading.spot.engine.grid_model import remaining_grid_cost as gm_remaining
+        return gm_remaining(current_layers, allocation)
 
     def _top_up_engine_capital(self):
         """Push idle router cash into engines that need capital for DCA layers.
