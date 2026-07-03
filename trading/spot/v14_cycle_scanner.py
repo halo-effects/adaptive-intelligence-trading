@@ -668,12 +668,21 @@ def compute_trend_scores(history_path: Path = SCORE_HISTORY_PATH) -> dict:
             points = [(d, s) for d, s in series if d <= window_days]
             if len(points) < 2:
                 return None
-            # Simple: (latest score - earliest score in window) / earliest score
-            earliest = points[0][1]  # oldest in window
-            latest = points[-1][1]   # most recent
-            if abs(earliest) < 0.01:
+            # Least-squares slope over all points in window (audit M5, 2026-07-03)
+            # Replaces endpoint delta which was sensitive to single noisy points.
+            # Result normalized by mean score for comparability across coins.
+            n = len(points)
+            mean_d = sum(d for d, _ in points) / n
+            mean_s = sum(s for _, s in points) / n
+            if abs(mean_s) < 0.01:
                 return 0.0
-            return (latest - earliest) / abs(earliest)
+            num = sum((d - mean_d) * (s - mean_s) for d, s in points)
+            den = sum((d - mean_d) ** 2 for d, _ in points)
+            if abs(den) < 1e-12:
+                return 0.0
+            raw_slope = num / den  # Score change per day
+            # Normalize: slope * window_days / mean_score → fractional change
+            return (raw_slope * window_days) / abs(mean_s) if abs(mean_s) > 0.01 else 0.0
 
         t7 = slope_over_window(7)
         t14 = slope_over_window(14)
@@ -775,6 +784,20 @@ def send_telegram_summary(output: dict):
         lines.append(f"\U0001f3c6 Best: {best_trade} | "
                      f"\u26a1 Fastest: {fastest} | "
                      f"\U0001f6e1\ufe0f Safest: {safest}")
+
+    # Trend multiplier distribution (audit M5, 2026-07-03)
+    if trend_scores:
+        mults = [t.get("trend_multiplier", 1.0) for t in trend_scores.values()]
+        above = sum(1 for m in mults if m > 1.02)
+        stable = sum(1 for m in mults if 0.98 <= m <= 1.02)
+        below = sum(1 for m in mults if m < 0.98)
+        mult_min = min(mults) if mults else 1.0
+        mult_max = max(mults) if mults else 1.0
+        lines.append("")
+        lines.append(
+            f"\U0001f4ca Trend: {above}\u2197 {stable}\u2192 {below}\u2198 "
+            f"(range {mult_min:.2f}x\u2013{mult_max:.2f}x)"
+        )
 
     message = "\n".join(lines)
 

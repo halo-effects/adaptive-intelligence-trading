@@ -623,6 +623,24 @@ class AsterPerpClient:
                     qty = qty / 1000.0
                 proceeds = float(order.get("cost") or float(fill) * qty)
                 fee = float((order.get("fee") or {}).get("cost") or 0)
+                # If order didn't report fee (common with trailing stops),
+                # try fetching from trade fills (audit M4, 2026-07-03)
+                if fee < 0.0001 and qty > 0:
+                    try:
+                        import time as _t
+                        _t.sleep(0.5)
+                        trades = self._exchange.fetch_my_trades(sym, limit=5)
+                        if trades:
+                            # Find trades matching this order
+                            order_trades = [t for t in trades if str(t.get('order')) == str(order_id)]
+                            if order_trades:
+                                fee = sum(float((t.get('fee') or {}).get('cost', 0)) for t in order_trades)
+                                logger.info(f"Fee from trades for {db_symbol}: ${fee:.6f} ({len(order_trades)} fills)")
+                            elif trades:  # Fallback: use most recent trade
+                                fee = float((trades[-1].get('fee') or {}).get('cost', 0))
+                                logger.info(f"Fee from latest trade for {db_symbol}: ${fee:.6f}")
+                    except Exception as fe:
+                        logger.debug(f"Fee lookup from trades failed for {db_symbol}: {fe}")
                 return {
                     "filled": True,
                     "price": float(fill),
@@ -872,6 +890,10 @@ class V14PortfolioLiveAster:
             "_place_tp_order", "_check_tp_fills", "_recover_tp_orders",
             # Capital detection
             "_detect_capital_change", "_init_capital_ledger",
+            # Monitoring (audit P7/F6)
+            "_check_grid_freeze", "_daily_health_digest",
+            # Overflow v2 (audit H4)
+            "_try_overflow_entry", "_overflow_conditions_met",
         ]
         missing = [m for m in _critical_methods if not hasattr(self, m)]
         if missing:
@@ -2759,7 +2781,7 @@ class V14PortfolioLiveAster:
             # Request capital from router
             key = f"{sym}:long"
             layer = self.tracker._open_deals.get(key, {}).get("layers", 0) + 1
-            pool = "reserve" if layer >= 6 else "active"
+            pool = "active"  # Reserve branch removed (audit M7, max_layers=4, layer>=6 unreachable)
             granted = self.router.request_capital(sym, cost, pool=pool)
 
             if granted <= 0:
@@ -2826,7 +2848,27 @@ class V14PortfolioLiveAster:
                     try:
                         close_result = self.client.create_market_sell(sym, actual_qty)
                         if close_result:
-                            logger.info(f"Spread reject close for {sym}: {close_result}")
+                            close_price = close_result.get("price", 0)
+                            close_proceeds = close_result.get("proceeds", 0)
+                            close_fee = close_result.get("fee", 0)
+                            spread_loss = close_proceeds - actual_cost - close_fee
+                            logger.info(
+                                f"Spread reject close for {sym}: "
+                                f"bought=${actual_cost:.2f}, sold=${close_proceeds:.2f}, "
+                                f"loss=${spread_loss:.4f}"
+                            )
+                            # Record spread-reject loss in capital ledger (audit M2)
+                            # so it's visible to deposit detection and equity tracking
+                            if abs(spread_loss) > 0.001:
+                                record_ledger_transaction(
+                                    OUTPUT_DIR / "capital_ledger.json",
+                                    "pnl_adjustment", spread_loss,
+                                    f"Spread reject {sym}: {spread_bps:.0f}bps"
+                                )
+                                self._cumulative_realized_pnl += spread_loss
+                                logger.info(
+                                    f"Spread reject PnL recorded in ledger: ${spread_loss:.4f}"
+                                )
                     except Exception as close_err:
                         logger.error(f"Failed to close spread-rejected {sym}: {close_err}")
                     # Roll back engine state
@@ -3231,6 +3273,92 @@ class V14PortfolioLiveAster:
     # The REAL regime monitor is _check_coin_regime_conflict() (graduated conviction
     # alerts, 15-50% thresholds, APPROVE/DENY flow) — untouched.
 
+    # ── Grid-freeze detector + daily digest (audit P7/F6, 2026-07-03) ───────
+
+    def _check_grid_freeze(self):
+        """Alert if any engine has open position below max layers with zero capital.
+        This is the Rule #36 incident class: capital starvation freezes the DCA grid.
+        """
+        max_layers = self._get_max_layers()
+        frozen = []
+        for sym, cs in self.coins.items():
+            if not cs.engine or not cs.engine._engine:
+                continue
+            eng = cs.engine._engine
+            has_position = eng.long_coins > 0 or eng.short_coins > 0
+            if has_position and cs.layer_count < max_layers and eng.capital < 1.0:
+                frozen.append(f"{sym.split('/')[0]} L{cs.layer_count} cap=${eng.capital:.2f}")
+        if frozen:
+            msg = (
+                f"\U0001f6a8 {TG_PREFIX} <b>Grid Freeze Detected</b>\n"
+                f"{len(frozen)} position(s) with $0 engine capital below max layers:\n"
+                + "\n".join(frozen)
+            )
+            logger.warning(msg)
+            send_telegram(msg)
+
+    def _daily_health_digest(self, current_dt: datetime):
+        """Send daily silent-failure digest at midnight UTC.
+        Surfaces scanner age, trend spread, zombies, overflow, grid freezes.
+        """
+        today_key = current_dt.strftime("%Y-%m-%d")
+        if hasattr(self, '_last_digest_date') and self._last_digest_date == today_key:
+            return
+        self._last_digest_date = today_key
+
+        digest_lines = [f"\U0001f4cb {TG_PREFIX} <b>Daily Health Digest</b>"]
+
+        # Scanner age
+        if SCANNER_PATH.exists():
+            age_h = (time.time() - SCANNER_PATH.stat().st_mtime) / 3600
+            digest_lines.append(f"Scanner: {age_h:.0f}h old" + (" \u26a0\ufe0f" if age_h > 24 else " \u2705"))
+        else:
+            digest_lines.append("Scanner: MISSING \u274c")
+
+        # Zombie slots
+        max_layers = self._get_max_layers()
+        zombies = [
+            sym for sym, cs in self.coins.items()
+            if cs.layer_count >= max_layers
+            and sym not in self.router.active_allocations
+            and cs.engine and cs.engine._engine
+            and (cs.engine._engine.long_coins > 0 or cs.engine._engine.short_coins > 0)
+        ]
+        if zombies:
+            digest_lines.append(f"Zombies: {', '.join(s.split('/')[0] for s in zombies)}")
+
+        # Overflow / book status
+        equity = self.router.total_equity or self._tracked_capital
+        soft_ceil = self._next_tier_coin_cap(equity)
+        book = sum(
+            1 for cs in self.coins.values()
+            if cs.engine and cs.engine._engine
+            and (cs.engine._engine.long_coins > 0 or cs.engine._engine.short_coins > 0)
+        )
+        idle_cash = self.router.active_pool_cash
+        digest_lines.append(
+            f"Book: {book}/{self.router.tier_coin_cap} (ceiling {soft_ceil}) "
+            f"| Idle: ${idle_cash:.2f}"
+        )
+
+        # Grid freeze check
+        frozen = [
+            sym for sym, cs in self.coins.items()
+            if cs.engine and cs.engine._engine
+            and (cs.engine._engine.long_coins > 0 or cs.engine._engine.short_coins > 0)
+            and cs.layer_count < max_layers
+            and cs.engine._engine.capital < 1.0
+        ]
+        if frozen:
+            digest_lines.append(
+                f"\u26a0\ufe0f Grid freeze: {', '.join(s.split('/')[0] for s in frozen)}"
+            )
+        else:
+            digest_lines.append("Grid freeze: none \u2705")
+
+        send_telegram("\n".join(digest_lines))
+        logger.info(f"Daily health digest sent ({len(digest_lines)} items)")
+
     # ── Wind-down ─────────────────────────────────────────────────────────────
 
     def _check_wind_down_complete(self):
@@ -3447,27 +3575,94 @@ class V14PortfolioLiveAster:
             self._save_state()
 
         elif text.startswith("CLOSE "):
-            parts = text.split(None, 1)
+            parts = text.split(None, 2)  # CLOSE <coin> [CONFIRM]
             if len(parts) < 2:
                 return
             coin_name = parts[1].upper().strip()
 
             if coin_name == "ALL":
+                # CLOSEALL requires: CLOSE ALL CONFIRM
+                if len(parts) < 3 or parts[2].upper().strip() != "CONFIRM":
+                    # Show all unrealized PnL and ask for confirmation
+                    open_syms = []
+                    total_unreal = 0.0
+                    for sym, cs in self.coins.items():
+                        if cs.engine and cs.engine._engine and cs.engine._engine.long_coins > 0:
+                            eng = cs.engine._engine
+                            cp = cs.engine.current_price if cs.engine and cs.engine.current_price else eng.long_avg_entry
+                            unreal = (cp - eng.long_avg_entry) * eng.long_coins if eng.long_avg_entry > 0 else 0
+                            open_syms.append(f"{sym.split('/')[0]}: ${unreal:+.2f}")
+                            total_unreal += unreal
+                    send_telegram(
+                        f"\u26a0\ufe0f {TG_PREFIX} <b>CLOSE ALL requires confirmation</b>\n"
+                        f"This will realize ~${total_unreal:+.2f} across {len(open_syms)} positions:\n"
+                        f"{chr(10).join(open_syms[:10])}\n\n"
+                        f"Reply <b>CLOSE ALL CONFIRM</b> to proceed."
+                    )
+                    return
                 self._force_close_all()
             else:
-                # Find matching symbol
+                # CLOSE <coin> requires: CLOSE <coin> CONFIRM
                 target = None
                 for sym in self.coins:
                     if sym.split("/")[0].upper() == coin_name:
                         target = sym
                         break
-                if target:
-                    self._force_close_coin(target)
-                else:
+                if not target:
                     send_telegram(
-                        f"❓ {TG_PREFIX} Symbol '{coin_name}' not found in active positions.\n"
+                        f"\u2753 {TG_PREFIX} Symbol '{coin_name}' not found in active positions.\n"
                         f"Active: {', '.join(s.split('/')[0] for s in self.coins)}"
                     )
+                    return
+                if len(parts) < 3 or parts[2].upper().strip() != "CONFIRM":
+                    cs = self.coins[target]
+                    eng = cs.engine._engine if cs.engine and cs.engine._engine else None
+                    unreal = 0.0
+                    if eng and eng.long_avg_entry > 0 and eng.long_coins > 0:
+                        cur_price = cs.engine.current_price if cs.engine and cs.engine.current_price else eng.long_avg_entry
+                        unreal = (cur_price - eng.long_avg_entry) * eng.long_coins
+                    send_telegram(
+                        f"\u26a0\ufe0f {TG_PREFIX} <b>CLOSE {coin_name} requires confirmation</b>\n"
+                        f"This will realize ~${unreal:+.2f}\n"
+                        f"Reply <b>CLOSE {coin_name} CONFIRM</b> to proceed."
+                    )
+                    return
+                self._force_close_coin(target)
+
+        elif text.strip().upper() == "MIGRATE":
+            # MIGRATE command (audit P3/F4): graceful upgrade wind-down
+            # Enters WIND_DOWN, reports positions + distance to TP
+            if self.bot_state == BotState.WIND_DOWN:
+                send_telegram(f"\u2139\ufe0f {TG_PREFIX} Already in WIND_DOWN mode.")
+                self._check_wind_down_complete()
+                return
+            self.bot_state = BotState.WIND_DOWN
+            logger.info("MIGRATE command: entering WIND_DOWN")
+            # Report open positions and distance to TP
+            lines = [f"\U0001f504 {TG_PREFIX} <b>MIGRATE: Wind-Down Started</b>"]
+            lines.append("No new entries. Positions exit via TP only.")
+            lines.append("")
+            open_count = 0
+            for sym, cs in self.coins.items():
+                eng = cs.engine._engine if cs.engine and cs.engine._engine else None
+                if not eng or eng.long_coins <= 0:
+                    continue
+                open_count += 1
+                cur_price = cs.engine.current_price if cs.engine and cs.engine.current_price else eng.long_avg_entry
+                tp = eng.long_tp if eng.long_tp > 0 else eng.long_avg_entry * 1.03
+                dist_pct = ((tp - cur_price) / cur_price * 100) if cur_price > 0 else 0
+                lines.append(
+                    f"{sym.split('/')[0]}: L{cs.layer_count} @ ${eng.long_avg_entry:.4f} "
+                    f"\u2192 TP ${tp:.4f} ({dist_pct:+.1f}%)"
+                )
+            if open_count == 0:
+                lines.append("No open positions \u2014 flat. Safe to restart.")
+                self.bot_state = BotState.RUNNING
+                lines.append("Bot returned to RUNNING (was already flat).")
+            else:
+                lines.append(f"\n{open_count} position(s) winding down via TP.")
+                lines.append("Bot will notify when flat.")
+            send_telegram("\n".join(lines))
 
         elif text.startswith("DEPOSIT ") or text.startswith("DEPOSIT\n"):
             parts = text.split(None, 1)
@@ -4225,6 +4420,9 @@ class V14PortfolioLiveAster:
                     # _evaluate_regime call removed (audit M1, 2026-07-03)
                     # Regime monitoring handled by _check_coin_regime_conflict()
 
+                    # Daily health digest (audit P7/F6)
+                    self._daily_health_digest(current_dt)
+
                     # Check TP fills every TP_CHECK_INTERVAL seconds
                     if time.time() - last_tp_check >= TP_CHECK_INTERVAL:
                         self._check_tp_fills()
@@ -4376,6 +4574,9 @@ class V14PortfolioLiveAster:
                         self._poll_cfgi()
                     except Exception as e:
                         logger.debug(f"CFGI poll failed: {e}")
+
+                    # Grid-freeze detector (audit P7, Rule #36)
+                    self._check_grid_freeze()
 
                     # Write status
                     self._write_status()

@@ -37,7 +37,7 @@ EQUITY_TIER_CAPS = [
 EQUITY_TIER_SPLITS = [
     (20_000, 0.75, 0.25),  # $20K+     -> 75/25 (proven, deep safety buffer)
     (10_000, 0.80, 0.20),  # $10K-$20K -> 80/20 (intermediate — avoids cliff)
-    (   100, 0.90, 0.10),  # <$10K     -> 90/10 (max grid depth, bounded risk)
+    (   100, 1.00, 0.00),  # <$10K     -> 100/0 (D-RESERVE 2026-07-03: reserve folded into active)
 ]
 
 # ---------------------------------------------------------------------------
