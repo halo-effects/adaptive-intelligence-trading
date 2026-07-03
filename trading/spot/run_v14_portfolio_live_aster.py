@@ -1152,6 +1152,18 @@ class V14PortfolioLiveAster:
             ex_entry = pos.get("entry_price", 0) or 0
 
             if ex_qty > 0:
+                # H3 fix (audit 2026-07-03): branch on position side.
+                # Shorts must never be written into eng.long_* fields.
+                ex_side = pos.get("side", "long").lower()
+                if ex_side == "short":
+                    # Short position on exchange — currently unsupported in live.
+                    # Log and skip rather than corrupting long state.
+                    logger.warning(
+                        f"Exchange reports SHORT position for {sym} "
+                        f"(qty={ex_qty}, entry={ex_entry}). "
+                        f"Short sync not yet supported — skipping position sync for this coin."
+                    )
+                    continue
                 eng.long_coins = ex_qty
                 eng.long_cost = ex_entry * ex_qty
                 eng.long_avg_entry = ex_entry
