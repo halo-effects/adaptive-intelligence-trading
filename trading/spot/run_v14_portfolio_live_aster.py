@@ -987,6 +987,8 @@ class V14PortfolioLiveAster:
                     # Propagate live_mode to inner DCA engine (disables paper-trading caps)
                     if engine._engine:
                         engine._engine.live_mode = True
+                        # GridModel: set allocated_capital so engine sizes layers correctly
+                        engine._engine.allocated_capital = cs.allocated_capital
 
                     # LIVE FIX (revised 2026-04-11): Reset engine capital to
                     # allocated_capital minus current position cost. This ensures
@@ -1029,6 +1031,7 @@ class V14PortfolioLiveAster:
                     engine._live_mode = True
                     if engine._engine:
                         engine._engine.live_mode = True
+                        engine._engine.allocated_capital = cs.allocated_capital
                     engine._warmed_up = True
                     cs.engine = engine
                     # Set candle ts to NOW — only process future candles, never replay history
@@ -2387,6 +2390,7 @@ class V14PortfolioLiveAster:
         new_cs.engine._live_mode = True
         if new_cs.engine._engine:
             new_cs.engine._engine.live_mode = True
+            new_cs.engine._engine.allocated_capital = alloc
         new_cs.engine._warmed_up = True
         # Skip historical candles for rotated engine
         new_cs.engine._last_candle_ts = int(time.time() * 1000)
@@ -2924,6 +2928,7 @@ class V14PortfolioLiveAster:
                     cs.engine._live_mode = True
                     if cs.engine._engine:
                         cs.engine._engine.live_mode = True
+                        cs.engine._engine.allocated_capital = alloc
                     # Force warmup for live trading — we're trading against real
                     # exchange data, no need to wait for a daily boundary.
                     # The engine is initialized in LONG_DCA phase and ready to trade.
@@ -2939,9 +2944,10 @@ class V14PortfolioLiveAster:
                     # Update allocation
                     cs = self.coins[sym]
                     cs.allocated_capital = alloc
-                    # Sync engine capital when no position is open (prevents sizing drift)
+                    # Sync engine capital and GridModel allocation
                     if cs.engine and cs.engine._engine:
                         eng = cs.engine._engine
+                        eng.allocated_capital = alloc  # GridModel sizing
                         if eng.long_coins == 0 and eng.short_coins == 0:
                             old_cap = eng.capital
                             eng.capital = alloc

@@ -387,11 +387,18 @@ class V14DCAEngine:
                 should_buy = True
 
         if should_buy:
-            if self.long_layers == 0:
-                order = available * cfg.DCA_BO_PCT
+            # GridModel sizing: fixed fractions of allocated capital (audit C1, 2026-07-03)
+            # Falls back to old Martingale formula if allocated_capital not set
+            if hasattr(self, 'allocated_capital') and self.allocated_capital > 0:
+                from trading.spot.engine.grid_model import layer_cost as gm_layer_cost
+                order = gm_layer_cost(self.long_layers, self.allocated_capital)
             else:
-                order = available * cfg.DCA_BO_PCT * (cfg.DCA_SO_MULTIPLIER ** min(self.long_layers, 4))
-            order = min(order, self.capital * 0.3)
+                # Legacy fallback (paper bots, backtests without allocated_capital)
+                if self.long_layers == 0:
+                    order = available * cfg.DCA_BO_PCT
+                else:
+                    order = available * cfg.DCA_BO_PCT * (cfg.DCA_SO_MULTIPLIER ** min(self.long_layers, 4))
+                order = min(order, self.capital * 0.3)
             if order < 10 or order > self.capital:
                 return
 
@@ -492,11 +499,17 @@ class V14DCAEngine:
                 should_sell = True
 
         if should_sell:
-            if self.short_layers == 0:
-                order = available * cfg.DCA_BO_PCT
+            # GridModel sizing: fixed fractions of allocated capital (audit C1, 2026-07-03)
+            if hasattr(self, 'allocated_capital') and self.allocated_capital > 0:
+                from trading.spot.engine.grid_model import layer_cost as gm_layer_cost
+                order = gm_layer_cost(self.short_layers, self.allocated_capital)
             else:
-                order = available * cfg.DCA_BO_PCT * (cfg.DCA_SO_MULTIPLIER ** min(self.short_layers, 4))
-            order = min(order, self.capital * 0.3)
+                # Legacy fallback (paper bots, backtests without allocated_capital)
+                if self.short_layers == 0:
+                    order = available * cfg.DCA_BO_PCT
+                else:
+                    order = available * cfg.DCA_BO_PCT * (cfg.DCA_SO_MULTIPLIER ** min(self.short_layers, 4))
+                order = min(order, self.capital * 0.3)
             if order < 10 or order > self.capital:
                 return
 
