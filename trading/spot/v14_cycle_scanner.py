@@ -27,13 +27,18 @@ logger = logging.getLogger("v14_cycle_scanner")
 
 # ─── DCA Parameters (V14 High Profile) ─────────────────────────────────────
 
-BO_PCT = 0.40          # 40% base order of DCA allocation
-SO_DEV = 0.015         # 1.5% safety order price deviation
-SO_STEP_MULT = 1.5     # Price step multiplier (each SO further apart)
-SO_VOL_MULT = 1.5      # Volume multiplier (each SO bigger)
-MAX_LAYERS = 4
-TP_PCT = 0.030         # 3.0% take profit from avg entry
-TAKER_FEE = 0.00025    # Hyperliquid taker fee
+# Grid parameters now imported from GridModel (single source of truth, audit C1/F1)
+from trading.spot.engine.grid_model import (
+    LAYER_FRACTIONS, L1_COST_FRACTION, SO_DEVIATION as GM_SO_DEV,
+    TP_PCT as GM_TP_PCT, MAX_LAYERS as GM_MAX_LAYERS,
+    layer_cost as gm_layer_cost, tp_price as gm_tp_price,
+)
+BO_PCT = L1_COST_FRACTION  # 0.40 — kept as alias for logging compatibility
+SO_DEV = GM_SO_DEV         # 1.5% — linear from avg entry (matches engine)
+MAX_LAYERS = GM_MAX_LAYERS  # 4
+TP_PCT = GM_TP_PCT          # 3.0%
+TAKER_FEE = 0.00025         # Hyperliquid taker fee
+# SO_STEP_MULT and SO_VOL_MULT REMOVED — replaced by GridModel fixed fractions
 CAPITAL = 10_000.0     # Capital per coin
 DCA_ALLOC = 0.90       # 90% allocated to DCA
 
@@ -149,18 +154,9 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
 
     alloc = CAPITAL * DCA_ALLOC  # $9,000
 
-    # Pre-compute SO grid: for layer i (0-indexed), what's the volume?
-    # Layer 0 = base order, layer 1+ = safety orders
-    # BO volume = alloc * BO_PCT
-    bo_size = alloc * BO_PCT  # $3,600
-
-    # SO sizes: SO_1 = bo_size * 1.0, SO_2 = SO_1 * SO_VOL_MULT, etc.
-    # Actually in standard 3commas-style: SO base = BO * some ratio
-    # But the spec says BO_PCT=0.40, so BO=$3600 of $9000
-    # Remaining $5400 for SOs. Let's compute SO sizes with geometric scaling.
-    # SO_i = base_so * SO_VOL_MULT^(i-1)
-    # Total SOs = base_so * (SO_VOL_MULT^n - 1) / (SO_VOL_MULT - 1) for n SOs
-    # We'll just cap at available cash
+    # Layer sizing now uses GridModel fixed fractions (audit C1/F1, 2026-07-03).
+    # L1=40%, L2=24%, L3=20%, L4=16% of allocation. Sum=100%, fully self-funded.
+    # SO triggers use linear deviation from avg entry (matches live engine).
 
     # Track deals
     deals_pnl = []
@@ -183,29 +179,29 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
     peak_equity = alloc
     max_dd = 0.0
 
-    def compute_so_grid(entry_price: float) -> list[float]:
-        """Compute SO trigger prices from the entry price."""
+    def compute_so_triggers(avg_entry_price: float, current_layers: int) -> list[float]:
+        """Compute SO trigger prices using engine's linear deviation from avg entry.
+
+        This matches the live engine: deviation = SO_DEV * layer_count,
+        measured from the volume-weighted average entry (not from previous SO).
+        """
         prices = []
-        p = entry_price
-        for i in range(MAX_LAYERS):
-            dev = SO_DEV * (SO_STEP_MULT ** i)
-            p = p * (1 - dev)
-            prices.append(p)
+        for i in range(current_layers, MAX_LAYERS):
+            # Next layer triggers at avg_entry * (1 - SO_DEV * (i+1))
+            dev = SO_DEV * (i + 1)
+            prices.append(avg_entry_price * (1 - dev))
         return prices
 
-    def get_so_size(layer_idx: int) -> float:
-        """Get dollar size for safety order at layer_idx (0-indexed from first SO).
-        First SO is same size as BO, then scales by SO_VOL_MULT."""
-        # SO base = remaining capital / estimated total SO weight
-        # This ensures capital is allocated proportionally across layers
-        base_so = bo_size * 0.5  # First SO = half of BO
-        return base_so * (SO_VOL_MULT ** layer_idx)
+    def get_layer_size(layer_idx: int) -> float:
+        """Get dollar size for layer at layer_idx using GridModel fractions.
+        layer_idx: 0=L1(BO), 1=L2, 2=L3, 3=L4."""
+        return gm_layer_cost(layer_idx, alloc)
 
     def open_deal(price: float, ts: int):
         nonlocal in_position, layers, entries, total_qty, total_cost
         nonlocal avg_entry, tp_price, so_prices, deal_start_ms, cash
 
-        order_cost = min(bo_size, cash)
+        order_cost = min(get_layer_size(0), cash)  # L1 from GridModel
         if order_cost < 1.0:
             return False
 
@@ -217,7 +213,7 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
         total_cost = order_cost
         avg_entry = total_cost / total_qty
         tp_price = avg_entry * (1 + TP_PCT)
-        so_prices = compute_so_grid(price)
+        so_prices = compute_so_triggers(avg_entry, 1)  # triggers for layers 2+
         layers = 1
         deal_start_ms = ts
         cash -= order_cost
@@ -226,9 +222,9 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
 
     def add_so(layer_idx: int, price: float):
         """Add safety order at given layer. Returns False if no cash."""
-        nonlocal layers, total_qty, total_cost, avg_entry, tp_price, cash
+        nonlocal layers, total_qty, total_cost, avg_entry, tp_price, cash, so_prices
 
-        so_cost = get_so_size(layer_idx)
+        so_cost = get_layer_size(layers)  # Use current layer count as GridModel index
         so_cost = min(so_cost, cash)
         if so_cost < 1.0:
             return False
@@ -243,6 +239,8 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
         tp_price = avg_entry * (1 + TP_PCT)
         layers += 1
         cash -= so_cost
+        # Recompute triggers from new avg entry (engine uses linear from avg)
+        so_prices = compute_so_triggers(avg_entry, layers)
         return True
 
     def close_deal(exit_price: float, ts: int):
@@ -282,13 +280,14 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
             continue
 
         # Check safety orders (low might trigger one or more)
+        # so_prices[0] is always the next trigger (recomputed after each add_so)
         so_added = True
-        while so_added and layers <= MAX_LAYERS:
-            so_idx = layers - 1  # 0-indexed SO number
-            if so_idx >= len(so_prices):
+        while so_added and layers < MAX_LAYERS:
+            if not so_prices:
                 break
-            if l <= so_prices[so_idx]:
-                so_added = add_so(so_idx, so_prices[so_idx])
+            if l <= so_prices[0]:
+                so_added = add_so(layers, so_prices[0])
+                # so_prices is recomputed inside add_so from new avg_entry
             else:
                 break
 
@@ -838,8 +837,7 @@ def main():
         sys.exit(1)
 
     logger.info(f"V14 DCA Cycle Scanner \u2014 {len(coins)} coins, {len(windows)} windows")
-    logger.info(f"Parameters: BO={BO_PCT:.0%}, SO_DEV={SO_DEV:.1%}, "
-                f"SO_STEP_MULT={SO_STEP_MULT}, SO_VOL_MULT={SO_VOL_MULT}, "
+    logger.info(f"Parameters: GridModel fracs={LAYER_FRACTIONS}, SO_DEV={SO_DEV:.1%}, "
                 f"TP={TP_PCT:.1%}, MAX_LAYERS={MAX_LAYERS}")
 
     # Handle --backfill-history: run scanner for N past days to build trend history
