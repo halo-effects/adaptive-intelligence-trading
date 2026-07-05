@@ -38,12 +38,13 @@ SO_DEV = GM_SO_DEV         # 1.5% — linear from avg entry (matches engine)
 MAX_LAYERS = GM_MAX_LAYERS  # 4
 TP_PCT = GM_TP_PCT          # 3.0%
 TAKER_FEE = 0.00025         # Hyperliquid taker fee
-# P5: Estimated average funding rate per 8h period (long side).
-# Perps charge/pay funding every 8h. Positive = longs pay shorts.
-# Average across crypto perps is ~0.01% per 8h (0.03% daily).
-# TODO: Replace with per-coin trailing-average from exchange API once
-# funding rate collection is added to the data pipeline.
-AVG_FUNDING_RATE_8H = 0.0001  # 0.01% per 8h (conservative estimate)
+# P5: Funding cost per 8h period (long side).
+# Per-coin trailing-90-day median from funding_rates table.
+# Fallback to flat constant when <60 observations (young listings).
+# Evidence: measured median actual cost is 0.51 bps/deal; the prior flat
+# 0.01%/8h estimate overstated ~3x, and 20% of deals earn carry.
+AVG_FUNDING_RATE_8H_FALLBACK = 0.0001  # Fallback for coins with <60 observations
+MIN_FUNDING_OBSERVATIONS = 60          # Minimum data points for per-coin rate
 # SO_STEP_MULT and SO_VOL_MULT REMOVED — replaced by GridModel fixed fractions
 CAPITAL = 10_000.0     # Capital per coin
 DCA_ALLOC = 0.90       # 90% allocated to DCA
@@ -131,7 +132,9 @@ def _validate_candles(candles: list[tuple], symbol: str) -> list[tuple]:
 MIN_ORDER_NOTIONAL = 10.0  # Aster/Hyperliquid minimum
 
 
-def run_dca_sim(candles: list[tuple], symbol: str, window: str, sim_allocation: float | None = None) -> dict:
+def run_dca_sim(candles: list[tuple], symbol: str, window: str,
+                sim_allocation: float | None = None,
+                funding_rate_8h: float | None = None) -> dict:
     """
     Run DCA simulation on a series of 1h candles.
 
@@ -273,9 +276,11 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str, sim_allocation: 
         fee = gross * TAKER_FEE
         duration_h = max((ts - deal_start_ms) / 3_600_000, 1.0)
         # P5: subtract estimated funding cost (long positions pay funding)
-        # Funding periods = duration / 8h, applied to position notional at close
+        # Per-coin trailing-90d median rate; fallback to flat constant for young listings.
+        # Negative rates mean longs earn carry (20% of deals).
+        rate = funding_rate_8h if funding_rate_8h is not None else AVG_FUNDING_RATE_8H_FALLBACK
         funding_periods = duration_h / 8.0
-        funding_cost = total_cost * AVG_FUNDING_RATE_8H * funding_periods
+        funding_cost = total_cost * rate * funding_periods
         net = gross - fee - funding_cost
         pnl = net - total_cost
 
@@ -482,6 +487,36 @@ def _history_months(conn: sqlite3.Connection, symbol: str) -> float:
     return (row[1] - row[0]) / (1000 * 60 * 60 * 24 * 30.44)
 
 
+def _get_funding_rate_8h(conn: sqlite3.Connection, symbol: str, now_ms: int = 0) -> float:
+    """Get trailing-90-day median funding rate per 8h for a coin.
+    Falls back to AVG_FUNDING_RATE_8H_FALLBACK when <MIN_FUNDING_OBSERVATIONS.
+    RH-3: replaces flat P5 constant with per-coin empirical rate."""
+    if now_ms == 0:
+        now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    cutoff_ms = now_ms - 90 * 24 * 3600 * 1000
+
+    # Try the symbol as-is, then flip quote
+    for sym in [symbol, _alt_quote(symbol)]:
+        try:
+            rows = conn.execute(
+                "SELECT funding_rate FROM funding_rates "
+                "WHERE symbol = ? AND timestamp >= ? ORDER BY timestamp DESC",
+                (sym, cutoff_ms)
+            ).fetchall()
+            if len(rows) >= MIN_FUNDING_OBSERVATIONS:
+                rates = sorted(r[0] for r in rows)
+                mid = len(rates) // 2
+                if len(rates) % 2 == 0:
+                    median = (rates[mid - 1] + rates[mid]) / 2
+                else:
+                    median = rates[mid]
+                return median
+        except Exception:
+            pass  # Table may not exist yet
+
+    return AVG_FUNDING_RATE_8H_FALLBACK
+
+
 # FA-4: Maximum age (days) for daily candle data to be considered fresh.
 # Coins with data older than this are excluded from veto evaluation (fail-closed)
 # and flagged as stale in the output. Consistent with overflow's stale-scanner guard.
@@ -554,6 +589,9 @@ def scan_all(coins: list[str], windows: list[str], top_n: Optional[int] = None, 
 
         symbol = resolved  # use the resolved symbol from here
 
+        # P5/RH-3: per-coin funding rate (trailing-90d median)
+        coin_funding_rate = _get_funding_rate_8h(conn, symbol, now_ms)
+
         for window in windows:
             start_ms, end_ms = get_window_range(window, now_ms)
             candles = load_candles(conn, symbol, start_ms, end_ms)
@@ -563,7 +601,7 @@ def scan_all(coins: list[str], windows: list[str], top_n: Optional[int] = None, 
                 logger.warning(f"  {window}: only {len(candles)} candles for {short_name}, skipping")
                 continue
 
-            sim = run_dca_sim(candles, symbol, window)
+            sim = run_dca_sim(candles, symbol, window, funding_rate_8h=coin_funding_rate)
             sim["mature"] = mature
             sim["history_months"] = round(months, 1)
             if mature:
