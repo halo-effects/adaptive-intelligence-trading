@@ -6,7 +6,7 @@
 - Check `trading/spot/live/v14/status.json` for bot health
 - Alert if: `running` is false, drawdown > 15%, or status.json stale (>65 min)
 - **Capital: reads from DEX on startup** (was $300 seed, now ~$385 with PnL). Alert if status.json stale.
-- Profile: High, 12 layers, 1.5% TP, 1.5x leverage
+- Profile: High, 3.0% TP (grid optimization 2026-05-12)
 - Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "V14LiveAster"`
 - **PRE-FLIGHT REQUIRED**: `python -c "from trading.spot.run_v14_portfolio_live_aster import V14PortfolioLiveAster; print('OK')"` before every restart
 - Scheduled Task: `V14LiveAster` (at boot) — confirmed exists as of 2026-03-09
@@ -39,17 +39,20 @@
 - Dashboard: `docs/dashboardV14ETF.html`
 
 ### V14 PM (Portfolio Manager) Live Bot — Aster Perps
-- **Capital**: Reads from DEX on startup (~$385). 3 coin slots (equity-tiered at <$500).
-- **Profile**: High, 12 layers, **1.0x leverage** (no leverage), Aster Perps
-- **Positions**: PENDLE 7.0 qty, TON 61.7 qty (oversized, approved to hold)
-- **TP Orders**: PENDLE limit @ $2.0645, TON market sell
+- **Capital**: Reads from DEX on startup (~$442). 3 coin slots (equity-tiered at <$500).
+- **Profile**: High, **3 layers (G-SPLIT 48/32/20)**, **1.0x leverage** (no leverage), Aster Perps
+- **Grid**: G-SPLIT 48/32/20 (GridModel v2.0). 3 layers, L4 removed.
+- **Part A veto**: LIVE. Stale-daily guard (7d). V-4 guard deployed.
+- **Regime persistence (RH-1)**: regime_events.db, append-only, fail-open.
+- **TON→GRAM**: Handled in scanner+collector. V14PM picks up GRAM at runtime.
+- **CHANGES 2026-07-05**: Two-tier collector, TON→GRAM, HYPE quote fix, RH-1/RH-2/RH-3 (Fable regime handoff). Arch doc v1.14.
 - Check `trading/spot/live/v14pm/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
 - **PRE-FLIGHT REQUIRED before restart**: `python -c "from trading.spot.run_v14_portfolio_live_aster import V14PortfolioLiveAster; print('OK')"`
 - Entry point: `python -u -m trading.spot.run_v14_portfolio_live_aster --capital 300 --confirm --skip-backfill`
 - Dashboard: `docs/d-984ae0d4ab9dc1a5.html`
 - **CHANGES 2026-05-16**: Orphan-TP mode active (`FORCE_CLOSE_ON_SIGNAL=False`). No forced closes on phase transition or MARKDOWN_FAIL. Positions exit via TP only. Phase-change TP cancel guards orphans.
-- **CHANGES 2026-05-12**: Grid params now 3.0% TP, 4 max layers (via high profile). Existing positions grandfathered.
+- **CHANGES 2026-05-12**: Grid G-SPLIT 48/32/20 deployed. 3 layers, L4 removed. GridModel v2.0. Part A veto live. V-4 guard deployed. MAE tracking active.
 
 ### V14 PM Paper Bot (Hyperliquid)
 - Check `trading/spot/paper/v14_portfolio/status.json` for bot health

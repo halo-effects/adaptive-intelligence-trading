@@ -1,6 +1,110 @@
 # AIT — Project Log
 _Reverse chronological. Key events only._
 
+
+## 2026-07-05
+- **Two-tier candle collector deployed** (`e33addcc8`):
+  - `COINS` → `ACTIVE_UNIVERSE` (44 active pairs) + `WATCHLIST` (9 removed-but-live coins: APT, JTO, TRUMP, BERA, S, VIRTUAL, GRASS, INIT, MOVE).
+  - Watchlist coins collected to maintain candle continuity for potential reinstatement. Cost negligible, prevents warmup gaps.
+  - Dead coins excluded: MKR (delisted on HL), IP (delisted), ORCA (not on HL), PEPE (kPEPE denomination mismatch).
+  - HYPE/USDC added to USDC_COINS for history preservation. TRUMP/USDC likewise.
+- **TON → GRAM rename handled**:
+  - Toncoin rebranded to Gram on June 15, 2026 (81% community vote). Binance TON/USDT inactive, GRAM/USDT active. Hyperliquid delisted TON, lists GRAM.
+  - Collector: `("TON/USDT", "TON/USDC:USDC")` → `("GRAM/USDT", "GRAM/USDC:USDC")`.
+  - Scanner: `'TON/USDT'` → `'GRAM/USDT'` in COINS list.
+  - V14PM runner: no hardcoded TON refs — symbols come from scanner at runtime. TON/USDT has 0 layers, drops naturally.
+  - Legacy TON funding rates (3,215 rows) imported as GRAM/USDT for continuity.
+- **HYPE quote currency fix**: Collector switched from `HYPE/USDC` → `HYPE/USDT` in active universe (matches V14PM warmup queries on Aster USDT perps). USDC history preserved in USDC_COINS.
+- **Watchlist backfill**: 9 watchlist coins backfilled — ~1,453 candles each (60-day gap from May 6 filled). GRAM: 79 candles (HL perp is new, limited OHLCV history).
+- **Candle DB audit**: 2.56M candles, 79 symbols, 271 MB. 15 stale symbols identified and categorized (12 removed from collector May 6, TON stale June 30, MKR intentional FA-4).
+- **RH-3: Per-coin funding rate** (`b33923c94`):
+  - `AVG_FUNDING_RATE_8H` flat 0.0001 → per-coin trailing-90d median from `funding_rates` table.
+  - Evidence: flat estimate overstated ~3×. 20% of deals earn carry (negative funding). Affects sim/score only.
+  - 94,496 funding rates imported (45 coins, Binance USDT-M futures, 18 months).
+  - Fallback to flat constant for <60 observations (young listings).
+- **RH-1: Regime event persistence** (`c480c10ab`):
+  - Append-only `regime_events` table in `trading/spot/data/regime_events.db`.
+  - 3 event types: GLOBAL_FLIP, COIN_PHASE, ALERT. 3 write points: engine phase transition, alert firing, APPROVE/DENY.
+  - Fail-open: all writes wrapped in try/except. Persistence failure never blocks trading.
+  - Attested history seeded: March 2024 SHORT start, Dec 2025 LONG flip.
+  - Backfill snapshot of current coin phases + global regime on startup (idempotent).
+  - Synthetic test: 8 checks pass (phase flip, alert, global flip, fail-open, idempotency, data integrity).
+- **RH-2: Architecture doc v1.14** (`2d3122d6f`):
+  - §7.5.10: Two phase machines disambiguation (engine_4_5 vs scanner_wyckoff).
+  - §7.5.11: Regime event persistence documentation.
+  - Evidence record: Regime-Ladder Final study — production +43.5% vs B&H −43.8% (Jan 2025–Jul 2026). Fable's earlier +90%/yr reconstruction withdrawn after calibration failure.
+- **Fable data exports delivered**: Funding-Rate Signal Export (30 MB, 91K funding rates + 1.4M candles + manifest) and Regime History Export (542 KB, R-1 through R-4 + §4.5 confirmation).
+- **Verification package delivered**: regime_events schema + 22 seeded rows + test output + all diffs. Fable confirmed all green.
+
+## 2026-07-04
+- **Trade Score improvements deployed** (P1-P5, Fable Trade Score Assessment):
+  - P1: Capital freedom denominator fixed (/24 -> /MAX_LAYERS). P1b: average-layer-fraction replaces end-state sampling.
+  - P2: Time-at-depth penalty (DEPTH_HALF_LIFE_H=72). P3: Score logging at deal-open (dca_score, trade_score, trend_mult in trades.csv).
+  - P4: Sim at live scale (MIN_ORDER_NOTIONAL=$10, sim_allocation param). P5: Funding cost subtraction (AVG_FUNDING_RATE_8H=0.0001).
+  - Score history reset (old /24 snapshots contaminated trends).
+- **Signal Gating Part A deployed** (G-1 through G-5):
+  - G-1: NEAR fixture in GateModel self-test (full veto lifecycle validated against real May-Jul 2026 data).
+  - G-2: A2 ATR normalization (EXT_ATR_MULT=3.0, replaces fixed 25% extension threshold).
+  - G-3: A3 side-resolved divergence wiring (bearish->long veto, bullish->short veto). Fixes audit M-5.
+  - G-4: Veto filter wired into all 3 selector paths (rebalance, rotation, overflow). Precedence: veto -> hurdle -> trend -> scoring -> tier cap.
+  - G-5: Part A backtest (46 coins, 3 months). 34 coins triggered, 53 triggers, 46 clears, 7 currently vetoed. NEAR anchors all pass.
+  - Scanner + runner restarted. HYPE currently vetoed (A2_EXTENSION).
+- **Signal Gating Part B analyzed** (G-6 through G-7, NOT deployed):
+  - G-6: B1 fork resolved. Higher-low anchor is universal anti-noise filter for both B1+B2. Zero fills during NEAR/INJ waterfalls. No flush primitive needed.
+  - G-7: Full 4-arm backtest (8 coins, 90d). Strict gate cuts DD 75% but costs 25% PnL. Options tested: veto-only gate, L4-only gate, relaxed HL.
+  - Part B superseded by grid decision (G-SPLIT removes L4 entirely).
+- **Final Grid Decision: G-SPLIT approved and deployed**:
+  - Decision test: 4 arms (G-A1 40/24/20/16, G-A2 40/24/20+reserve, G-SPLIT 48/32/20, G-FAT 56/24/20) x 2 windows.
+  - G-SPLIT wins: +8.6% PnL over incumbent, best PnL/%DD (- **Late session fixes deployed** (Fable FA-1 through FA-4 + corrections):
+  - **FA-1 (V-4)**: `veto_clear` now re-checks `entry_veto` before returning True. NEAR May 30 gap CLOSED. Fixture assertion guards it. Third-flag item finally shipped.
+  - **FA-2**: Architecture doc updated to v1.13. G-SPLIT 48/32/20 recorded in $5.2 grid table. All today's decisions documented with evidence links.
+  - **FA-3**: MAE column deployed in trades.csv. Corrected formula: running max of (avg_entry_now - candle_low) / avg_entry_now per tick (not min-price-vs-final-avg at close). Legacy deal backfill on first tick. Persists through restarts via open_deals state.
+  - **FA-4**: Stale-daily fail-closed guard (MAX_DAILY_STALE_DAYS=7). Coins with data >7d old get STALE_DAILY_DATA veto. 23 stale coins -> 1 (MKR only).
+  - **Collector pipeline fixed**: ccxt 4.5.x crashes on `load_markets()` when Hyperliquid spot markets have null baseAsset (same bug class as Aster May 11). Patched `fetch_spot_markets` to return empty list on TypeError with explicit logging. 21,194 candles recovered for 20 coins. Daily resampled (940 new rows).
+  - **MKR removed** from scanner universe (45 coins, was 46). Delisted/stale on Hyperliquid.
+  - **Fable final verification**: ALL GREEN. Self-tests executed. V-4 confirmed, MAE verified, all fingerprints match. Day fully closed and verified by all three parties.
+- **Fable Post-Remediation Audit complete**,053), Rule 1 survived, Fable-verified.
+  - GridModel v2.0: LAYER_FRACTIONS=[0.48, 0.32, 0.20], MAX_LAYERS=3. L4 removed.
+  - E-3a entry quality study: MAE gap fails >=2.0 bar. E-4 dynamic sizing NOT supported. Static grid is the answer.
+  - Brett approved. Bot restarted. Existing positions untouched (Rule #34).
+  - **Specs**: `final-grid-decision-spec-v1.0.md`, `grid-decision-verification-memo.md`, `l4-decision-test-spec-v1.0.md`
+- **Late session fixes deployed** (Fable FA-1 through FA-4 + corrections):
+  - **FA-1 (V-4)**: `veto_clear` now re-checks `entry_veto` before returning True. NEAR May 30 gap CLOSED. Fixture assertion guards it. Third-flag item finally shipped.
+  - **FA-2**: Architecture doc updated to v1.13. G-SPLIT 48/32/20 recorded in $5.2 grid table. All today's decisions documented with evidence links.
+  - **FA-3**: MAE column deployed in trades.csv. Corrected formula: running max of (avg_entry_now - candle_low) / avg_entry_now per tick (not min-price-vs-final-avg at close). Legacy deal backfill on first tick. Persists through restarts via open_deals state.
+  - **FA-4**: Stale-daily fail-closed guard (MAX_DAILY_STALE_DAYS=7). Coins with data >7d old get STALE_DAILY_DATA veto. 23 stale coins -> 1 (MKR only).
+  - **Collector pipeline fixed**: ccxt 4.5.x crashes on `load_markets()` when Hyperliquid spot markets have null baseAsset (same bug class as Aster May 11). Patched `fetch_spot_markets` to return empty list on TypeError with explicit logging. 21,194 candles recovered for 20 coins. Daily resampled (940 new rows).
+  - **MKR removed** from scanner universe (45 coins, was 46). Delisted/stale on Hyperliquid.
+  - **Fable final verification**: ALL GREEN. Self-tests executed. V-4 confirmed, MAE verified, all fingerprints match. Day fully closed and verified by all three parties.
+- **Fable Post-Remediation Audit complete**: Independent verification of all 2026-07-03 fixes. Every remediation task confirmed as implemented. C1 "three grids" gap is closed � GridModel is verified leaf module, scanner unified, arch doc v1.11 matches self-test output line-for-line.
+  - **All P0 verified**: C2 prune (defined at 2248), H1 liquidity filter (0 broken attrs), H2 descale (price_from_exchange flag), M3 trade IDs (1-119 clean), M1 evaluate_regime (deleted). Plus: startup self-test, bare except removal, GridModel call-site migration, overflow v2, spread-reject pnl_adjustment, trend multiplier regression, CLOSE/CLOSEALL/MIGRATE commands, grid-freeze + daily digest, D-RESERVE fold.
+  - **1 HIGH finding**: H-1 � L4 silently never fires below $62.50 allocation (`order < 10` gate in DCA engine). Active at current capital depending on allocation math. L3 below $50. Backtests assume full deployability at $10K � live diverges.
+  - **5 MEDIUM findings**: M-1 (reconcile zeroes reserve at all tiers � landmine at $10K), M-2 (balance-fetch failure injects $ .00 for one cycle), M-3 (prune method semantics deviate from docstring), M-4 (grid-freeze detector too narrow for GridModel world), M-5 (GateModel A3 divergence input is direction-agnostic)
+  - **6 LOW findings**: L-1 (TP from profile config not GridModel), L-2 (GateModel self-test missing NEAR fixture), L-3 (VetoState.since never populated), L-4 (harness metric inflation), L-5 (veto_clear C2 retrace edge), L-6 (inline import in tick path)
+  - **Key validation**: Reconcile ordering correct (sync ? reconcile ? top-up/rebalance). Old-grid positions untouched by construction. Overflow v2 fails closed. GridModel is genuine leaf with zero engine imports.
+  - **Recommended sequence**: H-1 decision (allocation floor vs alert � Brett decision) ? M-2 (balance guard) ? M-3 (prune semantics) ? M-4 (freeze threshold) ? M-1 (spec for $10K) ? gating deployment
+  - **Report**: `specs/fable-post-remediation-audit-2026-07-04.md`
+- **Post-remediation code fixes deployed** (same day, 2026-07-04): All four priority findings actioned and bot restarted successfully.
+  - **H-1 (documented, not floored)**: L4 silently never fires below $62.50/coin allocation. Decision: document as known constraint for sub-$500 capital (real users start at $500+). Added Telegram WARNING log when any grid layer is sub-minimum. No allocation floor added.
+  - **M-2 (fixed)**: `fetch_full_balance` now returns `None` on API failure instead of `{"usdt_free": 0.0, ...}`. `_sync_positions_from_exchange` checks for `None` and keeps previous values — prevents $0.00 injection into reconcile and daily rebalance.
+  - **M-3 (docstring fixed)**: `_prune_stale_coin_after_tp` docstring amended to match actual simpler behavior — unconditional prune on flat position, self-heals via daily rebalance. Code not changed; docstring was the lie.
+  - **M-4 (fixed)**: `_check_grid_freeze` now compares `eng.capital` against `gm_layer_cost(layer, alloc)` instead of flat `< $1`. Catches the real starvation state (e.g. $5 on hand, $12 needed for next layer).
+  - Bot restarted with pre-flight passed. All open positions confirmed intact.
+## 2026-07-03
+- **Fable Audit complete**: Comprehensive external code audit + performance analysis by Claude (Fable). 119 trades analyzed, full codebase reviewed. System health: GOOD with three integrity gaps.
+  - **2 CRITICAL findings**: C1 (three different grids in production � live_mode write-only, deployed grid 30/21/15/10% vs documented 40/60/90/135%), C2 (_prune_stale_coin_after_tp() called but never defined � crashes non-TP sell path silently)
+  - **4 HIGH findings**: H1 (liquidity filter never executed � 2 attribute errors swallowed), H2 (1000-prefix double-descale in buy ticker fallback), H3 (short positions would sync as longs � landmine for HL migration), H4 (overflow entry unreachable � 7,680 scenarios, zero admissions)
+  - **7 MEDIUM findings**: M1 (dead _evaluate_regime), M2 (spread-reject losses invisible), M3 (6 duplicate deal_ids), M4 (fee column empty), M5 (trend multiplier inert), M6 (equity tier doc drift), M7 (dead reserve pool branch)
+  - **Trade performance validated**: Strategy-native 116 deals +$145.46, 87.9% WR. The -$103.83 was all manual force-closes. Post-orphan-TP era: 18 deals, 94% WR, ~6.7%/month. L4 deals 11-for-11. TAO best coin (+$72.40, 17/17). Capital traps: PYTH, HYPE.
+  - **Cloud migration score**: 6/10 current, 4/10 for Hyperliquid target
+  - **Priority fix path**: P0 (C2, H1, H2, M3, M1) ? P1.5 (overflow v2) ? P1 (one grid, one truth) ? P2 (capital utilization)
+  - **Report**: `specs/fable-audit-2026-07-03.md`
+- **Pool reconciliation fix deployed** (v2 addition): `CapitalRouter.reconcile_pools_from_exchange()` � syncs `active_pool_cash` to actual DEX USDT free balance every cycle. Corrected $149.71 phantom drift ($184.70 phantom ? $34.99 real). Runs on startup + every main-loop cycle after position sync.
+  - **Files changed**: `v14_capital_manager.py` (new reconcile method), `run_v14_portfolio_live_aster.py` (startup + cycle calls)
+- **New specs produced**: `overflow-entry-v2-soft-ceiling.md` (v1.2), `implementation-handoff-prompt.md`, `grid-profile-per-regime-spec.md`, `signal-aware-deployment.md`, `realized-velocity-feedback-spec.md`, `sqlite-tradestore-migration-spec.md`
+- **Key audit insight**: "Everything that broke, broke quietly." Rule #14 (never silence errors) most violated in spirit � fail-open handlers hid every silent failure.
+
+
 ## 2026-06-19
 - **Candle replay fix deployed** (paper + live): New engines created mid-run by `_check_and_rebalance()` or `_rotate_after_tp()` now set `_last_candle_ts = now` to skip historical candles. Without this, the engine replayed up to 200 historical candles from the exchange, buying at old prices and selling at current prices — inflating PnL by up to 64%. Root cause: HYPE paper trades showed 54-64% ROI on L1 (should be ~3%). Investigation traced to engines created for coins re-entering the approved list after weeks of absence. Verified all inflated trades (23 trades >10% return) correlated with engine creation gaps. Live runner has warmup guard as second defense; `_last_candle_ts` set for defense-in-depth.
   - **Files changed**: `run_v14_portfolio_live_aster.py` (2 engine creation sites), `run_v14_portfolio_paper.py` (2 engine creation sites)

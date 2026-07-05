@@ -1,19 +1,22 @@
 # AIT — Project Overview
-_Last updated: 2026-05-16_
+_Last updated: 2026-07-05_
 
 ## Product
 **Adaptive Intelligence Trading** — Automated crypto DCA trading system with signal-directed phase transitions and dynamic capital rotation.
 
 ## Architecture
 - **V14 DCA Engine**: Signal-directed continuous DCA with LONG/SHORT phases
-- **V14PM Portfolio Manager**: Capital rotation across 10 coin slots using DCA Cycle Velocity scoring + trend multipliers
+- **V14PM Portfolio Manager**: Capital rotation across coin slots using DCA Cycle Velocity scoring + trend multipliers
+- **GridModel v2.0**: Canonical leaf module — single source of truth for DCA grid fractions (G-SPLIT: 48/32/20% of allocation, 3 layers). Used by engine, scanner, and capital top-up. Zero engine imports.
+- **GateModel**: Signal-aware entry veto (Part A) + layer deployment gates (Part B, retired). Leaf dependency. ATR-normalized extension, side-resolved divergence, NEAR fixture, V-4 guard.
 - **Signal Stack**: V13SignalPack (StochRSI, ADX, structure), HybridDetector2D (top/bottom), Steve 3-Check, CFGI
 - **Exchange**: Hyperliquid perps (production), Aster DEX (proof-of-concept)
-- **Data Pipeline**: Hourly candle collection → daily resampling → DCA cycle scanner
+- **Data Pipeline**: Hourly candle collection (45 active + 9 watchlist coins, Hyperliquid) → daily resampling → DCA cycle scanner → veto evaluation
+- **Regime Persistence**: Append-only `regime_events.db` — GLOBAL_FLIP, COIN_PHASE, ALERT events (RH-1)
 - **Dashboards**: GitHub Pages (4 dashboards, synced every 10 min)
 
 ## Architecture Documents
-- `projects/ait-product/V14PM_SYSTEM_ARCHITECTURE.md` (v1.7) — Complete system reference
+- `projects/ait-product/V14PM_SYSTEM_ARCHITECTURE.md` (v1.14) — Complete system reference
 - `projects/ait-product/CLOUD_MIGRATION_GUIDE.md` (v1.1) — Linux deployment guide
 - `projects/ait-product/V14PM_FULL_AUDIT.md` — End-to-end code audit (2026-03-10)
 - `projects/ait-product/CODE_AUDIT_FINDINGS.md` — Bug tracker
@@ -25,74 +28,73 @@ _Last updated: 2026-05-16_
 |----------|------|--------|
 | V14 is sole engine | 2026-03-02 | V13 sunset (+184.5% final), V14 only go-forward |
 | Hyperliquid is production exchange | 2026-03-03 | Aster too limited; HL has 45+ quality perps |
-| DCA Cycle Velocity scoring | 2026-03-03 | `Score = Realized_PnL × (1-MaxDD%) × Capital_Freedom / 100` |
+| DCA Cycle Velocity scoring | 2026-03-03 | `Score = Realized_PnL × (1-MaxDD%) × Capital_Freedom × Depth_Penalty / 100` |
+| Two-tier collector | 2026-07-05 | ACTIVE_UNIVERSE (45 scored) + WATCHLIST (9 collected-only for reinstatement) |
+| TON→GRAM rename | 2026-07-05 | Token renamed June 15, 2026. Scanner + collector updated. Legacy TON candles preserved. |
+| Per-coin funding rate (RH-3) | 2026-07-05 | Trailing-90d median replaces flat P5 constant. Measured 3× overstatement. 20% deals earn carry. |
+| Regime event persistence (RH-1) | 2026-07-05 | Append-only regime_events table. Fail-open writes. Attested history seeded. |
 | PM capital = $50K, 10 coin slots | 2026-03-06 | Equity tier at $50K+ = 10 simultaneous coins |
 | Trend multiplier in allocation | 2026-03-06 | `Adjusted Score = DCA Score × Trend Multiplier` [0.30, 1.50] |
-| High profile, 1.0x leverage for PM | 2026-05-12 | **4 layers, 3.0% TP**, 1.5% dev, 1.5x SO mult, no liquidation risk (was 12L/1.5% TP before 2026-05-12) |
-| Conviction: 3D DX + 2W K≥5 + score≥3/4 | 2026-02-28 | Bottom detection locked |
-| Top: OB93 arm + 2D divergence (35d timeout) | 2026-02-28 | Top detection locked |
-| Ground-truth equity formula | 2026-03-08 | `Capital + Realized PnL - Fees + Unrealized PnL` |
-| State persistence via engine_state.json | 2026-03-10 | Engines save/restore across restarts, no phantom trades |
-| Daily resampling in pipeline | 2026-03-10 | 1h→daily ensures all coins have signal data |
-| --fresh for first launch only | 2026-03-10 | Normal restarts use engine_state.json |
-| Macro conviction signals observational | 2026-03-08 | 6 index-level signals documented, not wired into bot logic |
-| Trend multiplier gates entry not exit | 2026-03-06 | Declining coins get less capital but existing positions stay |
+| G-SPLIT grid (48/32/20) | 2026-07-04 | **3 layers**, L4 removed. +8.6% PnL over 40/24/20/16, best PnL/%DD. Fable-verified. |
+| Part A entry veto | 2026-07-04 | ATR-normalized extension (EXT_ATR_MULT=3.0), side-resolved divergence, V-4 guard. LIVE. |
+| Part B layer gate | 2026-07-04 | Analyzed, tested, **RETIRED**. Superseded by G-SPLIT removing L4. |
+| E-4 dynamic L1 sizing | 2026-07-04 | Tested via E-3a. MAE gap fails ≥2.0 bar. **PARKED** — static grid is the answer. |
+| High profile, 1.0x leverage for PM | 2026-05-12 | 3 layers (was 4→12), 3.0% TP, 1.5% dev, no liquidation risk |
+| No forced closes (orphan-TP) | 2026-05-16 | `FORCE_CLOSE_ON_SIGNAL=False`. Positions exit via TP only. |
+| open_deals is truth for layer count | 2026-06-19 | Engine snapshot resets; open_deals tracks actual fills (Hard Rule #35). |
+| seed_capital immutable | 2026-05-10 | CLI --capital, never recalculated (Hard Rule #26). |
+| DEX-as-truth for capital | 2026-05-08 | Exchange wallet balance IS capital. |
 
-## Current State (2026-05-16)
-- **V14PM Live (Aster)**: $423 capital (seed=$300 + $40 deposit), 96 trades, ~84% win rate
-  - **Grid optimization (2026-05-12)**: TP 3.0%, Max 4 layers (was 1.5%/12L). Backtest: +26.3% PnL. Spec: `specs/grid-optimization-tp3-4layer.md`
-  - **Trailing stop**: Enabled, 0.2% callback. Activation at new 3.0% TP.
+## Current State (2026-07-05)
+- **V14PM Live (Aster)**: $442 capital (seed=$300 + $40 deposit), 119 trades, ~86% win rate
+  - **Grid: G-SPLIT (48/32/20) deployed**. GridModel v2.0, 3 layers. L4 removed.
+    - Decision: Final Grid Decision Test (Fable spec v1.0). G-SPLIT +8.6% PnL over incumbent, best PnL/%DD ($1,053). Rule 1 survived. Fable-verified.
+    - E-4 dynamic L1 sizing tested and FAILED evidence bar (MAE gap +0.52 vs ≥2.0). Static grid is the answer.
+  - **Part A Signal Gating LIVE**: Entry veto system active.
+    - GateModel: ATR-normalized extension (EXT_ATR_MULT=3.0), side-resolved divergence (G-3/M-5), NEAR fixture (G-1).
+    - V-4 guard: veto_clear blocked while any trigger condition still true. May 30 gap closed.
+    - Veto filter in all 3 selector paths (rebalance, rotation, overflow). Precedence: veto → hurdle → trend → scoring → tier cap.
+    - Stale-daily fail-closed guard (MAX_DAILY_STALE_DAYS=7): coins with old daily data excluded with STALE_DAILY_DATA reason.
+  - **Part B Signal Gating**: Analyzed, pivot gate designed and tested, **RETIRED** — G-SPLIT removes L4, so layer gating is moot.
+  - **Trade Score (P1-P5 + P1b)**: Capital freedom avg-layer-fraction (P1b), depth penalty (P2, DEPTH_HALF_LIFE_H=72), score logging at deal-open (P3), sim at live scale with $10 minimum (P4), funding cost subtraction (P5).
+  - **MAE tracking**: Per-deal max adverse excursion, running max per tick at current avg entry. Legacy deal backfill on first tick. Persists through restarts via open_deals state.
+  - **Strategy-native performance**: 116 deals, +$145.46, 87.9% WR, worst loss -$3.80.
+  - **Post-orphan-TP era** (after 5/17): 18 deals, 94% WR, +$29.14, ~$28/month run rate.
+  - **Pool reconciliation**: `reconcile_pools_from_exchange()` syncs active_pool_cash to DEX every cycle.
   - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
-  - **Auto deposit/withdrawal detection ENABLED** (2026-05-11): Consecutive balance comparison, no unrealized PnL
-  - **Orphan-TP mode (2026-05-16)**: No forced closes on phase transition or MARKDOWN_FAIL. Positions exit via TP only. `FORCE_CLOSE_ON_SIGNAL=False`. Orphaned positions ride to TP naturally. Spec: `specs/orphaned-position-tp-spec.md`
-  - **Layer reconstruction + Capital flow + Zombie slots (2026-06-19)**: Layer counts reconciled from `open_deals` on startup (fixes layer reset bug). Idle router cash flows to engines needing DCA capital. Zombie slots (max depth + not approved) excluded from tier cap. Spec: `specs/layer-reconstruction-capital-flow-zombie-slots.md`
-  - **Regime phase gate deployed + fixed (2026-05-15)**: Coins trade only when engine phase matches global regime. Gate blocks entries (BUY/SHORT_OPEN) with `reject_action()` rollback; exits (SELL/SHORT_CLOSE/TP) always pass through. Initial gate (05-13) had two bugs: blocked exits (trapping positions) and no rollback (phantom state drift).
+  - **Orphan-TP mode**: FORCE_CLOSE_ON_SIGNAL=False. Positions exit via TP only.
   - **seed_capital immutable** (Hard Rule #26): CLI --capital arg, never recalculated
-  - **Dashboard growth**: `(equity - seed - net_deposits) / seed` — isolates trading from capital flows
-  - **Capital ledger baseline**: seed=$300, deposit=$40, pnl_adjustment=$64.59 (dark PnL gap)
-  - **V2 System Audit complete**: 60 findings, 15 fixed, 1 HIGH remaining (auto-restart task)
-  - **Scanner synced** (2026-05-12): Params match production (3.0% TP, 4L). 30d window confirmed optimal via walk-forward analysis.
-  - Approved symbols: `[JUP/USDT, ONDO/USDT, PENDLE/USDT, TON/USDT]` (scanner top)
+  - Approved symbols: `[INJ, JUP, GRAM]` (scanner top 3; TON renamed to GRAM 2026-06-15)
+  - **Star coin**: TAO (+$72.40, 17/17 wins, 6.25% avg return). Capital traps: PYTH, HYPE.
+  - **Cloud migration readiness**: 6/10 current, 4/10 for Hyperliquid target. No HL runner exists.
+  - **Collector pipeline**: Two-tier structure (ACTIVE_UNIVERSE + WATCHLIST). ccxt 4.5.x null-market patch. 45 active + 9 watchlist coins.
+    - TON→GRAM rename handled (June 15, 2026). HYPE quote fix (USDT matches V14PM). MKR removed (delisted on HL).
+    - Watchlist (collected but not scored): APT, JTO, TRUMP, BERA, S, VIRTUAL, GRASS, INIT, MOVE.
+    - Dead coins excluded: MKR (delisted), IP (delisted), ORCA (not on HL), PEPE (kPEPE denomination mismatch).
+    - Funding rates: 94K rates in `funding_rates` table (45 coins, Binance USDT-M futures).
+- **V14PM Paper**: 750+ trades, $50K+ PnL (restored from CSV truncation)
+- **V14 Live (Aster)**: ASTER/USDT single-coin, running
 - **V14 Paper**: Running on Hyperliquid
 - **V14-ETF Paper**: Running
-- **V14 Live (Aster, single-coin)**: ASTER/USDT, running
-- **Data sync cron**: Fixed Windows pathspec bug, runs every 10 min
 
-## Key Decisions (Recent)
-| Decision | Date | Detail |
-|----------|------|--------|
-| DEX-as-truth for capital | 2026-05-08 | Exchange wallet balance IS capital. No more state.json/ledger/CLI for capital. |
-| Reconciliation disabled | 2026-05-08 | Heuristic fill-grouping creates phantom trades from churn. TP recovery handles missed fills. |
-| Auto deposit detection disabled | 2026-05-08 | Formula broken for DEX-as-truth. Manual DEPOSIT/WITHDRAW commands only. |
-| Warmup-only candle replay | 2026-05-09 | Old candles update indicators only; only current candle executes actions. |
-| Exchange-truth trade recording | 2026-05-09 | Use DEX entry price × actual qty, not engine's internal price tracking. |
-| Regime phase gate | 2026-05-09 | Coins trade only when engine phase matches global regime. Engine phases never overwritten. |
-| Graduated conviction alerts | 2026-05-09 | 7 thresholds (15-50%), APPROVE at any level, DENY resets tracker. |
-| Engine phases are truth | 2026-05-09 | Never overwrite engine phase to match global—the signal data IS the conviction signal. |
-| Allocation reconcile on rebalance | 2026-05-10 | Clean stale coins from router after each rebalance. Seed new targets to unblock T1 gate. |
-| Phantom position fix | 2026-05-10 | Status writer + exchange sync zero ALL position fields when DEX has no position. |
-| seed_capital immutable | 2026-05-10 | CLI --capital is the seed, period. Never derived from balance - csv_pnl (breaks on incomplete CSV). |
-| Dashboard sync: fresh clone | 2026-05-10 | Replaced `git reset --soft` with fresh shallow clone per cycle. Eliminates non-docs file leakage. |
-| Hurdle rate configurable | 2026-05-10 | Extracted to `HURDLE_RATE_DCA_SCORE = 5.0` in v14_capital_manager.py. Single source of truth. |
-| Auto deposit/withdrawal detection | 2026-05-11 | Consecutive balance comparison. No unrealized PnL (cascade risk). Threshold max($5, 2%). |
-| Dashboard growth excludes deposits | 2026-05-11 | `(equity - seed - net_deposits) / seed`. Isolates trading performance. |
-| Startup ledger reconciliation | 2026-05-11 | `dex_total - ledger_capital - csv_pnl`. Stable values only. No cascade. |
-| Grid optimization: TP 3.0%, 4 layers | 2026-05-12 | Portfolio backtest +26.3% PnL. Layers 5-12 never fired in live data (avg 1.65). Higher return/deal beats higher deal count. |
-| Multiplier/deviation unchanged | 2026-05-12 | 1.5x mult and 1.5% dev — backtested 2.0x/2.0%, zero difference. Not worth the change risk. |
-| Grandfather open positions | 2026-05-12 | Existing TP orders on Aster untouched. New config applies to new deals only. DCA layers on existing deals recalculate TP at new rate. |
-| No forced closes (orphan-TP) | 2026-05-16 | `FORCE_CLOSE_ON_SIGNAL=False`. Phase transitions never force-close positions. MARKDOWN_FAIL disabled (leverage-era relic). Positions exit via TP only. |
-| MARKDOWN_FAIL deprecated | 2026-05-16 | 25% drawdown force-close was for leveraged trading. On 1.0x, grid recovers naturally. No liquidation risk. |
-| Scanner synced to production | 2026-05-12 | `v14_cycle_scanner.py` updated: MAX_LAYERS 12→4, TP_PCT 0.015→0.030. DCA scores now reflect actual trading. |
-| 30d scanner window confirmed | 2026-05-12 | Walk-forward analysis (6 windows, 60 days). 30d: best score, lowest churn (13%), fewest false positives (20%). No change needed. |
-| open_deals is truth for layer count | 2026-06-19 | Engine snapshot `long_layers` resets to 0 on restart. `open_deals` tracks actual fills. Reconcile on startup (Hard Rule #35). |
-| Engine capital top-up from router | 2026-06-19 | When `invested > allocation` causes engine.capital=0, router idle cash must flow to engines. Prevents silent DCA grid freeze (Hard Rule #36). |
-| Zombie slots excluded from tier cap | 2026-06-19 | Positions at max depth + not approved don't count toward cap. Idle capital deploys to new opportunities. Zombies exit via TP (Hard Rule #34). |
-| New engines skip historical candles | 2026-06-19 | `_last_candle_ts = now` on mid-run engine creation. Prevents historical candle replay that inflated paper PnL by up to 64% per trade. |
+## Audit Trail
+| Audit | Date | Status |
+|-------|------|--------|
+| Fable Comprehensive Audit | 2026-07-03 | 2C/4H/7M findings. All P0 remediated same day. |
+| Fable Post-Remediation Verification | 2026-07-04 | All P0 confirmed. New H-1/M-1 through M-5. |
+| Fable Final Audit (EOD) | 2026-07-04 | All green. V-4 verified, MAE verified, G-SPLIT verified. |
+| Grid Decision (G-SPLIT) | 2026-07-04 | Pre-registered rules. Fable-verified. Brett approved. |
+| Part B (Layer Gate) | 2026-07-04 | Analyzed, tested, retired on honest evidence. |
+| E-4 (Dynamic L1) | 2026-07-04 | E-3a MAE gap fails bar. Parked by pre-registered rule. |
+| Regime-Ladder Final (Fable) | 2026-07-05 | Production +43.5% vs B&H −43.8%. Earlier +90%/yr reconstruction withdrawn. |
+| Regime Persistence (RH-1/2/3) | 2026-07-05 | All verified. Arch doc v1.14. Per-coin funding. Event log. |
 
 ## Next Steps
 1. **🔴 Create V14PM Live auto-restart task** (needs admin PowerShell)
 2. **🔴 Disable old V14LiveAster task** (needs admin PowerShell)
-3. **Database migration**: Replace CSV with SQLite (proper deal IDs, ACID transactions, no corruption)
-4. **Cloud migration**: Linux server, Hyperliquid mainnet (Phase 1: 6-10 weeks)
-5. **Commercial product**: Signal-as-a-Service, hub-and-spoke architecture ($49/$149/$499 tiers)
-6. Centralize DB_PATH into single config module
+3. **M-1 spec** (reconcile_pools reserve zeroing): Safe now, landmine at $10K. Spec while context fresh.
+4. **Database migration**: Replace CSV with SQLite (proper deal IDs, ACID transactions, no corruption)
+5. **Cloud migration**: Linux server, Hyperliquid mainnet (Phase 1: 6-10 weeks)
+6. **Commercial product**: Signal-as-a-Service, hub-and-spoke architecture
+7. Centralize DB_PATH into single config module
+8. **Funding rate collector**: Add hourly funding rate pull to collector pipeline (currently seeded from one-time Binance export)

@@ -18,35 +18,51 @@ _Curated essentials. For details, see the structured files below._
 - **Trading status**: `areas/finances/overview.md`
 - **Daily notes**: `memory/YYYY-MM-DD.md` (raw session logs)
 
-## AIT � Current State (2026-05-16)
-- **V14PM Live (Aster)**: $423 capital (seed=$300 + $40 deposit), 96 trades, ~84% win rate
-  - **Grid optimization (2026-05-12)**: TP 3.0%, Max 4 layers (was 1.5%/12L). Backtest: +26.3% PnL.
-  - **Scanner synced (2026-05-12)**: Params match production (3.0% TP, 4L). 30d window confirmed via walk-forward analysis. INJ now #1 (score 35.0).
+## AIT — Current State (2026-07-05)
+- **V14PM Live (Aster)**: $442.29 capital (seed=$300 + $40 deposit), 119 trades, ~86% win rate
+  - **Grid: G-SPLIT (48/32/20) deployed 2026-07-04**. 3 layers, L4 removed. GridModel v2.0.
+    - Decision: Final Grid Decision Test (Fable spec v1.0). G-SPLIT +8.6% PnL over incumbent, best PnL/%DD. Fable-verified.
+    - E-4 dynamic L1 sizing tested and FAILED evidence bar (MAE gap fails >=2.0). Static grid is the answer.
+  - **Part A Signal Gating LIVE**: Entry veto system active. HYPE currently vetoed (A2_EXTENSION).
+    - GateModel: ATR-normalized extension (EXT_ATR_MULT=3.0), side-resolved divergence, NEAR fixture.
+    - Veto filter in all 3 selector paths (rebalance, rotation, overflow).
+    - V-4 guard: veto_clear blocked while trigger still true. May 30 gap closed.
+    - Stale-daily fail-closed guard (MAX_DAILY_STALE_DAYS=7).
+  - **Part B Signal Gating**: Analyzed but superseded — G-SPLIT removes L4, so layer gating is moot.
+  - **Fable Audit (2026-07-03–04)**: All P0 remediation verified. C1 "three grids" gap CLOSED. Post-remediation audit: all fixes confirmed. New findings (H-1/M-1 through M-5) addressed. Final verification ALL GREEN — self-tests executed.
+  - **Trade Score (P1-P5)**: Capital freedom fixed (/MAX_LAYERS, average-layer-fraction), depth penalty (DEPTH_HALF_LIFE_H=72), score logging at deal-open (dca_score, trade_score, trend_mult), sim at live scale (MIN_ORDER_NOTIONAL=$10), funding cost in sim (AVG_FUNDING_RATE_8H=0.0001).
+  - **MAE tracking**: Per-deal max adverse excursion. Running max per tick at current avg entry. Legacy backfill. Persists via open_deals.
+  - **Strategy-native performance**: 116 deals, +$145.46, 87.9% WR, worst loss -$3.80.
+  - **Post-orphan-TP era** (after 5/17): 18 deals, 94% WR, +$29.14, ~$28/month run rate.
+  - **Pool reconciliation**: `reconcile_pools_from_exchange()` syncs active_pool_cash to DEX every cycle.
   - DEX-as-truth startup, exchange-truth trade recording, warmup-only candle replay
-  - **Auto deposit/withdrawal detection ENABLED** (2026-05-11): Consecutive balance comparison, no unrealized PnL. Full system audit: `specs/deposit-detection-audit.md`
-  - Reconciliation disabled (caused corruption). TP recovery handles missed fills.
-  - **Orphan-TP mode (2026-05-16)**: FORCE_CLOSE_ON_SIGNAL=False. No forced closes on phase transition or MARKDOWN_FAIL. Positions exit via TP only. Orphaned positions ride to TP naturally. MARKDOWN_FAIL deprecated (leverage-era relic). Backtest: 5/8 coins improved.
-  - **Regime phase gate fixed (2026-05-15)**: Entries (BUY/SHORT_OPEN) blocked + rolled back via `reject_action()`; exits (SELL/SHORT_CLOSE/TP) always pass through. Initial gate (05-13) blocked everything including exits (trapping positions) and had no rollback (phantom state drift). Incident: NEAR opened short in LONG regime because gate didn't exist in running code when position opened.
+  - **Orphan-TP mode**: FORCE_CLOSE_ON_SIGNAL=False. Positions exit via TP only.
   - **seed_capital immutable** (Hard Rule #26): CLI --capital arg, never recalculated
-  - **Dashboard growth**: `(equity - seed - net_deposits) / seed` � isolates trading from capital flows
-  - **Capital ledger baseline**: seed=$300, deposit=$40, pnl_adjustment=$64.59 (dark PnL gap)
-  - **ccxt Aster patch**: Filters null baseAsset markets from API (intermittent crash fix)
   - Approved symbols: `[INJ, JUP, TON]` (scanner top 3)
+  - **Star coin**: TAO (+$72.40, 17/17 wins, 6.25% avg return). Capital traps: PYTH, HYPE.
+  - **Cloud migration readiness**: 6/10 current, 4/10 for Hyperliquid target. No HL runner exists.
+  - **Collector pipeline**: Two-tier structure deployed 2026-07-05.
+    - ACTIVE_UNIVERSE: 44 pairs (45 scanner coins minus ASTER which is Aster-exchange-only).
+    - WATCHLIST: 9 coins (APT, JTO, TRUMP, BERA, S, VIRTUAL, GRASS, INIT, MOVE) — collected for reinstatement continuity.
+    - Dead excluded: MKR (delisted), IP (delisted), ORCA (not on HL), PEPE (kPEPE mismatch).
+    - TON→GRAM handled. HYPE quote fix (USDT). ccxt 4.5.x null-market patch.
+  - **Score history**: Old /24 snapshots cleared. NULL-on-failure for scanner score lookup.
+  - **Architecture doc**: v1.14. §7.5.10 two phase machines, §7.5.11 regime persistence.
+  - **Regime persistence (RH-1)**: Append-only `regime_events.db`. GLOBAL_FLIP/COIN_PHASE/ALERT events. Fail-open writes. Attested history seeded (March 2024 SHORT, Dec 2025 LONG).
+  - **Per-coin funding (RH-3)**: Trailing-90d median replaces flat P5 constant. 94K rates imported. 20% deals earn carry.
+  - **Regime-Ladder Final**: Production +43.5% vs B&H −43.8%. Earlier +90%/yr reconstruction withdrawn.
 - **V14PM Paper**: 750+ trades, $50K+ PnL (restored from CSV truncation)
 - **V14 Live (Aster)**: ASTER/USDT single-coin, running
 - **V14 Paper**: Running on Hyperliquid
 - **V14-ETF Paper**: Running
-- **V2 System Audit** (2026-05-10): 60 findings, 15 fixed. Deposit detection audit (2026-05-11): 7 findings, 2 critical fixed.
-- **Hard rules 26-36**: Immutable seed, no derived constants, fresh clone sync, append-only CSV, no unrealized in detection, idempotent restart, post-tick gates must rollback + separate entries/exits (#32), read arch spec before writing fix code (#33), no forced closes on 1.0x leverage (#34), open_deals is truth for layer count (#35), idle router cash must flow to engines (#36).
-  - **Candle replay fix (2026-06-19)**: New engines created mid-run must set `_last_candle_ts = now`. Historical candle replay inflated paper PnL up to 64%.
-  - **Trailing TP gap**: Paper bot uses fixed TP (candle close). Live uses Aster trailing stop (0.2% callback). Spec pending backtest comparison.
+- **Hard rules 26-36 (unchanged)**: Immutable seed, no derived constants, fresh clone sync, append-only CSV, no unrealized in detection, idempotent restart, post-tick gates must rollback + separate entries/exits (#32), read arch spec before writing fix code (#33), no forced closes on 1.0x leverage (#34), open_deals is truth for layer count (#35), idle router cash must flow to engines (#36).
 
 ### Needs Admin PowerShell
 1. Create V14PM auto-restart task (`V14PMLiveAster`)
 2. Disable old stale task (`V14LiveAster`)
 
 ## Active Projects
-- **AIT**: Primary. V14PM is the MVP. Next: cloud migration to Hyperliquid mainnet.
+- **AIT**: Primary. V14PM is the MVP. G-SPLIT deployed. Next: cloud migration to Hyperliquid mainnet.
 - **TrustedBusinessReviews.com**: WordPress → static HTML. Malware cleanup.
 - **ShadowQuery**: Deferred.
 
@@ -55,4 +71,12 @@ _Curated essentials. For details, see the structured files below._
 - Default: Claude Sonnet 4.6 (sub-agents, lighter tasks)
 - Cron: Claude Haiku 4.5 (cheapest for routine checks)
 - Heartbeat: Haiku
-
+## Silent Replies
+When you have nothing to say, respond with ONLY: NO_REPLY
+⚠️ Rules:
+- It must be your ENTIRE message — nothing else
+- Never append it to an actual response (never include "NO_REPLY" in real replies)
+- Never wrap it in markdown or code blocks
+❌ Wrong: "Here's help... NO_REPLY"
+❌ Wrong: "NO_REPLY"
+✅ Right: NO_REPLY
