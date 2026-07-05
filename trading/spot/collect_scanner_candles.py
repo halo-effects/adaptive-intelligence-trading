@@ -37,7 +37,11 @@ DB_PATH = Path(os.environ.get("AIT_CANDLES_DB", str(Path(__file__).parent / "dat
 # Format: (db_symbol, hyperliquid_perp_symbol)
 # Hyperliquid perps all trade as COIN/USDC:USDC
 
-COINS = [
+# ACTIVE_UNIVERSE: actively scored and eligible for trading.
+# WATCHLIST: removed from active scanning but still listed on Hyperliquid;
+#   candles collected to maintain continuity for potential reinstatement.
+
+ACTIVE_UNIVERSE = [
     # --- Established (pre-2024) ---
     ("BTC/USDC",    "BTC/USDC:USDC"),
     ("ETH/USDC",    "ETH/USDC:USDC"),
@@ -59,7 +63,7 @@ COINS = [
     ("CRV/USDT",    "CRV/USDC:USDC"),
     ("SNX/USDT",    "SNX/USDC:USDC"),
     ("COMP/USDT",   "COMP/USDC:USDC"),
-    ("MKR/USDT",    "MKR/USDC:USDC"),
+    # ("MKR/USDT", "MKR/USDC:USDC"),  # Removed: delisted/stale on HL (FA-4)
     ("ENS/USDT",    "ENS/USDC:USDC"),
     ("DYDX/USDT",   "DYDX/USDC:USDC"),
     ("LDO/USDT",    "LDO/USDC:USDC"),
@@ -72,7 +76,7 @@ COINS = [
     ("SUI/USDT",    "SUI/USDC:USDC"),
     ("FET/USDT",    "FET/USDC:USDC"),
     ("TAO/USDT",    "TAO/USDC:USDC"),
-    ("TON/USDT",    "TON/USDC:USDC"),
+    ("GRAM/USDT",   "GRAM/USDC:USDC"),  # TON renamed to GRAM on 2026-06-15
     ("JUP/USDT",    "JUP/USDC:USDC"),
     ("KAS/USDT",    "KAS/USDC:USDC"),
     ("PENDLE/USDT", "PENDLE/USDC:USDC"),
@@ -84,7 +88,7 @@ COINS = [
     ("W/USDT",      "W/USDC:USDC"),
     ("ZRO/USDT",    "ZRO/USDC:USDC"),
     # --- Mid-cycle 2025 ---
-    ("HYPE/USDC",   "HYPE/USDC:USDC"),
+    ("HYPE/USDT",   "HYPE/USDC:USDC"),  # DB stores as USDT (matches V14PM warmup queries)
     # --- AAVE ---
     ("AAVE/USDT",   "AAVE/USDC:USDC"),
 ]
@@ -93,6 +97,25 @@ COINS = [
 # The scanner will use whatever ASTER data exists in the DB already.
 # If we need fresh ASTER candles, that requires the Aster exchange client.
 
+WATCHLIST = [
+    # Removed from active universe but still listed on Hyperliquid.
+    # Candles collected to maintain continuity for potential reinstatement.
+    ("APT/USDT",     "APT/USDC:USDC"),
+    ("JTO/USDT",     "JTO/USDC:USDC"),
+    ("TRUMP/USDT",   "TRUMP/USDC:USDC"),   # also has TRUMP/USDC in USDC_COINS
+    ("BERA/USDT",    "BERA/USDC:USDC"),
+    ("S/USDT",       "S/USDC:USDC"),
+    ("VIRTUAL/USDT", "VIRTUAL/USDC:USDC"),
+    ("GRASS/USDT",   "GRASS/USDC:USDC"),
+    ("INIT/USDT",    "INIT/USDC:USDC"),
+    ("MOVE/USDT",    "MOVE/USDC:USDC"),
+    # NOT included (dead on Hyperliquid):
+    # MKR — delisted on HL (FA-4)
+    # IP — delisted on HL
+    # ORCA — not on HL at all
+    # PEPE — listed as kPEPE on HL (different symbol/denomination; price mismatch would corrupt data)
+]
+
 # Also pull USDC-quoted versions that may exist in the DB
 USDC_COINS = [
     ("LINK/USDC",   "LINK/USDC:USDC"),
@@ -100,6 +123,8 @@ USDC_COINS = [
     ("SOL/USDC",    "SOL/USDC:USDC"),
     ("ETH/USDC",    "ETH/USDC:USDC"),
     ("BTC/USDC",    "BTC/USDC:USDC"),
+    ("HYPE/USDC",   "HYPE/USDC:USDC"),   # USDC history; USDT version in ACTIVE_UNIVERSE
+    ("TRUMP/USDC",  "TRUMP/USDC:USDC"),  # USDC history; USDT version in WATCHLIST
 ]
 
 # Default lookback for first-time pull (days)
@@ -212,16 +237,36 @@ def main():
     # Build deduplicated coin list (avoid pulling same HL symbol twice)
     seen_hl = set()
     coin_list = []
-    for db_sym, hl_sym in COINS + USDC_COINS:
+    for db_sym, hl_sym in ACTIVE_UNIVERSE + WATCHLIST + USDC_COINS:
         key = (db_sym, hl_sym)
         if key not in seen_hl:
             seen_hl.add(key)
             coin_list.append((db_sym, hl_sym))
 
-    logger.info(f"Candle Collector — {len(coin_list)} coins from Hyperliquid")
+    n_active = len(ACTIVE_UNIVERSE)
+    n_watch = len(WATCHLIST)
+    logger.info(f"Candle Collector — {n_active} active + {n_watch} watchlist coins from Hyperliquid")
 
     # Connect to Hyperliquid
+    # Patch: ccxt 4.5.x crashes on load_markets() when Hyperliquid spot markets
+    # contain coins with None baseAsset (same bug class as Aster null-market patch,
+    # 2026-05-11). Workaround: patch fetch_spot_markets to return empty list,
+    # since we only need perp markets for candle collection.
     hl = ccxt.hyperliquid()
+    _orig_fetch_spot = hl.fetch_spot_markets
+    def _safe_fetch_spot(*args, **kwargs):
+        try:
+            return _orig_fetch_spot(*args, **kwargs)
+        except TypeError as e:
+            if "NoneType" in str(e):
+                logger.warning(
+                    "Hyperliquid spot markets have null baseAsset — skipping spot (perps only). "
+                    f"Error: {e}. This patch (ccxt 4.5.x workaround) fires every run; "
+                    "update ccxt to fix permanently."
+                )
+                return []
+            raise
+    hl.fetch_spot_markets = _safe_fetch_spot
     try:
         hl.load_markets()
     except Exception as e:

@@ -38,6 +38,12 @@ SO_DEV = GM_SO_DEV         # 1.5% — linear from avg entry (matches engine)
 MAX_LAYERS = GM_MAX_LAYERS  # 4
 TP_PCT = GM_TP_PCT          # 3.0%
 TAKER_FEE = 0.00025         # Hyperliquid taker fee
+# P5: Estimated average funding rate per 8h period (long side).
+# Perps charge/pay funding every 8h. Positive = longs pay shorts.
+# Average across crypto perps is ~0.01% per 8h (0.03% daily).
+# TODO: Replace with per-coin trailing-average from exchange API once
+# funding rate collection is added to the data pipeline.
+AVG_FUNDING_RATE_8H = 0.0001  # 0.01% per 8h (conservative estimate)
 # SO_STEP_MULT and SO_VOL_MULT REMOVED — replaced by GridModel fixed fractions
 CAPITAL = 10_000.0     # Capital per coin
 DCA_ALLOC = 0.90       # 90% allocated to DCA
@@ -50,20 +56,22 @@ MIN_HISTORY_MONTHS = 6
 # Full Hyperliquid quality perp universe + ASTER (Aster exchange live bot).
 # Format: preferred symbol as found in candles.db.  The scanner will also
 # try the other quote (USDT↔USDC) if the primary isn't found.
+# Watchlist coins (collected but not scored) are defined in collect_scanner_candles.py
 COINS = [
     # --- Established (pre-2024) ---
     'BTC/USDC',   'ETH/USDC',   'SOL/USDC',   'XRP/USDT',   'LINK/USDT',
     'DOGE/USDT',  'ADA/USDT',   'LTC/USDT',   'AVAX/USDT',  'DOT/USDT',
     'UNI/USDT',   'ATOM/USDT',  'NEAR/USDT',  'HBAR/USDT',  'INJ/USDT',
     'FIL/USDT',   'RUNE/USDT',  'CRV/USDT',   'SNX/USDT',   'COMP/USDT',
-    'MKR/USDT',   'ENS/USDT',   'DYDX/USDT',  'LDO/USDT',   'ARB/USDT',
+    # MKR removed (delisted/stale on Hyperliquid, FA-4 2026-07-04)
+    'ENS/USDT',   'DYDX/USDT',  'LDO/USDT',   'ARB/USDT',
     'OP/USDT',    'STX/USDT',   'SEI/USDT',    'RENDER/USDT',
     # --- 2024 launches ---
-    'SUI/USDT',   'FET/USDT',   'TAO/USDT',   'TON/USDT',   'JUP/USDT',
+    'SUI/USDT',   'FET/USDT',   'TAO/USDT',   'GRAM/USDT',  'JUP/USDT',  # TON renamed to GRAM 2026-06-15
     'KAS/USDT',   'PENDLE/USDT','PYTH/USDT',  'TIA/USDT',   'ONDO/USDT',
     'ENA/USDT',   'EIGEN/USDT', 'W/USDT',     'ZRO/USDT',
     # --- Mid-cycle 2025 (OK per Brett — launched before bear) ---
-    'HYPE/USDC',  'ASTER/USDT',
+    'HYPE/USDT',  'ASTER/USDT',  # HYPE: USDT matches collector DB symbol (V14PM warmup)
     # --- AAVE (established but listed separately for clarity) ---
     'AAVE/USDT',
 ]
@@ -119,7 +127,11 @@ def _validate_candles(candles: list[tuple], symbol: str) -> list[tuple]:
     return clean
 
 
-def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
+# P4: Named constant for minimum notional order (exchange constraint)
+MIN_ORDER_NOTIONAL = 10.0  # Aster/Hyperliquid minimum
+
+
+def run_dca_sim(candles: list[tuple], symbol: str, window: str, sim_allocation: float | None = None) -> dict:
     """
     Run DCA simulation on a series of 1h candles.
 
@@ -152,7 +164,7 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
     if len(candles) < 2:
         return result
 
-    alloc = CAPITAL * DCA_ALLOC  # $9,000
+    alloc = sim_allocation if sim_allocation is not None else CAPITAL * DCA_ALLOC
 
     # Layer sizing now uses GridModel fixed fractions (audit C1/F1, 2026-07-03).
     # L1=40%, L2=24%, L3=20%, L4=16% of allocation. Sum=100%, fully self-funded.
@@ -161,6 +173,7 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
     # Track deals
     deals_pnl = []
     deals_hours = []
+    deals_depth_hours = []  # P2: hours spent at L3+ per deal
 
     # State
     in_position = False
@@ -172,12 +185,18 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
     tp_price = 0.0
     so_prices = []  # pre-computed SO trigger prices
     deal_start_ms = 0
+    depth_start_ms = 0      # P2: when current deep (L3+) period started
+    depth_hours_accum = 0.0 # P2: accumulated L3+ hours in current deal
     cash = alloc
     cumulative_pnl = 0.0
 
     # Drawdown tracking
     peak_equity = alloc
     max_dd = 0.0
+
+    # R-7: track layer-hours for average open-layer fraction
+    total_layer_hours = 0
+    total_candle_count = 0
 
     def compute_so_triggers(avg_entry_price: float, current_layers: int) -> list[float]:
         """Compute SO trigger prices using engine's linear deviation from avg entry.
@@ -200,9 +219,10 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
     def open_deal(price: float, ts: int):
         nonlocal in_position, layers, entries, total_qty, total_cost
         nonlocal avg_entry, tp_price, so_prices, deal_start_ms, cash
+        nonlocal depth_start_ms, depth_hours_accum
 
         order_cost = min(get_layer_size(0), cash)  # L1 from GridModel
-        if order_cost < 1.0:
+        if order_cost < MIN_ORDER_NOTIONAL:  # P4: exchange minimum notional
             return False
 
         fee = order_cost * TAKER_FEE
@@ -216,6 +236,8 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
         so_prices = compute_so_triggers(avg_entry, 1)  # triggers for layers 2+
         layers = 1
         deal_start_ms = ts
+        depth_start_ms = 0
+        depth_hours_accum = 0.0
         cash -= order_cost
         in_position = True
         return True
@@ -226,7 +248,7 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
 
         so_cost = get_layer_size(layers)  # Use current layer count as GridModel index
         so_cost = min(so_cost, cash)
-        if so_cost < 1.0:
+        if so_cost < MIN_ORDER_NOTIONAL:  # P4: exchange minimum notional
             return False
 
         fee = so_cost * TAKER_FEE
@@ -245,20 +267,27 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
 
     def close_deal(exit_price: float, ts: int):
         nonlocal in_position, cash, cumulative_pnl, total_qty, total_cost
+        nonlocal depth_hours_accum
 
         gross = total_qty * exit_price
         fee = gross * TAKER_FEE
-        net = gross - fee
-        pnl = net - total_cost
         duration_h = max((ts - deal_start_ms) / 3_600_000, 1.0)
+        # P5: subtract estimated funding cost (long positions pay funding)
+        # Funding periods = duration / 8h, applied to position notional at close
+        funding_periods = duration_h / 8.0
+        funding_cost = total_cost * AVG_FUNDING_RATE_8H * funding_periods
+        net = gross - fee - funding_cost
+        pnl = net - total_cost
 
         deals_pnl.append(pnl)
         deals_hours.append(duration_h)
+        deals_depth_hours.append(depth_hours_accum)  # P2: record L3+ time
         cumulative_pnl += pnl
         cash += net
         in_position = False
         total_qty = 0.0
         total_cost = 0.0
+        depth_hours_accum = 0.0
 
     # Main loop
     for i, (ts, o, h, l, c, vol) in enumerate(candles):
@@ -302,6 +331,15 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
                 max_dd = dd
             continue
 
+        # P2: accumulate hours at depth (L3+ = layers >= 3). 1h candles = 1 hour each.
+        if in_position and layers >= 3:
+            depth_hours_accum += 1.0
+
+        # R-7: accumulate layer-hours (1h candles = 1 hour each)
+        if in_position:
+            total_layer_hours += layers
+        total_candle_count += 1
+
         # Track drawdown with open position valued at close
         if in_position:
             position_value = total_qty * c
@@ -332,6 +370,15 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
 
     result["open_layers"] = layers if in_position else 0
 
+    # P4: flag how many layers are actually executable at this allocation
+    layers_executable = MAX_LAYERS
+    for li in range(MAX_LAYERS):
+        if gm_layer_cost(li, alloc) < MIN_ORDER_NOTIONAL:
+            layers_executable = li
+            break
+    result["layers_executable"] = layers_executable
+    result["grid_truncated"] = layers_executable < MAX_LAYERS
+
     # Unrealized P&L
     if in_position:
         last_close = candles[-1][4]
@@ -343,12 +390,46 @@ def run_dca_sim(candles: list[tuple], symbol: str, window: str) -> dict:
     total_pnl = result["realized_pnl"] + result["unrealized_pnl"]
     result["net_return_pct"] = round(total_pnl / alloc * 100, 2)
 
-    # Capital freedom
-    result["capital_freedom"] = round(1 - (result["open_layers"] / 24), 4)
+    # R-7: Capital freedom as average open-layer fraction over window
+    # Replaces end-state sampling (P1) which was binary/snapshot-dependent.
+    # avg_layer_frac in [0,1]: 0 = never in position, 1 = always at max depth
+    # capital_freedom = 1 - avg_layer_frac: higher = more capital was free
+    avg_layer_frac = total_layer_hours / (total_candle_count * MAX_LAYERS) if total_candle_count > 0 else 0
+    result["capital_freedom"] = round(1 - avg_layer_frac, 4)
+    result["avg_layer_frac"] = round(avg_layer_frac, 4)
+    result["open_layers_end"] = result["open_layers"]  # Keep end-state for reference
 
-    # DCA Score
+    # P2: Time-at-depth penalty — penalizes coins that spend long periods at L3+.
+    # Scores the ONDO failure mode: capital trapped for days at max depth.
+    # Formula: depth_penalty = 1 / (1 + median_hours_at_L3plus / DEPTH_HALF_LIFE_H)
+    # At 0h depth → 1.0 (no penalty), at 72h → 0.5, at 144h → 0.33
+    DEPTH_HALF_LIFE_H = 72  # Named constant per spec
+    if deals_depth_hours:
+        sorted_depth = sorted(deals_depth_hours)
+        mid = len(sorted_depth) // 2
+        if len(sorted_depth) % 2 == 0 and len(sorted_depth) > 1:
+            median_depth_h = (sorted_depth[mid - 1] + sorted_depth[mid]) / 2
+        else:
+            median_depth_h = sorted_depth[mid]
+    else:
+        median_depth_h = 0.0
+    # Also account for the currently open position's depth time
+    if in_position and layers >= 3:
+        # Include current open deal's depth in the median calculation
+        all_depth = deals_depth_hours + [depth_hours_accum]
+        sorted_all = sorted(all_depth)
+        mid = len(sorted_all) // 2
+        if len(sorted_all) % 2 == 0 and len(sorted_all) > 1:
+            median_depth_h = (sorted_all[mid - 1] + sorted_all[mid]) / 2
+        else:
+            median_depth_h = sorted_all[mid]
+    depth_penalty = 1.0 / (1.0 + median_depth_h / DEPTH_HALF_LIFE_H)
+    result["median_depth_hours"] = round(median_depth_h, 1)
+    result["depth_penalty"] = round(depth_penalty, 4)
+
+    # DCA Score (now includes depth penalty)
     result["dca_score"] = round(
-        result["realized_pnl"] * (1 - max_dd) * result["capital_freedom"] / 100,
+        result["realized_pnl"] * (1 - max_dd) * result["capital_freedom"] * depth_penalty / 100,
         2
     )
 
@@ -399,6 +480,48 @@ def _history_months(conn: sqlite3.Connection, symbol: str) -> float:
     if row[0] is None:
         return 0.0
     return (row[1] - row[0]) / (1000 * 60 * 60 * 24 * 30.44)
+
+
+# FA-4: Maximum age (days) for daily candle data to be considered fresh.
+# Coins with data older than this are excluded from veto evaluation (fail-closed)
+# and flagged as stale in the output. Consistent with overflow's stale-scanner guard.
+MAX_DAILY_STALE_DAYS = 7
+
+
+def _load_daily_signals(conn: sqlite3.Connection, symbol: str, now_ms: int = 0) -> Optional[dict]:
+    """Load latest daily candle signals for veto evaluation (G-4).
+    Returns dict with rsi14, sma50, close, atr14, stale flag, or None on failure.
+    FA-4: includes staleness check — data older than MAX_DAILY_STALE_DAYS returns
+    stale=True so callers can fail-closed.
+    """
+    try:
+        row = conn.execute(
+            "SELECT close, sma50, rsi14, atr14, atr_pct, timestamp "
+            "FROM candles_daily WHERE symbol = ? "
+            "ORDER BY timestamp DESC LIMIT 1",
+            (symbol,)
+        ).fetchone()
+        if row and row[0] and row[2]:  # need at least close and rsi
+            # FA-4: Check freshness
+            data_ts = row[5] if row[5] else 0
+            if now_ms == 0:
+                now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+            age_days = (now_ms - data_ts) / (1000 * 86400) if data_ts > 0 else 999
+            stale = age_days > MAX_DAILY_STALE_DAYS
+            data_date = datetime.fromtimestamp(data_ts / 1000, tz=timezone.utc).strftime('%Y-%m-%d') if data_ts else 'unknown'
+            return {
+                "close": float(row[0]),
+                "sma50": float(row[1] or 0),
+                "rsi14": float(row[2]),
+                "atr14": float(row[3] or 0),
+                "atr_pct": float(row[4] or 0),
+                "stale": stale,
+                "data_date": data_date,
+                "age_days": round(age_days, 1),
+            }
+    except Exception as e:
+        logger.warning(f"Failed to load daily signals for {symbol}: {e}")
+    return None
 
 
 def scan_all(coins: list[str], windows: list[str], top_n: Optional[int] = None, as_of_ms: Optional[int] = None) -> dict:
@@ -453,6 +576,64 @@ def scan_all(coins: list[str], windows: list[str], top_n: Optional[int] = None, 
                 f"Score {sim['dca_score']:.1f}"
             )
 
+    # G-4: Compute entry vetoes from daily signals for each scanned coin
+    # FA-4: fail-closed on stale daily data (>MAX_DAILY_STALE_DAYS old)
+    from trading.spot.engine.gate_model import entry_veto as gm_entry_veto
+    veto_results = {}  # coin -> {active, reason, ...}
+    vetoed_count = 0
+    stale_count = 0
+    for symbol in coins:
+        resolved, _ = _resolve_symbol(conn, symbol)
+        coin = resolved.split('/')[0]
+        daily = _load_daily_signals(conn, resolved, now_ms=now_ms)
+        if not daily:
+            continue
+        # FA-4: stale daily data → fail-closed (exclude from selection)
+        if daily.get("stale", False):
+            stale_count += 1
+            logger.warning(
+                f"  {coin}: STALE daily data ({daily['data_date']}, {daily['age_days']:.0f}d old) "
+                f"— excluded from veto evaluation (fail-closed)")
+            veto_results[coin] = {
+                "active": True,
+                "reason": "STALE_DAILY_DATA",
+                "side": "long",
+                "extreme_price": 0,
+                "rsi14": round(daily["rsi14"], 1),
+                "atr_pct": round(daily["atr_pct"], 2),
+                "stale": True,
+                "data_date": daily["data_date"],
+                "age_days": daily["age_days"],
+            }
+            continue
+        # Evaluate long-side veto (current global regime is LONG_DCA)
+        v = gm_entry_veto(
+            side="long",
+            daily_rsi=daily["rsi14"],
+            close=daily["close"],
+            sma50=daily["sma50"],
+            atr14=daily["atr14"],
+        )
+        if v.active:
+            vetoed_count += 1
+            logger.info(f"  {coin}: VETOED ({v.reason}) — RSI={daily['rsi14']:.1f}, "
+                        f"vs_sma50={((daily['close']/daily['sma50']-1)*100) if daily['sma50'] > 0 else 0:.1f}%")
+        veto_results[coin] = {
+            "active": v.active,
+            "reason": v.reason if v.active else "",
+            "side": v.side,
+            "extreme_price": round(v.extreme_price, 6) if v.extreme_price else 0,
+            "rsi14": round(daily["rsi14"], 1),
+            "atr_pct": round(daily["atr_pct"], 2),
+            "stale": False,
+            "data_date": daily.get("data_date", ""),
+        }
+    if vetoed_count:
+        logger.info(f"Entry vetoes: {vetoed_count} coin(s) flagged")
+    if stale_count:
+        logger.warning(f"Stale daily data: {stale_count} coin(s) excluded (fail-closed, >" 
+                       f"{MAX_DAILY_STALE_DAYS}d old)")
+
     conn.close()
 
     # Sort each window by dca_score descending
@@ -470,6 +651,10 @@ def scan_all(coins: list[str], windows: list[str], top_n: Optional[int] = None, 
         "min_history_months": MIN_HISTORY_MONTHS,
         "top_picks": {},
     }
+
+    # G-4: Add veto summary to output (observability)
+    output["vetoes"] = veto_results
+    output["vetoed_count"] = vetoed_count
 
     best_window = "bear" if "bear" in windows else windows[-1]
     all_results = results.get(best_window, [])
@@ -490,7 +675,8 @@ def scan_all(coins: list[str], windows: list[str], top_n: Optional[int] = None, 
 
         window_data = {
             "rankings": [
-                {**r, "rank": i + 1}
+                {**r, "rank": i + 1,
+                 "veto": veto_results.get(r.get("coin", r.get("symbol", "").split("/")[0]), {})}
                 for i, r in enumerate(rankings)
             ]
         }
