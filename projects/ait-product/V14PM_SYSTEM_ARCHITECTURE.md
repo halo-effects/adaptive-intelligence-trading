@@ -1,5 +1,5 @@
 # Adaptive Intelligence Trading - V14PM System Architecture
-_Version: 1.11 | Date: 2026-07-03 | Status: Production (Aster Perps)_
+_Version: 1.14 | Date: 2026-07-05 | Status: Production (Aster Perps)_
 
 ---
 
@@ -420,10 +420,10 @@ Layer sizes are fixed fractions of **allocated capital** (not remaining capital)
 
 | Layer | Fraction | Cumulative | Avg Entry | TP Price | Bounce to TP |
 |-------|----------|------------|-----------|----------|-------------|
-| L1 | 40% | 40% | 100.00 | 103.00 | +3.0% |
-| L2 | 24% | 64% | 99.43 | 102.42 | +4.0% |
-| L3 | 20% | 84% | 98.84 | 101.81 | +5.0% |
-| L4 | 16% | 100% | 98.29 | 101.24 | +6.0% |
+| L1 | 48% | 48% | 100.00 | 103.00 | +3.0% |
+| L2 | 32% | 80% | 99.39 | 102.38 | +3.9% |
+| L3 | 20% | 100% | 98.91 | 101.87 | +5.0% |
+
 
 Sum = 100% — fully self-funded, no top-up needed by construction.
 Deviation: 1.5% linear from volume-weighted average entry (unchanged).
@@ -460,7 +460,7 @@ All bots are launched with an explicit `--profile` flag:
 |---------|----------|----------------|--------|------------|----|
 | `low` | 1.0x | (legacy Martingale) | 2.0% | 10 | 1.5% |
 | `medium` | 1.5x | (legacy Martingale) | 2.0% | 10 | 1.5% |
-| `high` | 1.5x | 40/24/20/16% (GridModel) | 1.5% | 4 | 3.0% |
+| `high` | 1.5x | 48/32/20% G-SPLIT (GridModel v2.0) | 1.5% | 3 | 3.0% |
 
 **V14PM live production uses:** `high` profile, `1.0x` leverage (no liquidation risk)
 
@@ -472,7 +472,7 @@ DCA_TP_PCT          = 0.015   # 1.5% take profit (base default; high profile ove
 DCA_SO_DEVIATION    = 0.025   # 2.5% between safety orders (base default; high profile overrides to 0.015)
 DCA_SO_MULTIPLIER   = 1.5     # Volume multiplier per layer (capped at layer 4 in sizing formula)
 DCA_BO_PCT          = 0.30    # 30% base order (base default; high profile overrides to 0.40)
-DCA_MAX_LAYERS      = 8       # Max safety orders (base default; high profile overrides to 4)
+DCA_MAX_LAYERS      = 8       # Max safety orders (base default; high profile overrides to 3, G-SPLIT)
 DCA_ACCUMULATE      = True    # False = cycling mode (paper bots)
 OB_THRESHOLD_2W     = 93      # StochRSI 2w overbought threshold
 ```
@@ -1161,6 +1161,52 @@ if cs.layer_count == 0 and ex_qty > 0:
 
 **Hard Rule #35:** `open_deals` is truth for layer count.
 
+#### 7.5.10 Two Phase Machines (2026-07-05)
+
+The system contains two distinct phase machines that coexist. They use different
+state vocabularies, different signal sets, and serve different consumers:
+
+| | Engine Machine (§4.5) | Scanner Machine |
+|---|---|---|
+| **States** | LONG_DCA / SHORT_DCA (ROUTER transient) | DCA / FLAT / MARKUP / MARKDOWN |
+| **Signals** | 1W/2W StochRSI stack, 2D divergence, triple-gate bottom (CFGI, Steve 3-Check, HVF, Fib) | HH_HL/LH_LL structure, ADX, Fib break/support, CFGI |
+| **Consumers** | Regime gate (§7.5.2), regime monitor, dashboard phase badges | Scanner phase backtests, coin scoring context |
+| **Persisted** | `regime_events` table, `machine='engine_4_5'` | `regime_events` table, `machine='scanner_wyckoff'` |
+
+The **engine machine** (§4.5) drives all live trading decisions. It operates at the
+coin level and feeds into the portfolio regime gate. Phase transitions emit
+`COIN_PHASE` events to the regime event log.
+
+The **scanner machine** operates during cycle scanner backtests to classify market
+regimes for each coin. Its 4-state model (DCA→MARKUP→MARKDOWN→FLAT) provides
+context for DCA cycle scoring but does not drive live trading.
+
+The two machines can disagree on a coin's state — this is expected. The engine
+machine has real-time signal access; the scanner machine runs on daily candles
+with a different indicator set.
+
+#### 7.5.11 Regime Event Persistence (2026-07-05, RH-1)
+
+All regime-relevant events are persisted to an append-only SQLite table
+(`regime_events` in `trading/spot/data/regime_events.db`). Three event types:
+
+- **GLOBAL_FLIP**: Global regime changes via APPROVE command or manual set.
+- **COIN_PHASE**: Per-coin phase transitions from the engine §4.5 machine.
+- **ALERT**: Graduated conviction alerts (15%→50%) and operator responses.
+
+**Hard rule:** Persistence failure never blocks trading or alerting. All writes
+are wrapped in try/except with warning-level logging.
+
+The table is seeded on first deploy with:
+1. Brett's attested regime history (March 2024 SHORT start, Dec 2025 LONG flip)
+2. A backfill snapshot of all current coin phases and the global regime
+
+**Evidence record:** The Regime-Ladder Final study (Fable, 2026-07-05) scored
+the production regime layer at +43.5% vs B&H −43.8% (Jan 2025–Jul 2026, 43 coins)
+using attested calls where logs were absent. Fable's earlier reconstruction number
+(+90%/yr) was withdrawn after failing calibration against actual production timing.
+The corrected figure uses attested regime flip dates, not the reconstruction.
+
 #### 7.6 Engine Capital Flow (2026-06-19)
 
 The DCA engine requires `engine.capital > 0` to generate BUY actions. Engine capital
@@ -1267,6 +1313,54 @@ The engine only processes candles newer than its creation time.
 **Defense-in-depth (live runner only):** The live runner also has a warmup guard that
 rolls back actions on non-current candles. The `_last_candle_ts` fix prevents the
 candles from even reaching the engine.
+
+#### 7.10 Balance-Fetch Failure Guard (2026-07-04)
+
+`fetch_full_balance` previously swallowed API exceptions and returned
+`{"usdt_free": 0.0, ...}`, causing `reconcile_pools_from_exchange` to set
+`active_pool_cash = 0.0` and `total_equity = invested only` for that cycle.
+If the failure coincided with the midnight cycle, `_do_rebalance` ran on
+wrong equity (tier hysteresis dampened but did not eliminate the impact).
+
+**Fix:** `fetch_full_balance` returns `None` on exception.
+`_sync_positions_from_exchange` checks for `None` and keeps all previous
+balance values unchanged. `reconcile_pools_from_exchange` skips its
+accounting for that cycle and logs a WARNING.
+
+**Result:** A transient API failure is gracefully absorbed — equity accounting
+continues from the last known-good values rather than being zeroed.
+
+#### 7.11 Grid-Freeze Detector Threshold (2026-07-04)
+
+`_check_grid_freeze` previously fired on `eng.capital < 1.0`. Under
+GridModel fixed-fraction sizing, the real starvation state is
+`0 < capital < next_layer_cost` — e.g. $5 on hand, $12 needed for L3.
+The old `< $1` threshold missed this band silently.
+
+**Fix:** Compare `eng.capital` against `gm_layer_cost(cs.layer_count, eng.allocated_capital)`
+(the cost of the next unfilled layer from GridModel) instead of flat `$1`.
+Fires a Telegram WARNING when the engine has capital but cannot afford the
+next grid step.
+
+#### 7.12 Sub-Minimum Layer Warning (2026-07-04)
+
+**Known constraint:** `v14_dca_engine.py` retains `if order < 10: return`
+as an absolute floor. Under GridModel fixed fractions:
+- L4 = 16% of allocation → requires allocation ≥ **$62.50** to fire
+- L3 = 20% of allocation → requires allocation ≥ **$50.00** to fire
+
+At sub-$500 total capital with 3 coins, per-coin allocations fall in this
+band and upper layers silently do not fire. The 11-for-11 L4 record cannot
+extend at test-capital scale; backtests assume full deployability at $10K.
+
+**Mitigation:** Telegram WARNING logged at rebalance time when any seeded
+grid layer is sub-minimum for the current allocation. No allocation floor
+imposed — real users start at $500+ where the tier table naturally ensures
+adequate per-coin allocation.
+
+**Tier table safety:** At $500 equity (2-coin tier), each coin receives
+~$250 → L4 fires at $40. At $1K (3-coin tier) ~$333/coin → L4 fires at
+$53. Warning threshold aligns with the actual `order < 10` gate.
 
 #### 7.9 Paper vs Live TP Behavior
 
@@ -1654,5 +1748,14 @@ _Updated: 2026-05-16 (v1.8 - Orphan-TP mode: no forced closes on phase transitio
 _Updated: 2026-06-19 (v1.9 - Layer reconstruction §7.5.9, engine capital flow §7.6, zombie slot detection §7.7. Hard Rules #35-36. §7.3 steps 10-11. §15 design decisions. Deployed to paper + live.)_
 _Updated: 2026-06-19 (v1.10 - Candle replay guard §7.8, paper vs live TP behavior §7.9. New engines skip historical candles. Trailing TP simulation specced.)_
 _Updated: 2026-07-03 (v1.11 - External audit (Fable) remediation. GridModel: bull-phase grid D-GRID(d) 40/24/20/16% fixed fractions, single source of truth for engine+scanner+top-up. §5.2 grid table rewritten. §5.3 high profile updated. §7.2 tier table updated to match code EQUITY_TIER_CAPS (D-TIER confirmed). §7.6 grid cost table updated. Phase 0 fixes: C2 (\_prune\_stale), H1 (liquidity filter), H2 (1000-prefix), M1 (\_evaluate\_regime deleted), M3 (CSV repair), P7 (startup self-test). See specs/fable-audit-2026-07-03.md.)_
+_Updated: 2026-07-04 (v1.13 - G-SPLIT grid migration + Part A veto + session close.
+  Grid: GridModel v2.0, G-SPLIT 48/32/20 (3 layers). L4 removed. Decision: Final Grid Decision Test Spec v1.0 (Fable). +8.6% PnL over incumbent, best PnL/%DD. E-4 dynamic sizing tested and FAILED evidence bar. Static grid is the answer. Brett approved 2026-07-04.
+  Part A veto: DEPLOYED. GateModel: ATR-normalized extension (EXT_ATR_MULT=3.0), side-resolved divergence, NEAR fixture. Veto filter in all 3 selector paths. V-4 guard implemented (no clear while trigger active).
+  Part B layer gate: CLOSED. Pivot gate tested, higher-low anchor validated (zero waterfall leaks). Superseded by G-SPLIT removing L4.
+  Trade Score: P1-P5 + P1b deployed. Capital freedom average-layer-fraction, depth penalty, score logging, sim at live scale, funding costs.
+  Post-remediation fixes: M-2 (None guard), M-4 (GridModel freeze threshold), H-1 (sub-min warning).
+  5.2 grid table rewritten from GridModel v2.0 self-test. Evidence: final-grid-decision-spec-v1.0.md, grid-decision-verification-memo.md.)_
+_Updated: 2026-07-04 (v1.12 - Post-remediation audit (Fable) fixes deployed. §7.10 balance-fetch None guard (M-2 fix). §7.11 grid-freeze threshold uses GridModel layer cost (M-4 fix). §7.12 sub-minimum layer warning (H-1 documented). Known constraint: grid assumes allocation ≥$62.50/coin for L4; tier table enforces at $500+ real capital. All P0 fixes from v1.11 independently verified. See specs/fable-post-remediation-audit-2026-07-04.md.)_
+_Updated: 2026-07-05 (v1.14 - RH-1 regime event persistence §7.5.11. Append-only regime_events table (GLOBAL_FLIP, COIN_PHASE, ALERT). Fail-open writes. Attested history seed (March 2024 SHORT, Dec 2025 LONG). §7.5.10 two phase machines disambiguation (engine_4_5 vs scanner_wyckoff). RH-3: P5 per-coin trailing-90d median funding rate replaces flat 0.01%/8h constant in scanner sim. Regime-Ladder Final study evidence record: production +43.5% vs B&H -43.8%; earlier +90%/yr reconstruction withdrawn. Spec: Regime-Persistence Handoff v1.0, Fable.)_
 _Next: Cloud Migration Guide (Phase 5)_
-_Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md, fable-audit-2026-07-03.md_
+_Audit trail: V14PM_FULL_AUDIT.md, PM_AUDIT_2026-03-10.md, fable-audit-2026-07-03.md, fable-post-remediation-audit-2026-07-04.md_
