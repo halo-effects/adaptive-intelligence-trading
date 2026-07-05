@@ -232,7 +232,8 @@ class TradeTracker:
         except Exception as e:
             logger.error(f"Failed to load trades.csv: {e}")
 
-    def on_buy(self, symbol: str, qty: float, price: float, ts: datetime):
+    def on_buy(self, symbol: str, qty: float, price: float, ts: datetime,
+               dca_score: float = 0.0, trade_score: float = 0.0, trend_mult: float = 1.0):
         key = f"{symbol}:long"
         if key not in self._open_deals:
             self._deal_counter += 1
@@ -242,10 +243,50 @@ class TradeTracker:
                 "open_time": ts.isoformat(),
                 "layers": 0,
                 "invested": 0.0,
+                "qty": 0.0,  # FA-3: track running qty for MAE computation
+                # P3: capture scanner scores at deal-open for validation loop
+                "dca_score": dca_score,
+                "trade_score": trade_score,
+                "trend_mult": trend_mult,
+                # FA-3: max adverse excursion tracking (running max per tick)
+                "mae_pct": 0.0,
             }
         deal = self._open_deals[key]
         deal["layers"] += 1
         deal["invested"] += qty * price
+        deal["qty"] = deal.get("qty", 0) + qty  # FA-3: running qty for MAE
+
+    def update_mae(self, symbol: str, current_low: float, current_qty: float = 0):
+        """Update max adverse excursion for an open deal (FA-3).
+        Tracks running max of (avg_entry_now - candle_low) / avg_entry_now per tick.
+        This captures the worst unrealized loss at the TIME it happened, using the
+        avg entry that was live at that moment — not the final avg entry at close.
+        Multi-layer deals correctly reflect the pain felt before averaging down.
+        
+        Handles legacy deals (pre-MAE schema): backfills qty from current_qty
+        and initializes mae_pct to 0 on first tick."""
+        key = f"{symbol}:long"
+        deal = self._open_deals.get(key)
+        if not deal or deal.get("invested", 0) <= 0:
+            return
+        # Backfill qty for legacy deals (opened before MAE tracking)
+        if "qty" not in deal or deal["qty"] <= 0:
+            if current_qty > 0:
+                deal["qty"] = current_qty
+            else:
+                return  # Can't compute MAE without qty
+        if "mae_pct" not in deal:
+            deal["mae_pct"] = 0.0
+        qty = deal["qty"]
+        if qty <= 0:
+            return
+        avg_entry = deal["invested"] / qty
+        if avg_entry <= 0 or current_low <= 0:
+            return
+        # Adverse excursion at THIS moment
+        excursion_pct = max(0, (avg_entry - current_low) / avg_entry * 100)
+        if excursion_pct > deal["mae_pct"]:
+            deal["mae_pct"] = excursion_pct
 
     def on_sell(self, symbol: str, qty: float, actual_price: float,
                 actual_proceeds: float, fee: float, ts: datetime) -> dict:
@@ -276,6 +317,12 @@ class TradeTracker:
             "duration_h": round(duration_h, 1),
             "fill_price": round(actual_price, 8),
             "recorded_at": datetime.now(timezone.utc).isoformat(),
+            # P3: scanner scores captured at deal-open for validation loop
+            "dca_score": deal.get("dca_score", ""),
+            "trade_score": deal.get("trade_score", ""),
+            "trend_mult": deal.get("trend_mult", ""),
+            # FA-3: max adverse excursion (running max, computed per-tick)
+            "mae_pct": round(deal.get("mae_pct", 0), 2) if deal.get("mae_pct", 0) > 0 else "",
         }
         self.trades.append(record)
         return record
@@ -287,6 +334,10 @@ class TradeTracker:
             "deal_id", "symbol", "open_time", "close_time", "layers",
             "invested", "proceeds", "fee", "pnl", "return_pct",
             "duration_h", "fill_price", "recorded_at",
+            # P3: scanner scores at deal-open (validation loop)
+            "dca_score", "trade_score", "trend_mult",
+            # FA-3: max adverse excursion
+            "mae_pct",
         ]
         path = self.output_dir / "trades.csv"
         tmp  = path.with_suffix(".tmp")
@@ -411,7 +462,7 @@ class AsterPerpClient:
             }
         except Exception as e:
             logger.error(f"fetch_full_balance failed: {e}")
-            return {"usdt_free": 0.0, "usdt_total": 0.0}
+            return None  # M-2 fix: caller must handle None (skip reconcile)
 
     def fetch_ticker_price(self, db_symbol: str) -> float:
         """Fetch current market price."""
@@ -1130,6 +1181,9 @@ class V14PortfolioLiveAster:
         """Overwrite engine position state from exchange API every cycle. Exchange is truth."""
         try:
             balance = self.client.fetch_full_balance()
+            if balance is None:
+                logger.warning("Balance fetch returned None — keeping previous values, skipping reconcile")
+                return  # M-2: don't inject $0.00 as truth
             self._exchange_usdt_free = balance["usdt_free"]
             self._exchange_usdt_total = balance["usdt_total"]
         except Exception as e:
@@ -1423,6 +1477,12 @@ class V14PortfolioLiveAster:
                         )
                         # Allow APPROVE at any conviction level
                         self._regime_alert_state = "AWAITING_APPROVAL"
+                        # RH-1: persist alert event (fail-open)
+                        try:
+                            from trading.spot.engine.regime_persistence import log_alert
+                            log_alert(threshold, len(flipped), total_engines)
+                        except Exception:
+                            pass
                         break  # Only one alert per tick
 
             self._save_state()
@@ -2093,8 +2153,9 @@ class V14PortfolioLiveAster:
     def _get_scanner_rankings(self) -> List[Tuple[str, float]]:
         """Return scanner rankings as (symbol, adjusted_score) sorted descending.
 
-        Applies hurdle rate and trend multiplier, same logic as
-        CapitalRouter.rebalance_daily(). Returns empty list on error (fail-open).
+        Applies hurdle rate, trend multiplier, and G-4 entry veto filter.
+        Vetoed coins are excluded BEFORE scoring (spec §4.4 precedence).
+        Returns empty list on error (fail-open).
         """
         try:
             scanner_data = self.router.load_scanner_json(str(SCANNER_PATH))
@@ -2102,19 +2163,54 @@ class V14PortfolioLiveAster:
                 return []
 
             qualifying = []
+            vetoed_out = []
             for entry in scanner_data:
                 symbol = entry.get("symbol") or entry.get("coin")
                 base_score = float(entry.get("dca_score", 0))
                 trend_mult = float(entry.get("trend_multiplier", 1.0))
+                # G-4: veto filter — exclude vetoed coins before scoring
+                veto = entry.get("veto", {})
+                if veto.get("active", False):
+                    vetoed_out.append((symbol, veto.get("reason", "unknown")))
+                    continue
                 if base_score >= HURDLE_RATE:
                     adjusted = base_score * trend_mult
                     qualifying.append((symbol, adjusted))
+
+            if vetoed_out:
+                logger.info(f"Veto filter excluded {len(vetoed_out)} coin(s): "
+                           f"{', '.join(f'{s}({r})' for s, r in vetoed_out)}")
 
             qualifying.sort(key=lambda x: x[1], reverse=True)
             return qualifying
         except Exception as e:
             logger.warning(f"Scanner rankings load failed (fail-open): {e}")
             return []
+
+    def _get_coin_scanner_scores(self, symbol: str) -> tuple:
+        """Return (dca_score, trade_score, trend_mult) for a coin from latest scanner JSON.
+        P3: captured at deal-open for the validation loop.
+        Returns ("", "", "") on any failure — NULL, never defaults.
+        A sizing rule fed by silent defaults would size on noise (Fable D-2 finding).
+        """
+        try:
+            scanner_data = self.router.load_scanner_json(str(SCANNER_PATH))
+            if not scanner_data:
+                logger.warning(f"Scanner scores lookup failed for {symbol}: no scanner data")
+                return ("", "", "")
+            coin = symbol.split('/')[0]
+            for entry in scanner_data:
+                entry_coin = (entry.get('symbol') or entry.get('coin', '')).split('/')[0]
+                if entry_coin == coin:
+                    dca = float(entry.get('dca_score', 0))
+                    trend = float(entry.get('trend_multiplier', 1.0))
+                    trade = dca * trend
+                    return (round(dca, 2), round(trade, 2), round(trend, 3))
+            logger.warning(f"Scanner scores lookup: {symbol} not found in rankings")
+            return ("", "", "")
+        except Exception as e:
+            logger.warning(f"Scanner scores lookup failed for {symbol}: {e}")
+            return ("", "", "")
 
     def _get_max_layers(self) -> int:
         """Return max DCA layers from the engine config (High profile default)."""
@@ -2246,11 +2342,11 @@ class V14PortfolioLiveAster:
             logger.info("Capital top-up: no engines need additional capital")
 
     def _prune_stale_coin_after_tp(self, sym: str, cs):
-        """Remove coin from router allocations if it has no open position
-        and is not in the current rebalance targets (active_allocations
-        seeded from scanner rankings). Called after non-TP sells (manual/
-        forced closes) to clean up stale state. Same semantics as the
-        stale-allocation-cleanup block in _do_rebalance().
+        """Remove coin from router allocations if it has no open position.
+        Called after non-TP sells (manual/forced closes) to clean up stale
+        allocation state. Unconditionally prunes flat coins from
+        active_allocations — the next daily rebalance re-seeds any coin
+        that's still top-ranked in the scanner. Self-healing within 24h.
         """
         # Check if coin still has an open position
         has_position = (
@@ -2894,8 +2990,12 @@ class V14PortfolioLiveAster:
                         f"Engine: ${price:.6f} | Fill: ${actual_price:.6f}"
                     )
 
+                # P3: capture scanner scores at deal-open for validation loop
+                dca_s, trade_s, trend_m = self._get_coin_scanner_scores(sym)
                 self.tracker.on_buy(sym, actual_qty, actual_price,
-                                    datetime.now(timezone.utc))
+                                    datetime.now(timezone.utc),
+                                    dca_score=dca_s, trade_score=trade_s,
+                                    trend_mult=trend_m)
 
                 # Record buy timestamp for dedup guard
                 cs._last_buy_time = time.time()
@@ -3288,26 +3388,54 @@ class V14PortfolioLiveAster:
     # ── Grid-freeze detector + daily digest (audit P7/F6, 2026-07-03) ───────
 
     def _check_grid_freeze(self):
-        """Alert if any engine has open position below max layers with zero capital.
+        """Alert if any engine has open position below max layers with insufficient
+        capital to fund the next layer. M-4 fix: compare against GridModel layer cost
+        instead of $1 threshold. Also warns (H-1) when any layer would be sub-$10.
         This is the Rule #36 incident class: capital starvation freezes the DCA grid.
         """
+        from trading.spot.engine.grid_model import layer_cost as gm_layer_cost
         max_layers = self._get_max_layers()
         frozen = []
+        sub_minimum = []
         for sym, cs in self.coins.items():
             if not cs.engine or not cs.engine._engine:
                 continue
             eng = cs.engine._engine
             has_position = eng.long_coins > 0 or eng.short_coins > 0
-            if has_position and cs.layer_count < max_layers and eng.capital < 1.0:
-                frozen.append(f"{sym.split('/')[0]} L{cs.layer_count} cap=${eng.capital:.2f}")
+            alloc = getattr(eng, 'allocated_capital', 0) or 0
+            if has_position and cs.layer_count < max_layers:
+                next_layer_cost = gm_layer_cost(cs.layer_count, alloc)
+                if eng.capital < next_layer_cost:
+                    frozen.append(
+                        f"{sym.split('/')[0]} L{cs.layer_count} "
+                        f"cap=${eng.capital:.2f} need=${next_layer_cost:.2f}"
+                    )
+            # H-1 warning: check if any layer in this coin's grid is sub-$10
+            if alloc > 0:
+                for layer_idx in range(max_layers):
+                    cost = gm_layer_cost(layer_idx, alloc)
+                    if 0 < cost < 10.0:
+                        sub_minimum.append(
+                            f"{sym.split('/')[0]} L{layer_idx+1} "
+                            f"=${cost:.2f} (alloc=${alloc:.2f})"
+                        )
+                        break  # one warning per coin is enough
         if frozen:
             msg = (
                 f"\U0001f6a8 {TG_PREFIX} <b>Grid Freeze Detected</b>\n"
-                f"{len(frozen)} position(s) with $0 engine capital below max layers:\n"
+                f"{len(frozen)} position(s) with insufficient capital for next layer:\n"
                 + "\n".join(frozen)
             )
             logger.warning(msg)
             send_telegram(msg)
+        if sub_minimum:
+            msg = (
+                f"\u26a0\ufe0f {TG_PREFIX} <b>Sub-Minimum Layer Warning</b>\n"
+                f"{len(sub_minimum)} coin(s) have layers below $10 exchange minimum:\n"
+                + "\n".join(sub_minimum)
+                + "\nGrid may be 3-layer at current allocation."
+            )
+            logger.warning(msg)
 
     def _daily_health_digest(self, current_dt: datetime):
         """Send daily silent-failure digest at midnight UTC.
@@ -3475,6 +3603,17 @@ class V14PortfolioLiveAster:
             )
             self._regime_last_alert_pct = 0.0  # Reset conviction tracker
             logger.info(f"APPROVE: global regime {old_regime} -> {self._global_regime}")
+            # RH-1: persist global flip (fail-open)
+            try:
+                from trading.spot.engine.regime_persistence import log_global_flip, log_alert_response
+                flipped_count = len([c for c in self.coins.values() if c.regime_flagged])
+                total_count = sum(1 for c in self.coins.values() if c.engine)
+                conviction = flipped_count / total_count if total_count > 0 else 0
+                log_global_flip(old_regime, self._global_regime, conviction,
+                                flipped_count, total_count, "approve")
+                log_alert_response(conviction, "approve")
+            except Exception:
+                pass
             self._save_state()
 
         elif text == "DENY":
@@ -3487,6 +3626,12 @@ class V14PortfolioLiveAster:
             send_telegram(
                 f"✅ {TG_PREFIX} Regime change denied. Conviction reset — alerts will re-fire if more coins flip."
             )
+            # RH-1: persist deny response (fail-open)
+            try:
+                from trading.spot.engine.regime_persistence import log_alert_response
+                log_alert_response(0.0, "deny")
+            except Exception:
+                pass
             logger.info("DENY: regime change declined, conviction reset")
             self._save_state()
 
@@ -4420,6 +4565,20 @@ class V14PortfolioLiveAster:
                 f"Active coins: {len(self.coins)}\n"
                 f"State: {mode_str}"
             )
+            # RH-1: seed regime event log on startup (fail-open, idempotent)
+            try:
+                from trading.spot.engine.regime_persistence import (
+                    seed_attested_history, seed_current_state
+                )
+                seed_attested_history()
+                seed_current_state(
+                    {s: {'engine_state': {'phase': c.engine._engine.phase.name
+                          if c.engine and c.engine._engine else None}}
+                     for s, c in self.coins.items()},
+                    self._global_regime
+                )
+            except Exception as e:
+                logger.warning(f"Regime event seed failed (non-fatal): {e}")
 
             last_tp_check = time.time()
 
@@ -4511,6 +4670,13 @@ class V14PortfolioLiveAster:
                                     f"O={candle['open']:.6f} H={candle['high']:.6f} "
                                     f"L={candle['low']:.6f} C={candle['close']:.6f}"
                                 )
+
+                            # FA-3: Update MAE tracking with candle low
+                            # Pass current qty from engine for legacy deal backfill
+                            eng_qty = 0.0
+                            if cs.engine and cs.engine._engine:
+                                eng_qty = cs.engine._engine.long_coins or 0.0
+                            self.tracker.update_mae(sym, candle['low'], current_qty=eng_qty)
 
                             # Run engine tick (always — indicators need all candles)
                             try:

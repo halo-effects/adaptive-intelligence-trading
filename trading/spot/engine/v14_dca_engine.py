@@ -243,6 +243,14 @@ class V14DCAEngine:
         self.phase_log.append({
             'date': date, 'from': old, 'to': new_phase, 'reason': reason
         })
+        # RH-1: persist phase transition (fail-open)
+        try:
+            from trading.spot.engine.regime_persistence import log_coin_phase
+            old_name = old.name if hasattr(old, 'name') else str(old)
+            new_name = new_phase.name if hasattr(new_phase, 'name') else str(new_phase)
+            log_coin_phase(self.symbol, old_name, new_name, reason)
+        except Exception:
+            pass  # fail-open: never block trading
 
     # =========================================================================
     #  FEE HELPER
