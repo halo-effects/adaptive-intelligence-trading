@@ -1,6 +1,6 @@
 {
   "seed_capital": 300.0,
-  "current_capital": 401.63927531,
+  "current_capital": 462.48294111999996,
   "transactions": [
     {
       "timestamp": "2026-04-15T00:00:00",
@@ -34,6 +34,18 @@
       "type": "deposit",
       "amount": 9.380775020000044,
       "note": "Startup reconciliation: DEX=$414.13 vs ledger=$392.26"
+    },
+    {
+      "timestamp": "2026-08-10T05:50:16.794121+00:00",
+      "type": "deposit",
+      "amount": 13.811865809999972,
+      "note": "Startup reconciliation: DEX=$440.80 vs ledger=$401.64"
+    },
+    {
+      "timestamp": "2026-08-20T06:52:48.609463+00:00",
+      "type": "deposit",
+      "amount": 47.031799999999976,
+      "note": "Auto-detected via balance comparison (drift $+47.03, +10.7%)"
     }
   ]
 }
