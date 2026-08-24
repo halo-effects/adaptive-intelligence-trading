@@ -1,0 +1,1568 @@
+{
+  "generated_at": "2026-07-04T20:16:28.887617+00:00",
+  "window": "2026-04-01 to 2026-07-03",
+  "parameters": {
+    "RSI_HOT": 78,
+    "RSI_COLD": 22,
+    "EXT_ATR_MULT": 3.0,
+    "EXT_PCT": 0.25,
+    "CALM_DAYS": 4,
+    "RETRACE_PCT": 0.25
+  },
+  "summary": {
+    "coins_scanned": 46,
+    "coins_with_events": 34,
+    "total_triggers": 53,
+    "total_clears": 46,
+    "currently_vetoed": 7
+  },
+  "results": {
+    "BTC": {
+      "events": [
+        {
+          "date": "2026-04-26",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 78615.0,
+          "rsi": 65.13341056725989,
+          "sma50": 71558.78,
+          "atr_pct": 2.8995117639823342
+        },
+        {
+          "date": "2026-05-16",
+          "type": "CLEAR",
+          "close": 79134.0,
+          "rsi": 52.04836181083514,
+          "sma50": 75212.74,
+          "days_calm": 4,
+          "extreme": 81543.0
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "ETH": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "SOL": {
+      "events": [
+        {
+          "date": "2026-05-11",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 96.291,
+          "rsi": 72.62752697327639,
+          "sma50": 85.47762,
+          "atr_pct": 3.2512951772833656
+        },
+        {
+          "date": "2026-05-16",
+          "type": "CLEAR",
+          "close": 89.272,
+          "rsi": 50.18987569496885,
+          "sma50": 85.90154000000001,
+          "days_calm": 4,
+          "extreme": 97.319
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "XRP": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "LINK": {
+      "events": [
+        {
+          "date": "2026-05-08",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 10.34,
+          "rsi": 70.07424142786603,
+          "sma50": 9.13796,
+          "atr_pct": 3.4975712171296407
+        },
+        {
+          "date": "2026-05-15",
+          "type": "CLEAR",
+          "close": 10.068,
+          "rsi": 54.9766325125659,
+          "sma50": 9.327620000000001,
+          "days_calm": 5,
+          "extreme": 10.711
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "DOGE": {
+      "events": [
+        {
+          "date": "2026-05-01",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.10808,
+          "rsi": 72.95391884425082,
+          "sma50": 0.0951598,
+          "atr_pct": 3.8545158600683833
+        },
+        {
+          "date": "2026-05-05",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 0.11559,
+          "rsi": 80.78742391246267,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-05-06",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.11245,
+          "rsi": 71.23491906995689,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-11",
+          "type": "CLEAR",
+          "close": 0.11111,
+          "rsi": 63.0807485501724,
+          "sma50": 0.0981052,
+          "days_calm": 5,
+          "extreme": 0.11559
+        },
+        {
+          "date": "2026-05-13",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.11378,
+          "rsi": 65.78364335569279,
+          "sma50": 0.09879760000000001,
+          "atr_pct": 3.8050438727495313
+        },
+        {
+          "date": "2026-05-18",
+          "type": "CLEAR",
+          "close": 0.10479,
+          "rsi": 46.28216468221646,
+          "sma50": 0.10065420000000001,
+          "days_calm": 4,
+          "extreme": 0.11575
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 2,
+      "clears": 2,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "ADA": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "LTC": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "AVAX": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "DOT": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "UNI": {
+      "events": [
+        {
+          "date": "2026-05-09",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 3.81,
+          "rsi": 72.373675134333,
+          "sma50": 3.3258199999999998,
+          "atr_pct": 4.150451647454071
+        },
+        {
+          "date": "2026-05-14",
+          "type": "CLEAR",
+          "close": 3.7319,
+          "rsi": 59.87712870657127,
+          "sma50": 3.3483199999999993,
+          "days_calm": 4,
+          "extreme": 3.9832
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "ATOM": {
+      "events": [
+        {
+          "date": "2026-04-25",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 2.02,
+          "rsi": 68.24342833643666,
+          "sma50": 1.7894079999999997,
+          "atr_pct": 3.4319447314130147
+        },
+        {
+          "date": "2026-04-29",
+          "type": "CLEAR",
+          "close": 1.915,
+          "rsi": 55.89749793004367,
+          "sma50": 1.8054400000000002,
+          "days_calm": 4,
+          "extreme": 2.02
+        },
+        {
+          "date": "2026-05-12",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 2.11,
+          "rsi": 71.90904296161659,
+          "sma50": 1.82595,
+          "atr_pct": 3.9918053161904457
+        },
+        {
+          "date": "2026-05-17",
+          "type": "CLEAR",
+          "close": 2.0451,
+          "rsi": 58.35610570434435,
+          "sma50": 1.8561640000000004,
+          "days_calm": 4,
+          "extreme": 2.11
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 0,
+      "clears": 2,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "NEAR": {
+      "events": [
+        {
+          "date": "2026-05-08",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 1.598,
+          "rsi": 71.91632233024674,
+          "sma50": 1.3203199999999997,
+          "atr_pct": 4.613060994330074
+        },
+        {
+          "date": "2026-05-17",
+          "type": "CLEAR",
+          "close": 1.5087,
+          "rsi": 55.964189121256254,
+          "sma50": 1.3733960000000003,
+          "days_calm": 4,
+          "extreme": 1.598
+        },
+        {
+          "date": "2026-05-20",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 1.6918,
+          "rsi": 69.03304209179585,
+          "sma50": 1.401394,
+          "atr_pct": 5.374734139604237
+        },
+        {
+          "date": "2026-05-21",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 1.9266,
+          "rsi": 78.6020170763459,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-05-27",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 2.4977,
+          "rsi": 73.12345663637211,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-30",
+          "type": "CLEAR",
+          "close": 2.25,
+          "rsi": 60.88098533784982,
+          "sma50": 1.6244999999999998,
+          "days_calm": 4,
+          "extreme": 2.7826
+        },
+        {
+          "date": "2026-05-31",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 2.32,
+          "rsi": 62.87430281557141,
+          "sma50": 1.64286,
+          "atr_pct": 8.524565257987037
+        },
+        {
+          "date": "2026-06-07",
+          "type": "CLEAR",
+          "close": 2.059,
+          "rsi": 48.90721011397761,
+          "sma50": 1.7718399999999996,
+          "days_calm": 4,
+          "extreme": 2.817
+        }
+      ],
+      "triggers": 3,
+      "retriggers": 2,
+      "clears": 3,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "HBAR": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "INJ": {
+      "events": [
+        {
+          "date": "2026-04-26",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 3.779,
+          "rsi": 72.42365274360654,
+          "sma50": 3.066058,
+          "atr_pct": 4.775104985572471
+        },
+        {
+          "date": "2026-05-12",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 4.7847,
+          "rsi": 79.46155381171211,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-05-15",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 4.9234,
+          "rsi": 73.41374126118099,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-20",
+          "type": "CLEAR",
+          "close": 4.7749,
+          "rsi": 61.7724362182553,
+          "sma50": 3.6581820000000005,
+          "days_calm": 6,
+          "extreme": 5.1648
+        },
+        {
+          "date": "2026-05-21",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 5.2464,
+          "rsi": 68.76729591908278,
+          "sma50": 3.7056899999999997,
+          "atr_pct": 7.673799480392093
+        },
+        {
+          "date": "2026-06-01",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 6.99,
+          "rsi": 78.39962990491156,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-06-02",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 6.587,
+          "rsi": 69.19881509945294,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-06-05",
+          "type": "CLEAR",
+          "close": 5.16,
+          "rsi": 46.54760006005853,
+          "sma50": 4.578658,
+          "days_calm": 4,
+          "extreme": 6.99
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 4,
+      "clears": 2,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "FIL": {
+      "events": [
+        {
+          "date": "2026-05-06",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 1.115,
+          "rsi": 74.88257902134448,
+          "sma50": 0.90358,
+          "atr_pct": 4.5835876073243
+        },
+        {
+          "date": "2026-05-08",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 1.287,
+          "rsi": 81.55299431346401,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-05-09",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 1.2,
+          "rsi": 69.38906259384558,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-12",
+          "type": "CLEAR",
+          "close": 1.097,
+          "rsi": 57.75770250038052,
+          "sma50": 0.935134,
+          "days_calm": 4,
+          "extreme": 1.287
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 2,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "RUNE": {
+      "events": [
+        {
+          "date": "2026-04-19",
+          "type": "TRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 1.342,
+          "rsi": 94.94075346959706,
+          "sma50": 0.43225499999999994,
+          "atr_pct": 6.12623969007614
+        },
+        {
+          "date": "2026-05-10",
+          "type": "CLEAR",
+          "close": 0.61123,
+          "rsi": 30.422088423542178,
+          "sma50": 0.7404846,
+          "days_calm": 21,
+          "extreme": 1.342
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "CRV": {
+      "events": [
+        {
+          "date": "2026-05-11",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.28407,
+          "rsi": 71.99387164646441,
+          "sma50": 0.2270964,
+          "atr_pct": 4.831922649514632
+        },
+        {
+          "date": "2026-05-15",
+          "type": "CLEAR",
+          "close": 0.25538,
+          "rsi": 53.28645494699529,
+          "sma50": 0.230655,
+          "days_calm": 4,
+          "extreme": 0.28407
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "SNX": {
+      "events": [
+        {
+          "date": "2026-05-07",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.34564,
+          "rsi": 63.092223006962875,
+          "sma50": 0.29915279999999994,
+          "atr_pct": 4.107968526041426
+        },
+        {
+          "date": "2026-05-13",
+          "type": "CLEAR",
+          "close": 0.34748,
+          "rsi": 58.4237733595013,
+          "sma50": 0.30526040000000004,
+          "days_calm": 4,
+          "extreme": 0.36682
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "COMP": {
+      "events": [
+        {
+          "date": "2026-04-01",
+          "type": "TRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 48.63,
+          "rsi": 89.31908407808348,
+          "sma50": 32.7781,
+          "atr_pct": 1.2963886539138083
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": true,
+      "final_reason": "A1_RSI_HOT",
+      "days_data": 59
+    },
+    "MKR": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 36
+    },
+    "ENS": {
+      "events": [
+        {
+          "date": "2026-04-01",
+          "type": "TRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 25.886,
+          "rsi": 92.27252311284374,
+          "sma50": 15.677515999999995,
+          "atr_pct": 1.3226687420971768
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": true,
+      "final_reason": "A1_RSI_HOT",
+      "days_data": 59
+    },
+    "DYDX": {
+      "events": [
+        {
+          "date": "2026-04-16",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.13,
+          "rsi": 74.84233121833233,
+          "sma50": 0.09313039999999997,
+          "atr_pct": 6.352113877656151
+        },
+        {
+          "date": "2026-04-18",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 0.141,
+          "rsi": 78.63751155732683,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-04-19",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.134,
+          "rsi": 70.85733272750694,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-04-24",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 0.16,
+          "rsi": 78.79970345436871,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-04-26",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.16,
+          "rsi": 77.95026597955426,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-01",
+          "type": "CLEAR",
+          "close": 0.144,
+          "rsi": 58.519285437964875,
+          "sma50": 0.11048000000000002,
+          "days_calm": 6,
+          "extreme": 0.161
+        },
+        {
+          "date": "2026-05-02",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.153,
+          "rsi": 63.51181152341609,
+          "sma50": 0.11176,
+          "atr_pct": 7.719836295914622
+        },
+        {
+          "date": "2026-05-12",
+          "type": "CLEAR",
+          "close": 0.1661,
+          "rsi": 58.6669079416663,
+          "sma50": 0.12703720000000002,
+          "days_calm": 4,
+          "extreme": 0.1945
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 4,
+      "clears": 2,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "LDO": {
+      "events": [
+        {
+          "date": "2026-04-15",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.3779,
+          "rsi": 66.87796375572654,
+          "sma50": 0.310485,
+          "atr_pct": 5.725905517019263
+        },
+        {
+          "date": "2026-04-20",
+          "type": "CLEAR",
+          "close": 0.3733,
+          "rsi": 56.01460157198296,
+          "sma50": 0.31910700000000003,
+          "days_calm": 4,
+          "extreme": 0.4373
+        },
+        {
+          "date": "2026-04-26",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.446,
+          "rsi": 67.49188559261538,
+          "sma50": 0.32965560000000005,
+          "atr_pct": 6.730263499493601
+        },
+        {
+          "date": "2026-04-30",
+          "type": "CLEAR",
+          "close": 0.3663,
+          "rsi": 49.61288888533779,
+          "sma50": 0.33714599999999995,
+          "days_calm": 4,
+          "extreme": 0.446
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 0,
+      "clears": 2,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "ARB": {
+      "events": [
+        {
+          "date": "2026-04-16",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.129,
+          "rsi": 72.99852267871059,
+          "sma50": 0.10085039999999999,
+          "atr_pct": 5.639803155420891
+        },
+        {
+          "date": "2026-04-28",
+          "type": "CLEAR",
+          "close": 0.125,
+          "rsi": 58.16734292605499,
+          "sma50": 0.107428,
+          "days_calm": 11,
+          "extreme": 0.1311
+        },
+        {
+          "date": "2026-05-08",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.1426,
+          "rsi": 71.03962094289868,
+          "sma50": 0.11183799999999999,
+          "atr_pct": 5.406777072962462
+        },
+        {
+          "date": "2026-05-14",
+          "type": "CLEAR",
+          "close": 0.13163,
+          "rsi": 54.75048922983751,
+          "sma50": 0.1167296,
+          "days_calm": 4,
+          "extreme": 0.14398
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 0,
+      "clears": 2,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "OP": {
+      "events": [
+        {
+          "date": "2026-05-07",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.14787,
+          "rsi": 73.92045568355205,
+          "sma50": 0.1178454,
+          "atr_pct": 4.619780005497831
+        },
+        {
+          "date": "2026-05-08",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 0.17164,
+          "rsi": 82.3869802205854,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-05-09",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.16353,
+          "rsi": 73.60687160506427,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-12",
+          "type": "CLEAR",
+          "close": 0.15681,
+          "rsi": 66.006665105612,
+          "sma50": 0.12233780000000001,
+          "days_calm": 4,
+          "extreme": 0.17164
+        },
+        {
+          "date": "2026-05-13",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.15196,
+          "rsi": 61.413135889503806,
+          "sma50": 0.12309900000000001,
+          "atr_pct": 5.235676810232294
+        },
+        {
+          "date": "2026-05-17",
+          "type": "CLEAR",
+          "close": 0.13281,
+          "rsi": 46.0540923429736,
+          "sma50": 0.12576779999999999,
+          "days_calm": 4,
+          "extreme": 0.15196
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 2,
+      "clears": 2,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "STX": {
+      "events": [
+        {
+          "date": "2026-05-12",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.26906,
+          "rsi": 71.34500555132765,
+          "sma50": 0.2303352,
+          "atr_pct": 4.349409274892902
+        },
+        {
+          "date": "2026-05-17",
+          "type": "CLEAR",
+          "close": 0.23803,
+          "rsi": 44.605137801394946,
+          "sma50": 0.23288359999999997,
+          "days_calm": 4,
+          "extreme": 0.27245
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "SEI": {
+      "events": [
+        {
+          "date": "2026-05-09",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.07049,
+          "rsi": 71.92915710390994,
+          "sma50": 0.0576014,
+          "atr_pct": 4.291073378454146
+        },
+        {
+          "date": "2026-05-15",
+          "type": "CLEAR",
+          "close": 0.063631,
+          "rsi": 50.216703326480946,
+          "sma50": 0.0587554,
+          "days_calm": 4,
+          "extreme": 0.076631
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "RENDER": {
+      "events": [
+        {
+          "date": "2026-04-07",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 2.051,
+          "rsi": 67.0458479449085,
+          "sma50": 1.611248,
+          "atr_pct": 6.7999494485994365
+        },
+        {
+          "date": "2026-04-12",
+          "type": "CLEAR",
+          "close": 1.884,
+          "rsi": 53.408758290534934,
+          "sma50": 1.665468,
+          "days_calm": 4,
+          "extreme": 2.051
+        },
+        {
+          "date": "2026-05-26",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 2.1613,
+          "rsi": 66.03680390832409,
+          "sma50": 1.8769519999999997,
+          "atr_pct": 3.8743189638901567
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": true,
+      "final_reason": "A2_EXTENSION",
+      "days_data": 59
+    },
+    "SUI": {
+      "events": [
+        {
+          "date": "2026-05-09",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 1.0703,
+          "rsi": 70.38502169129251,
+          "sma50": 0.930104,
+          "atr_pct": 4.327923988273287
+        },
+        {
+          "date": "2026-05-10",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 1.3365,
+          "rsi": 84.73789021711038,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-05-11",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 1.292,
+          "rsi": 77.93783745788963,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-14",
+          "type": "CLEAR",
+          "close": 1.1878,
+          "rsi": 64.22458019853785,
+          "sma50": 0.961164,
+          "days_calm": 4,
+          "extreme": 1.3365
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 2,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "FET": {
+      "events": [
+        {
+          "date": "2026-05-30",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.2792,
+          "rsi": 70.83020198410233,
+          "sma50": 0.2172082,
+          "atr_pct": 7.376123946593373
+        },
+        {
+          "date": "2026-06-05",
+          "type": "CLEAR",
+          "close": 0.1977,
+          "rsi": 41.53225075823778,
+          "sma50": 0.2181102,
+          "days_calm": 4,
+          "extreme": 0.2792
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "TAO": {
+      "events": [
+        {
+          "date": "2026-04-01",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 307.8,
+          "rsi": 62.67173242301874,
+          "sma50": 226.80419999999998,
+          "atr_pct": 8.515368193384663
+        },
+        {
+          "date": "2026-04-12",
+          "type": "CLEAR",
+          "close": 259.3,
+          "rsi": 42.088584190566195,
+          "sma50": 253.21019999999996,
+          "days_calm": 4,
+          "extreme": 335.4
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "TON": {
+      "events": [
+        {
+          "date": "2026-05-04",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 1.6387,
+          "rsi": 77.94992059569552,
+          "sma50": 1.312466,
+          "atr_pct": 3.980498348294498
+        },
+        {
+          "date": "2026-05-05",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 2.0048,
+          "rsi": 87.0991779380668,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-05-09",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 2.434,
+          "rsi": 76.71973471737977,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-12",
+          "type": "CLEAR",
+          "close": 2.3045,
+          "rsi": 68.98041802726765,
+          "sma50": 1.4931860000000003,
+          "days_calm": 5,
+          "extreme": 2.714
+        },
+        {
+          "date": "2026-05-13",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 2.1022,
+          "rsi": 59.41750221253062,
+          "sma50": 1.5088100000000002,
+          "atr_pct": 9.194453319546179
+        },
+        {
+          "date": "2026-05-18",
+          "type": "CLEAR",
+          "close": 1.9944,
+          "rsi": 54.34458098507279,
+          "sma50": 1.5821699999999999,
+          "days_calm": 4,
+          "extreme": 2.1381
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 2,
+      "clears": 2,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 91
+    },
+    "JUP": {
+      "events": [
+        {
+          "date": "2026-04-27",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.1928,
+          "rsi": 65.27975551821245,
+          "sma50": 0.164144,
+          "atr_pct": 4.481526721461044
+        },
+        {
+          "date": "2026-05-01",
+          "type": "CLEAR",
+          "close": 0.18,
+          "rsi": 54.70592186594446,
+          "sma50": 0.165598,
+          "days_calm": 4,
+          "extreme": 0.1928
+        },
+        {
+          "date": "2026-05-06",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.1988,
+          "rsi": 66.65241912326212,
+          "sma50": 0.167558,
+          "atr_pct": 4.653353343648214
+        },
+        {
+          "date": "2026-05-08",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 0.2443,
+          "rsi": 81.17111702802599,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-05-11",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.24795,
+          "rsi": 72.34464163392897,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-14",
+          "type": "CLEAR",
+          "close": 0.22483,
+          "rsi": 59.25724114930066,
+          "sma50": 0.1803136,
+          "days_calm": 4,
+          "extreme": 0.26541
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 2,
+      "clears": 2,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "KAS": {
+      "events": [
+        {
+          "date": "2026-05-11",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.038665,
+          "rsi": 72.6487935455794,
+          "sma50": 0.03382176,
+          "atr_pct": 3.5828730271780205
+        },
+        {
+          "date": "2026-05-16",
+          "type": "CLEAR",
+          "close": 0.035119,
+          "rsi": 48.159580884908735,
+          "sma50": 0.033997679999999995,
+          "days_calm": 4,
+          "extreme": 0.040803
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "PENDLE": {
+      "events": [
+        {
+          "date": "2026-05-01",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 1.5871,
+          "rsi": 69.74552916282501,
+          "sma50": 1.215464,
+          "atr_pct": 5.720791986243062
+        },
+        {
+          "date": "2026-05-05",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 1.965,
+          "rsi": 79.6220221686466,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-05-07",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 1.8752,
+          "rsi": 72.26133143114608,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-17",
+          "type": "CLEAR",
+          "close": 1.8347,
+          "rsi": 54.0016844891498,
+          "sma50": 1.433872,
+          "days_calm": 5,
+          "extreme": 2.1177
+        },
+        {
+          "date": "2026-05-18",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 1.819,
+          "rsi": 53.242304703932795,
+          "sma50": 1.4480320000000004,
+          "atr_pct": 6.0298076333547925
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 2,
+      "clears": 1,
+      "currently_vetoed": true,
+      "final_reason": "A2_EXTENSION",
+      "days_data": 59
+    },
+    "PYTH": {
+      "events": [
+        {
+          "date": "2026-05-07",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.05236,
+          "rsi": 63.00812359001518,
+          "sma50": 0.044420600000000005,
+          "atr_pct": 4.637607499700889
+        },
+        {
+          "date": "2026-05-13",
+          "type": "CLEAR",
+          "close": 0.054496,
+          "rsi": 57.18678443224109,
+          "sma50": 0.046413640000000006,
+          "days_calm": 4,
+          "extreme": 0.059853
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "TIA": {
+      "events": [
+        {
+          "date": "2026-04-16",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.4117,
+          "rsi": 74.11343809288279,
+          "sma50": 0.32183480000000003,
+          "atr_pct": 5.510363323580783
+        },
+        {
+          "date": "2026-04-22",
+          "type": "CLEAR",
+          "close": 0.3784,
+          "rsi": 59.4464546354134,
+          "sma50": 0.3293808,
+          "days_calm": 4,
+          "extreme": 0.4338
+        },
+        {
+          "date": "2026-05-08",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.44644,
+          "rsi": 71.98689159284191,
+          "sma50": 0.3360831999999999,
+          "atr_pct": 5.448395766378625
+        },
+        {
+          "date": "2026-05-19",
+          "type": "CLEAR",
+          "close": 0.40404,
+          "rsi": 51.36347880278542,
+          "sma50": 0.36241500000000004,
+          "days_calm": 4,
+          "extreme": 0.46656
+        },
+        {
+          "date": "2026-05-26",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.46874,
+          "rsi": 62.25004698813938,
+          "sma50": 0.38067139999999994,
+          "atr_pct": 5.150104570807336
+        }
+      ],
+      "triggers": 3,
+      "retriggers": 0,
+      "clears": 2,
+      "currently_vetoed": true,
+      "final_reason": "A2_EXTENSION",
+      "days_data": 59
+    },
+    "ONDO": {
+      "events": [
+        {
+          "date": "2026-05-04",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.3162,
+          "rsi": 73.86464805212375,
+          "sma50": 0.263432,
+          "atr_pct": 4.6370762309057945
+        },
+        {
+          "date": "2026-05-07",
+          "type": "RETRIGGER",
+          "reason": "A1_RSI_HOT",
+          "close": 0.35293,
+          "rsi": 79.08533438354908,
+          "from_reason": "A2_EXTENSION"
+        },
+        {
+          "date": "2026-05-09",
+          "type": "RETRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.41905,
+          "rsi": 76.18921806576103,
+          "from_reason": "A1_RSI_HOT"
+        },
+        {
+          "date": "2026-05-13",
+          "type": "CLEAR",
+          "close": 0.39102,
+          "rsi": 63.381682348221915,
+          "sma50": 0.2866774,
+          "days_calm": 4,
+          "extreme": 0.4522
+        },
+        {
+          "date": "2026-05-14",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.3827,
+          "rsi": 61.11092618183336,
+          "sma50": 0.2890234,
+          "atr_pct": 6.735786441348197
+        },
+        {
+          "date": "2026-05-29",
+          "type": "CLEAR",
+          "close": 0.37125,
+          "rsi": 49.622908438827665,
+          "sma50": 0.3268402,
+          "days_calm": 4,
+          "extreme": 0.44053
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 2,
+      "clears": 2,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "ENA": {
+      "events": [
+        {
+          "date": "2026-05-08",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.132,
+          "rsi": 72.95539335674923,
+          "sma50": 0.10028359999999999,
+          "atr_pct": 6.184912117529444
+        },
+        {
+          "date": "2026-05-14",
+          "type": "CLEAR",
+          "close": 0.117,
+          "rsi": 53.00106423117983,
+          "sma50": 0.10366479999999999,
+          "days_calm": 4,
+          "extreme": 0.132
+        }
+      ],
+      "triggers": 1,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "EIGEN": {
+      "events": [
+        {
+          "date": "2026-05-08",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.2229,
+          "rsi": 70.19405592782192,
+          "sma50": 0.17654799999999998,
+          "atr_pct": 5.443441328185053
+        },
+        {
+          "date": "2026-05-14",
+          "type": "CLEAR",
+          "close": 0.2115,
+          "rsi": 59.398451457562075,
+          "sma50": 0.17911000000000002,
+          "days_calm": 4,
+          "extreme": 0.2232
+        },
+        {
+          "date": "2026-05-15",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.2237,
+          "rsi": 64.36542069962289,
+          "sma50": 0.179844,
+          "atr_pct": 4.914914239065171
+        },
+        {
+          "date": "2026-05-19",
+          "type": "CLEAR",
+          "close": 0.1905,
+          "rsi": 47.60156756362659,
+          "sma50": 0.18171600000000002,
+          "days_calm": 4,
+          "extreme": 0.2237
+        },
+        {
+          "date": "2026-05-24",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 0.2297,
+          "rsi": 63.61205107611687,
+          "sma50": 0.18592799999999998,
+          "atr_pct": 5.074641251919942
+        }
+      ],
+      "triggers": 3,
+      "retriggers": 0,
+      "clears": 2,
+      "currently_vetoed": true,
+      "final_reason": "A2_EXTENSION",
+      "days_data": 59
+    },
+    "W": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "ZRO": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 59
+    },
+    "HYPE": {
+      "events": [
+        {
+          "date": "2026-04-11",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 42.279,
+          "rsi": 67.45356215130231,
+          "sma50": 35.490860000000005,
+          "atr_pct": 5.200614555932477
+        },
+        {
+          "date": "2026-04-20",
+          "type": "CLEAR",
+          "close": 40.705,
+          "rsi": 51.49947581339152,
+          "sma50": 38.0661,
+          "days_calm": 4,
+          "extreme": 44.639
+        },
+        {
+          "date": "2026-05-19",
+          "type": "TRIGGER",
+          "reason": "A2_EXTENSION",
+          "close": 48.522,
+          "rsi": 65.0185391069594,
+          "sma50": 41.253280000000004,
+          "atr_pct": 4.397829740824021
+        }
+      ],
+      "triggers": 2,
+      "retriggers": 0,
+      "clears": 1,
+      "currently_vetoed": true,
+      "final_reason": "A2_EXTENSION",
+      "days_data": 59
+    },
+    "ASTER": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    },
+    "AAVE": {
+      "events": [],
+      "triggers": 0,
+      "retriggers": 0,
+      "clears": 0,
+      "currently_vetoed": false,
+      "final_reason": "",
+      "days_data": 94
+    }
+  }
+}
