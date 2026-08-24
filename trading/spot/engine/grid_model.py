@@ -1,7 +1,7 @@
 """
 GridModel — Single source of truth for DCA grid geometry.
 ==========================================================
-Version: 1.0 | Date: 2026-07-03 | Audit: C1/F1
+Version: 2.0 | Date: 2026-07-04 | Decision: G-SPLIT (Final Grid Decision Spec v1.0)
 
 All layer sizing, deviation triggers, TP math, and cumulative cost
 calculations live here. Imported by:
@@ -13,21 +13,28 @@ calculations live here. Imported by:
 This module is a LEAF dependency — zero imports from engine, runner,
 or any other trading module.
 
-Grid (d) — Bull-phase grid (resolved 2026-07-03, D-GRID):
+Grid G-SPLIT (approved 2026-07-04, Brett):
   Layer sizes as fixed fractions of ALLOCATED CAPITAL (not remaining).
-  L1=40%, L2=24%, L3=20%, L4=16%. Sum=100%, fully self-funded.
+  L1=48%, L2=32%, L3=20%. Sum=100%, fully self-funded.
+  3 layers (was 4). L4 removed — 16% redistributed to L1 (+8%) and L2 (+8%).
   Deviation 1.5% linear from average entry (unchanged).
   TP 3.0% above average entry (unchanged).
-  Max 4 layers (unchanged). Leverage 1.0x (unchanged).
+  Leverage 1.0x (unchanged).
+
+  Evidence: Final Grid Decision Test Spec v1.0 (Fable 2026-07-04).
+  G-SPLIT: +8.6% PnL over incumbent, best PnL/%DD ($1,053), Rule 1 survived.
+  Verified by Fable (Grid-Decision Verification Memo 2026-07-04).
+  Prior grid (v1.0): 40/24/20/16, 4 layers (2026-07-03 to 2026-07-04).
 """
 
 # ── Grid Constants ────────────────────────────────────────────────────────────
 
 # Fixed fractions of allocated capital per layer (sum = 1.00)
-LAYER_FRACTIONS = [0.40, 0.24, 0.20, 0.16]
+# G-SPLIT: 48/32/20 (3 layers). Approved 2026-07-04.
+LAYER_FRACTIONS = [0.48, 0.32, 0.20]
 
 # Convenience alias for the L1 fraction (used by overflow entry, top-up checks)
-L1_COST_FRACTION = LAYER_FRACTIONS[0]  # 0.40
+L1_COST_FRACTION = LAYER_FRACTIONS[0]  # 0.48
 
 # Deviation between safety orders (linear, from volume-weighted average entry)
 SO_DEVIATION = 0.015  # 1.5%
@@ -36,7 +43,7 @@ SO_DEVIATION = 0.015  # 1.5%
 TP_PCT = 0.030  # 3.0%
 
 # Maximum DCA layers (including base order L1)
-MAX_LAYERS = 4
+MAX_LAYERS = 3
 
 
 # ── Grid Math ─────────────────────────────────────────────────────────────────
@@ -126,22 +133,22 @@ def trigger_price(avg_entry: float, layer_count: int, side: str = "long") -> flo
 # ── Self-Test ─────────────────────────────────────────────────────────────────
 
 def self_test():
-    """Reproduce the D-GRID reference table from the implementation handoff.
+    """Reproduce the G-SPLIT reference table.
 
-    Reference (entry at 100, fills at 100 / 98.5 / 97.0 / 95.5):
+    G-SPLIT (48/32/20, 3 layers, entry at 100, fills at 100 / 98.5 / 97.0):
     | Layer | Fraction | Cumulative | Avg entry | TP price | Bounce to TP |
     |-------|----------|------------|-----------|----------|--------------|
-    | L1    | 40%      | 40%        | 100.00    | 103.00   | +3.0%        |
-    | L2    | 24%      | 64%        | 99.44     | 102.42   | +4.0%        |
-    | L3    | 20%      | 84%        | 98.85     | 101.82   | +5.0%        |
-    | L4    | 16%      | 100%       | 98.29     | 101.24   | +6.0%        |
+    | L1    | 48%      | 48%        | 100.00    | 103.00   | +3.0%        |
+    | L2    | 32%      | 80%        | 99.44     | 102.42   | +4.0%        |
+    | L3    | 20%      | 100%        | 98.85     | 101.82   | +5.0%        |
+    
     """
     allocation = 100.0  # Use $100 for clean percentages
-    fill_prices = [100.0, 98.5, 97.0, 95.5]
+    fill_prices = [100.0, 98.5, 97.0]
 
     # Expected values computed from the grid math (reference table was display-rounded)
-    expected_avg = [100.00, 99.43, 98.84, 98.29]
-    expected_tp = [103.00, 102.42, 101.81, 101.24]
+    expected_avg = [100.00, 99.40, 98.92]
+    expected_tp = [103.00, 102.38, 101.89]
 
     print("GridModel Self-Test")
     print("=" * 70)
@@ -182,8 +189,8 @@ def self_test():
     assert len(LAYER_FRACTIONS) == MAX_LAYERS, f"Must have {MAX_LAYERS} fractions"
     assert L1_COST_FRACTION == LAYER_FRACTIONS[0], "L1_COST_FRACTION must equal first fraction"
     assert remaining_grid_cost(0, 100) == 100.0, "0 layers filled = full cost"
-    assert remaining_grid_cost(4, 100) == 0.0, "4 layers filled = zero remaining"
-    assert abs(remaining_grid_cost(2, 100) - 36.0) < 0.01, "2 layers filled = 36% remaining"
+    assert remaining_grid_cost(3, 100) == 0.0, "3 layers filled = zero remaining"
+    assert abs(remaining_grid_cost(2, 100) - 20.0) < 0.01, "2 layers filled = 20% remaining"
 
     if all_pass:
         print("ALL CHECKS PASSED ✓")

@@ -177,6 +177,7 @@ def run_sim_1h(candles_1h: list, coin: str, use_veto: bool, use_gate: bool) -> d
     last_gated_fill_idx = -999
     stall_counter = 0
     last_1h_low = float('inf')
+    prior_swing_low = float('inf')  # B2 higher-low anchor
 
     # Stats
     vetoed_entries = 0
@@ -233,6 +234,7 @@ def run_sim_1h(candles_1h: list, coin: str, use_veto: bool, use_gate: bool) -> d
             in_position = True
             deal_start_idx = i
             last_1h_low = l
+            prior_swing_low = float('inf')
             stall_counter = 0
             continue
 
@@ -279,7 +281,9 @@ def run_sim_1h(candles_1h: list, coin: str, use_veto: bool, use_gate: bool) -> d
                                and stoch_k[i] > stoch_d[i]
                                and stoch_k[i-1] <= stoch_d[i-1]
                                and stoch_k[i] < 40)  # Only in oversold territory
-                    gate_open, reason = layer_gate_open("long", layer_idx, has_stall, has_turn, hours_since)
+                    # B2 higher-low anchor: current low > prior swing low
+                    has_hl = l > prior_swing_low if prior_swing_low < float('inf') else False
+                    gate_open, reason = layer_gate_open("long", layer_idx, has_stall, has_turn, has_hl, hours_since)
                     if not gate_open:
                         gated_layers += 1
                         continue
@@ -296,6 +300,8 @@ def run_sim_1h(candles_1h: list, coin: str, use_veto: bool, use_gate: bool) -> d
                 tp_price = avg_entry * (1 + TP_PCT)
                 layers += 1
                 cash -= so_cost
+                # Track swing lows for B2 higher-low anchor
+                prior_swing_low = last_1h_low
                 last_1h_low = l
                 stall_counter = 0
                 if use_gate and layer_idx >= 2:

@@ -303,9 +303,23 @@ class CapitalRouter:
         logger.info(f"Equity tier: ${self.total_equity:.2f} → max {self.tier_coin_cap} coins | "
                      f"split {active_pct*100:.0f}/{reserve_pct*100:.0f}")
 
+        # G-4: veto filter — exclude vetoed coins BEFORE scoring (spec §4.4 precedence)
+        vetoed_out = []
+        unvetoed_rankings = []
+        for coin_data in scanner_rankings:
+            veto = coin_data.get("veto", {})
+            sym = coin_data.get("symbol") or coin_data.get("coin", "")
+            if veto.get("active", False):
+                vetoed_out.append(f"{sym}({veto.get('reason', '?')})")
+                continue
+            unvetoed_rankings.append(coin_data)
+        if vetoed_out:
+            logger.info(f"Veto filter excluded {len(vetoed_out)} coin(s) from rebalance: "
+                       f"{', '.join(vetoed_out)}")
+
         # 1. Filter: hurdle rate >= HURDLE_RATE_DCA_SCORE, apply trend multiplier
         qualifying_coins = []
-        for coin_data in scanner_rankings:
+        for coin_data in unvetoed_rankings:
             symbol = coin_data.get("symbol") or coin_data.get("coin")
             base_score = coin_data.get("dca_score", 0.0)
             trend_mult = coin_data.get("trend_multiplier", 1.0)

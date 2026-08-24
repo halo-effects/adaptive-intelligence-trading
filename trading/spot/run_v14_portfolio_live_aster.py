@@ -938,7 +938,7 @@ class V14PortfolioLiveAster:
             # State management
             "_save_state", "_load_state", "_write_status",
             # TP and order management
-            "_place_tp_order", "_check_tp_fills", "_recover_tp_orders",
+            "_safe_cancel_tp", "_place_tp_order", "_check_tp_fills", "_recover_tp_orders",
             # Capital detection
             "_detect_capital_change", "_init_capital_ledger",
             # Monitoring (audit P7/F6)
@@ -1573,6 +1573,81 @@ class V14PortfolioLiveAster:
 
     # ── TP order management ───────────────────────────────────────────────────
 
+    def _safe_cancel_tp(self, sym: str, cs: CoinState) -> bool:
+        """Cancel a TP order, detecting silent fills.
+
+        Fix 1 (2026-08-21): When cancel_tp_order fails (e.g. "Unknown order"),
+        the order may have already FILLED on the exchange. Before clearing the
+        order ID, check whether it filled — and if so, process the fill properly
+        via _handle_tp_fill(). This prevents the silent-close bug where
+        open_deals.invested accumulates across multiple position lifecycles.
+
+        Returns True if the TP was successfully cancelled (or was already gone
+        without filling). Returns False if the TP had FILLED — caller should
+        abort any pending BUY since the position is now closed.
+        """
+        if not cs.tp_order_id:
+            return True  # Nothing to cancel
+
+        old_order_id = cs.tp_order_id
+        cancelled = self.client.cancel_tp_order(sym, old_order_id)
+
+        if cancelled:
+            # Clean cancel — order was still resting
+            cs.tp_order_id = None
+            cs.tp_limit_price = None
+            return True
+
+        # Cancel failed — check if it filled
+        logger.warning(
+            f"Cancel TP failed for {sym} (order {old_order_id}). "
+            f"Checking if it filled..."
+        )
+        try:
+            result = self.client.check_order_status(sym, old_order_id)
+            if not result:
+                # check_order_status failed internally (returned empty dict).
+                # Same class as Bug A — don't clear the order ID.
+                logger.error(
+                    f"Cannot determine status of TP order {old_order_id} for {sym} "
+                    f"(empty result from check_order_status). "
+                    f"Leaving order ID intact for retry on next cycle."
+                )
+                return True  # Don't block caller, don't clear ID
+            if result.get("filled"):
+                logger.warning(
+                    f"SILENT TP FILL detected for {sym}! "
+                    f"Order {old_order_id} filled while bot wasn't watching. "
+                    f"Processing fill now."
+                )
+                send_telegram(
+                    f"⚠️ {TG_PREFIX} <b>Silent TP Fill Detected</b>\n"
+                    f"Symbol: {sym}\n"
+                    f"Order: {old_order_id}\n"
+                    f"Fill: {result.get('qty', 0):.4f} @ ${result.get('price', 0):.6f}\n"
+                    f"Processing retroactively..."
+                )
+                self._handle_tp_fill(sym, cs, result)
+                return False  # TP filled — position is closed
+            else:
+                # Order was cancelled/expired externally, or never existed
+                status = result.get("status", "unknown")
+                logger.info(
+                    f"TP order {old_order_id} for {sym} status: {status} "
+                    f"(not filled, safe to clear)"
+                )
+                cs.tp_order_id = None
+                cs.tp_limit_price = None
+                return True
+        except Exception as e:
+            # Can't determine order status — leave tp_order_id intact
+            # so _check_tp_fills() or _recover_tp_orders() can retry later
+            logger.error(
+                f"Cannot determine status of TP order {old_order_id} for {sym}: {e}. "
+                f"Leaving order ID intact for retry on next cycle."
+            )
+            return True  # Don't block the caller, but don't clear the ID
+
     def _place_tp_order(self, sym: str, cs: CoinState):
         """Place (or replace) TP limit order for a coin.
         Stores the TP price in CoinState (Audit #8) so we never rely on
@@ -1625,11 +1700,14 @@ class V14PortfolioLiveAster:
         if not qty:
             return
 
-        # Cancel existing TP order if any
+        # Cancel existing TP order if any (Fix 1: detect silent fills)
         if cs.tp_order_id:
-            self.client.cancel_tp_order(sym, cs.tp_order_id)
-            cs.tp_order_id = None
-            cs.tp_limit_price = None
+            tp_still_open = self._safe_cancel_tp(sym, cs)
+            if not tp_still_open:
+                # TP had silently filled — position is closed.
+                # Don't place a new TP; the caller (BUY path) will see
+                # the position is gone on the next sync cycle.
+                return
 
         # Place new TP order — trailing stop or limit sell
         if TRAILING_STOP_ENABLED:
@@ -2011,18 +2089,44 @@ class V14PortfolioLiveAster:
             f"= ${actual_proceeds:.2f} (fee: ${fee:.4f})"
         )
 
-        # Exchange-truth: override deal invested with exchange entry × actual qty
-        # The tracker accumulates invested from on_buy using engine qty (which may
-        # differ from exchange filled qty due to lot-size rounding). The exchange
-        # entry price and actual sold qty are the authoritative numbers.
+        # Fix 2 (2026-08-21): Cross-validate invested vs exchange on TP fill.
+        # The tracker accumulates invested from on_buy, but after a silent TP fill
+        # (Bug A), invested can be inflated across multiple position lifecycles.
+        # Use a FRESH exchange position fetch (not cached) to get authoritative entry.
+        # If divergence > 10%, log a WARNING — this indicates the silent-fill bug.
         deal_key = f"{sym}:long"
         if deal_key in self.tracker._open_deals:
             base = sym.split("/")[0]
-            ex_pos = self._last_exchange_positions.get(base, {})
-            ex_entry = float(ex_pos.get("entry_price", 0) or 0)
+            # Try fresh fetch first; fall back to cached positions
+            ex_entry = 0.0
+            try:
+                fresh_positions = self.client.fetch_open_positions()
+                if base in fresh_positions and fresh_positions[base].get("qty", 0) > 0:
+                    ex_entry = float(fresh_positions[base].get("entry_price", 0) or 0)
+            except Exception:
+                pass  # Fall back to cached
+            if ex_entry <= 0:
+                ex_pos = self._last_exchange_positions.get(base, {})
+                ex_entry = float(ex_pos.get("entry_price", 0) or 0)
             if ex_entry > 0:
                 old_invested = self.tracker._open_deals[deal_key]["invested"]
                 new_invested = ex_entry * actual_qty
+                divergence_pct = abs(old_invested - new_invested) / new_invested * 100 if new_invested > 0 else 0
+                if divergence_pct > 10:
+                    logger.warning(
+                        f"INVESTED MISMATCH {sym}: open_deals=${old_invested:.2f} vs "
+                        f"exchange=${new_invested:.2f} ({divergence_pct:.1f}% divergence). "
+                        f"Likely caused by undetected TP fill (Bug A). "
+                        f"Correcting to exchange-truth."
+                    )
+                    send_telegram(
+                        f"⚠️ {TG_PREFIX} <b>Invested Mismatch Corrected</b>\n"
+                        f"Symbol: {sym}\n"
+                        f"Tracked: ${old_invested:.2f}\n"
+                        f"Exchange: ${new_invested:.2f}\n"
+                        f"Divergence: {divergence_pct:.1f}%\n"
+                        f"Corrected to exchange-truth for PnL calc."
+                    )
                 self.tracker._open_deals[deal_key]["invested"] = new_invested
                 if abs(old_invested - new_invested) > 0.01:
                     logger.info(
@@ -2990,6 +3094,113 @@ class V14PortfolioLiveAster:
                         f"Engine: ${price:.6f} | Fill: ${actual_price:.6f}"
                     )
 
+                # Fix 4 (2026-08-21): Before adding to an existing deal, verify
+                # the exchange actually has a position matching open_deals qty.
+                # If exchange has no position (or much less qty), a silent TP fill
+                # happened and open_deals is stale. Force-close the old deal first
+                # so invested doesn't accumulate across position lifecycles.
+                #
+                # Bug 4.1 fix: Clear cs.tp_order_id BEFORE on_sell to prevent
+                # _place_tp_order → _safe_cancel_tp from double-firing on the
+                # NEW deal created by on_buy.
+                # Bug 4.2 fix: Cross-check _last_exchange_positions to guard
+                # against transient API failures (fetch_open_positions returns
+                # {} on internal catch, not an exception).
+                deal_key_chk = f"{sym}:long"
+                existing_deal = self.tracker._open_deals.get(deal_key_chk)
+                if existing_deal and existing_deal.get("qty", 0) > 0:
+                    try:
+                        fix4_positions = self.client.fetch_open_positions()
+                        fix4_base = sym.split("/")[0]
+                        fix4_ex_qty = 0.0
+                        if fix4_base in fix4_positions:
+                            fix4_ex_qty = fix4_positions[fix4_base].get("qty", 0) or 0
+                        deal_qty = existing_deal["qty"]
+                        # If exchange has <50% of deal's tracked qty, the old position
+                        # is gone (silent TP fill). Close the stale deal.
+                        if fix4_ex_qty < deal_qty * 0.5:
+                            # Bug 4.2: Cross-check cached positions to guard against
+                            # API glitches. fetch_open_positions returns {} on failure
+                            # (no exception), so a single timeout could false-trigger.
+                            cached_qty = (
+                                self._last_exchange_positions
+                                .get(fix4_base, {})
+                                .get("qty", 0) or 0
+                            )
+                            if cached_qty >= deal_qty * 0.5:
+                                logger.warning(
+                                    f"Fix4 skipped for {sym}: fresh fetch shows "
+                                    f"{fix4_ex_qty:.4f} qty but cached positions show "
+                                    f"{cached_qty:.4f}. Likely API glitch."
+                                )
+                            else:
+                                # Both sources agree position is gone
+                                stale_invested = existing_deal["invested"]
+                                logger.warning(
+                                    f"FIX4 STALE DEAL {sym}: open_deals has "
+                                    f"{deal_qty:.4f} qty (${stale_invested:.2f} invested) "
+                                    f"but exchange has {fix4_ex_qty:.4f}. "
+                                    f"Closing stale deal before new entry."
+                                )
+                                send_telegram(
+                                    f"\u26a0\ufe0f {TG_PREFIX} <b>Stale Deal Closed</b>\n"
+                                    f"Symbol: {sym}\n"
+                                    f"Tracked: {deal_qty:.4f} qty, "
+                                    f"${stale_invested:.2f} invested\n"
+                                    f"Exchange: {fix4_ex_qty:.4f} qty\n"
+                                    f"Closing stale deal (likely silent TP fill) "
+                                    f"before new entry."
+                                )
+                                # N-2 invariant (2026-08-21): This block relies on
+                                # SINGLE-THREADED tick execution. on_sell pops the deal
+                                # then on_buy re-creates it below, all within one
+                                # synchronous _execute_action call. No other code path
+                                # mutates _open_deals[sym:long] between pop and re-create.
+                                # If the main loop is ever refactored to async/threads,
+                                # this must be re-guarded (lock or re-check) to avoid a
+                                # TOCTOU double-pop. See audit N-2 (fix-audit-opus48).
+                                #
+                                # Bug 4.1: Clear TP order ID BEFORE on_sell.
+                                # Otherwise _place_tp_order → _safe_cancel_tp fires
+                                # on the old (filled) TP and pops the NEW deal.
+                                cs.tp_order_id = None
+                                cs.tp_limit_price = None
+                                # N-1 fix (2026-08-21): Book ESTIMATED TP proceeds
+                                # instead of zero. A silent fill almost always
+                                # executed at/near the TP (+DCA_TP_PCT), so recording
+                                # zero proceeds fabricated a -100% loss that skewed
+                                # win-rate/PnL stats (capital accounting was already
+                                # correct via exchange reconciliation). Estimating at
+                                # the TP price gives a realistic ~+TP% row instead.
+                                # See audit N-1 (fix-audit-opus48).
+                                _eng = (
+                                    cs.engine._engine
+                                    if cs.engine and cs.engine._engine else None
+                                )
+                                tp_pct = (
+                                    _eng.cfg.DCA_TP_PCT
+                                    if _eng and hasattr(_eng, 'cfg')
+                                    and hasattr(_eng.cfg, 'DCA_TP_PCT')
+                                    else 0.030
+                                )
+                                est_proceeds = stale_invested * (1.0 + tp_pct)
+                                est_price = (
+                                    est_proceeds / deal_qty if deal_qty > 0 else 0.0
+                                )
+                                stale_ts = datetime.now(timezone.utc)
+                                stale_record = self.tracker.on_sell(
+                                    sym, deal_qty, est_price, est_proceeds, 0.0, stale_ts
+                                )
+                                if stale_record:
+                                    logger.warning(
+                                        f"FIX4 stale deal closed for {sym}: "
+                                        f"PnL=${stale_record.get('pnl', 0):.2f} "
+                                        f"(phantom loss from undetected fill)"
+                                    )
+                    except Exception as fix4_err:
+                        # API failure: proceed normally, don't block trading
+                        logger.warning(f"Fix4 position check failed for {sym}: {fix4_err}")
+
                 # P3: capture scanner scores at deal-open for validation loop
                 dca_s, trade_s, trend_m = self._get_coin_scanner_scores(sym)
                 self.tracker.on_buy(sym, actual_qty, actual_price,
@@ -3040,9 +3251,14 @@ class V14PortfolioLiveAster:
             # Non-TP sell: cancel TP order first, then market sell
             if cs.tp_order_id:
                 logger.info(f"Cancelling TP order for {sym} before {reason} sell")
-                self.client.cancel_tp_order(sym, cs.tp_order_id)
-                cs.tp_order_id = None
-                cs.tp_limit_price = None
+                tp_cancelled = self._safe_cancel_tp(sym, cs)
+                if not tp_cancelled:
+                    # TP silently filled — position already closed on exchange.
+                    # Skip the sell; _handle_tp_fill already processed accounting.
+                    logger.info(f"SELL skipped for {sym}: TP had silently filled")
+                    if cs.engine:
+                        cs.engine.reject_action(action)
+                    return
 
             # Use exchange position qty (source of truth), not engine qty
             # Old bot: bal["base_free"] with 1% tolerance cap
@@ -3420,14 +3636,25 @@ class V14PortfolioLiveAster:
                             f"=${cost:.2f} (alloc=${alloc:.2f})"
                         )
                         break  # one warning per coin is enough
-        if frozen:
+        # Dedup: alert once per freeze event. A given "SYM Ln" freeze fires
+        # a single Telegram alert; it won't re-alert until that key clears
+        # (position advances a layer / gains capital / closes) and re-freezes.
+        if not hasattr(self, '_frozen_alerted'):
+            self._frozen_alerted = set()
+        # Key on the coin+layer (strip the volatile cap/need dollar figures).
+        frozen_keys = {f.split(' cap=')[0] for f in frozen}
+        # Clear stale keys so a re-freeze after recovery alerts again.
+        self._frozen_alerted &= frozen_keys
+        new_frozen = [f for f in frozen if f.split(' cap=')[0] not in self._frozen_alerted]
+        if new_frozen:
             msg = (
                 f"\U0001f6a8 {TG_PREFIX} <b>Grid Freeze Detected</b>\n"
-                f"{len(frozen)} position(s) with insufficient capital for next layer:\n"
-                + "\n".join(frozen)
+                f"{len(new_frozen)} position(s) with insufficient capital for next layer:\n"
+                + "\n".join(new_frozen)
             )
             logger.warning(msg)
             send_telegram(msg)
+            self._frozen_alerted |= {f.split(' cap=')[0] for f in new_frozen}
         if sub_minimum:
             msg = (
                 f"\u26a0\ufe0f {TG_PREFIX} <b>Sub-Minimum Layer Warning</b>\n"
@@ -3497,6 +3724,46 @@ class V14PortfolioLiveAster:
             )
         else:
             digest_lines.append("Grid freeze: none \u2705")
+
+        # Fix 3 (2026-08-21): Periodic invested-vs-exchange audit.
+        # Compare open_deals.invested against exchange position value
+        # for all open deals. Log mismatches as early warning of Bug A.
+        try:
+            audit_positions = self.client.fetch_open_positions()
+            for deal_key, deal in list(self.tracker._open_deals.items()):
+                deal_sym = deal_key.split(":")[0]  # "SYM:long" → "SYM"
+                base = deal_sym.split("/")[0]
+                deal_invested = deal.get("invested", 0)
+                deal_qty = deal.get("qty", 0)
+                if deal_invested <= 0 or deal_qty <= 0:
+                    continue
+                ex_pos = audit_positions.get(base, {})
+                ex_qty = ex_pos.get("qty", 0) or 0
+                ex_entry = ex_pos.get("entry_price", 0) or 0
+                if ex_qty <= 0 or ex_entry <= 0:
+                    # No exchange position — may be pending TP fill.
+                    # Don't alarm, _sync_positions handles this.
+                    continue
+                ex_invested = ex_entry * ex_qty
+                if ex_invested > 0:
+                    divergence_pct = abs(deal_invested - ex_invested) / ex_invested * 100
+                    if divergence_pct > 10:
+                        logger.warning(
+                            f"INVESTED AUDIT {deal_sym}: open_deals=${deal_invested:.2f} vs "
+                            f"exchange=${ex_invested:.2f} ({divergence_pct:.1f}% divergence). "
+                            f"Possible silent TP fill accumulation."
+                        )
+                        digest_lines.append(
+                            f"⚠️ {deal_sym.split('/')[0]} invested mismatch: "
+                            f"${deal_invested:.2f} vs ex ${ex_invested:.2f} ({divergence_pct:.0f}%)"
+                        )
+                    elif divergence_pct > 5:
+                        digest_lines.append(
+                            f"⚠️ {deal_sym.split('/')[0]} invested drift: "
+                            f"${deal_invested:.2f} vs ex ${ex_invested:.2f} ({divergence_pct:.1f}%)"
+                        )
+        except Exception as e:
+            logger.warning(f"Invested audit failed: {e}")
 
         send_telegram("\n".join(digest_lines))
         logger.info(f"Daily health digest sent ({len(digest_lines)} items)")
@@ -3970,10 +4237,13 @@ class V14PortfolioLiveAster:
 
         send_telegram(f"🔄 {TG_PREFIX} Force-closing {sym} at market...")
 
-        # Cancel TP order first
+        # Cancel TP order first (Fix 1: detect silent fills)
         if cs.tp_order_id:
-            self.client.cancel_tp_order(sym, cs.tp_order_id)
-            cs.tp_order_id = None
+            tp_cancelled = self._safe_cancel_tp(sym, cs)
+            if not tp_cancelled:
+                # TP silently filled — position already closed on exchange.
+                logger.info(f"Force-close skipped for {sym}: TP had silently filled")
+                return
 
         result = self.client.create_market_sell(sym, qty)
         if result and result.get("status") in ("filled", "dry_run"):
@@ -4762,9 +5032,7 @@ class V14PortfolioLiveAster:
                                     f"Phase change {prev_phase} → {current_phase}: "
                                     f"cancelling TP for {sym}"
                                 )
-                                self.client.cancel_tp_order(sym, cs.tp_order_id)
-                                cs.tp_order_id = None
-                                cs.tp_limit_price = None
+                                self._safe_cancel_tp(sym, cs)
                             elif cs.tp_order_id and has_orphan:
                                 logger.info(
                                     f"Phase change {prev_phase} → {current_phase}: "
