@@ -57,18 +57,15 @@ _Curated essentials. For details, see the structured files below._
 - **V14-ETF Paper**: Running
 - **Hard rules 26-36 (unchanged)**: Immutable seed, no derived constants, fresh clone sync, append-only CSV, no unrealized in detection, idempotent restart, post-tick gates must rollback + separate entries/exits (#32), read arch spec before writing fix code (#33), no forced closes on 1.0x leverage (#34), open_deals is truth for layer count (#35), idle router cash must flow to engines (#36).
 
-### Needs Admin PowerShell
-1. Create V14PM auto-restart task (`V14PMLiveAster`)
-2. Disable old stale task (`V14LiveAster`)
+### Admin PowerShell tasks — ALL DONE
+_(V14PMLiveAster auto-restart task confirmed 2026-08-21: LogonTrigger enabled, correct exe/module/args/workdir, bot running PID-verified. Legacy single-coin task cleanup done 2026-08-21: AsterSpotLive, V14LiveAster, AsterTradingBot, SpotPaperAster unregistered. 6 keepers remain.)_
 
 ## Active Projects
 - **AIT**: Primary. V14PM is the MVP. G-SPLIT deployed. Next: cloud migration to Hyperliquid mainnet.
-- **TrustedBusinessReviews.com**: WordPress → static HTML. Malware cleanup.
-- **ShadowQuery**: Deferred.
 
 ## LLM Config
-- Primary: Claude Opus 4.6 (main sessions)
-- Default: Claude Sonnet 4.6 (sub-agents, lighter tasks)
+- Primary/Default: Claude Opus 5 (main sessions; now the configured default)
+- Sub-agents / lighter tasks: Claude Sonnet 4.6
 - Cron: Claude Haiku 4.5 (cheapest for routine checks)
 - Heartbeat: Haiku
 ## Silent Replies

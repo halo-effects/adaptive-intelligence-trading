@@ -2,20 +2,6 @@
 
 ## Priority Checks (every heartbeat)
 
-### V14 Live Bot (Aster — ASTER/USDT) ⚠️ REAL MONEY
-- Check `trading/spot/live/v14/status.json` for bot health
-- Alert if: `running` is false, drawdown > 15%, or status.json stale (>65 min)
-- **Capital: reads from DEX on startup** (was $300 seed, now ~$385 with PnL). Alert if status.json stale.
-- Profile: High, 3.0% TP (grid optimization 2026-05-12)
-- Restart: kill Python PID first, then `Start-ScheduledTask -TaskName "V14LiveAster"`
-- **PRE-FLIGHT REQUIRED**: `python -c "from trading.spot.run_v14_portfolio_live_aster import V14PortfolioLiveAster; print('OK')"` before every restart
-- Scheduled Task: `V14LiveAster` (at boot) — confirmed exists as of 2026-03-09
-- Manual restart: `python -u -m trading.spot.run_v14_live_aster --confirm --skip-backfill`
-- Real Python: `C:\Users\Never\AppData\Local\Programs\Python\Python312\python.exe`
-- Dashboard: https://halo-effects.github.io/adaptive-intelligence-trading/d-984ae0d4ab9dc1a5.html
-- **CHANGES 2026-05-12**: Grid optimization deployed — TP 3.0%, Max 4 layers (was 1.5%/12L). Trailing stop unchanged (0.2% callback). Open positions grandfathered.
-  - Prior (2026-05-11): Auto deposit/withdrawal detection, dashboard growth excludes deposits, ccxt Aster null market patch
-
 ### V14 Paper Bot (Hyperliquid — HBAR/ATOM/LINK/NEAR) — LIVE as of 2026-02-28
 - Check `trading/spot/paper/v14/status.json` for bot health
 - Alert if: process not running or status.json stale (>65 min)
@@ -77,22 +63,25 @@
 - Quick check: have any cron jobs failed in the last cycle? Check `memory/consolidation.log` for nightly consolidation status.
 - If morning briefing or weekly review failed, note it for Brett.
 
-## Periodic Checks (rotate through, 2-3x per day)
-- Are there active project deadlines approaching within 48 hours?
-- Any blocked tasks waiting for input >24 hours?
+## Periodic Checks (silent — do NOT message Brett with results)
+- Bot health checks — auto-restart if needed, only alert on failure
+- Dashboard sync health
+- Cron job health — alert only if broken >24h
+- **OpenClaw update check**: Run `npm view openclaw version` — if newer than `2026.7.1-2`, alert Brett (Opus 5 support). Once updated, remove this check.
 
 ## When to Alert Brett
-- A trading bot stopped or is stale
-- Drawdown exceeds thresholds
-- A cron job failed and needs intervention
-- A project deadline is <24 hours away with incomplete tasks
+- **Bot crash or stale** (process dead / status.json stale >65 min) — silent auto-restart first, alert only if restart fails
+- **Regime change** (GLOBAL_FLIP, coin phase transition)
+- **Signal alerts** (new entries, TPs hit, veto changes)
+- **Morning briefing** (once daily, AM only)
+- ⛔ Do NOT alert for: drawdown, routine status, periodic check results, cron health (unless broken >24h)
 
 ## When to Stay Silent (HEARTBEAT_OK)
-- Nothing urgent
-- All bots running normally
-- No approaching deadlines
-- Late evening (after 9 PM) unless truly urgent
-- You just checked <30 minutes ago and nothing changed
+- **Default is silent.** Only break silence for the alert categories above.
+- All bots running normally → HEARTBEAT_OK
+- Drawdown at any level → HEARTBEAT_OK (Brett DCA's weekly, not concerned)
+- Routine health checks pass → HEARTBEAT_OK
+- Late evening (after 9 PM) unless bot crash → HEARTBEAT_OK
 
 ## Governance Reminder
 - Before any heartbeat action, verify it falls within Tier 0-1 permissions.

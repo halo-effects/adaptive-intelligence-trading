@@ -2,6 +2,8 @@
 _Date: 2026-07-03 (rev. 2 — adds finding H4, overflow entry) | Auditor: Claude (Fable) | Scope: Live production system, Aster DEX Perps, real money_
 _Reference baseline: V14PM_SYSTEM_ARCHITECTURE.md v1.10, hard-rules.md (36 rules), 119 live trades_
 
+> **✅ POST-REMEDIATION STATUS (2026-07-04):** All P0 fixes from this audit independently verified delivered by Fable post-remediation audit. C1 (GridModel — three-grids gap) officially CLOSED. C2 (prune method), H1 (liquidity filter), H2 (1000-prefix), M1 (dead regime evaluator), M3 (trade IDs), startup self-test, bare-except removal, overflow v2, spread-reject pnl_adjustment, trend multiplier regression, CLOSE/CLOSEALL/MIGRATE commands, grid-freeze + daily digest, D-RESERVE fold — all confirmed implemented. See `fable-post-remediation-audit-2026-07-04.md` for full verification report.
+
 ---
 
 ## 1. Executive Summary

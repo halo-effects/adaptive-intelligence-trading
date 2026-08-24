@@ -1,5 +1,5 @@
 # Projects Index
-_Last updated: 2026-03-10_
+_Last updated: 2026-08-23_
 
 ## Active
 
@@ -20,10 +20,3 @@ _Last updated: 2026-03-10_
 | V14 Live (Aster) | $300 real | Aster DEX | ✅ Running |
 
 **Next milestone**: Cloud migration — V14PM to Hyperliquid mainnet on Linux server.
-
-### TrustedBusinessReviews.com Migration
-- **Status**: Active (WordPress → static HTML, malware cleanup)
-- **Priority**: Secondary to AIT
-
-## Deferred
-- **ShadowQuery / AI GEO**: Parked

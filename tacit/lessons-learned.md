@@ -39,6 +39,18 @@ _Hard-won knowledge from production incidents and development._
 - In a bear market, this means 10 blind long entries before signals kick in
 - **Rule**: New engines observe until first daily boundary (router sets direction)
 
+### Claude Project File Sync Is Not Chat Attachments (2026-07-04)
+- Project-level file uploads (in Claude Projects settings) are **separate** from chat attachments
+- Uploading a zip to a chat message does NOT update the project's file copies
+- When running an external audit via a Claude Project, the auditor reads the project-mounted files, not chat attachments
+- If you update code and re-upload to chat but forget to replace files in project settings, the auditor sees stale pre-fix code and their findings reflect the old state
+- **Rule**: To update an auditor's view, replace files directly in the Project settings (not in the chat). Verify the auditor has the correct version by asking them to confirm a specific line number or method signature from the new code before accepting findings.
+
+### Verify Auditor File Version Before Accepting Findings (2026-07-04)
+- External auditors (including Claude Projects) may be reading cached or stale file copies
+- Findings that seem inconsistent with known fixes are a signal that the auditor's file set is out of date
+- **Rule**: At the start of any external audit session, ask the auditor to confirm specific fingerprints (line count, method name at a given line, or a unique string) from the expected current version. Don't accept findings for code you believe was already fixed without verifying the auditor's copy first.
+
 ### Never Use PowerShell Export-Csv for Trading Data (2026-03-09)
 - `Export-Csv` adds BOM, mangles headers, changes delimiter behavior
 - Direct `write()` with explicit content is the only safe approach for trades.csv
@@ -111,3 +123,43 @@ _Hard-won knowledge from production incidents and development._
 - Cloning/backdating snapshots creates synthetic data that looks real but isn't
 - The `--backfill-history N` and `--as-of` flags generate genuine historical snapshots
 - **Rule**: Always prefer genuine data generation over synthetic shortcuts
+
+### Claude Project File Sync (2026-07-04)
+- Project-level file uploads are separate from chat attachments. Uploading a zip to chat doesn't update project copies.
+- Must replace files in the project's file/knowledge settings directly.
+- This caused a 3-hour detour: Fable was auditing stale pre-remediation code while we'd already fixed it.
+- **Rule**: When using external Claude Projects for audits, verify file fingerprints (line counts, specific coordinates) before accepting findings.
+
+### Verify Auditor File Version (2026-07-04)
+- Always confirm the auditor is reading current files: ask for line count + content at a known coordinate.
+- "The quickest single check: open the file and look at line 495" — Fable's diagnostic.
+
+### Duration Statistic Mismatch (2026-07-04)
+- Never compare means and medians in the same table column. The G-SPLIT "17h vs 46h speed" claim was entirely an artifact of comparing mean durations (reference data) against medians (new data).
+- When reusing reference data, verify the statistic name matches.
+
+### Pre-Registered Decision Rules Work (2026-07-04)
+- G-SPLIT won cleanly under pre-registered rules. E-4 failed cleanly under pre-registered MAE bar.
+- No post-hoc adjustments were needed. Registered predictions scored against outcomes create accountability.
+- Fable's predictions were mostly wrong — statics catch mechanisms, they don't pick winners. Path effects determine outcomes.
+
+### "Verified Shipped" != "Shipped" (2026-07-04)
+- Fable caught three consecutive packages with claimed-but-unverified fixes.
+- V-4 (veto_clear guard) survived three package flaggings before finally shipping.
+- Standing discipline: fingerprint check (self-tests executed, not just read) before closing.
+
+### Silent Data Pipeline Failures (2026-07-04)
+- The Hyperliquid candle collector broke silently ~May 29 due to a ccxt upgrade introducing null baseAsset in spot markets.
+- 20 of 46 scanner coins were dark for 5 weeks. The scheduled task reported success (exit code 0) because the script exited on connection failure.
+- **Rule**: TypeError-swallow patches must LOG when they fire. Silent empty-list returns hide data gaps for weeks.
+- **Rule**: Data freshness should be fail-closed, not fail-open. The stale-daily guard (MAX_DAILY_STALE_DAYS=7) now excludes coins with old data from selection.
+
+### MAE Formula: At-the-Time vs At-Close (2026-07-04)
+- Max adverse excursion must be computed as a running max of (avg_entry_now - low) / avg_entry_now per tick.
+- Computing MAE as (final_avg_entry - min_price) / final_avg_entry at sell time understates multi-layer deals because avg_entry falls as layers fill. The worst pain happens BEFORE averaging down, when avg was higher.
+- The bias grows with depth — exactly the dimension MAE exists to measure.
+
+### Legacy Schema Backfill (2026-07-04)
+- When adding new fields to persisted deal state, existing open deals won't have those keys after restart.
+- Always use .get() with defaults and handle the backfill case explicitly.
+- "The existing persistence handles it" is true for NEW deals only — test with a deal serialized under the OLD schema.
