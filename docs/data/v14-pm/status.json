@@ -6,17 +6,17 @@
   "leverage": 1.0,
   "exchange": "aster",
   "capital": 50000.0,
-  "equity": 93809.01,
-  "cash": 28856.57,
-  "pnl_pct": 87.62,
+  "equity": 93299.68,
+  "cash": 28828.17,
+  "pnl_pct": 86.6,
   "coins": {
     "ZRO/USDT": {
       "state": "LONG_DCA",
       "side": "long",
       "layers": 11,
       "avg_entry": 1.574383,
-      "current_price": 1.1883,
-      "unrealized_pnl": -1984.35,
+      "current_price": 1.1979,
+      "unrealized_pnl": -1935.01,
       "invested": 8091.87,
       "realized_pnl": 653.7,
       "lifecycle_phase": "LONG_DCA",
@@ -31,8 +31,8 @@
       "side": "long",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 1.8838,
-      "unrealized_pnl": -5313.72,
+      "current_price": 1.8603,
+      "unrealized_pnl": -5459.75,
       "invested": 17020.23,
       "realized_pnl": 0.0,
       "lifecycle_phase": "SHORT_DCA",
@@ -40,14 +40,14 @@
       "next_tp_price": 2.8210440147039506,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 302.34
+      "total_fees": 302.64
     },
     "DOT/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.86003,
+      "current_price": 0.85054,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 395.0,
@@ -56,15 +56,15 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 918.42
+      "total_fees": 918.78
     },
     "PENDLE/USDT": {
       "state": "LONG_DCA",
       "side": "long",
       "layers": 4,
       "avg_entry": 2.098287,
-      "current_price": 1.7282,
-      "unrealized_pnl": -1937.35,
+      "current_price": 1.7142,
+      "unrealized_pnl": -2010.64,
       "invested": 10984.23,
       "realized_pnl": 2397.12,
       "lifecycle_phase": "LONG_DCA",
@@ -79,7 +79,7 @@
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 5.7247,
+      "current_price": 5.6326,
       "unrealized_pnl": 0.0,
       "invested": 0,
       "realized_pnl": 15.21,
@@ -88,14 +88,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 260.16
+      "total_fees": 260.29
     },
     "JUP/USDT": {
       "state": "SHORT_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.21423,
+      "current_price": 0.21161,
       "unrealized_pnl": 0.0,
       "invested": 0,
       "realized_pnl": 2567.52,
@@ -104,14 +104,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 4760.76
+      "total_fees": 4765.49
     },
     "TAO/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 232.31,
+      "current_price": 229.28,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 1329.14,
@@ -120,14 +120,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 1548.88
+      "total_fees": 1549.58
     },
     "SOL/USDC": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 97.192,
+      "current_price": 96.552,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 49.02,
@@ -136,14 +136,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 2628.75
+      "total_fees": 2631.05
     },
     "SNX/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.22953,
+      "current_price": 0.22844,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 341.39,
@@ -152,14 +152,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 1009.99
+      "total_fees": 1010.36
     },
     "STX/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.25977,
+      "current_price": 0.25984,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 99.54,
@@ -168,7 +168,7 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 683.05
+      "total_fees": 683.33
     },
     "TON/USDT": {
       "state": "LONG_DCA",
@@ -191,8 +191,8 @@
       "side": "long",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.71607,
-      "unrealized_pnl": -2916.86,
+      "current_price": 0.71139,
+      "unrealized_pnl": -2943.62,
       "invested": 7011.28,
       "realized_pnl": 1211.44,
       "lifecycle_phase": "SHORT_DCA",
@@ -200,14 +200,14 @@
       "next_tp_price": 1.244591055249185,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 40.14
+      "total_fees": 40.16
     },
     "W/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.00936,
+      "current_price": 0.00931,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 1455.76,
@@ -216,15 +216,15 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 2848.09
+      "total_fees": 2850.29
     },
     "LDO/USDT": {
       "state": "LONG_DCA",
       "side": "long",
       "layers": 4,
       "avg_entry": 0.423361,
-      "current_price": 0.36735,
-      "unrealized_pnl": -679.67,
+      "current_price": 0.36275,
+      "unrealized_pnl": -735.49,
       "invested": 5137.28,
       "realized_pnl": 675.7,
       "lifecycle_phase": "LONG_DCA",
@@ -239,7 +239,7 @@
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.1448,
+      "current_price": 0.14288,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -248,14 +248,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 825.14
+      "total_fees": 825.45
     },
     "SEI/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.046372,
+      "current_price": 0.045937,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 807.38,
@@ -264,14 +264,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 778.9
+      "total_fees": 779.22
     },
     "ATOM/USDT": {
       "state": "SHORT_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 1.532,
+      "current_price": 1.5217,
       "unrealized_pnl": 0.0,
       "invested": 0,
       "realized_pnl": 0.0,
@@ -280,14 +280,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 744.64
+      "total_fees": 744.94
     },
     "UNI/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 4.2883,
+      "current_price": 4.2705,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -296,14 +296,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 1594.29
+      "total_fees": 1595.42
     },
     "DOGE/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.086801,
+      "current_price": 0.085675,
       "unrealized_pnl": 0.0,
       "invested": 0,
       "realized_pnl": 0.0,
@@ -312,15 +312,15 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 639.63
+      "total_fees": 639.93
     },
     "INJ/USDT": {
       "state": "SHORT_DCA",
       "side": "long",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 5.6451,
-      "unrealized_pnl": -1867.15,
+      "current_price": 5.5677,
+      "unrealized_pnl": -1975.87,
       "invested": 9796.56,
       "realized_pnl": 186.21,
       "lifecycle_phase": "SHORT_DCA",
@@ -328,15 +328,15 @@
       "next_tp_price": 7.183592896176183,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 685.17
+      "total_fees": 685.98
     },
     "FET/USDT": {
       "state": "LONG_DCA",
       "side": "long",
       "layers": 4,
       "avg_entry": 0.249398,
-      "current_price": 0.16362,
-      "unrealized_pnl": -1793.67,
+      "current_price": 0.16235,
+      "unrealized_pnl": -1820.23,
       "invested": 5215.07,
       "realized_pnl": 0.0,
       "lifecycle_phase": "LONG_DCA",
@@ -351,8 +351,8 @@
       "side": "long",
       "layers": 4,
       "avg_entry": 2.258889,
-      "current_price": 1.5204,
-      "unrealized_pnl": -1241.81,
+      "current_price": 1.5015,
+      "unrealized_pnl": -1273.59,
       "invested": 3798.46,
       "realized_pnl": 112.09,
       "lifecycle_phase": "LONG_DCA",
@@ -367,7 +367,7 @@
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.70375,
+      "current_price": 0.69903,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 96.14,
@@ -376,14 +376,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 1227.99
+      "total_fees": 1229.31
     },
     "CRV/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.31773,
+      "current_price": 0.3145,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -392,14 +392,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 42.63
+      "total_fees": 43.08
     },
     "DYDX/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.11614,
+      "current_price": 0.11575,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 98.79,
@@ -408,15 +408,15 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 785.37
+      "total_fees": 785.94
     },
     "EIGEN/USDT": {
       "state": "LONG_DCA",
       "side": "long",
       "layers": 4,
       "avg_entry": 0.241333,
-      "current_price": 0.2085,
-      "unrealized_pnl": -592.0,
+      "current_price": 0.2051,
+      "unrealized_pnl": -653.31,
       "invested": 4351.4,
       "realized_pnl": 0.0,
       "lifecycle_phase": "LONG_DCA",
@@ -431,7 +431,7 @@
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 80.167,
+      "current_price": 79.652,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -440,14 +440,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 584.09
+      "total_fees": 584.51
     },
     "AAVE/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 126.93,
+      "current_price": 126.45,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -463,7 +463,7 @@
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.48639,
+      "current_price": 0.48223,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -472,14 +472,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 706.33
+      "total_fees": 706.92
     },
     "LINK/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 11.383,
+      "current_price": 11.288,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -488,14 +488,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 3095.21
+      "total_fees": 3100.0
     },
     "ETH/USDC": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 2452.7,
+      "current_price": 2441.6,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -504,14 +504,14 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 1007.14
+      "total_fees": 1008.71
     },
     "ADA/USDT": {
       "state": "LONG_DCA",
       "side": "none",
       "layers": 0,
       "avg_entry": 0,
-      "current_price": 0.21169,
+      "current_price": 0.20892,
       "unrealized_pnl": 0.0,
       "invested": 0.0,
       "realized_pnl": 0.0,
@@ -520,7 +520,7 @@
       "next_tp_price": null,
       "liquidation_price": null,
       "distance_to_liq_pct": null,
-      "total_fees": 1376.68
+      "total_fees": 1380.81
     }
   },
   "symbols": [
@@ -561,13 +561,13 @@
   "global_regime": "LONG_DCA",
   "trend_direction": "bullish",
   "total_realized_pnl": 97390.54,
-  "total_fees": 30174.84,
+  "total_fees": 30203.24,
   "deals_completed": 933,
   "win_rate": 99.7,
   "max_drawdown_pct": 0.0,
-  "uptime_hours": 4223.89,
+  "uptime_hours": 4224.06,
   "fear_greed_index": null,
-  "last_update": "2026-08-25T23:53:14.735922+00:00",
+  "last_update": "2026-08-26T00:03:18.499185+00:00",
   "timeframe": "1h",
   "tier_coin_cap": 5,
   "approved_symbols": [],
