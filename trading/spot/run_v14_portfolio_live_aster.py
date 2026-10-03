@@ -3578,8 +3578,24 @@ class V14PortfolioLiveAster:
                     f"not in new targets and no open position: {sorted(stale_syms)}"
                 )
 
-            self._last_rebalance_date = today
-            self._last_rebalance_ts = time.time()
+            # Fix (2026-10-02): Only stamp the rebalance date when this pass
+            # actually produced allocations. On a fully-vetoed / hurdle-blocked
+            # board, rebalance_daily() returns {} and seeds nothing — but if we
+            # stamp the date anyway, the same-date guard at the top of this method
+            # blocks any intraday retry, locking active_allocations empty until
+            # midnight. That empties the router table and the T1 gate then rejects
+            # every entry (observed 2026-10-02: 100% cash, EIGEN eligible but
+            # un-enterable). Leaving the date unstamped on an empty board lets the
+            # next cycle re-run and catch intraday eligibility.
+            if allocations:
+                self._last_rebalance_date = today
+                self._last_rebalance_ts = time.time()
+            else:
+                logger.warning(
+                    "Rebalance produced 0 allocations (board fully vetoed/below "
+                    "hurdle) - NOT stamping rebalance date so the next cycle can "
+                    "retry and catch intraday eligibility."
+                )
 
             # Fix 2: After rebalance, top up engines needing DCA capital
             self._top_up_engine_capital()
