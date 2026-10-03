@@ -1432,8 +1432,15 @@ function renderWhyBlocked(){
     // score / hurdle
     var scoreHtml='<span style="color:var(--text3)">--</span>';
     if(c.dca_score_14d!=null){var sc=c.dca_score_14d;var scCol=sc>=c.hurdle?'var(--phase-long-dca)':'var(--amber)';scoreHtml='<span style="font-weight:700;color:'+scCol+'">'+sc.toFixed(2)+'</span> <span style="font-size:.7rem;color:var(--text3)">/ '+c.hurdle+'</span>';}
-    // veto
-    var vetoHtml=c.veto_active?'<span style="color:var(--amber);font-size:.78rem" title="'+(c.veto_reason||'')+'">⚠ '+(c.veto_reason||'veto')+'</span>':'<span style="color:var(--text3)">—</span>';
+    // veto — show plain-English meaning (not the raw code, which is already in the blocker column)
+    var VETO_DESC={
+      A2_EXTENSION:{label:'Overextended',tip:'Price >3× ATR above the 50-day SMA — too stretched to enter'},
+      A1_RSI_HOT:{label:'Overbought',tip:'Daily RSI(14) ≥ 80 — vertical move, dangerous to enter long'},
+      A1_RSI_COLD:{label:'Oversold',tip:'Daily RSI(14) ≤ 22 — capitulation, dangerous to enter short'},
+      A3_DIVERGENCE:{label:'Bearish divergence',tip:'Price made a new high but RSI did not — momentum weakening'}
+    };
+    var vetoHtml='<span style="color:var(--text3)">—</span>';
+    if(c.veto_active){var vd=VETO_DESC[c.veto_reason]||{label:(c.veto_reason||'veto'),tip:c.veto_reason||''};vetoHtml='<span style="color:var(--amber);font-size:.78rem" title="'+vd.tip.replace(/"/g,'')+'">⚠ '+vd.label+'</span>';}
     // slot
     var slotHtml=c.in_active_allocation?'<span style="color:var(--phase-long-dca)">● funded</span>':'<span style="color:var(--text3)">—</span>';
     // blocker (primary)
