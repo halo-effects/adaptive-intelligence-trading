@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-10-03T17:43:40.022922+00:00",
+  "generated_at": "2026-10-03T17:51:07.548945+00:00",
   "scanner_generated_at": "2026-10-03T17:24:03.118000+00:00",
-  "scanner_age_hours": 0.33,
+  "scanner_age_hours": 0.45,
   "hurdle": 5.0,
   "hurdle_window": "30d",
   "active_pool_cash": 265.99,
@@ -49,9 +49,9 @@
       "symbol": "ADA/USDT",
       "category": "UNWINDING",
       "color": "red",
-      "verdict": "UNWINDING latched",
+      "verdict": "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
       "blockers": [
-        "UNWINDING latched",
+        "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 2.24 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
@@ -116,9 +116,9 @@
       "symbol": "ENA/USDT",
       "category": "UNWINDING",
       "color": "red",
-      "verdict": "UNWINDING latched",
+      "verdict": "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
       "blockers": [
-        "UNWINDING latched",
+        "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 1.87 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
@@ -141,9 +141,9 @@
       "symbol": "ETH/USDC",
       "category": "UNWINDING",
       "color": "red",
-      "verdict": "UNWINDING latched (early_warning since 2026-09-17 00:00:00; clears on confirmed top or 21d timeout)",
+      "verdict": "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
       "blockers": [
-        "UNWINDING latched (early_warning since 2026-09-17 00:00:00; clears on confirmed top or 21d timeout)",
+        "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 2.78 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
@@ -212,9 +212,9 @@
       "symbol": "HYPE/USDT",
       "category": "UNWINDING",
       "color": "red",
-      "verdict": "UNWINDING latched",
+      "verdict": "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
       "blockers": [
-        "UNWINDING latched",
+        "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 1.51 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
@@ -236,9 +236,9 @@
       "symbol": "INJ/USDT",
       "category": "UNWINDING",
       "color": "red",
-      "verdict": "UNWINDING latched (early_warning since 2026-10-01 00:00:00; clears on confirmed top or 21d timeout)",
+      "verdict": "UNWINDING latched (2W peak 98\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
       "blockers": [
-        "UNWINDING latched (early_warning since 2026-10-01 00:00:00; clears on confirmed top or 21d timeout)",
+        "UNWINDING latched (2W peak 98\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 2.53 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
@@ -307,9 +307,9 @@
       "symbol": "LDO/USDT",
       "category": "UNWINDING",
       "color": "red",
-      "verdict": "UNWINDING latched (early_warning since 2026-09-10 00:00:00; clears on confirmed top or 21d timeout)",
+      "verdict": "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
       "blockers": [
-        "UNWINDING latched (early_warning since 2026-09-10 00:00:00; clears on confirmed top or 21d timeout)",
+        "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 0.80 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
@@ -331,9 +331,9 @@
       "symbol": "LINK/USDT",
       "category": "UNWINDING",
       "color": "red",
-      "verdict": "UNWINDING latched (early_warning since 2026-09-10 00:00:00; clears on confirmed top or 21d timeout)",
+      "verdict": "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
       "blockers": [
-        "UNWINDING latched (early_warning since 2026-09-10 00:00:00; clears on confirmed top or 21d timeout)",
+        "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 2.33 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
@@ -425,9 +425,9 @@
       "symbol": "PENDLE/USDT",
       "category": "UNWINDING",
       "color": "red",
-      "verdict": "UNWINDING latched (early_warning since 2026-09-24 00:00:00; clears on confirmed top or 21d timeout)",
+      "verdict": "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
       "blockers": [
-        "UNWINDING latched (early_warning since 2026-09-24 00:00:00; clears on confirmed top or 21d timeout)",
+        "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 2.99 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
@@ -519,9 +519,9 @@
       "symbol": "UNI/USDT",
       "category": "UNWINDING",
       "color": "red",
-      "verdict": "UNWINDING latched (early_warning since 2026-09-10 00:00:00; clears on confirmed top or 21d timeout)",
+      "verdict": "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
       "blockers": [
-        "UNWINDING latched (early_warning since 2026-09-10 00:00:00; clears on confirmed top or 21d timeout)",
+        "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 1.90 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
