@@ -1,35 +1,37 @@
 {
-  "generated_at": "2026-10-03T18:03:39.514744+00:00",
+  "generated_at": "2026-10-03T18:09:29.473597+00:00",
   "scanner_generated_at": "2026-10-03T17:24:03.118000+00:00",
-  "scanner_age_hours": 0.66,
+  "scanner_age_hours": 0.76,
   "hurdle": 5.0,
   "hurdle_window": "30d",
-  "active_pool_cash": 265.99,
+  "active_pool_cash": 265.95,
   "active_allocations": [
     "EIGEN/USDT"
   ],
   "global_regime": "LONG_DCA",
   "summary": {
-    "VETOED": 7,
+    "VETOED": 22,
     "UNWINDING": 9,
-    "BELOW_HURDLE": 5,
+    "BELOW_HURDLE": 14,
     "CLEAR": 1,
     "NO_SCORE": 1
   },
-  "total_coins": 23,
+  "total_coins": 47,
   "clear_count": 1,
   "stuck_count": 0,
   "coins": [
     {
       "coin": "AAVE",
       "symbol": "AAVE/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "VETOED",
       "color": "amber",
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 4.70 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -47,13 +49,15 @@
     {
       "coin": "ADA",
       "symbol": "ADA/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "UNWINDING",
       "color": "red",
       "verdict": "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
       "blockers": [
         "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 2.24 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -71,12 +75,14 @@
     {
       "coin": "ARB",
       "symbol": "ARB/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 1.44 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 1.44 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -92,8 +98,236 @@
       "peak_2w_k": 100.0
     },
     {
+      "coin": "ASTER",
+      "symbol": "ASTER/USDT",
+      "in_set": false,
+      "rank": 46,
+      "category": "BELOW_HURDLE",
+      "color": "amber",
+      "verdict": "BELOW_HURDLE (dca_score 0.17 < 5.0)",
+      "blockers": [
+        "BELOW_HURDLE (dca_score 0.17 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #46 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 0.17,
+      "hurdle": 5.0,
+      "veto_active": false,
+      "veto_reason": "",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "ATOM",
+      "symbol": "ATOM/USDT",
+      "in_set": false,
+      "rank": 41,
+      "category": "BELOW_HURDLE",
+      "color": "amber",
+      "verdict": "BELOW_HURDLE (dca_score 1.23 < 5.0)",
+      "blockers": [
+        "BELOW_HURDLE (dca_score 1.23 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #41 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 1.23,
+      "hurdle": 5.0,
+      "veto_active": false,
+      "veto_reason": "",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "AVAX",
+      "symbol": "AVAX/USDT",
+      "in_set": false,
+      "rank": 8,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "NOT_IN_SET (no engine; scanner rank #8 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 5.79,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "BTC",
+      "symbol": "BTC/USDT",
+      "in_set": false,
+      "rank": 35,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "BELOW_HURDLE (dca_score 1.84 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #35 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 1.84,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "COMP",
+      "symbol": "COMP/USDT",
+      "in_set": false,
+      "rank": 6,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "NOT_IN_SET (no engine; scanner rank #6 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 6.83,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "CRV",
+      "symbol": "CRV/USDT",
+      "in_set": false,
+      "rank": 45,
+      "category": "BELOW_HURDLE",
+      "color": "amber",
+      "verdict": "BELOW_HURDLE (dca_score 0.50 < 5.0)",
+      "blockers": [
+        "BELOW_HURDLE (dca_score 0.50 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #45 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 0.5,
+      "hurdle": 5.0,
+      "veto_active": false,
+      "veto_reason": "",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "DOGE",
+      "symbol": "DOGE/USDT",
+      "in_set": false,
+      "rank": 40,
+      "category": "BELOW_HURDLE",
+      "color": "amber",
+      "verdict": "BELOW_HURDLE (dca_score 1.25 < 5.0)",
+      "blockers": [
+        "BELOW_HURDLE (dca_score 1.25 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #40 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 1.25,
+      "hurdle": 5.0,
+      "veto_active": false,
+      "veto_reason": "",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "DOT",
+      "symbol": "DOT/USDT",
+      "in_set": false,
+      "rank": 37,
+      "category": "BELOW_HURDLE",
+      "color": "amber",
+      "verdict": "BELOW_HURDLE (dca_score 1.59 < 5.0)",
+      "blockers": [
+        "BELOW_HURDLE (dca_score 1.59 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #37 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 1.59,
+      "hurdle": 5.0,
+      "veto_active": false,
+      "veto_reason": "",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "DYDX",
+      "symbol": "DYDX/USDT",
+      "in_set": false,
+      "rank": 11,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "NOT_IN_SET (no engine; scanner rank #11 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 5.43,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
       "coin": "EIGEN",
       "symbol": "EIGEN/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "CLEAR",
       "color": "green",
       "verdict": "CLEAR \u2014 eligible to enter; waiting on L1 price trigger",
@@ -114,6 +348,8 @@
     {
       "coin": "ENA",
       "symbol": "ENA/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "UNWINDING",
       "color": "red",
       "verdict": "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
@@ -121,7 +357,7 @@
         "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 1.87 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -137,8 +373,35 @@
       "peak_2w_k": 96.24080776061425
     },
     {
+      "coin": "ENS",
+      "symbol": "ENS/USDT",
+      "in_set": false,
+      "rank": 7,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "NOT_IN_SET (no engine; scanner rank #7 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 6.29,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
       "coin": "ETH",
       "symbol": "ETH/USDC",
+      "in_set": true,
+      "rank": null,
       "category": "UNWINDING",
       "color": "red",
       "verdict": "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
@@ -146,7 +409,7 @@
         "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 2.78 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -164,12 +427,14 @@
     {
       "coin": "FET",
       "symbol": "FET/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 4.39 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 4.39 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -185,14 +450,41 @@
       "peak_2w_k": 79.46270904190037
     },
     {
+      "coin": "FIL",
+      "symbol": "FIL/USDT",
+      "in_set": false,
+      "rank": 36,
+      "category": "BELOW_HURDLE",
+      "color": "amber",
+      "verdict": "BELOW_HURDLE (dca_score 1.74 < 5.0)",
+      "blockers": [
+        "BELOW_HURDLE (dca_score 1.74 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #36 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 1.74,
+      "hurdle": 5.0,
+      "veto_active": false,
+      "veto_reason": "",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
       "coin": "GRAM",
       "symbol": "GRAM/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 3.21 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.21 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -208,15 +500,43 @@
       "peak_2w_k": 54.988693393207136
     },
     {
+      "coin": "HBAR",
+      "symbol": "HBAR/USDT",
+      "in_set": false,
+      "rank": 20,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "BELOW_HURDLE (dca_score 3.72 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #20 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 3.72,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
       "coin": "HYPE",
       "symbol": "HYPE/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "UNWINDING",
       "color": "red",
       "verdict": "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
       "blockers": [
         "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 1.51 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -234,13 +554,15 @@
     {
       "coin": "INJ",
       "symbol": "INJ/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "UNWINDING",
       "color": "red",
       "verdict": "UNWINDING latched (2W peak 98\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
       "blockers": [
         "UNWINDING latched (2W peak 98\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 2.53 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -258,12 +580,14 @@
     {
       "coin": "JTO",
       "symbol": "JTO/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 3.42 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.42 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -281,13 +605,15 @@
     {
       "coin": "JUP",
       "symbol": "JUP/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "VETOED",
       "color": "amber",
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 3.27 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -303,15 +629,43 @@
       "peak_2w_k": 100.0
     },
     {
+      "coin": "KAS",
+      "symbol": "KAS/USDT",
+      "in_set": false,
+      "rank": 17,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "BELOW_HURDLE (dca_score 4.14 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #17 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 4.14,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
       "coin": "LDO",
       "symbol": "LDO/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "UNWINDING",
       "color": "red",
       "verdict": "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
       "blockers": [
         "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 0.80 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -329,13 +683,15 @@
     {
       "coin": "LINK",
       "symbol": "LINK/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "UNWINDING",
       "color": "red",
       "verdict": "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
       "blockers": [
         "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 2.33 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -353,13 +709,15 @@
     {
       "coin": "LTC",
       "symbol": "LTC/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "VETOED",
       "color": "amber",
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 4.50 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -377,12 +735,14 @@
     {
       "coin": "NEAR",
       "symbol": "NEAR/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "VETOED",
       "color": "amber",
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -400,12 +760,14 @@
     {
       "coin": "ONDO",
       "symbol": "ONDO/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "VETOED",
       "color": "amber",
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -421,15 +783,43 @@
       "peak_2w_k": 89.16095383434123
     },
     {
+      "coin": "OP",
+      "symbol": "OP/USDT",
+      "in_set": false,
+      "rank": 19,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "BELOW_HURDLE (dca_score 3.75 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #19 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 3.75,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
       "coin": "PENDLE",
       "symbol": "PENDLE/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "UNWINDING",
       "color": "red",
       "verdict": "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
       "blockers": [
         "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 2.99 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -447,12 +837,14 @@
     {
       "coin": "PEPE",
       "symbol": "PEPE/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "NO_SCORE",
       "color": "muted",
       "verdict": "NO_SCANNER_SCORE (coin absent from 30d rankings)",
       "blockers": [
         "NO_SCANNER_SCORE (coin absent from 30d rankings)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -468,15 +860,93 @@
       "peak_2w_k": 81.67203704566607
     },
     {
+      "coin": "PYTH",
+      "symbol": "PYTH/USDT",
+      "in_set": false,
+      "rank": 4,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "NOT_IN_SET (no engine; scanner rank #4 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 7.14,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "RENDER",
+      "symbol": "RENDER/USDT",
+      "in_set": false,
+      "rank": 12,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "BELOW_HURDLE (dca_score 4.90 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #12 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 4.9,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "RUNE",
+      "symbol": "RUNE/USDT",
+      "in_set": false,
+      "rank": 3,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "NOT_IN_SET (no engine; scanner rank #3 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 7.35,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
       "coin": "SEI",
       "symbol": "SEI/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "VETOED",
       "color": "amber",
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 2.79 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -492,14 +962,119 @@
       "peak_2w_k": 86.3414722205623
     },
     {
+      "coin": "SNX",
+      "symbol": "SNX/USDT",
+      "in_set": false,
+      "rank": 18,
+      "category": "BELOW_HURDLE",
+      "color": "amber",
+      "verdict": "BELOW_HURDLE (dca_score 4.09 < 5.0)",
+      "blockers": [
+        "BELOW_HURDLE (dca_score 4.09 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #18 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 4.09,
+      "hurdle": 5.0,
+      "veto_active": false,
+      "veto_reason": "",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "SOL",
+      "symbol": "SOL/USDT",
+      "in_set": false,
+      "rank": 25,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "BELOW_HURDLE (dca_score 3.13 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #25 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 3.13,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "STX",
+      "symbol": "STX/USDT",
+      "in_set": false,
+      "rank": 29,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "BELOW_HURDLE (dca_score 2.55 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #29 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 2.55,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "SUI",
+      "symbol": "SUI/USDT",
+      "in_set": false,
+      "rank": 13,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "BELOW_HURDLE (dca_score 4.74 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #13 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 4.74,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
       "coin": "TAO",
       "symbol": "TAO/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 3.53 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.53 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -515,8 +1090,35 @@
       "peak_2w_k": 82.8939176856468
     },
     {
+      "coin": "TIA",
+      "symbol": "TIA/USDT",
+      "in_set": false,
+      "rank": 42,
+      "category": "BELOW_HURDLE",
+      "color": "amber",
+      "verdict": "BELOW_HURDLE (dca_score 1.21 < 5.0)",
+      "blockers": [
+        "BELOW_HURDLE (dca_score 1.21 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #42 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 1.21,
+      "hurdle": 5.0,
+      "veto_active": false,
+      "veto_reason": "",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
       "coin": "UNI",
       "symbol": "UNI/USDT",
+      "in_set": true,
+      "rank": null,
       "category": "UNWINDING",
       "color": "red",
       "verdict": "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
@@ -524,7 +1126,7 @@
         "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 1.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -540,14 +1142,66 @@
       "peak_2w_k": 100.0
     },
     {
-      "coin": "ZRO",
-      "symbol": "ZRO/USDT",
+      "coin": "W",
+      "symbol": "W/USDT",
+      "in_set": false,
+      "rank": 10,
       "category": "VETOED",
       "color": "amber",
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
+        "NOT_IN_SET (no engine; scanner rank #10 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 5.68,
+      "hurdle": 5.0,
+      "veto_active": true,
+      "veto_reason": "A2_EXTENSION",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "XRP",
+      "symbol": "XRP/USDT",
+      "in_set": false,
+      "rank": 44,
+      "category": "BELOW_HURDLE",
+      "color": "amber",
+      "verdict": "BELOW_HURDLE (dca_score 0.56 < 5.0)",
+      "blockers": [
+        "BELOW_HURDLE (dca_score 0.56 < 5.0)",
+        "NOT_IN_SET (no engine; scanner rank #44 \u2014 didn't win a slot)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 0.56,
+      "hurdle": 5.0,
+      "veto_active": false,
+      "veto_reason": "",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "ZRO",
+      "symbol": "ZRO/USDT",
+      "in_set": true,
+      "rank": null,
+      "category": "VETOED",
+      "color": "amber",
+      "verdict": "VETOED by scanner (A2_EXTENSION)",
+      "blockers": [
+        "VETOED by scanner (A2_EXTENSION)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.95 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,

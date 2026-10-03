@@ -1395,6 +1395,7 @@ function renderWhyBlocked(){
     UNWINDING:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'},
     REGIME:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'},
     NO_SCORE:{bg:'rgba(99,102,241,.1)',col:'var(--text3)',dot:'var(--text3)'},
+    NOT_IN_SET:{bg:'rgba(99,102,241,.08)',col:'var(--text3)',dot:'var(--text3)'},
     BLOCKED:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'}
   };
   function cs(cat){return catStyle[cat]||catStyle.BLOCKED}
@@ -1402,7 +1403,7 @@ function renderWhyBlocked(){
 
   // Summary chips
   var sum=d.summary||{};
-  var chipOrder=['CLEAR','IN_POSITION','BELOW_HURDLE','VETOED','UNWINDING','NO_SLOT','REGIME','PAUSED','NO_SCORE'];
+  var chipOrder=['CLEAR','IN_POSITION','BELOW_HURDLE','VETOED','UNWINDING','NO_SLOT','REGIME','PAUSED','NO_SCORE','NOT_IN_SET'];
   var chips='';
   chipOrder.forEach(function(cat){
     if(sum[cat]){var st=cs(cat);chips+='<span style="display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:12px;background:'+st.bg+';color:'+st.col+'"><span style="width:7px;height:7px;border-radius:50%;background:'+st.dot+'"></span>'+cat.replace(/_/g,' ')+' '+sum[cat]+'</span>';}
@@ -1436,9 +1437,15 @@ function renderWhyBlocked(){
   var h='';
   rows.forEach(function(c){
     var st=cs(c.category);
-    // phase pill
+    var notInSet=(c.in_set===false);
+    // phase pill — not-in-set coins have no engine, show "Watchlist"
     var ph=c.phase||'--';
-    var phaseHtml='<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[ph]||'var(--text3)')+'"></span>'+(ph==='--'?'--':ph.replace('_',' '))+'</span>';
+    var phaseHtml;
+    if(notInSet){
+      phaseHtml='<span class="phase-pill" style="background:rgba(99,102,241,.08);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Watchlist'+(c.rank!=null?' #'+c.rank:'')+'</span>';
+    }else{
+      phaseHtml='<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[ph]||'var(--text3)')+'"></span>'+(ph==='--'?'--':ph.replace('_',' '))+'</span>';
+    }
     // status pill
     var statusHtml='<span class="phase-pill" style="background:'+st.bg+';color:'+st.col+'"><span class="pd" style="background:'+st.dot+'"></span>'+c.category.replace(/_/g,' ')+'</span>';
     // score / hurdle
