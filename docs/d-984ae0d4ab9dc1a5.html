@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AIT V14-PM Live - Portfolio Manager</title>
+<title>AIT V14-PM - Portfolio Manager Paper Trading</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -399,7 +399,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
     <div class="header-titles">
       <h1>Adaptive Intelligence Trading</h1>
-      <div class="sub">V14 PM Live &mdash; Aster Perps</div>
+      <div class="sub">V14 PM &mdash; Portfolio Manager</div>
     </div>
   </div>
   <div class="header-right">
@@ -513,6 +513,33 @@ tr:hover td{background:rgba(99,102,241,.04)}
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
 </div>
 
+<!-- 8b. ENTRY GATE / WHY-BLOCKED DASHBOARD -->
+<div class="flow-section">
+  <h2 style="text-align:center;font-size:1.15rem;color:var(--text);margin-bottom:4px">&#x1F6A6; Entry Gate Monitor</h2>
+  <div class="flow-sub" style="text-align:center">Why each coin is or isn't eligible to open a new position right now</div>
+
+  <!-- Summary chips -->
+  <div id="wbSummary" style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+  <div id="wbMeta" style="text-align:center;font-size:.72rem;color:var(--text3);margin-bottom:12px"></div>
+
+  <div class="pag-bar" style="justify-content:space-between;margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:.75rem;color:var(--text2)">Show:</span>
+      <select id="wbPageSize"><option value="10">10</option><option value="25">25</option><option value="50" selected>50</option></select>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:.75rem;color:var(--text2)">Filter:</span>
+      <select id="wbFilter"><option value="all" selected>All</option><option value="CLEAR">Clear only</option><option value="blocked">Blocked only</option></select>
+      <span id="wbTimestamp" style="font-size:.7rem;color:var(--text3)"></span>
+    </div>
+  </div>
+  <table class="opp-table" id="wbTable">
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="Primary gate category" style="cursor:help">STATUS</th><th title="DCA Score (14d) vs hurdle rate 5.0 — coin must score ≥ hurdle to be funded" style="cursor:help">SCORE / HURDLE</th><th title="Scanner extension veto" style="cursor:help">VETO</th><th title="Holds a funded router slot" style="cursor:help">SLOT</th><th>BLOCKER</th></tr></thead>
+    <tbody id="wbBody"></tbody>
+  </table>
+  <div class="pag-bar" id="wbPagBar" style="display:none"><button id="wbPagPrev" class="pag-btn">Prev</button><span id="wbPagInfo" class="pag-info"></span><button id="wbPagNext" class="pag-btn">Next</button></div>
+</div>
+
 <!-- 9. ADAPTIVE INTELLIGENCE (Per-Coin) -->
 <div class="ai-panel">
   <h2>Adaptive Intelligence</h2>
@@ -553,9 +580,10 @@ tr:hover td{background:rgba(99,102,241,.04)}
 <script>
 // CONFIG
 var CONFIG = {
-  statusUrl: 'data/v14-pm-live/status.json',
-  tradesUrl: 'data/v14-pm-live/trades.csv',
+  statusUrl: 'data/v14-pm/status.json',
+  tradesUrl: 'data/v14-pm/trades.csv',
   scannerUrl: 'data/v14/cycle_scanner.json',
+  whyBlockedUrl: 'data/v14/why_blocked.json',
   refreshInterval: 60
 };
 
@@ -624,13 +652,16 @@ var PHASE_DESC = {
 var PHASES = ['LONG_DCA','ROUTER','SHORT_DCA'];
 var REGIME_CLS = {ACCUMULATION:'rb-ACCUMULATION',ACC:'rb-ACC',TRENDING:'rb-TRENDING',TREND:'rb-TREND',RANGING:'rb-RANGING',EXTREME:'rb-EXTREME',CRASH:'rb-CRASH',CHOPPY:'rb-CHOPPY',DISTRIBUTION:'rb-DISTRIBUTION',LONG_DCA:'rb-ACC',SHORT_DCA:'rb-EXTREME',ROUTER:'rb-RANGING'};
 
-var S=null, trades=[], eqChart=null, countdownVal=CONFIG.refreshInterval, tradePage=0, oppPage=0, scannerData=null;
+var S=null, trades=[], eqChart=null, countdownVal=CONFIG.refreshInterval, tradePage=0, oppPage=0, scannerData=null, whyBlockedData=null;
 
 function parseCSV(t){var l=t.trim().split('\n');if(l.length<2)return[];var h=l[0].split(',').map(function(x){return x.trim()});return l.slice(1).map(function(r){var v=r.split(',');var o={};h.forEach(function(k,i){o[k]=v[i]?v[i].trim():''});return o})}
 
 async function fetchData(){
   if(CONFIG.scannerUrl){
     try{var r3=await fetch(CONFIG.scannerUrl+'?t='+Date.now());if(r3.ok){scannerData=await r3.json()}}catch(e){console.warn('scanner fetch',e)}
+  }
+  if(CONFIG.whyBlockedUrl){
+    try{var r4=await fetch(CONFIG.whyBlockedUrl+'?t='+Date.now());if(r4.ok){whyBlockedData=await r4.json();try{renderWhyBlocked()}catch(e){console.warn('wb render',e)}}}catch(e){console.warn('whyBlocked fetch',e)}
   }
   try{var r=await fetch(CONFIG.statusUrl+'?t='+Date.now());if(r.ok){S=await r.json();render()}}catch(e){console.warn('status fetch',e)}
   try{var r2=await fetch(CONFIG.tradesUrl+'?t='+Date.now());if(r2.ok){trades=parseCSV(await r2.text());renderTrades();renderEquityChart();try{renderCompounding()}catch(e){}try{renderStats()}catch(e){}}}catch(e){}
@@ -1323,6 +1354,105 @@ h+='<td style="text-align:center">'+dealsHtml+'</td>';
   }else{$('oppPagBar').style.display='none'}
 }
 
+// ENTRY GATE / WHY-BLOCKED
+var wbPage=0;
+function renderWhyBlocked(){
+  var d=whyBlockedData;
+  if(!d||!d.coins){ $('wbBody').innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">No gate data</td></tr>'; return; }
+
+  // Category -> color/style map (reuses theme vars)
+  var catStyle={
+    CLEAR:{bg:'rgba(34,197,94,.12)',col:'var(--phase-long-dca)',dot:'var(--phase-long-dca)'},
+    IN_POSITION:{bg:'rgba(34,197,94,.12)',col:'var(--phase-long-dca)',dot:'var(--phase-long-dca)'},
+    BELOW_HURDLE:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
+    VETOED:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
+    NO_SLOT:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
+    PAUSED:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
+    UNWINDING:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'},
+    REGIME:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'},
+    NO_SCORE:{bg:'rgba(99,102,241,.1)',col:'var(--text3)',dot:'var(--text3)'},
+    BLOCKED:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'}
+  };
+  function cs(cat){return catStyle[cat]||catStyle.BLOCKED}
+  var phaseColors={LONG_DCA:'var(--phase-long-dca)',SHORT_DCA:'var(--phase-short-dca)',ROUTER:'var(--phase-router)'};
+
+  // Summary chips
+  var sum=d.summary||{};
+  var chipOrder=['CLEAR','IN_POSITION','BELOW_HURDLE','VETOED','UNWINDING','NO_SLOT','REGIME','PAUSED','NO_SCORE'];
+  var chips='';
+  chipOrder.forEach(function(cat){
+    if(sum[cat]){var st=cs(cat);chips+='<span style="display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:12px;background:'+st.bg+';color:'+st.col+'"><span style="width:7px;height:7px;border-radius:50%;background:'+st.dot+'"></span>'+cat.replace(/_/g,' ')+' '+sum[cat]+'</span>';}
+  });
+  $('wbSummary').innerHTML=chips;
+
+  // Meta line
+  var metaParts=[];
+  if(d.clear_count!=null)metaParts.push(d.clear_count+' of '+d.total_coins+' eligible');
+  if(d.active_pool_cash!=null)metaParts.push('$'+Number(d.active_pool_cash).toFixed(0)+' free');
+  if(d.hurdle!=null)metaParts.push('hurdle ≥'+d.hurdle+' ('+d.hurdle_window+')');
+  if(d.global_regime)metaParts.push('regime: '+d.global_regime.replace('_',' '));
+  $('wbMeta').innerHTML=metaParts.join(' &nbsp;|&nbsp; ');
+
+  // Timestamp
+  var tsEl=$('wbTimestamp');
+  if(tsEl&&d.generated_at){var g=new Date(d.generated_at);var mn=Math.round((Date.now()-g.getTime())/60000);tsEl.textContent='Updated: '+(mn<60?mn+'m ago':Math.round(mn/60)+'h ago');}
+
+  // Filter + sort (clear first, then by category severity, then by score)
+  var filt=$('wbFilter')?$('wbFilter').value:'all';
+  var sevRank={CLEAR:0,IN_POSITION:0,BELOW_HURDLE:1,VETOED:2,NO_SLOT:3,UNWINDING:4,PAUSED:5,REGIME:6,NO_SCORE:7,BLOCKED:8};
+  var rows=d.coins.slice().filter(function(c){
+    if(filt==='CLEAR')return c.category==='CLEAR'||c.category==='IN_POSITION';
+    if(filt==='blocked')return c.category!=='CLEAR'&&c.category!=='IN_POSITION';
+    return true;
+  });
+  rows.sort(function(a,b){var ra=sevRank[a.category]!=null?sevRank[a.category]:9;var rb=sevRank[b.category]!=null?sevRank[b.category]:9;if(ra!==rb)return ra-rb;var sa=a.dca_score_14d!=null?a.dca_score_14d:-1;var sb=b.dca_score_14d!=null?b.dca_score_14d:-1;return sb-sa;});
+
+  var h='';
+  rows.forEach(function(c){
+    var st=cs(c.category);
+    // phase pill
+    var ph=c.phase||'--';
+    var phaseHtml='<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[ph]||'var(--text3)')+'"></span>'+(ph==='--'?'--':ph.replace('_',' '))+'</span>';
+    // status pill
+    var statusHtml='<span class="phase-pill" style="background:'+st.bg+';color:'+st.col+'"><span class="pd" style="background:'+st.dot+'"></span>'+c.category.replace(/_/g,' ')+'</span>';
+    // score / hurdle
+    var scoreHtml='<span style="color:var(--text3)">--</span>';
+    if(c.dca_score_14d!=null){var sc=c.dca_score_14d;var scCol=sc>=c.hurdle?'var(--phase-long-dca)':'var(--amber)';scoreHtml='<span style="font-weight:700;color:'+scCol+'">'+sc.toFixed(2)+'</span> <span style="font-size:.7rem;color:var(--text3)">/ '+c.hurdle+'</span>';}
+    // veto
+    var vetoHtml=c.veto_active?'<span style="color:var(--amber);font-size:.78rem" title="'+(c.veto_reason||'')+'">⚠ '+(c.veto_reason||'veto')+'</span>':'<span style="color:var(--text3)">—</span>';
+    // slot
+    var slotHtml=c.in_active_allocation?'<span style="color:var(--phase-long-dca)">● funded</span>':'<span style="color:var(--text3)">—</span>';
+    // blocker (primary)
+    var blk=(c.blockers&&c.blockers.length)?c.blockers[0]:'—';
+    var blkCol=(c.category==='CLEAR'||c.category==='IN_POSITION')?'var(--phase-long-dca)':'var(--text2)';
+    var blkHtml='<span style="font-size:.82rem;color:'+blkCol+'" title="'+(c.blockers||[]).join(' | ').replace(/"/g,'')+'">'+blk+'</span>';
+
+    h+='<tr>';
+    h+='<td class="coin-name">'+c.coin+'</td>';
+    h+='<td>'+phaseHtml+'</td>';
+    h+='<td>'+statusHtml+'</td>';
+    h+='<td style="text-align:center">'+scoreHtml+'</td>';
+    h+='<td style="text-align:center">'+vetoHtml+'</td>';
+    h+='<td style="text-align:center">'+slotHtml+'</td>';
+    h+='<td>'+blkHtml+'</td>';
+    h+='</tr>';
+  });
+
+  // Pagination
+  var wbRows=h?h.match(/<tr[\s\S]*?<\/tr>/g):[];
+  var wps=parseInt($('wbPageSize').value)||50;
+  var wbMaxPage=Math.max(0,Math.ceil(wbRows.length/wps)-1);
+  wbPage=Math.min(wbPage,wbMaxPage);
+  var wbPageRows=wbRows.slice(wbPage*wps,(wbPage+1)*wps);
+  $('wbBody').innerHTML=wbPageRows.length?wbPageRows.join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">No coins match filter</td></tr>';
+  if(wbRows.length>wps){
+    $('wbPagBar').style.display='flex';
+    $('wbPagInfo').textContent='Page '+(wbPage+1)+' of '+(wbMaxPage+1);
+    $('wbPagPrev').disabled=wbPage===0;
+    $('wbPagNext').disabled=wbPage>=wbMaxPage;
+  }else{$('wbPagBar').style.display='none'}
+}
+
 // TRADES
 function renderTrades(){
   var empty=$('tradeEmpty'), pagB=$('pagBar');
@@ -1363,6 +1493,10 @@ document.addEventListener('DOMContentLoaded',function(){
   $('oppPagNext').onclick=function(){oppPage++;renderFlowDiagram()};
   $('oppPageSize').onchange=function(){oppPage=0;renderFlowDiagram()};
   if($('scanWindow'))$('scanWindow').onchange=function(){oppPage=0;renderFlowDiagram()};
+  if($('wbPagPrev'))$('wbPagPrev').onclick=function(){wbPage--;renderWhyBlocked()};
+  if($('wbPagNext'))$('wbPagNext').onclick=function(){wbPage++;renderWhyBlocked()};
+  if($('wbPageSize'))$('wbPageSize').onchange=function(){wbPage=0;renderWhyBlocked()};
+  if($('wbFilter'))$('wbFilter').onchange=function(){wbPage=0;renderWhyBlocked()};
 });
 
 // EQUITY CHART
