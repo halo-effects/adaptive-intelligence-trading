@@ -39,7 +39,12 @@ class CFGICreditsExhausted(CFGIError):
     pass
 
 
-ENDPOINT = "https://cfgi.io/api/api_request_v2.php"
+# v3 migration (2026-09-30): v2 `api_request_v2.php` was sunset (HTTP 410).
+# v3 batches multiple symbols in one call and returns a flat `data[]` array.
+# The old `cfgi` field is now `score`; get_current() exposes BOTH keys for
+# backward compatibility with callers that read `.cfgi`.
+ENDPOINT = "https://cfgi.io/api/v3/scores"
+ENDPOINT_V2_LEGACY = "https://cfgi.io/api/api_request_v2.php"  # sunset, kept for reference
 
 VALID_TOKENS = [
     "BTC", "ETH", "SOL", "BNB", "HYPE", "ASTER", "DOGE", "PEPE",
@@ -53,6 +58,15 @@ VALID_FIELDS = [
 ]
 
 PERIODS = {1: "15m", 2: "1h", 3: "4h", 4: "1d"}
+
+
+def _period_str(period) -> str:
+    """Map a legacy integer period code (1-4) to a v3 period string.
+    Accepts already-stringified periods ("1d", "4h", ...) and passes them through.
+    """
+    if isinstance(period, str):
+        return period
+    return PERIODS.get(period, "1d")
 
 
 class CFGIClient:
@@ -107,48 +121,44 @@ class CFGIClient:
     # ── Public methods ────────────────────────────────────────────
 
     def get_current(self, tokens: list, period: int = 4, fields: str = "cfgi") -> dict:
-        """Fetch latest value for given tokens. Returns {token: {field: value, ...}}."""
+        """Fetch latest score for given tokens (v3 /api/v3/scores).
+
+        Batches all tokens in a single request. Returns
+        {token: {"cfgi": score, "score": score, "classification": str,
+                 "components": dict, "price": float, "stale": bool}}.
+
+        Backward-compat: value exposed under BOTH `cfgi` (legacy v2 key) and
+        `score` (v3 key) so callers reading `.get("cfgi")` keep working. The
+        `fields` arg is accepted for signature compatibility but ignored — v3
+        always returns the full object.
+        """
         params = {
-            "token": ",".join(tokens),
-            "period": period,
-            "values": 1,
-            "fields": fields,
+            "symbols": ",".join(tokens),
+            "period": _period_str(period),
         }
         data = self._request(params)
         return self._parse_multi_token(data, tokens)
 
     def get_history(self, token: str, period: int, start: str, end: str, fields: str = "cfgi") -> list:
-        """Fetch historical range with auto-pagination (max 1200 per request)."""
-        all_data = []
-        current_start = start
+        """Historical range fetch — NOT YET MIGRATED TO v3 (P2, 2026-09-30).
 
-        while True:
-            params = {
-                "token": token,
-                "period": period,
-                "start": current_start,
-                "end": end,
-                "fields": fields,
-                "values": 1200,
-            }
-            data = self._request(params)
-            rows = self._parse_single_token(data, token)
-            if not rows:
-                break
-            all_data.extend(rows)
-            if len(rows) < 1200:
-                break
-            # Next page starts after last row's date
-            last_date = rows[-1].get("date", "")
-            if not last_date or last_date >= end:
-                break
-            current_start = last_date
+        The v2 history path (`api_request_v2.php` with `token`/`start`/`end`/
+        `values` params) was sunset (HTTP 410). This method has NOT been
+        ported to the v3 history endpoint yet. It is used ONLY by backtest
+        helpers (`get_bulk_history`, `get_roc3d`, `get_cfgi_for_backtest`),
+        never by the live bot's `_poll_cfgi()`.
 
-        # Deduplicate by date and sort
-        seen = {}
-        for r in all_data:
-            seen[r.get("date", "")] = r
-        return sorted(seen.values(), key=lambda x: x.get("date", ""))
+        Fails loud on purpose: returning empty/partial data would silently
+        corrupt a backtest. When CFGI history is next needed for a backtest,
+        migrate this to the v3 history endpoint (probe `/api/v3/history` or
+        equivalent) and remove this guard.
+        """
+        raise NotImplementedError(
+            "CFGI get_history() is not migrated to v3 yet (P2, 2026-09-30). "
+            "v2 history endpoint was sunset. Live polling uses get_current() (v3, "
+            "already migrated). Migrate the v3 history endpoint before using this "
+            "in a backtest. See projects/ait/log.md 2026-09-30."
+        )
 
     def get_bulk_history(self, token: str, period: int, start: str, end: str,
                          fields: str = "cfgi", cache: bool = True) -> list:
@@ -176,9 +186,14 @@ class CFGIClient:
 
     def get_roc3d(self, token: str) -> Optional[float]:
         """Get CFGI 3-day rate of change for a single token.
-        
+
         Fetches last 4 daily values and returns current - 3_days_ago.
         Handles errors gracefully (returns None).
+
+        NOTE (P2, 2026-09-30): depends on get_history(), which is NOT yet
+        migrated to v3 and will raise NotImplementedError. This method catches
+        that and returns None (fail-soft) — callers must treat None as "CFGI ROC
+        unavailable". Not used by the live bot.
         """
         try:
             from datetime import datetime, timedelta
@@ -216,28 +231,39 @@ class CFGIClient:
     # ── Parsing helpers ───────────────────────────────────────────
 
     def _parse_multi_token(self, data: dict, tokens: list) -> dict:
-        """Parse API response for multiple tokens."""
+        """Parse v3 /api/v3/scores response into {token: {cfgi, score, ...}}.
+
+        v3 shape:
+            {"data": [{"symbol": "BTC", "score": 52.5, "classification": ...,
+                       "components": {...}, "price": ..., "stale": bool}, ...],
+             "meta": {"unknown_symbols": [...]}}
+
+        Matches on `item["symbol"]`. Exposes the score under both `cfgi` and
+        `score` for backward compatibility.
+        """
         result = {}
+        rows = []
         if isinstance(data, dict):
-            for token in tokens:
-                token_data = data.get(token, data.get(token.upper(), data.get(token.lower())))
-                if token_data is None and len(tokens) == 1:
-                    # Single token response might not be nested
-                    token_data = data
-                if isinstance(token_data, list) and token_data:
-                    result[token] = token_data[0] if len(token_data) == 1 else token_data[-1]
-                elif isinstance(token_data, dict):
-                    result[token] = token_data
+            rows = data.get("data", []) or []
+            meta = data.get("meta", {}) or {}
+            unknown = meta.get("unknown_symbols")
+            if unknown:
+                logger.debug(f"CFGI v3 unknown_symbols: {unknown}")
         elif isinstance(data, list):
-            # API returns flat list with "token" field per entry
-            for item in data:
-                if isinstance(item, dict):
-                    t = item.get("token", "")
-                    if t in tokens:
-                        result[t] = item
-            # Fallback: single token, flat list
-            if not result and len(tokens) == 1 and data:
-                result[tokens[0]] = data[-1] if isinstance(data[-1], dict) else {"cfgi": data[-1]}
+            rows = data  # defensive: bare array fallback
+
+        token_set = set(tokens)
+        for item in rows:
+            if not isinstance(item, dict):
+                continue
+            sym = item.get("symbol", "")
+            if sym not in token_set:
+                continue
+            score = item.get("score")
+            entry = dict(item)  # preserve full v3 object (components, price, stale, ...)
+            entry["cfgi"] = score   # legacy alias for backward compat
+            entry["score"] = score
+            result[sym] = entry
         return result
 
     def _parse_single_token(self, data: dict, token: str) -> list:

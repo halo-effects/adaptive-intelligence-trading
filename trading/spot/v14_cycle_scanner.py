@@ -69,6 +69,7 @@ COINS = [
     'OP/USDT',    'STX/USDT',   'SEI/USDT',    'RENDER/USDT',
     # --- 2024 launches ---
     'SUI/USDT',   'FET/USDT',   'TAO/USDT',   'GRAM/USDT',  'JUP/USDT',  # TON renamed to GRAM 2026-06-15
+    'JTO/USDT',   # added 2026-09-30 (mature, active bot slot)
     'KAS/USDT',   'PENDLE/USDT','PYTH/USDT',  'TIA/USDT',   'ONDO/USDT',
     'ENA/USDT',   'EIGEN/USDT', 'W/USDT',     'ZRO/USDT',
     # --- Mid-cycle 2025 (OK per Brett — launched before bear) ---
@@ -86,7 +87,25 @@ SCORE_HISTORY_PATH = WORKSPACE / "trading" / "spot" / "data" / "score_history.js
 
 
 def load_candles(conn: sqlite3.Connection, symbol: str, start_ms: int, end_ms: int) -> list[tuple]:
-    """Load 1h candles for a symbol within a time range, sorted by timestamp."""
+    """Load 1h candles for a symbol within a time range, sorted by timestamp.
+    D3 (2026-09-30): for renamed coins, union candles across the ticker lineage
+    (GRAM+TON), dedup by timestamp (newest ticker wins)."""
+    lineage = _lineage_symbols_1h(conn, symbol)
+    if lineage:
+        placeholders = ','.join('?' * len(lineage))
+        cursor = conn.execute(
+            f"SELECT timestamp, open, high, low, close, volume FROM candles "
+            f"WHERE symbol IN ({placeholders}) AND timeframe = '1h' "
+            f"AND timestamp >= ? AND timestamp <= ? ORDER BY timestamp",
+            (*lineage, start_ms, end_ms)
+        )
+        rows = cursor.fetchall()
+        # dedup by timestamp (keep last seen; lineage ordered current-first so
+        # iterate and let later duplicates overwrite -> deterministic)
+        dedup = {}
+        for r in rows:
+            dedup[r[0]] = r
+        return [dedup[k] for k in sorted(dedup)]
     cursor = conn.execute(
         "SELECT timestamp, open, high, low, close, volume FROM candles "
         "WHERE symbol = ? AND timeframe = '1h' AND timestamp >= ? AND timestamp <= ? "
@@ -456,6 +475,30 @@ def get_window_range(window: str, now_ms: int) -> tuple[int, int]:
         raise ValueError(f"Unknown window: {window}")
 
 
+def _lineage_symbols_1h(conn, symbol):
+    """D3 (2026-09-30): return the list of 1h-candle symbols across a coin's ticker
+    lineage (e.g. GRAM -> [GRAM/USDT, TON/USDT]) that actually have candles, so the
+    scanner's maturity gate and scoring see a renamed coin's full history."""
+    try:
+        from trading.spot.engine.ticker_lineage import lineage_bases
+    except Exception:
+        lineage_bases = lambda b: [b]
+    base = symbol.split('/')[0]
+    bases = lineage_bases(base)
+    if len(bases) <= 1:
+        return None  # no lineage -> callers use the plain single-symbol path
+    syms = []
+    for b in bases:
+        for q in ('USDT', 'USDC'):
+            s = f'{b}/{q}'
+            row = conn.execute(
+                "SELECT COUNT(*) FROM candles WHERE symbol = ? AND timeframe = '1h'", (s,)
+            ).fetchone()
+            if row[0] > 0:
+                syms.append(s)
+    return syms or None
+
+
 def _resolve_symbol(conn: sqlite3.Connection, symbol: str) -> tuple[str, int]:
     """Try the given symbol, then flip USDT↔USDC. Returns (resolved_symbol, candle_count)."""
     for sym in [symbol, _alt_quote(symbol)]:
@@ -477,11 +520,20 @@ def _alt_quote(symbol: str) -> str:
 
 
 def _history_months(conn: sqlite3.Connection, symbol: str) -> float:
-    """Return months of 1h candle history for a symbol."""
-    row = conn.execute(
-        "SELECT MIN(timestamp), MAX(timestamp) FROM candles "
-        "WHERE symbol = ? AND timeframe = '1h'", (symbol,)
-    ).fetchone()
+    """Return months of 1h candle history for a symbol.
+    D3 (2026-09-30): for renamed coins, span the full ticker lineage (GRAM+TON)."""
+    lineage = _lineage_symbols_1h(conn, symbol)
+    if lineage:
+        placeholders = ','.join('?' * len(lineage))
+        row = conn.execute(
+            f"SELECT MIN(timestamp), MAX(timestamp) FROM candles "
+            f"WHERE symbol IN ({placeholders}) AND timeframe = '1h'", lineage
+        ).fetchone()
+    else:
+        row = conn.execute(
+            "SELECT MIN(timestamp), MAX(timestamp) FROM candles "
+            "WHERE symbol = ? AND timeframe = '1h'", (symbol,)
+        ).fetchone()
     if row[0] is None:
         return 0.0
     return (row[1] - row[0]) / (1000 * 60 * 60 * 24 * 30.44)

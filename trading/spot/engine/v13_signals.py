@@ -80,6 +80,17 @@ def load_daily(coin, db_path=None):
     db = sqlite3.connect(str(db_path or DB_PATH))
     # Search by base coin (e.g., LINK/USDC → LINK/%) to find all quote pairs
     base = coin.split('/')[0] if '/' in coin else coin
+    # D3 (2026-09-30): union across ticker lineage (renamed coins e.g. GRAM+TON)
+    from trading.spot.engine.ticker_lineage import load_lineage_daily, lineage_bases
+    if len(lineage_bases(base)) > 1:
+        df = load_lineage_daily(db, base, columns='*')
+        db.close()
+        if df is None or len(df) == 0:
+            return None
+        if not df.index.is_unique:
+            df = df[~df.index.duplicated(keep='last')]
+        df.attrs['symbol'] = df.attrs.get('symbol', base)
+        return df
     syms = [r[0] for r in db.execute(
         'SELECT DISTINCT symbol FROM candles_daily WHERE symbol LIKE ?',
         (f'{base}/%',)).fetchall()]

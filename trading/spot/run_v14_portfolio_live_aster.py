@@ -4842,7 +4842,7 @@ class V14PortfolioLiveAster:
                 )
                 seed_attested_history()
                 seed_current_state(
-                    {s: {'engine_state': {'phase': c.engine._engine.phase.name
+                    {s: {'engine_state': {'phase': (c.engine._engine.phase.name if hasattr(c.engine._engine.phase, 'name') else str(c.engine._engine.phase))
                           if c.engine and c.engine._engine else None}}
                      for s, c in self.coins.items()},
                     self._global_regime

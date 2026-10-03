@@ -35,6 +35,15 @@ class Steve3CheckDetector:
 
     def _load_daily(self):
         db = sqlite3.connect(str(DB_PATH))
+        # D3 (2026-09-30): union across ticker lineage (renamed coins e.g. GRAM+TON)
+        from trading.spot.engine.ticker_lineage import load_lineage_daily, lineage_bases
+        if len(lineage_bases(self.base)) > 1:
+            df = load_lineage_daily(db, self.base)
+            db.close()
+            if df is None or len(df) == 0:
+                return None
+            df = df[df.index.notna()]
+            return df
         syms = db.execute(
             "SELECT DISTINCT symbol FROM candles_daily WHERE symbol LIKE ?",
             (f'{self.base}%',)

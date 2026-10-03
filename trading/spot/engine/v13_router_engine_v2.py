@@ -50,6 +50,7 @@ DB_PATH = Path(os.environ.get('AIT_CANDLES_DB', str(_default_path)))
 
 class HybridDetector2D:
     """Steve's 3-Check (2D) + CFGI<35 + 2D death cross gate."""
+    _FALLBACK_MIN_DAILY = 200  # D1: daily bars needed for the young-coin 50/200 fallback
 
     def __init__(self, coin, exhaustion_k_min=5.0, exhaustion_tf='2W', exhaustion_mode='cross'):
         self.coin = coin
@@ -83,34 +84,15 @@ class HybridDetector2D:
         """Load best available daily history.
         Uses same symbol selection as load_daily(): prefer symbols with
         indicators, then widest range. (Finding #13 fix)"""
+        # D3 (2026-09-30): union candles across the coin's ticker lineage
+        # (e.g. GRAM+TON) so a renamed coin sees its full history.
         try:
+            from trading.spot.engine.ticker_lineage import load_lineage_daily
             db = sqlite3.connect(str(DB_PATH))
-            syms = [r[0] for r in db.execute(
-                'SELECT DISTINCT symbol FROM candles_daily WHERE symbol LIKE ?',
-                (f'{self.base}/%',)).fetchall()]
-            if not syms:
-                db.close()
-                return None
-            def _score(s):
-                r = db.execute(
-                    'SELECT MAX(timestamp) - MIN(timestamp), '
-                    'SUM(CASE WHEN sma50 IS NOT NULL AND sma50 != 0 THEN 1 ELSE 0 END) '
-                    'FROM candles_daily '
-                    'WHERE symbol=? AND timestamp IS NOT NULL AND timestamp > 0', (s,)).fetchone()
-                date_range = r[0] or 0
-                has_indicators = 1 if (r[1] or 0) > 0 else 0
-                return (has_indicators * 10**15) + date_range
-            best_sym = max(syms, key=_score)
-            best_df = pd.read_sql(
-                "SELECT timestamp, open, high, low, close, volume FROM candles_daily WHERE symbol=? ORDER BY timestamp",
-                db, params=[best_sym]
-            )
+            best_df = load_lineage_daily(db, self.base)
             db.close()
-            if len(best_df) == 0:
+            if best_df is None or len(best_df) == 0:
                 return None
-            best_df['dt'] = pd.to_datetime(best_df['timestamp'], unit='ms')
-            best_df = best_df.set_index('dt').sort_index()
-            best_df = best_df[~best_df.index.duplicated(keep='last')]
             return best_df
         except Exception:
             return None
@@ -156,20 +138,71 @@ class HybridDetector2D:
 
         daily_idx = df.index
 
-        # 3D death cross (SMA50 < SMA200)
+        # -- 3D death cross (SMA50 < SMA200) --  [VALIDATED PATH]
+        # D1 (2026-09-30): 200 SMA on a 3D grid needs ~600 calendar days before it
+        # yields a non-NaN value. Coins with < ~600 days (young / renamed) produce an
+        # all-NaN / all-False series -> bottom-conviction gate 1 can never fire. For
+        # those coins ONLY, fall back to a canonical daily 50/200 death cross
+        # (~200-day requirement, matches the original spec's stated fallback). Coins
+        # with enough 3D history keep the validated 3D signal byte-for-byte. The
+        # fallback self-retires the day a coin crosses ~600 days. Tagged via _dc_mode.
         d3 = df['close'].resample('3D').last().dropna()
         s50_3 = d3.rolling(50).mean()
         s200_3 = d3.rolling(200).mean()
-        in_dx_3d = s50_3 < s200_3
-        self._in_dx_3d = in_dx_3d.reindex(daily_idx, method='ffill')
+        in_dx_3d = (s50_3 < s200_3).reindex(daily_idx, method='ffill')
 
-        # StochRSI exhaustion crossover (configurable timeframe)
-        w2 = df.resample(self._exhaustion_tf).agg({
+        self._dc_mode = '3D'
+        if s200_3.notna().sum() == 0 or in_dx_3d.notna().sum() == 0:
+            # Young coin: validated 3D path unavailable -> daily 50/200 fallback
+            c = df['close']
+            if c.rolling(self._FALLBACK_MIN_DAILY).mean().notna().sum() > 0:
+                in_dx_3d = (c.rolling(50).mean() < c.rolling(200).mean())
+                self._dc_mode = 'daily50/200_fallback'
+            # else: still too young even for the fallback -> leave all-NaN. Coin stays
+            #       LONG-start; cannot yet bottom-convict (D2 provides the structural
+            #       escape). _dc_mode stays '3D' to signal 'no usable signal yet'.
+        self._in_dx_3d = in_dx_3d
+
+        # -- StochRSI exhaustion crossover --  [VALIDATED PATH at self._exhaustion_tf]
+        # D1b (2026-09-30): the exhaustion series has the same young-coin starvation
+        # (resample to 2W + rolling(14) windows need many weeks). Compute at the
+        # validated timeframe first; if it never fires for a young coin, fall back to a
+        # shorter timeframe ('1W') with identical logic. Coins with enough history keep
+        # the validated 2W signal unchanged. Tagged via _exh_mode.
+        self._exh_mode = self._exhaustion_tf
+        cross_active, _w_idx = self._compute_exhaustion_series(df, self._exhaustion_tf)
+        exh_reindexed = cross_active.reindex(daily_idx, method='ffill').fillna(False)
+        if exh_reindexed.sum() == 0 and self._exhaustion_tf != '1W':
+            # Never fired at the validated tf -> try the shorter '1W' proxy
+            fb_cross, _ = self._compute_exhaustion_series(df, '1W')
+            fb_reindexed = fb_cross.reindex(daily_idx, method='ffill').fillna(False)
+            if fb_reindexed.sum() > 0:
+                exh_reindexed = fb_reindexed
+                self._exh_mode = '1W_fallback'
+        self._2w_exhaustion_cross = exh_reindexed
+
+        # Also keep 2D for reference (UNCHANGED)
+        d2 = df['close'].resample('2D').last().dropna()
+        s50_2 = d2.rolling(50).mean()
+        s200_2 = d2.rolling(200).mean()
+        in_dx_2d = s50_2 < s200_2
+        self._in_dx_2d = in_dx_2d.reindex(daily_idx, method='ffill')
+
+        return self._in_dx_2d
+
+    def _compute_exhaustion_series(self, df, timeframe):
+        """StochRSI exhaustion 'active' series at a given resample timeframe.
+        Factored out (D1b, 2026-09-30) so the young-coin fallback can re-run the
+        SAME logic at a shorter timeframe. Returns (cross_active Series, index).
+        Logic is byte-for-byte the original 2W computation, parameterized on tf."""
+        w2 = df.resample(timeframe).agg({
             'open': 'first', 'high': 'max', 'low': 'min',
             'close': 'last', 'volume': 'sum'
         }).dropna()
+        if len(w2) == 0:
+            return pd.Series(dtype=bool), w2.index
 
-        # RSI(14) on 2W
+        # RSI(14)
         delta = w2['close'].diff()
         gain = delta.clip(lower=0)
         loss = (-delta).clip(lower=0)
@@ -187,7 +220,7 @@ class HybridDetector2D:
         w2['k'] = stoch_raw.rolling(3).mean()
         w2['d'] = w2['k'].rolling(3).mean()
 
-        # Method A: K×D crossover after pinned (original)
+        # Method A: K>D crossover after pinned (original)
         w2['was_pinned'] = w2['k'].rolling(3).min() < 5
         w2['k_above_d'] = w2['k'] > w2['d']
         w2['cross_up'] = w2['k_above_d'] & ~w2['k_above_d'].shift(1).fillna(False)
@@ -196,7 +229,6 @@ class HybridDetector2D:
         # Method B: K >= threshold after being pinned < 5 (faster, no D cross needed)
         w2['k_lifted'] = (w2['k'] >= self._exhaustion_k_min) & (w2['k'].shift(1) < self._exhaustion_k_min) & w2['was_pinned']
 
-        # Use configured method
         signal_col = 'k_lifted' if self._exhaustion_mode == 'k_lift' else 'exhaustion_cross'
 
         # Once fired, stays True until K enters overbought (K > 90 = new cycle top)
@@ -208,17 +240,7 @@ class HybridDetector2D:
             if active and row['k'] > 90:
                 active = False
             cross_active.loc[dt] = active
-
-        self._2w_exhaustion_cross = cross_active.reindex(daily_idx, method='ffill').fillna(False)
-
-        # Also keep 2D for reference
-        d2 = df['close'].resample('2D').last().dropna()
-        s50_2 = d2.rolling(50).mean()
-        s200_2 = d2.rolling(200).mean()
-        in_dx_2d = s50_2 < s200_2
-        self._in_dx_2d = in_dx_2d.reindex(daily_idx, method='ffill')
-
-        return self._in_dx_2d
+        return cross_active, w2.index
 
     def in_death_cross(self, date, timeframe='3D'):
         """Check if coin is in death cross at given date."""

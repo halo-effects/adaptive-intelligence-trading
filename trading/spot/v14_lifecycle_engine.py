@@ -249,7 +249,7 @@ class V14LifecycleEngine:
                 if not self._warmed_up:
                     self._warmed_up = True
                     logger.info(f"{self.symbol} warmup complete — router direction set, "
-                                f"phase={self._engine.phase.name}, trading enabled")
+                                f"phase={(self._engine.phase.name if hasattr(self._engine.phase, 'name') else str(self._engine.phase))}, trading enabled")
 
                 # Clear old candles (keep current day only)
                 self._candles_1h = [c for c in self._candles_1h

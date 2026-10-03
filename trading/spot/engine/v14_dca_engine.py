@@ -86,6 +86,9 @@ class V14Config:
     ROUTER_MAX_EVAL_DAYS = 42
     ROUTER_ADX_RANGING = 20
     ROUTER_ADX_SUSTAINED_DAYS = 14
+    # -- D2: stuck-SHORT router re-entry escape (2026-09-30) --
+    STUCK_REENTRY_MIN_DAYS = 30       # min days in SHORT before re-entry is allowed
+    STUCK_REENTRY_REQUIRE_FLAT = True # only re-route when no open short position
     HVF_LOOKBACK = 44
 
     # -- Top Detection: OB93 arm -> divergence --
@@ -815,6 +818,8 @@ class V14DCAEngine:
                 self._check_bottom_signals(date, price, signals)
                 # Also check for structural bullish reversal (markdown → DCA transition)
                 self._check_markdown_exit(date, price, signals)
+                # D2: stuck-SHORT router re-entry escape (structure-based, no death cross)
+                self._check_short_stuck_reentry(date, price, signals)
 
             elif self.phase == Phase.ROUTER:
                 # Evaluate and route
@@ -859,6 +864,31 @@ class V14DCAEngine:
                         f'Short grid failed: +{rise*100:.0f}% against, switching to LONG_DCA')
                     return True
 
+        return False
+
+    def _check_short_stuck_reentry(self, date, price, signals):
+        """D2 escape hatch (2026-09-30): a flat, long-stuck SHORT_DCA coin with
+        bullish structure re-enters ROUTER so _check_router can re-evaluate direction
+        WITHOUT needing the death-cross/conviction gate. Addresses both the young-coin
+        trap (no death cross available) and the 'old coin, 4-gate conjunction never
+        aligned' case. Nothing else ever returns a coin to ROUTER, so this reopens the
+        one phase with a structure-based (non-conviction) path back to LONG_DCA."""
+        if self.phase != Phase.SHORT_DCA:
+            return False
+        # Never abandon an open short grid mid-position.
+        if self.cfg.STUCK_REENTRY_REQUIRE_FLAT and (self.short_coins > 0 or self.short_layers > 0):
+            return False
+        days_in = (date - self.phase_start_date).days if self.phase_start_date else 0
+        if days_in < self.cfg.STUCK_REENTRY_MIN_DAYS:
+            return False
+        # Bullish structure confirmation (same signals _check_router trusts for LONG).
+        if signals.get('hh_hl') and signals.get('fib_support'):
+            self._change_phase(date, Phase.ROUTER,
+                f'Stuck-SHORT re-entry: flat {days_in}d + bullish structure → ROUTER')
+            # Reset conviction latch so a future top can re-arm cleanly.
+            self.top_detected = False
+            self.conviction_fired = False
+            return True
         return False
 
     def _results(self):
