@@ -553,7 +553,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
   </div>
   <table class="opp-table" id="wbTable">
-    <thead><tr><th>COIN</th><th>PHASE</th><th title="Primary gate category" style="cursor:help">STATUS</th><th title="DCA Score (14d) vs hurdle rate 5.0 — coin must score ≥ hurdle to be funded" style="cursor:help">SCORE / HURDLE</th><th title="Scanner extension veto" style="cursor:help">VETO</th><th title="Holds a funded router slot" style="cursor:help">SLOT</th><th>BLOCKER</th></tr></thead>
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="Primary gate category" style="cursor:help">STATUS</th><th title="STUCK = early-warning unwind that can never clear on its own (OB93 never armed AND 2W peak &lt; 93) — the EIGEN-class lockout, safe to force-clear. Otherwise the unwind is legitimate top-detection with a valid exit path." style="cursor:help">STUCK?</th><th title="DCA Score vs hurdle rate 5.0 — coin must score ≥ hurdle to be funded" style="cursor:help">SCORE / HURDLE</th><th title="Scanner extension veto" style="cursor:help">VETO</th><th title="Holds a funded router slot" style="cursor:help">SLOT</th><th>BLOCKER</th></tr></thead>
     <tbody id="wbBody"></tbody>
   </table>
   <div class="pag-bar" id="wbPagBar" style="display:none"><button id="wbPagPrev" class="pag-btn">Prev</button><span id="wbPagInfo" class="pag-info"></span><button id="wbPagNext" class="pag-btn">Next</button></div>
@@ -1377,7 +1377,7 @@ h+='<td style="text-align:center">'+dealsHtml+'</td>';
 var wbPage=0;
 function renderWhyBlocked(){
   var d=whyBlockedData;
-  if(!d||!d.coins){ $('wbBody').innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">No gate data</td></tr>'; return; }
+  if(!d||!d.coins){ $('wbBody').innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">No gate data</td></tr>'; return; }
 
   // Category -> color/style map (reuses theme vars)
   var catStyle={
@@ -1410,7 +1410,9 @@ function renderWhyBlocked(){
   if(d.active_pool_cash!=null)metaParts.push('$'+Number(d.active_pool_cash).toFixed(0)+' free');
   if(d.hurdle!=null)metaParts.push('hurdle ≥'+d.hurdle+' ('+d.hurdle_window+')');
   if(d.global_regime)metaParts.push('regime: '+d.global_regime.replace('_',' '));
-  $('wbMeta').innerHTML=metaParts.join(' &nbsp;|&nbsp; ');
+  var metaStr=metaParts.join(' &nbsp;|&nbsp; ');
+  if(d.stuck_count>0){metaStr+=' &nbsp;|&nbsp; <span style="color:var(--red);font-weight:700">⚠ '+d.stuck_count+' STUCK (force-clear safe)</span>';}
+  $('wbMeta').innerHTML=metaStr;
 
   // Timestamp
   var tsEl=$('wbTimestamp');
@@ -1446,6 +1448,15 @@ function renderWhyBlocked(){
     };
     var vetoHtml='<span style="color:var(--text3)">—</span>';
     if(c.veto_active){var vd=VETO_DESC[c.veto_reason]||{label:(c.veto_reason||'veto'),tip:c.veto_reason||''};vetoHtml='<span style="color:var(--amber);font-size:.78rem" title="'+vd.tip.replace(/"/g,'')+'">⚠ '+vd.label+'</span>';}
+    // stuck? — EIGEN-class lockout vs legitimate unwind vs not-unwinding
+    var stuckHtml;
+    if(c.is_stuck){
+      stuckHtml='<span style="color:var(--red);font-weight:700;font-size:.78rem" title="EIGEN-class lockout: early-warning fired but OB93 never armed and 2W peak <93 — cannot clear on its own. Safe to force-clear.">⚠ STUCK</span>';
+    }else if(c.unwinding){
+      stuckHtml='<span style="color:var(--phase-long-dca);font-size:.78rem" title="Legitimate top-detection unwind (OB93 armed or 2W peak ≥93) — has a valid exit path, do not force-clear. peak_2w_k='+(c.peak_2w_k!=null?c.peak_2w_k.toFixed(0):'?')+'">✓ ok</span>';
+    }else{
+      stuckHtml='<span style="color:var(--text3)">—</span>';
+    }
     // slot
     var slotHtml=c.in_active_allocation?'<span style="color:var(--phase-long-dca)">● funded</span>':'<span style="color:var(--text3)">—</span>';
     // blocker (primary)
@@ -1457,6 +1468,7 @@ function renderWhyBlocked(){
     h+='<td class="coin-name">'+c.coin+'</td>';
     h+='<td>'+phaseHtml+'</td>';
     h+='<td>'+statusHtml+'</td>';
+    h+='<td style="text-align:center">'+stuckHtml+'</td>';
     h+='<td style="text-align:center">'+scoreHtml+'</td>';
     h+='<td style="text-align:center">'+vetoHtml+'</td>';
     h+='<td style="text-align:center">'+slotHtml+'</td>';
@@ -1470,7 +1482,7 @@ function renderWhyBlocked(){
   var wbMaxPage=Math.max(0,Math.ceil(wbRows.length/wps)-1);
   wbPage=Math.min(wbPage,wbMaxPage);
   var wbPageRows=wbRows.slice(wbPage*wps,(wbPage+1)*wps);
-  $('wbBody').innerHTML=wbPageRows.length?wbPageRows.join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">No coins match filter</td></tr>';
+  $('wbBody').innerHTML=wbPageRows.length?wbPageRows.join(''):'<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">No coins match filter</td></tr>';
   if(wbRows.length>wps){
     $('wbPagBar').style.display='flex';
     $('wbPagInfo').textContent='Page '+(wbPage+1)+' of '+(wbMaxPage+1);
