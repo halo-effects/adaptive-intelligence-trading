@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-03T16:53:35.699606+00:00",
+  "generated_at": "2026-10-03T17:03:38.298050+00:00",
   "scanner_generated_at": "2026-10-03T16:24:02.882000+00:00",
-  "scanner_age_hours": 0.49,
+  "scanner_age_hours": 0.66,
   "hurdle": 5.0,
   "hurdle_window": "30d",
-  "active_pool_cash": 505.19,
+  "active_pool_cash": 265.99,
   "active_allocations": [
     "EIGEN/USDT"
   ],
@@ -13,11 +13,11 @@
     "VETOED": 7,
     "UNWINDING": 9,
     "BELOW_HURDLE": 5,
-    "NO_SLOT": 1,
+    "CLEAR": 1,
     "NO_SCORE": 1
   },
   "total_coins": 23,
-  "clear_count": 0,
+  "clear_count": 1,
   "stuck_count": 0,
   "coins": [
     {
@@ -28,7 +28,7 @@
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -52,7 +52,7 @@
       "blockers": [
         "UNWINDING latched",
         "BELOW_HURDLE (dca_score 2.25 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -75,7 +75,7 @@
       "verdict": "BELOW_HURDLE (dca_score 1.35 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 1.35 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -93,21 +93,19 @@
     {
       "coin": "EIGEN",
       "symbol": "EIGEN/USDT",
-      "category": "NO_SLOT",
-      "color": "amber",
-      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)",
-      "blockers": [
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
-      ],
+      "category": "CLEAR",
+      "color": "green",
+      "verdict": "CLEAR \u2014 eligible to enter; waiting on L1 price trigger",
+      "blockers": [],
       "phase": "LONG_DCA",
-      "long_layers": 0,
+      "long_layers": 1,
       "unwinding": false,
       "early_warning_date": null,
       "dca_score_14d": 6.98,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
-      "in_active_allocation": false,
+      "in_active_allocation": true,
       "is_stuck": false,
       "ob93_armed": false,
       "peak_2w_k": 84.21954376981965
@@ -122,7 +120,7 @@
         "UNWINDING latched",
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 2.09 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -147,7 +145,7 @@
         "UNWINDING latched (early_warning since 2026-09-17 00:00:00; clears on confirmed top or 21d timeout)",
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 2.78 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -170,7 +168,7 @@
       "verdict": "BELOW_HURDLE (dca_score 4.11 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 4.11 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -193,7 +191,7 @@
       "verdict": "BELOW_HURDLE (dca_score 3.22 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.22 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -217,7 +215,7 @@
       "blockers": [
         "UNWINDING latched",
         "BELOW_HURDLE (dca_score 1.52 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -241,7 +239,7 @@
       "blockers": [
         "UNWINDING latched (early_warning since 2026-10-01 00:00:00; clears on confirmed top or 21d timeout)",
         "BELOW_HURDLE (dca_score 2.68 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -264,7 +262,7 @@
       "verdict": "BELOW_HURDLE (dca_score 3.57 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.57 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -288,7 +286,7 @@
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 3.29 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -312,7 +310,7 @@
       "blockers": [
         "UNWINDING latched (early_warning since 2026-09-10 00:00:00; clears on confirmed top or 21d timeout)",
         "BELOW_HURDLE (dca_score 0.87 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -336,7 +334,7 @@
       "blockers": [
         "UNWINDING latched (early_warning since 2026-09-10 00:00:00; clears on confirmed top or 21d timeout)",
         "BELOW_HURDLE (dca_score 2.34 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -360,7 +358,7 @@
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 4.52 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -383,7 +381,7 @@
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -406,7 +404,7 @@
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -430,7 +428,7 @@
       "blockers": [
         "UNWINDING latched (early_warning since 2026-09-24 00:00:00; clears on confirmed top or 21d timeout)",
         "BELOW_HURDLE (dca_score 2.91 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -453,7 +451,7 @@
       "verdict": "NO_SCANNER_SCORE (coin absent from 30d rankings)",
       "blockers": [
         "NO_SCANNER_SCORE (coin absent from 30d rankings)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -477,7 +475,7 @@
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 3.08 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -500,7 +498,7 @@
       "verdict": "BELOW_HURDLE (dca_score 3.55 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.55 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -525,7 +523,7 @@
         "UNWINDING latched (early_warning since 2026-09-10 00:00:00; clears on confirmed top or 21d timeout)",
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 1.92 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -548,7 +546,7 @@
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $505.19 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $265.99 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
