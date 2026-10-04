@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-04T15:25:01.737629+00:00",
-  "scanner_generated_at": "2026-10-04T15:24:05.149000+00:00",
-  "scanner_age_hours": 0.01,
+  "generated_at": "2026-10-04T15:33:39.185779+00:00",
+  "scanner_generated_at": "2026-10-04T15:32:07.937000+00:00",
+  "scanner_age_hours": 0.02,
   "hurdle": 5.0,
   "hurdle_window": "30d",
-  "active_pool_cash": 173.12,
+  "active_pool_cash": 172.52,
   "active_allocations": [
     "EIGEN/USDT",
     "NEAR/USDT"
@@ -34,7 +34,7 @@
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -60,7 +60,7 @@
       "blockers": [
         "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 2.28 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -85,7 +85,7 @@
       "verdict": "BELOW_HURDLE (dca_score 1.68 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 1.68 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -104,13 +104,13 @@
       "coin": "ASTER",
       "symbol": "ASTER/USDT",
       "in_set": false,
-      "rank": 46,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 0.09 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 0.09 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #46 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -129,13 +129,13 @@
       "coin": "ATOM",
       "symbol": "ATOM/USDT",
       "in_set": false,
-      "rank": 43,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 0.92 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 0.92 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #43 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -154,12 +154,12 @@
       "coin": "AVAX",
       "symbol": "AVAX/USDT",
       "in_set": false,
-      "rank": 9,
+      "rank": 5,
       "category": "NOT_IN_SET",
       "color": "muted",
-      "verdict": "NOT_IN_SET (no engine; scanner rank #9 \u2014 didn't win a slot)",
+      "verdict": "NOT_IN_SET (no engine; scanner rank #5 \u2014 didn't win a slot)",
       "blockers": [
-        "NOT_IN_SET (no engine; scanner rank #9 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank #5 \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -178,13 +178,13 @@
       "coin": "BTC",
       "symbol": "BTC/USDT",
       "in_set": false,
-      "rank": 35,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 2.00 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 2.00 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #35 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -203,12 +203,12 @@
       "coin": "COMP",
       "symbol": "COMP/USDT",
       "in_set": false,
-      "rank": 6,
+      "rank": null,
       "category": "NOT_IN_SET",
       "color": "muted",
-      "verdict": "NOT_IN_SET (no engine; scanner rank #6 \u2014 didn't win a slot)",
+      "verdict": "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)",
       "blockers": [
-        "NOT_IN_SET (no engine; scanner rank #6 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -227,13 +227,13 @@
       "coin": "CRV",
       "symbol": "CRV/USDT",
       "in_set": false,
-      "rank": 45,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 0.54 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 0.54 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #45 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -252,13 +252,13 @@
       "coin": "DOGE",
       "symbol": "DOGE/USDT",
       "in_set": false,
-      "rank": 41,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 1.30 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 1.30 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #41 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -277,13 +277,13 @@
       "coin": "DOT",
       "symbol": "DOT/USDT",
       "in_set": false,
-      "rank": 40,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 1.32 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 1.32 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #40 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -302,12 +302,12 @@
       "coin": "DYDX",
       "symbol": "DYDX/USDT",
       "in_set": false,
-      "rank": 10,
+      "rank": 6,
       "category": "NOT_IN_SET",
       "color": "muted",
-      "verdict": "NOT_IN_SET (no engine; scanner rank #10 \u2014 didn't win a slot)",
+      "verdict": "NOT_IN_SET (no engine; scanner rank #6 \u2014 didn't win a slot)",
       "blockers": [
-        "NOT_IN_SET (no engine; scanner rank #10 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank #6 \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -357,7 +357,7 @@
       "blockers": [
         "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 2.83 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -376,12 +376,12 @@
       "coin": "ENS",
       "symbol": "ENS/USDT",
       "in_set": false,
-      "rank": 7,
+      "rank": 4,
       "category": "NOT_IN_SET",
       "color": "muted",
-      "verdict": "NOT_IN_SET (no engine; scanner rank #7 \u2014 didn't win a slot)",
+      "verdict": "NOT_IN_SET (no engine; scanner rank #4 \u2014 didn't win a slot)",
       "blockers": [
-        "NOT_IN_SET (no engine; scanner rank #7 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank #4 \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -407,7 +407,7 @@
       "blockers": [
         "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 2.48 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -432,7 +432,7 @@
       "verdict": "BELOW_HURDLE (dca_score 3.94 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.94 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -451,13 +451,13 @@
       "coin": "FIL",
       "symbol": "FIL/USDT",
       "in_set": false,
-      "rank": 33,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 2.20 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 2.20 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #33 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -482,7 +482,7 @@
       "verdict": "BELOW_HURDLE (dca_score 2.92 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 2.92 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -501,13 +501,13 @@
       "coin": "HBAR",
       "symbol": "HBAR/USDT",
       "in_set": false,
-      "rank": 22,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 3.75 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.75 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #22 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -533,7 +533,7 @@
       "blockers": [
         "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 1.47 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -559,7 +559,7 @@
       "blockers": [
         "UNWINDING latched (2W peak 98\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 3.14 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -584,7 +584,7 @@
       "verdict": "BELOW_HURDLE (dca_score 4.54 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 4.54 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -609,7 +609,7 @@
       "verdict": "BELOW_HURDLE (dca_score 4.24 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 4.24 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -628,13 +628,13 @@
       "coin": "KAS",
       "symbol": "KAS/USDT",
       "in_set": false,
-      "rank": 23,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 3.63 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.63 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #23 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -660,7 +660,7 @@
       "blockers": [
         "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 0.89 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -686,7 +686,7 @@
       "blockers": [
         "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 2.01 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -712,7 +712,7 @@
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 4.38 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -756,9 +756,9 @@
       "rank": null,
       "category": "NO_SLOT",
       "color": "amber",
-      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)",
+      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)",
       "blockers": [
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -777,13 +777,13 @@
       "coin": "OP",
       "symbol": "OP/USDT",
       "in_set": false,
-      "rank": 17,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 4.26 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 4.26 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #17 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -809,7 +809,7 @@
       "blockers": [
         "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 2.73 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -834,7 +834,7 @@
       "verdict": "NO_SCANNER_SCORE (coin absent from 30d rankings)",
       "blockers": [
         "NO_SCANNER_SCORE (coin absent from 30d rankings)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -853,12 +853,12 @@
       "coin": "PYTH",
       "symbol": "PYTH/USDT",
       "in_set": false,
-      "rank": 3,
+      "rank": 2,
       "category": "NOT_IN_SET",
       "color": "muted",
-      "verdict": "NOT_IN_SET (no engine; scanner rank #3 \u2014 didn't win a slot)",
+      "verdict": "NOT_IN_SET (no engine; scanner rank #2 \u2014 didn't win a slot)",
       "blockers": [
-        "NOT_IN_SET (no engine; scanner rank #3 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank #2 \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -877,12 +877,12 @@
       "coin": "RENDER",
       "symbol": "RENDER/USDT",
       "in_set": false,
-      "rank": 13,
+      "rank": 8,
       "category": "NOT_IN_SET",
       "color": "muted",
-      "verdict": "NOT_IN_SET (no engine; scanner rank #13 \u2014 didn't win a slot)",
+      "verdict": "NOT_IN_SET (no engine; scanner rank #8 \u2014 didn't win a slot)",
       "blockers": [
-        "NOT_IN_SET (no engine; scanner rank #13 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank #8 \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -901,12 +901,12 @@
       "coin": "RUNE",
       "symbol": "RUNE/USDT",
       "in_set": false,
-      "rank": 2,
+      "rank": null,
       "category": "NOT_IN_SET",
       "color": "muted",
-      "verdict": "NOT_IN_SET (no engine; scanner rank #2 \u2014 didn't win a slot)",
+      "verdict": "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)",
       "blockers": [
-        "NOT_IN_SET (no engine; scanner rank #2 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -931,7 +931,7 @@
       "verdict": "BELOW_HURDLE (dca_score 3.27 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.27 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -950,13 +950,13 @@
       "coin": "SNX",
       "symbol": "SNX/USDT",
       "in_set": false,
-      "rank": 21,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 3.77 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.77 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #21 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -975,13 +975,13 @@
       "coin": "SOL",
       "symbol": "SOL/USDT",
       "in_set": false,
-      "rank": 27,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 3.08 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.08 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #27 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -1000,14 +1000,14 @@
       "coin": "STX",
       "symbol": "STX/USDT",
       "in_set": false,
-      "rank": 20,
+      "rank": null,
       "category": "VETOED",
       "color": "amber",
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
         "BELOW_HURDLE (dca_score 3.93 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #20 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -1026,13 +1026,13 @@
       "coin": "SUI",
       "symbol": "SUI/USDT",
       "in_set": false,
-      "rank": 14,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 4.63 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 4.63 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #14 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -1057,7 +1057,7 @@
       "verdict": "BELOW_HURDLE (dca_score 3.15 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 3.15 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -1076,13 +1076,13 @@
       "coin": "TIA",
       "symbol": "TIA/USDT",
       "in_set": false,
-      "rank": 42,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 1.25 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 1.25 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #42 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -1108,7 +1108,7 @@
       "blockers": [
         "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
         "BELOW_HURDLE (dca_score 1.48 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -1127,12 +1127,12 @@
       "coin": "W",
       "symbol": "W/USDT",
       "in_set": false,
-      "rank": 8,
+      "rank": null,
       "category": "NOT_IN_SET",
       "color": "muted",
-      "verdict": "NOT_IN_SET (no engine; scanner rank #8 \u2014 didn't win a slot)",
+      "verdict": "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)",
       "blockers": [
-        "NOT_IN_SET (no engine; scanner rank #8 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -1151,13 +1151,13 @@
       "coin": "XRP",
       "symbol": "XRP/USDT",
       "in_set": false,
-      "rank": 37,
+      "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
       "verdict": "BELOW_HURDLE (dca_score 1.58 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 1.58 < 5.0)",
-        "NOT_IN_SET (no engine; scanner rank #37 \u2014 didn't win a slot)"
+        "NOT_IN_SET (no engine; scanner rank ? \u2014 didn't win a slot)"
       ],
       "phase": null,
       "long_layers": null,
@@ -1182,7 +1182,7 @@
       "verdict": "VETOED by scanner (A2_EXTENSION)",
       "blockers": [
         "VETOED by scanner (A2_EXTENSION)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $173.12 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $172.52 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
