@@ -1392,6 +1392,7 @@ function renderWhyBlocked(){
     BELOW_HURDLE:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
     VETOED:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
     NO_SLOT:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
+    QUEUED:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
     PAUSED:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
     UNWINDING:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'},
     REGIME:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'},
@@ -1404,7 +1405,7 @@ function renderWhyBlocked(){
 
   // Summary chips
   var sum=d.summary||{};
-  var chipOrder=['CLEAR','IN_POSITION','HOLDING','BELOW_HURDLE','VETOED','UNWINDING','NO_SLOT','REGIME','PAUSED','NO_SCORE','NOT_IN_SET'];
+  var chipOrder=['CLEAR','IN_POSITION','HOLDING','QUEUED','BELOW_HURDLE','VETOED','UNWINDING','NO_SLOT','REGIME','PAUSED','NO_SCORE','NOT_IN_SET'];
   var chips='';
   chipOrder.forEach(function(cat){
     if(sum[cat]){var st=cs(cat);chips+='<span style="display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:12px;background:'+st.bg+';color:'+st.col+'"><span style="width:7px;height:7px;border-radius:50%;background:'+st.dot+'"></span>'+cat.replace(/_/g,' ')+' '+sum[cat]+'</span>';}
@@ -1427,13 +1428,13 @@ function renderWhyBlocked(){
 
   // Filter + sort (clear first, then by category severity, then by score)
   var filt=$('wbFilter')?$('wbFilter').value:'all';
-  var sevRank={CLEAR:0,IN_POSITION:0,HOLDING:0,BELOW_HURDLE:1,VETOED:2,NO_SLOT:3,UNWINDING:4,PAUSED:5,REGIME:6,NO_SCORE:7,BLOCKED:8};
+  var sevRank={CLEAR:0,IN_POSITION:0,HOLDING:0,QUEUED:1,BELOW_HURDLE:2,VETOED:3,NO_SLOT:4,UNWINDING:5,PAUSED:6,REGIME:7,NO_SCORE:8,BLOCKED:9};
   var rows=d.coins.slice().filter(function(c){
-    if(filt==='CLEAR')return c.category==='CLEAR'||c.category==='IN_POSITION'||c.category==='HOLDING';
-    if(filt==='blocked')return c.category!=='CLEAR'&&c.category!=='IN_POSITION'&&c.category!=='HOLDING';
+    if(filt==='CLEAR')return c.category==='CLEAR'||c.category==='IN_POSITION'||c.category==='HOLDING'||c.category==='QUEUED';
+    if(filt==='blocked')return c.category!=='CLEAR'&&c.category!=='IN_POSITION'&&c.category!=='HOLDING'&&c.category!=='QUEUED';
     return true;
   });
-  rows.sort(function(a,b){var ra=sevRank[a.category]!=null?sevRank[a.category]:9;var rb=sevRank[b.category]!=null?sevRank[b.category]:9;if(ra!==rb)return ra-rb;var sa=a.dca_score_14d!=null?a.dca_score_14d:-1;var sb=b.dca_score_14d!=null?b.dca_score_14d:-1;return sb-sa;});
+  rows.sort(function(a,b){var ra=sevRank[a.category]!=null?sevRank[a.category]:9;var rb=sevRank[b.category]!=null?sevRank[b.category]:9;if(ra!==rb)return ra-rb;var fa=a.rank!=null?a.rank:9999;var fb=b.rank!=null?b.rank:9999;if(fa!==fb)return fa-fb;var sa=a.dca_score_14d!=null?a.dca_score_14d:-1;var sb=b.dca_score_14d!=null?b.dca_score_14d:-1;return sb-sa;});
 
   var h='';
   rows.forEach(function(c){
