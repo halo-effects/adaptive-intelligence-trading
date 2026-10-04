@@ -1304,8 +1304,13 @@ function renderFlowDiagram(){
     var liqStatus=scanCoinData?scanCoinData.liquidity_status:null;
     var vol24h=scanCoinData?scanCoinData.volume_24h:null;
     var volImpact=scanCoinData?scanCoinData.volume_impact_pct:null;
+    // aster_tradeable: false => coin is scored on Binance candles but NOT listed on
+    // Aster, so it can never be funded by the live bot. Undefined => flag not computed
+    // (older scan or fetch failed) -> treat as tradeable (don't false-flag).
+    var asterTradeable=(scanCoinData&&scanCoinData.aster_tradeable===false)?false:true;
     if(liqStatus==='LOW_LIQUIDITY')isExcluded=true;
-    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData,isPaused:isPaused,isRegimeFlagged:isRegimeFlagged,isExcluded:isExcluded,liqStatus:liqStatus,vol24h:vol24h,volImpact:volImpact});
+    if(!asterTradeable)isExcluded=true;  // not fundable on Aster -> sort to bottom like excluded
+    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData,isPaused:isPaused,isRegimeFlagged:isRegimeFlagged,isExcluded:isExcluded,liqStatus:liqStatus,vol24h:vol24h,volImpact:volImpact,asterTradeable:asterTradeable});
   });
 
   rowData.sort(function(a,b){
@@ -1340,6 +1345,7 @@ function renderFlowDiagram(){
     var badges=rd.isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'';
     if(rd.isRegimeFlagged)badges+=' <span style="font-size:.55rem;color:var(--red);vertical-align:middle">🚩 FLAGGED</span>';
     if(rd.isPaused)badges+=' <span style="font-size:.55rem;color:var(--amber);vertical-align:middle">⏸ PAUSED</span>';
+    if(rd.asterTradeable===false)badges+=' <span style="font-size:.55rem;color:var(--text3);vertical-align:middle" title="Scored on Binance candles but NOT listed on Aster — cannot be funded by the live bot">⊘ NOT ON ASTER</span>';
     h+='<td class="coin-name">'+rd.m.label+badges+'</td>';
     h+='<td>'+phaseHtml+'</td>';
     var volHtml='<span style="color:var(--text3)">--</span>';
