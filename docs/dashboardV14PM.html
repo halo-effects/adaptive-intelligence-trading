@@ -1443,7 +1443,10 @@ function renderWhyBlocked(){
     var ph=c.phase||'--';
     var phaseHtml;
     if(notInSet){
-      phaseHtml='<span class="phase-pill" style="background:rgba(99,102,241,.08);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Watchlist'+(c.rank!=null?' #'+c.rank:'')+'</span>';
+      // c.rank is the fundable rank (rank_live from why_blocked). null => not fundable
+      // on the live exchange (not-on-Aster / vetoed / below hurdle) => no # shown.
+      var wlRank=(c.rank!=null)?' #'+c.rank:'';
+      phaseHtml='<span class="phase-pill" style="background:rgba(99,102,241,.08);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Watchlist'+wlRank+'</span>';
     }else{
       phaseHtml='<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[ph]||'var(--text3)')+'"></span>'+(ph==='--'?'--':ph.replace('_',' '))+'</span>';
     }
