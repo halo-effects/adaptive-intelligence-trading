@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-10-05T00:53:36.311572+00:00",
+  "generated_at": "2026-10-05T01:03:36.749890+00:00",
   "scanner_generated_at": "2026-10-05T00:24:13.924000+00:00",
-  "scanner_age_hours": 0.49,
+  "scanner_age_hours": 0.65,
   "hurdle": 5.0,
   "hurdle_window": "30d",
   "active_pool_cash": 11.88,
@@ -17,7 +17,8 @@
     "BELOW_HURDLE": 23,
     "QUEUED": 3,
     "NOT_IN_SET": 2,
-    "IN_POSITION": 2,
+    "IN_POSITION": 1,
+    "HOLDING": 1,
     "NO_SCORE": 1
   },
   "total_coins": 47,
@@ -731,10 +732,12 @@
       "symbol": "NEAR/USDT",
       "in_set": true,
       "rank": null,
-      "category": "IN_POSITION",
+      "category": "HOLDING",
       "color": "green",
-      "verdict": "IN_POSITION (L1 open, funded slot \u2014 managing grid + TP)",
-      "blockers": [],
+      "verdict": "HOLDING (open position, exiting via TP; fundable rank #1 \u2014 no NEW capital, not a current cap-N target)",
+      "blockers": [
+        "HOLDING (open position, exiting via TP; fundable rank #1 \u2014 no NEW capital, not a current cap-N target)"
+      ],
       "phase": "LONG_DCA",
       "long_layers": 1,
       "unwinding": false,
@@ -743,7 +746,7 @@
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
-      "in_active_allocation": true,
+      "in_active_allocation": false,
       "is_stuck": false,
       "ob93_armed": false,
       "peak_2w_k": 78.86825775018605
@@ -805,9 +808,9 @@
       "rank": null,
       "category": "UNWINDING",
       "color": "red",
-      "verdict": "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
+      "verdict": "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
       "blockers": [
-        "UNWINDING latched (2W peak 100\u226593 \u2014 real top; clears on confirmed top [OB85 fallback / failsafe], NOT the 21d timeout)",
+        "UNWINDING latched (OB93 armed; clears on divergence/35d timeout \u2192 confirmed top)",
         "BELOW_HURDLE (dca_score 2.56 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $11.88 free)"
       ],
@@ -821,7 +824,7 @@
       "veto_reason": "",
       "in_active_allocation": false,
       "is_stuck": false,
-      "ob93_armed": false,
+      "ob93_armed": true,
       "peak_2w_k": 100.0
     },
     {
