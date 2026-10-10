@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-10T13:23:36.880667+00:00",
-  "scanner_generated_at": "2026-10-10T13:00:02.410000+00:00",
-  "scanner_age_hours": 0.39,
+  "generated_at": "2026-10-10T13:33:35.926180+00:00",
+  "scanner_generated_at": "2026-10-10T13:24:09.952000+00:00",
+  "scanner_age_hours": 0.15,
   "hurdle": 5.0,
   "hurdle_window": "30d",
-  "active_pool_cash": 2.27,
+  "active_pool_cash": 3.21,
   "active_allocations": [
     "EIGEN/USDT",
     "NEAR/USDT",
@@ -31,15 +31,15 @@
       "rank": null,
       "category": "NO_SLOT",
       "color": "amber",
-      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)",
+      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)",
       "blockers": [
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 8.32,
+      "dca_score_14d": 8.31,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -58,14 +58,14 @@
       "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
-        "BELOW_HURDLE (dca_score 4.71 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "BELOW_HURDLE (dca_score 4.70 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": true,
       "early_warning_date": "2026-10-08 00:00:00",
-      "dca_score_14d": 4.71,
+      "dca_score_14d": 4.7,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -81,16 +81,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 2.68 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 2.67 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 2.68 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "BELOW_HURDLE (dca_score 2.67 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 2.68,
+      "dca_score_14d": 2.67,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -157,16 +157,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 3.18 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 3.17 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 3.18 < 5.0)",
+        "BELOW_HURDLE (dca_score 3.17 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 3.18,
+      "dca_score_14d": 3.17,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -256,16 +256,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 1.83 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 1.82 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 1.83 < 5.0)",
+        "BELOW_HURDLE (dca_score 1.82 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 1.83,
+      "dca_score_14d": 1.82,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -281,16 +281,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 1.58 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 1.57 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 1.58 < 5.0)",
+        "BELOW_HURDLE (dca_score 1.57 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 1.58,
+      "dca_score_14d": 1.57,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -306,16 +306,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 4.00 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 3.99 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 4.00 < 5.0)",
+        "BELOW_HURDLE (dca_score 3.99 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 4.0,
+      "dca_score_14d": 3.99,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -334,13 +334,13 @@
       "verdict": "UNWINDING latched (early_warning since 2026-10-08 00:00:00; EIGEN-class stall \u2014 clears on 21d timeout or confirmed top)",
       "blockers": [
         "UNWINDING latched (early_warning since 2026-10-08 00:00:00; EIGEN-class stall \u2014 clears on 21d timeout or confirmed top)",
-        "BELOW_HURDLE (dca_score 3.68 < 5.0)"
+        "BELOW_HURDLE (dca_score 3.67 < 5.0)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 3,
       "unwinding": true,
       "early_warning_date": "2026-10-08 00:00:00",
-      "dca_score_14d": 3.68,
+      "dca_score_14d": 3.67,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -359,14 +359,14 @@
       "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
-        "BELOW_HURDLE (dca_score 4.87 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "BELOW_HURDLE (dca_score 4.86 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": true,
       "early_warning_date": null,
-      "dca_score_14d": 4.87,
+      "dca_score_14d": 4.86,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -390,7 +390,7 @@
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 5.4,
+      "dca_score_14d": 5.39,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -410,7 +410,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (dca_score 1.75 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -435,7 +435,7 @@
       "verdict": "BELOW_HURDLE (dca_score 4.23 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 4.23 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -457,16 +457,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 1.68 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 1.69 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 1.68 < 5.0)",
+        "BELOW_HURDLE (dca_score 1.69 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 1.68,
+      "dca_score_14d": 1.69,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -482,16 +482,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 3.56 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 3.55 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 3.56 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "BELOW_HURDLE (dca_score 3.55 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 3.56,
+      "dca_score_14d": 3.55,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -536,7 +536,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (dca_score 1.59 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -561,14 +561,14 @@
       "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
-        "BELOW_HURDLE (dca_score 2.49 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "BELOW_HURDLE (dca_score 2.48 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": true,
       "early_warning_date": "2026-10-01 00:00:00",
-      "dca_score_14d": 2.49,
+      "dca_score_14d": 2.48,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -584,15 +584,15 @@
       "rank": null,
       "category": "NO_SLOT",
       "color": "amber",
-      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)",
+      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)",
       "blockers": [
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 7.4,
+      "dca_score_14d": 7.39,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -608,15 +608,15 @@
       "rank": null,
       "category": "NO_SLOT",
       "color": "amber",
-      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)",
+      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)",
       "blockers": [
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 6.82,
+      "dca_score_14d": 6.83,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -660,14 +660,14 @@
       "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
-        "BELOW_HURDLE (dca_score 2.24 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "BELOW_HURDLE (dca_score 2.23 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": true,
       "early_warning_date": "2026-09-10 00:00:00",
-      "dca_score_14d": 2.24,
+      "dca_score_14d": 2.23,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -687,7 +687,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (dca_score 4.32 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -712,13 +712,13 @@
       "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": true,
       "early_warning_date": "2026-10-08 00:00:00",
-      "dca_score_14d": 5.32,
+      "dca_score_14d": 5.31,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -743,7 +743,7 @@
       "long_layers": 1,
       "unwinding": true,
       "early_warning_date": null,
-      "dca_score_14d": 6.38,
+      "dca_score_14d": 6.37,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -762,7 +762,7 @@
       "verdict": "BELOW_HURDLE (dca_score 4.54 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (dca_score 4.54 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -784,16 +784,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 3.53 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 3.52 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 3.53 < 5.0)",
+        "BELOW_HURDLE (dca_score 3.52 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 3.53,
+      "dca_score_14d": 3.52,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -813,7 +813,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (dca_score 2.24 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -838,7 +838,7 @@
       "verdict": "NO_SCANNER_SCORE (coin absent from 30d rankings)",
       "blockers": [
         "NO_SCANNER_SCORE (coin absent from 30d rankings)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -863,13 +863,13 @@
       "verdict": "UNWINDING latched \u2014 COOLING PAUSE (2W Stoch RSI peaked 100; still LONG, NOT a top). New layers paused until overbought resolves (1W OB85 fallback / failsafe); will NOT flip SHORT unless OB93 arms.",
       "blockers": [
         "UNWINDING latched \u2014 COOLING PAUSE (2W Stoch RSI peaked 100; still LONG, NOT a top). New layers paused until overbought resolves (1W OB85 fallback / failsafe); will NOT flip SHORT unless OB93 arms.",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": true,
       "early_warning_date": "2026-10-02 00:00:00",
-      "dca_score_14d": 7.94,
+      "dca_score_14d": 7.92,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -893,7 +893,7 @@
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 6.23,
+      "dca_score_14d": 6.22,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -909,16 +909,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 3.72 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 3.71 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 3.72 < 5.0)",
+        "BELOW_HURDLE (dca_score 3.71 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 3.72,
+      "dca_score_14d": 3.71,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -934,16 +934,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 3.72 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 3.71 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 3.72 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "BELOW_HURDLE (dca_score 3.71 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 3.72,
+      "dca_score_14d": 3.71,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -984,16 +984,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 3.25 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 3.24 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 3.25 < 5.0)",
+        "BELOW_HURDLE (dca_score 3.24 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 3.25,
+      "dca_score_14d": 3.24,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -1009,16 +1009,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 4.02 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 4.01 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 4.02 < 5.0)",
+        "BELOW_HURDLE (dca_score 4.01 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 4.02,
+      "dca_score_14d": 4.01,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -1059,16 +1059,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 3.15 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 3.14 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 3.15 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "BELOW_HURDLE (dca_score 3.14 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 3.15,
+      "dca_score_14d": 3.14,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -1084,16 +1084,16 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (dca_score 2.07 < 5.0)",
+      "verdict": "BELOW_HURDLE (dca_score 2.06 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (dca_score 2.07 < 5.0)",
+        "BELOW_HURDLE (dca_score 2.06 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 2.07,
+      "dca_score_14d": 2.06,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -1113,7 +1113,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (dca_score 4.14 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -1144,7 +1144,7 @@
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 7.9,
+      "dca_score_14d": 7.89,
       "hurdle": 5.0,
       "veto_active": true,
       "veto_reason": "A2_EXTENSION",
@@ -1185,15 +1185,15 @@
       "rank": null,
       "category": "NO_SLOT",
       "color": "amber",
-      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)",
+      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)",
       "blockers": [
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $2.27 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $3.21 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 11.97,
+      "dca_score_14d": 11.96,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
