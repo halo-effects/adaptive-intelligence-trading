@@ -1459,9 +1459,20 @@ function renderWhyBlocked(){
     }
     // status pill
     var statusHtml='<span class="phase-pill" style="background:'+st.bg+';color:'+st.col+'"><span class="pd" style="background:'+st.dot+'"></span>'+c.category.replace(/_/g,' ')+'</span>';
-    // score / hurdle
+    // score / hurdle (2026-10-11): colour on the TREND-ADJUSTED trade_score, not the
+    // raw base. Gate clamp: trend only HELPS (max(trend,1)); ranking uses full trade.
+    // Show base x trend = trade / hurdle inline so a clear (base<5 but trade>=5) is
+    // self-explanatory.
     var scoreHtml='<span style="color:var(--text3)">--</span>';
-    if(c.dca_score_14d!=null){var sc=c.dca_score_14d;var scCol=sc>=c.hurdle?'var(--phase-long-dca)':'var(--amber)';scoreHtml='<span style="font-weight:700;color:'+scCol+'">'+sc.toFixed(2)+'</span> <span style="font-size:.7rem;color:var(--text3)">/ '+c.hurdle+'</span>';}
+    if(c.dca_score_14d!=null){
+      var base=c.dca_score_14d;
+      var tm=(c.trend_mult!=null)?c.trend_mult:1.0;
+      var tsc=(c.trade_score!=null)?c.trade_score:(base*tm);
+      var gateVal=base*Math.max(tm,1.0);            // clamp: trend only helps the gate
+      var scCol=(gateVal>=c.hurdle)?'var(--phase-long-dca)':'var(--amber)';
+      scoreHtml='<span style="font-weight:700;color:'+scCol+'" title="gate on trade_score = base x max(trend,1); rank on full trade_score">'+tsc.toFixed(2)+'</span>'
+        +' <span style="font-size:.7rem;color:var(--text3)">('+base.toFixed(2)+'\u00d7'+tm.toFixed(2)+') / '+c.hurdle+'</span>';
+    }
     // veto — show plain-English meaning (not the raw code, which is already in the blocker column)
     var VETO_DESC={
       A2_EXTENSION:{label:'Overextended',tip:'Price >3× ATR above the 50-day SMA — too stretched to enter'},
