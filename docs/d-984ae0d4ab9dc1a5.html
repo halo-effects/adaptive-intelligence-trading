@@ -553,7 +553,7 @@ tr:hover td{background:rgba(99,102,241,.04)}
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:.75rem;color:var(--text2)">Filter:</span>
-      <select id="wbFilter"><option value="all" selected>All</option><option value="CLEAR">Clear only</option><option value="blocked">Blocked only</option></select>
+      <select id="wbFilter"><option value="all" selected>All</option><option value="CLEAR">Clear only</option><option value="blocked">Blocked only (gate rejects)</option><option value="waiting">Waiting for capital</option></select>
       <span id="wbTimestamp" style="font-size:.7rem;color:var(--text3)"></span>
     </div>
   </div>
@@ -1436,8 +1436,16 @@ function renderWhyBlocked(){
   var filt=$('wbFilter')?$('wbFilter').value:'all';
   var sevRank={CLEAR:0,IN_POSITION:0,HOLDING:0,QUEUED:1,BELOW_HURDLE:2,VETOED:3,NO_SLOT:4,UNWINDING:5,PAUSED:6,REGIME:7,NO_SCORE:8,BLOCKED:9};
   var rows=d.coins.slice().filter(function(c){
-    if(filt==='CLEAR')return c.category==='CLEAR'||c.category==='IN_POSITION'||c.category==='HOLDING'||c.category==='QUEUED';
-    if(filt==='blocked')return c.category!=='CLEAR'&&c.category!=='IN_POSITION'&&c.category!=='HOLDING'&&c.category!=='QUEUED';
+    // "Waiting for capital" = passed all gates, just no funded slot yet (NO_SLOT /
+    // QUEUED). NOT a gate rejection. Split out so "Blocked" shows only true rejects
+    // (veto / below-hurdle / regime / unwinding / spread / no-score).
+    var waiting=(c.category==='NO_SLOT'||c.category==='QUEUED');
+    // Clear = passed all gates. Includes eligible-but-unfunded coins (NO_SLOT / QUEUED):
+    // they cleared every gate and are just awaiting a capital slot, so they belong in
+    // "Clear", not "Blocked".
+    if(filt==='CLEAR')return c.category==='CLEAR'||c.category==='IN_POSITION'||c.category==='HOLDING'||waiting;
+    if(filt==='waiting')return waiting;
+    if(filt==='blocked')return c.category!=='CLEAR'&&c.category!=='IN_POSITION'&&c.category!=='HOLDING'&&!waiting;
     return true;
   });
   rows.sort(function(a,b){var ra=sevRank[a.category]!=null?sevRank[a.category]:9;var rb=sevRank[b.category]!=null?sevRank[b.category]:9;if(ra!==rb)return ra-rb;var fa=a.rank!=null?a.rank:9999;var fb=b.rank!=null?b.rank:9999;if(fa!==fb)return fa-fb;var sa=a.dca_score_14d!=null?a.dca_score_14d:-1;var sb=b.dca_score_14d!=null?b.dca_score_14d:-1;return sb-sa;});
