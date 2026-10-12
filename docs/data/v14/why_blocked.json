@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-12T02:03:35.842184+00:00",
+  "generated_at": "2026-10-12T02:13:36.967096+00:00",
   "scanner_generated_at": "2026-10-12T01:24:03.101000+00:00",
-  "scanner_age_hours": 0.66,
+  "scanner_age_hours": 0.82,
   "hurdle": 5.0,
   "hurdle_window": "30d",
-  "active_pool_cash": 238.93,
+  "active_pool_cash": 238.97,
   "active_allocations": [
     "ZRO/USDT",
     "AAVE/USDT",
@@ -12,15 +12,15 @@
   ],
   "global_regime": "LONG_DCA",
   "summary": {
-    "HOLDING": 2,
+    "IN_POSITION": 2,
     "UNWINDING": 11,
     "BELOW_HURDLE": 23,
     "NOT_IN_SET": 2,
     "QUEUED": 3,
     "NO_SLOT": 3,
-    "IN_POSITION": 1,
     "NO_SCORE": 1,
-    "VETOED": 1
+    "VETOED": 1,
+    "HOLDING": 1
   },
   "total_coins": 47,
   "clear_count": 0,
@@ -31,12 +31,10 @@
       "symbol": "AAVE/USDT",
       "in_set": true,
       "rank": null,
-      "category": "HOLDING",
+      "category": "IN_POSITION",
       "color": "green",
-      "verdict": "HOLDING (open position, exiting via TP; fundable rank #3 \u2014 no NEW capital, not a current cap-N target)",
-      "blockers": [
-        "HOLDING (open position, exiting via TP; fundable rank #3 \u2014 no NEW capital, not a current cap-N target)"
-      ],
+      "verdict": "IN_POSITION (L1 open, funded slot \u2014 managing grid + TP)",
+      "blockers": [],
       "phase": "LONG_DCA",
       "long_layers": 1,
       "unwinding": false,
@@ -47,7 +45,7 @@
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
-      "in_active_allocation": false,
+      "in_active_allocation": true,
       "is_stuck": false,
       "ob93_armed": false,
       "peak_2w_k": 96.98879351829498
@@ -63,7 +61,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 4.33 = base 4.33 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -90,7 +88,7 @@
       "verdict": "BELOW_HURDLE (trade_score 3.41 = base 3.41 x trend 1.00 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (trade_score 3.41 = base 3.41 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -386,7 +384,7 @@
       "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -440,7 +438,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 2.19 = base 2.43 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -467,7 +465,7 @@
       "verdict": "BELOW_HURDLE (trade_score 4.06 = base 4.06 x trend 1.00 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (trade_score 4.06 = base 4.06 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -521,7 +519,7 @@
       "verdict": "BELOW_HURDLE (trade_score 2.99 = base 2.99 x trend 1.00 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (trade_score 2.99 = base 2.99 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -576,7 +574,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 2.31 = base 2.31 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -604,7 +602,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 2.26 = base 2.26 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -628,9 +626,9 @@
       "rank": null,
       "category": "NO_SLOT",
       "color": "amber",
-      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)",
+      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)",
       "blockers": [
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -654,9 +652,9 @@
       "rank": null,
       "category": "NO_SLOT",
       "color": "amber",
-      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)",
+      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)",
       "blockers": [
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -711,7 +709,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 2.05 = base 2.05 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -739,7 +737,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 4.80 = base 4.80 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -767,7 +765,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 4.38 = base 4.38 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -815,9 +813,9 @@
       "rank": null,
       "category": "NO_SLOT",
       "color": "amber",
-      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)",
+      "verdict": "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)",
       "blockers": [
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -872,7 +870,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 1.59 = base 1.77 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -899,7 +897,7 @@
       "verdict": "NO_SCANNER_SCORE (coin absent from 30d rankings)",
       "blockers": [
         "NO_SCANNER_SCORE (coin absent from 30d rankings)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -926,7 +924,7 @@
       "verdict": "UNWINDING latched \u2014 COOLING PAUSE (2W Stoch RSI peaked 100; still LONG, NOT a top). New layers paused until overbought resolves (1W OB85 fallback / failsafe); will NOT flip SHORT unless OB93 arms.",
       "blockers": [
         "UNWINDING latched \u2014 COOLING PAUSE (2W Stoch RSI peaked 100; still LONG, NOT a top). New layers paused until overbought resolves (1W OB85 fallback / failsafe); will NOT flip SHORT unless OB93 arms.",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -1006,7 +1004,7 @@
       "verdict": "BELOW_HURDLE (trade_score 4.16 = base 4.16 x trend 1.00 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (trade_score 4.16 = base 4.16 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -1140,7 +1138,7 @@
       "verdict": "BELOW_HURDLE (trade_score 3.41 = base 3.41 x trend 1.00 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (trade_score 3.41 = base 3.41 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -1194,7 +1192,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 2.21 = base 2.46 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.93 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $238.97 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
