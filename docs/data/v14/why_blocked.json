@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-10-13T00:53:52.886700+00:00",
+  "generated_at": "2026-10-13T01:03:38.757421+00:00",
   "scanner_generated_at": "2026-10-13T00:25:48.390000+00:00",
-  "scanner_age_hours": 0.46,
+  "scanner_age_hours": 0.63,
   "hurdle": 5.0,
   "hurdle_window": "30d",
   "active_pool_cash": 30.07,
@@ -13,8 +13,8 @@
   "global_regime": "LONG_DCA",
   "summary": {
     "HOLDING": 1,
-    "UNWINDING": 11,
-    "BELOW_HURDLE": 25,
+    "UNWINDING": 12,
+    "BELOW_HURDLE": 24,
     "QUEUED": 4,
     "NO_SLOT": 2,
     "IN_POSITION": 2,
@@ -1002,16 +1002,17 @@
       "symbol": "SEI/USDT",
       "in_set": true,
       "rank": null,
-      "category": "BELOW_HURDLE",
-      "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 3.82 = base 3.82 x trend 1.00 < 5.0)",
+      "category": "UNWINDING",
+      "color": "red",
+      "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
+        "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 3.82 = base 3.82 x trend 1.00 < 5.0)",
         "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $30.07 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
-      "unwinding": false,
+      "unwinding": true,
       "early_warning_date": null,
       "dca_score_14d": 3.82,
       "trend_mult": 1.0,
@@ -1021,7 +1022,7 @@
       "veto_reason": "",
       "in_active_allocation": false,
       "is_stuck": false,
-      "ob93_armed": false,
+      "ob93_armed": true,
       "peak_2w_k": 95.82231812130203
     },
     {
