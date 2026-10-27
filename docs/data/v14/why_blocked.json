@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-27T22:23:40.292436+00:00",
-  "scanner_generated_at": "2026-10-27T21:24:10.830000+00:00",
-  "scanner_age_hours": 0.99,
+  "generated_at": "2026-10-27T22:33:36.567645+00:00",
+  "scanner_generated_at": "2026-10-27T22:24:08.685000+00:00",
+  "scanner_age_hours": 0.15,
   "hurdle": 5.0,
   "hurdle_window": "30d",
-  "active_pool_cash": 28.65,
+  "active_pool_cash": 28.56,
   "active_allocations": [],
   "global_regime": "LONG_DCA",
   "summary": {
@@ -55,16 +55,16 @@
       "verdict": "REGIME_FLAGGED (phase conflicts with global regime)",
       "blockers": [
         "REGIME_FLAGGED (phase conflicts with global regime)",
-        "BELOW_HURDLE (trade_score 0.08 = base 0.09 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "BELOW_HURDLE (trade_score 0.64 = base 0.71 x trend 0.90 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "SHORT_DCA",
       "long_layers": 0,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.09,
+      "dca_score_14d": 0.71,
       "trend_mult": 0.9,
-      "trade_score": 0.081,
+      "trade_score": 0.639,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -84,7 +84,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -108,18 +108,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.26 = base 0.26 x trend 1.00 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.32 = base 0.32 x trend 1.00 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.26 = base 0.26 x trend 1.00 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.32 = base 0.32 x trend 1.00 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.26,
+      "dca_score_14d": 0.32,
       "trend_mult": 1.0,
-      "trade_score": 0.26,
+      "trade_score": 0.32,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -131,33 +131,6 @@
     {
       "coin": "ATOM",
       "symbol": "ATOM/USDT",
-      "in_set": false,
-      "rank": null,
-      "category": "BELOW_HURDLE",
-      "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.05 = base 0.06 x trend 0.90 < 5.0)",
-      "blockers": [
-        "BELOW_HURDLE (trade_score 0.05 = base 0.06 x trend 0.90 < 5.0)",
-        "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
-      ],
-      "phase": null,
-      "long_layers": null,
-      "unwinding": false,
-      "early_warning_date": null,
-      "dca_score_14d": 0.06,
-      "trend_mult": 0.9,
-      "trade_score": 0.054,
-      "hurdle": 5.0,
-      "veto_active": false,
-      "veto_reason": "",
-      "in_active_allocation": false,
-      "is_stuck": false,
-      "ob93_armed": null,
-      "peak_2w_k": null
-    },
-    {
-      "coin": "AVAX",
-      "symbol": "AVAX/USDT",
       "in_set": false,
       "rank": null,
       "category": "BELOW_HURDLE",
@@ -183,24 +156,51 @@
       "peak_2w_k": null
     },
     {
-      "coin": "BTC",
-      "symbol": "BTC/USDT",
+      "coin": "AVAX",
+      "symbol": "AVAX/USDT",
       "in_set": false,
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 1.00 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.05 = base 0.06 x trend 0.90 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 1.00 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.05 = base 0.06 x trend 0.90 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.0,
+      "dca_score_14d": 0.06,
+      "trend_mult": 0.9,
+      "trade_score": 0.054,
+      "hurdle": 5.0,
+      "veto_active": false,
+      "veto_reason": "",
+      "in_active_allocation": false,
+      "is_stuck": false,
+      "ob93_armed": null,
+      "peak_2w_k": null
+    },
+    {
+      "coin": "BTC",
+      "symbol": "BTC/USDT",
+      "in_set": false,
+      "rank": null,
+      "category": "BELOW_HURDLE",
+      "color": "amber",
+      "verdict": "BELOW_HURDLE (trade_score 0.05 = base 0.05 x trend 1.00 < 5.0)",
+      "blockers": [
+        "BELOW_HURDLE (trade_score 0.05 = base 0.05 x trend 1.00 < 5.0)",
+        "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
+      ],
+      "phase": null,
+      "long_layers": null,
+      "unwinding": false,
+      "early_warning_date": null,
+      "dca_score_14d": 0.05,
       "trend_mult": 1.0,
-      "trade_score": 0.0,
+      "trade_score": 0.05,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -216,18 +216,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.32 = base 0.36 x trend 0.90 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.31 = base 0.34 x trend 0.90 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.32 = base 0.36 x trend 0.90 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.31 = base 0.34 x trend 0.90 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.36,
+      "dca_score_14d": 0.34,
       "trend_mult": 0.9,
-      "trade_score": 0.324,
+      "trade_score": 0.30600000000000005,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -270,18 +270,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.90 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.90 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.0,
+      "dca_score_14d": 0.02,
       "trend_mult": 0.9,
-      "trade_score": 0.0,
+      "trade_score": 0.018000000000000002,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -297,18 +297,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.90 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.18 = base 0.20 x trend 0.90 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.90 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.18 = base 0.20 x trend 0.90 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.02,
+      "dca_score_14d": 0.2,
       "trend_mult": 0.9,
-      "trade_score": 0.018000000000000002,
+      "trade_score": 0.18000000000000002,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -381,16 +381,16 @@
       "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
-        "BELOW_HURDLE (trade_score 0.04 = base 0.04 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "BELOW_HURDLE (trade_score 0.05 = base 0.05 x trend 1.00 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": true,
       "early_warning_date": null,
-      "dca_score_14d": 0.04,
+      "dca_score_14d": 0.05,
       "trend_mult": 1.0,
-      "trade_score": 0.04,
+      "trade_score": 0.05,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -406,18 +406,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.14 = base 0.16 x trend 0.90 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.15 = base 0.17 x trend 0.90 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.14 = base 0.16 x trend 0.90 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.15 = base 0.17 x trend 0.90 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.16,
+      "dca_score_14d": 0.17,
       "trend_mult": 0.9,
-      "trade_score": 0.14400000000000002,
+      "trade_score": 0.15300000000000002,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -437,7 +437,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 0.04 = base 0.04 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -461,18 +461,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.80 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.03 = base 0.04 x trend 0.80 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.80 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "BELOW_HURDLE (trade_score 0.03 = base 0.04 x trend 0.80 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.02,
+      "dca_score_14d": 0.04,
       "trend_mult": 0.8,
-      "trade_score": 0.016,
+      "trade_score": 0.032,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -518,7 +518,7 @@
       "verdict": "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -573,7 +573,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -601,7 +601,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 0.36 = base 0.36 x trend 1.00 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -628,7 +628,7 @@
       "verdict": "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.80 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.80 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -655,16 +655,16 @@
       "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
-        "BELOW_HURDLE (trade_score 0.10 = base 0.11 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "BELOW_HURDLE (trade_score 0.04 = base 0.04 x trend 0.90 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": true,
       "early_warning_date": null,
-      "dca_score_14d": 0.11,
+      "dca_score_14d": 0.04,
       "trend_mult": 0.9,
-      "trade_score": 0.099,
+      "trade_score": 0.036000000000000004,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -711,7 +711,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -738,16 +738,16 @@
       "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
-        "BELOW_HURDLE (trade_score 0.12 = base 0.13 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "BELOW_HURDLE (trade_score 0.10 = base 0.11 x trend 0.90 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": true,
       "early_warning_date": "2026-09-10 00:00:00",
-      "dca_score_14d": 0.13,
+      "dca_score_14d": 0.11,
       "trend_mult": 0.9,
-      "trade_score": 0.117,
+      "trade_score": 0.099,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -767,7 +767,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 0.03 = base 0.03 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -794,16 +794,16 @@
       "verdict": "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
-        "BELOW_HURDLE (trade_score 0.14 = base 0.16 x trend 0.90 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.08 = base 0.09 x trend 0.90 < 5.0)",
         "HOLDING (open position, exiting via TP; \u2014 no NEW capital, not a current cap-N target)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 3,
       "unwinding": true,
       "early_warning_date": null,
-      "dca_score_14d": 0.16,
+      "dca_score_14d": 0.09,
       "trend_mult": 0.9,
-      "trade_score": 0.14400000000000002,
+      "trade_score": 0.081,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -822,7 +822,7 @@
       "verdict": "BELOW_HURDLE (trade_score 0.01 = base 0.01 x trend 0.90 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (trade_score 0.01 = base 0.01 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -846,18 +846,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.80 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.06 = base 0.08 x trend 0.80 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.80 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.06 = base 0.08 x trend 0.80 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.02,
+      "dca_score_14d": 0.08,
       "trend_mult": 0.8,
-      "trade_score": 0.016,
+      "trade_score": 0.064,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -877,7 +877,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -904,7 +904,7 @@
       "verdict": "NO_SCANNER_SCORE (coin absent from 30d rankings)",
       "blockers": [
         "NO_SCANNER_SCORE (coin absent from 30d rankings)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -931,16 +931,16 @@
       "verdict": "UNWINDING latched \u2014 COOLING PAUSE (2W Stoch RSI peaked 100; still LONG, NOT a top). New layers paused until overbought resolves (1W OB85 fallback / failsafe); will NOT flip SHORT unless OB93 arms.",
       "blockers": [
         "UNWINDING latched \u2014 COOLING PAUSE (2W Stoch RSI peaked 100; still LONG, NOT a top). New layers paused until overbought resolves (1W OB85 fallback / failsafe); will NOT flip SHORT unless OB93 arms.",
-        "BELOW_HURDLE (trade_score 0.13 = base 0.14 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "BELOW_HURDLE (trade_score 0.14 = base 0.16 x trend 0.90 < 5.0)",
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
       "unwinding": true,
       "early_warning_date": "2026-10-02 00:00:00",
-      "dca_score_14d": 0.14,
+      "dca_score_14d": 0.16,
       "trend_mult": 0.9,
-      "trade_score": 0.12600000000000003,
+      "trade_score": 0.14400000000000002,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -956,18 +956,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.06 = base 0.07 x trend 0.90 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.07 = base 0.08 x trend 0.90 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.06 = base 0.07 x trend 0.90 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.07 = base 0.08 x trend 0.90 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.07,
+      "dca_score_14d": 0.08,
       "trend_mult": 0.9,
-      "trade_score": 0.06300000000000001,
+      "trade_score": 0.07200000000000001,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -1014,7 +1014,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 0.01 = base 0.01 x trend 0.80 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -1065,18 +1065,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.05 = base 0.05 x trend 0.90 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.05 = base 0.05 x trend 0.90 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.0,
+      "dca_score_14d": 0.05,
       "trend_mult": 0.9,
-      "trade_score": 0.0,
+      "trade_score": 0.045000000000000005,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -1149,7 +1149,7 @@
       "verdict": "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
       "blockers": [
         "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -1173,18 +1173,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.63 = base 0.70 x trend 0.90 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.61 = base 0.68 x trend 0.90 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.63 = base 0.70 x trend 0.90 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.61 = base 0.68 x trend 0.90 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.7,
+      "dca_score_14d": 0.68,
       "trend_mult": 0.9,
-      "trade_score": 0.63,
+      "trade_score": 0.6120000000000001,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -1204,7 +1204,7 @@
       "blockers": [
         "UNWINDING latched \u2014 TOP-WATCH ARMED (OB93); watching for bearish divergence to flip SHORT (35d timeout). Still LONG until confirmed.",
         "BELOW_HURDLE (trade_score 0.00 = base 0.00 x trend 0.90 < 5.0)",
-        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.65 free)"
+        "NO_ACTIVE_ALLOCATION (router hasn't funded a slot; $28.56 free)"
       ],
       "phase": "LONG_DCA",
       "long_layers": 0,
@@ -1255,18 +1255,18 @@
       "rank": null,
       "category": "BELOW_HURDLE",
       "color": "amber",
-      "verdict": "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.90 < 5.0)",
+      "verdict": "BELOW_HURDLE (trade_score 0.03 = base 0.03 x trend 0.90 < 5.0)",
       "blockers": [
-        "BELOW_HURDLE (trade_score 0.02 = base 0.02 x trend 0.90 < 5.0)",
+        "BELOW_HURDLE (trade_score 0.03 = base 0.03 x trend 0.90 < 5.0)",
         "NOT_IN_SET (no engine; not fundable \u2014 below hurdle)"
       ],
       "phase": null,
       "long_layers": null,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 0.02,
+      "dca_score_14d": 0.03,
       "trend_mult": 0.9,
-      "trade_score": 0.018000000000000002,
+      "trade_score": 0.027,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
@@ -1285,16 +1285,16 @@
       "verdict": "REGIME_FLAGGED (phase conflicts with global regime)",
       "blockers": [
         "REGIME_FLAGGED (phase conflicts with global regime)",
-        "BELOW_HURDLE (trade_score 1.67 = base 1.86 x trend 0.90 < 5.0)",
+        "BELOW_HURDLE (trade_score 1.73 = base 1.92 x trend 0.90 < 5.0)",
         "HOLDING (open position, exiting via TP; \u2014 no NEW capital, not a current cap-N target)"
       ],
       "phase": "SHORT_DCA",
       "long_layers": 3,
       "unwinding": false,
       "early_warning_date": null,
-      "dca_score_14d": 1.86,
+      "dca_score_14d": 1.92,
       "trend_mult": 0.9,
-      "trade_score": 1.6740000000000002,
+      "trade_score": 1.728,
       "hurdle": 5.0,
       "veto_active": false,
       "veto_reason": "",
