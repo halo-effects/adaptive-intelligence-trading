@@ -1,4 +1,18 @@
 <!DOCTYPE html>
+<!--
+  ============================================================================
+  📄  PAPER DASHBOARD SOURCE  —  NOT A DROP-IN COPY FOR THE LIVE MIRROR
+  ============================================================================
+  This file (dashboardV14PM.html) is the PAPER trading dashboard.
+  Its sibling d-984ae0d4ab9dc1a5.html is the LIVE dashboard and has
+  INTENTIONALLY DIFFERENT config (v14-pm-live/ data URLs + "Live" branding).
+
+  If you add a feature here, PORT the markup/JS to d-984 manually —
+  do NOT `Copy-Item dashboardV14PM.html -> d-984...`. A wholesale copy
+  clobbers the live data URLs + title and shows PAPER data on the live page.
+  (Incident 2026-10-03.)
+  ============================================================================
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -221,6 +235,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .opp-table .phase-pill{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;padding:4px 12px;border-radius:12px}
 .opp-table .phase-pill .pd{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .opp-table .signal-text{color:var(--text2);font-size:.9rem}
+/* Entry Gate table — widen key cols so LONG DCA / BELOW HURDLE don't wrap on desktop */
+#wbTable .phase-pill{white-space:nowrap}
+#wbTable th:nth-child(1),#wbTable td:nth-child(1){min-width:90px}
+#wbTable th:nth-child(2),#wbTable td:nth-child(2){min-width:120px;white-space:nowrap}
+#wbTable th:nth-child(3),#wbTable td:nth-child(3){min-width:150px;white-space:nowrap}
 .opp-table .opp-text{font-weight:600;font-size:.9rem}
 .flow-sub{font-size:.75rem;color:var(--text3);margin-bottom:20px}
 
@@ -513,6 +532,33 @@ tr:hover td{background:rgba(99,102,241,.04)}
   <div class="pag-bar" id="oppPagBar" style="display:none"><button id="oppPagPrev" class="pag-btn">Prev</button><span id="oppPagInfo" class="pag-info"></span><button id="oppPagNext" class="pag-btn">Next</button></div>
 </div>
 
+<!-- 8b. ENTRY GATE / WHY-BLOCKED DASHBOARD -->
+<div class="flow-section">
+  <h2 style="text-align:center;font-size:1.15rem;color:var(--text);margin-bottom:4px">&#x1F6A6; Entry Gate Monitor</h2>
+  <div class="flow-sub" style="text-align:center">Why each coin is or isn't eligible to open a new position right now</div>
+
+  <!-- Summary chips -->
+  <div id="wbSummary" style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+  <div id="wbMeta" style="text-align:center;font-size:.72rem;color:var(--text3);margin-bottom:12px"></div>
+
+  <div class="pag-bar" style="justify-content:space-between;margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:.75rem;color:var(--text2)">Show:</span>
+      <select id="wbPageSize"><option value="10">10</option><option value="25">25</option><option value="50" selected>50</option></select>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:.75rem;color:var(--text2)">Filter:</span>
+      <select id="wbFilter"><option value="all" selected>All</option><option value="CLEAR">Clear only</option><option value="blocked">Blocked only</option></select>
+      <span id="wbTimestamp" style="font-size:.7rem;color:var(--text3)"></span>
+    </div>
+  </div>
+  <table class="opp-table" id="wbTable">
+    <thead><tr><th>COIN</th><th>PHASE</th><th title="Primary gate category" style="cursor:help">STATUS</th><th title="STUCK = early-warning unwind that can never clear on its own (OB93 never armed AND 2W peak &lt; 93) — the EIGEN-class lockout, safe to force-clear. Otherwise the unwind is legitimate top-detection with a valid exit path." style="cursor:help">STUCK?</th><th title="DCA Score vs hurdle rate 5.0 — coin must score ≥ hurdle to be funded" style="cursor:help">SCORE / HURDLE</th><th title="Scanner extension veto" style="cursor:help">VETO</th><th title="Holds a funded router slot" style="cursor:help">SLOT</th><th>BLOCKER</th></tr></thead>
+    <tbody id="wbBody"></tbody>
+  </table>
+  <div class="pag-bar" id="wbPagBar" style="display:none"><button id="wbPagPrev" class="pag-btn">Prev</button><span id="wbPagInfo" class="pag-info"></span><button id="wbPagNext" class="pag-btn">Next</button></div>
+</div>
+
 <!-- 9. ADAPTIVE INTELLIGENCE (Per-Coin) -->
 <div class="ai-panel">
   <h2>Adaptive Intelligence</h2>
@@ -556,6 +602,7 @@ var CONFIG = {
   statusUrl: 'data/v14-pm/status.json',
   tradesUrl: 'data/v14-pm/trades.csv',
   scannerUrl: 'data/v14/cycle_scanner.json',
+  whyBlockedUrl: 'data/v14/why_blocked.json',
   refreshInterval: 60
 };
 
@@ -624,13 +671,16 @@ var PHASE_DESC = {
 var PHASES = ['LONG_DCA','ROUTER','SHORT_DCA'];
 var REGIME_CLS = {ACCUMULATION:'rb-ACCUMULATION',ACC:'rb-ACC',TRENDING:'rb-TRENDING',TREND:'rb-TREND',RANGING:'rb-RANGING',EXTREME:'rb-EXTREME',CRASH:'rb-CRASH',CHOPPY:'rb-CHOPPY',DISTRIBUTION:'rb-DISTRIBUTION',LONG_DCA:'rb-ACC',SHORT_DCA:'rb-EXTREME',ROUTER:'rb-RANGING'};
 
-var S=null, trades=[], eqChart=null, countdownVal=CONFIG.refreshInterval, tradePage=0, oppPage=0, scannerData=null;
+var S=null, trades=[], eqChart=null, countdownVal=CONFIG.refreshInterval, tradePage=0, oppPage=0, scannerData=null, whyBlockedData=null;
 
 function parseCSV(t){var l=t.trim().split('\n');if(l.length<2)return[];var h=l[0].split(',').map(function(x){return x.trim()});return l.slice(1).map(function(r){var v=r.split(',');var o={};h.forEach(function(k,i){o[k]=v[i]?v[i].trim():''});return o})}
 
 async function fetchData(){
   if(CONFIG.scannerUrl){
     try{var r3=await fetch(CONFIG.scannerUrl+'?t='+Date.now());if(r3.ok){scannerData=await r3.json()}}catch(e){console.warn('scanner fetch',e)}
+  }
+  if(CONFIG.whyBlockedUrl){
+    try{var r4=await fetch(CONFIG.whyBlockedUrl+'?t='+Date.now());if(r4.ok){whyBlockedData=await r4.json();try{renderWhyBlocked()}catch(e){console.warn('wb render',e)}}}catch(e){console.warn('whyBlocked fetch',e)}
   }
   try{var r=await fetch(CONFIG.statusUrl+'?t='+Date.now());if(r.ok){S=await r.json();render()}}catch(e){console.warn('status fetch',e)}
   try{var r2=await fetch(CONFIG.tradesUrl+'?t='+Date.now());if(r2.ok){trades=parseCSV(await r2.text());renderTrades();renderEquityChart();try{renderCompounding()}catch(e){}try{renderStats()}catch(e){}}}catch(e){}
@@ -1249,8 +1299,12 @@ function renderFlowDiagram(){
     var liqStatus=scanCoinData?scanCoinData.liquidity_status:null;
     var vol24h=scanCoinData?scanCoinData.volume_24h:null;
     var volImpact=scanCoinData?scanCoinData.volume_impact_pct:null;
+    // aster_tradeable: false => scored on Binance candles but NOT listed on Aster,
+    // so the live bot can never fund it. Undefined => treat as tradeable.
+    var asterTradeable=(scanCoinData&&scanCoinData.aster_tradeable===false)?false:true;
     if(liqStatus==='LOW_LIQUIDITY')isExcluded=true;
-    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData,isPaused:isPaused,isRegimeFlagged:isRegimeFlagged,isExcluded:isExcluded,liqStatus:liqStatus,vol24h:vol24h,volImpact:volImpact});
+    if(!asterTradeable)isExcluded=true;
+    rowData.push({sym:sym,m:m,isActive:isActive,phase:phase,dcaScore:dcaScore,tradeScore:tradeScore,trendMult:trendMult,dealsWk:dealsWk,avgCycle:avgCycle,capFree:capFree,ddPct:ddPct,trend:trendData,isPaused:isPaused,isRegimeFlagged:isRegimeFlagged,isExcluded:isExcluded,liqStatus:liqStatus,vol24h:vol24h,volImpact:volImpact,asterTradeable:asterTradeable});
   });
 
   rowData.sort(function(a,b){
@@ -1285,6 +1339,7 @@ function renderFlowDiagram(){
     var badges=rd.isActive?' <span style="font-size:.55rem;color:var(--accent2);vertical-align:middle">ACTIVE</span>':'';
     if(rd.isRegimeFlagged)badges+=' <span style="font-size:.55rem;color:var(--red);vertical-align:middle">🚩 FLAGGED</span>';
     if(rd.isPaused)badges+=' <span style="font-size:.55rem;color:var(--amber);vertical-align:middle">⏸ PAUSED</span>';
+    if(rd.asterTradeable===false)badges+=' <span style="font-size:.55rem;color:var(--text3);vertical-align:middle" title="Scored on Binance candles but NOT listed on Aster — cannot be funded by the live bot">⊘ NOT ON ASTER</span>';
     h+='<td class="coin-name">'+rd.m.label+badges+'</td>';
     h+='<td>'+phaseHtml+'</td>';
     var volHtml='<span style="color:var(--text3)">--</span>';
@@ -1321,6 +1376,136 @@ h+='<td style="text-align:center">'+dealsHtml+'</td>';
     $('oppPagPrev').disabled=oppPage===0;
     $('oppPagNext').disabled=oppPage>=oppMaxPage;
   }else{$('oppPagBar').style.display='none'}
+}
+
+// ENTRY GATE / WHY-BLOCKED
+var wbPage=0;
+function renderWhyBlocked(){
+  var d=whyBlockedData;
+  if(!d||!d.coins){ $('wbBody').innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">No gate data</td></tr>'; return; }
+
+  // Category -> color/style map (reuses theme vars)
+  var catStyle={
+    CLEAR:{bg:'rgba(34,197,94,.12)',col:'var(--phase-long-dca)',dot:'var(--phase-long-dca)'},
+    IN_POSITION:{bg:'rgba(34,197,94,.12)',col:'var(--phase-long-dca)',dot:'var(--phase-long-dca)'},
+    HOLDING:{bg:'rgba(34,197,94,.12)',col:'var(--phase-long-dca)',dot:'var(--phase-long-dca)'},
+    BELOW_HURDLE:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
+    VETOED:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
+    NO_SLOT:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
+    QUEUED:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
+    PAUSED:{bg:'rgba(245,158,11,.1)',col:'var(--amber)',dot:'var(--amber)'},
+    UNWINDING:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'},
+    REGIME:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'},
+    NO_SCORE:{bg:'rgba(99,102,241,.1)',col:'var(--text3)',dot:'var(--text3)'},
+    NOT_IN_SET:{bg:'rgba(99,102,241,.08)',col:'var(--text3)',dot:'var(--text3)'},
+    BLOCKED:{bg:'rgba(239,68,68,.1)',col:'var(--red)',dot:'var(--red)'}
+  };
+  function cs(cat){return catStyle[cat]||catStyle.BLOCKED}
+  var phaseColors={LONG_DCA:'var(--phase-long-dca)',SHORT_DCA:'var(--phase-short-dca)',ROUTER:'var(--phase-router)'};
+
+  // Summary chips
+  var sum=d.summary||{};
+  var chipOrder=['CLEAR','IN_POSITION','HOLDING','QUEUED','BELOW_HURDLE','VETOED','UNWINDING','NO_SLOT','REGIME','PAUSED','NO_SCORE','NOT_IN_SET'];
+  var chips='';
+  chipOrder.forEach(function(cat){
+    if(sum[cat]){var st=cs(cat);chips+='<span style="display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:12px;background:'+st.bg+';color:'+st.col+'"><span style="width:7px;height:7px;border-radius:50%;background:'+st.dot+'"></span>'+cat.replace(/_/g,' ')+' '+sum[cat]+'</span>';}
+  });
+  $('wbSummary').innerHTML=chips;
+
+  // Meta line
+  var metaParts=[];
+  if(d.clear_count!=null)metaParts.push(d.clear_count+' of '+d.total_coins+' eligible');
+  if(d.active_pool_cash!=null)metaParts.push('$'+Number(d.active_pool_cash).toFixed(0)+' free');
+  if(d.hurdle!=null)metaParts.push('hurdle ≥'+d.hurdle+' ('+d.hurdle_window+')');
+  if(d.global_regime)metaParts.push('regime: '+d.global_regime.replace('_',' '));
+  var metaStr=metaParts.join(' &nbsp;|&nbsp; ');
+  if(d.stuck_count>0){metaStr+=' &nbsp;|&nbsp; <span style="color:var(--red);font-weight:700">⚠ '+d.stuck_count+' STUCK (force-clear safe)</span>';}
+  $('wbMeta').innerHTML=metaStr;
+
+  // Timestamp
+  var tsEl=$('wbTimestamp');
+  if(tsEl&&d.generated_at){var g=new Date(d.generated_at);var mn=Math.round((Date.now()-g.getTime())/60000);tsEl.textContent='Updated: '+(mn<60?mn+'m ago':Math.round(mn/60)+'h ago');}
+
+  // Filter + sort (clear first, then by category severity, then by score)
+  var filt=$('wbFilter')?$('wbFilter').value:'all';
+  var sevRank={CLEAR:0,IN_POSITION:0,HOLDING:0,QUEUED:1,BELOW_HURDLE:2,VETOED:3,NO_SLOT:4,UNWINDING:5,PAUSED:6,REGIME:7,NO_SCORE:8,BLOCKED:9};
+  var rows=d.coins.slice().filter(function(c){
+    if(filt==='CLEAR')return c.category==='CLEAR'||c.category==='IN_POSITION'||c.category==='HOLDING'||c.category==='QUEUED';
+    if(filt==='blocked')return c.category!=='CLEAR'&&c.category!=='IN_POSITION'&&c.category!=='HOLDING'&&c.category!=='QUEUED';
+    return true;
+  });
+  rows.sort(function(a,b){var ra=sevRank[a.category]!=null?sevRank[a.category]:9;var rb=sevRank[b.category]!=null?sevRank[b.category]:9;if(ra!==rb)return ra-rb;var fa=a.rank!=null?a.rank:9999;var fb=b.rank!=null?b.rank:9999;if(fa!==fb)return fa-fb;var sa=a.dca_score_14d!=null?a.dca_score_14d:-1;var sb=b.dca_score_14d!=null?b.dca_score_14d:-1;return sb-sa;});
+
+  var h='';
+  rows.forEach(function(c){
+    var st=cs(c.category);
+    var notInSet=(c.in_set===false);
+    // phase pill — not-in-set coins have no engine, show "Watchlist"
+    var ph=c.phase||'--';
+    var phaseHtml;
+    if(notInSet){
+      // c.rank is the fundable rank (rank_live from why_blocked). null => not fundable
+      // on the live exchange (not-on-Aster / vetoed / below hurdle) => no # shown.
+      var wlRank=(c.rank!=null)?' #'+c.rank:'';
+      phaseHtml='<span class="phase-pill" style="background:rgba(99,102,241,.08);color:var(--text3)"><span class="pd" style="background:var(--text3)"></span>Watchlist'+wlRank+'</span>';
+    }else{
+      phaseHtml='<span class="phase-pill"><span class="pd" style="background:'+(phaseColors[ph]||'var(--text3)')+'"></span>'+(ph==='--'?'--':ph.replace('_',' '))+'</span>';
+    }
+    // status pill
+    var statusHtml='<span class="phase-pill" style="background:'+st.bg+';color:'+st.col+'"><span class="pd" style="background:'+st.dot+'"></span>'+c.category.replace(/_/g,' ')+'</span>';
+    // score / hurdle
+    var scoreHtml='<span style="color:var(--text3)">--</span>';
+    if(c.dca_score_14d!=null){var sc=c.dca_score_14d;var scCol=sc>=c.hurdle?'var(--phase-long-dca)':'var(--amber)';scoreHtml='<span style="font-weight:700;color:'+scCol+'">'+sc.toFixed(2)+'</span> <span style="font-size:.7rem;color:var(--text3)">/ '+c.hurdle+'</span>';}
+    // veto — show plain-English meaning (not the raw code, which is already in the blocker column)
+    var VETO_DESC={
+      A2_EXTENSION:{label:'Overextended',tip:'Price >3× ATR above the 50-day SMA — too stretched to enter'},
+      A1_RSI_HOT:{label:'Overbought',tip:'Daily RSI(14) ≥ 80 — vertical move, dangerous to enter long'},
+      A1_RSI_COLD:{label:'Oversold',tip:'Daily RSI(14) ≤ 22 — capitulation, dangerous to enter short'},
+      A3_DIVERGENCE:{label:'Bearish divergence',tip:'Price made a new high but RSI did not — momentum weakening'}
+    };
+    var vetoHtml='<span style="color:var(--text3)">—</span>';
+    if(c.veto_active){var vd=VETO_DESC[c.veto_reason]||{label:(c.veto_reason||'veto'),tip:c.veto_reason||''};vetoHtml='<span style="color:var(--amber);font-size:.78rem" title="'+vd.tip.replace(/"/g,'')+'">⚠ '+vd.label+'</span>';}
+    // stuck? — EIGEN-class lockout vs legitimate unwind vs not-unwinding
+    var stuckHtml;
+    if(c.is_stuck){
+      stuckHtml='<span style="color:var(--red);font-weight:700;font-size:.78rem" title="EIGEN-class lockout: early-warning fired but OB93 never armed and 2W peak <93 — cannot clear on its own. Safe to force-clear.">⚠ STUCK</span>';
+    }else if(c.unwinding){
+      stuckHtml='<span style="color:var(--phase-long-dca);font-size:.78rem" title="Legitimate top-detection unwind (OB93 armed or 2W peak ≥93) — has a valid exit path, do not force-clear. peak_2w_k='+(c.peak_2w_k!=null?c.peak_2w_k.toFixed(0):'?')+'">✓ ok</span>';
+    }else{
+      stuckHtml='<span style="color:var(--text3)">—</span>';
+    }
+    // slot
+    var slotHtml=c.in_active_allocation?'<span style="color:var(--phase-long-dca)">● funded</span>':'<span style="color:var(--text3)">—</span>';
+    // blocker (primary)
+    var blk=(c.blockers&&c.blockers.length)?c.blockers[0]:'—';
+    var blkCol=(c.category==='CLEAR'||c.category==='IN_POSITION')?'var(--phase-long-dca)':'var(--text2)';
+    var blkHtml='<span style="font-size:.82rem;color:'+blkCol+'" title="'+(c.blockers||[]).join(' | ').replace(/"/g,'')+'">'+blk+'</span>';
+
+    h+='<tr>';
+    h+='<td class="coin-name">'+c.coin+'</td>';
+    h+='<td>'+phaseHtml+'</td>';
+    h+='<td>'+statusHtml+'</td>';
+    h+='<td style="text-align:center">'+stuckHtml+'</td>';
+    h+='<td style="text-align:center">'+scoreHtml+'</td>';
+    h+='<td style="text-align:center">'+vetoHtml+'</td>';
+    h+='<td style="text-align:center">'+slotHtml+'</td>';
+    h+='<td>'+blkHtml+'</td>';
+    h+='</tr>';
+  });
+
+  // Pagination
+  var wbRows=h?h.match(/<tr[\s\S]*?<\/tr>/g):[];
+  var wps=parseInt($('wbPageSize').value)||50;
+  var wbMaxPage=Math.max(0,Math.ceil(wbRows.length/wps)-1);
+  wbPage=Math.min(wbPage,wbMaxPage);
+  var wbPageRows=wbRows.slice(wbPage*wps,(wbPage+1)*wps);
+  $('wbBody').innerHTML=wbPageRows.length?wbPageRows.join(''):'<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">No coins match filter</td></tr>';
+  if(wbRows.length>wps){
+    $('wbPagBar').style.display='flex';
+    $('wbPagInfo').textContent='Page '+(wbPage+1)+' of '+(wbMaxPage+1);
+    $('wbPagPrev').disabled=wbPage===0;
+    $('wbPagNext').disabled=wbPage>=wbMaxPage;
+  }else{$('wbPagBar').style.display='none'}
 }
 
 // TRADES
@@ -1363,6 +1548,10 @@ document.addEventListener('DOMContentLoaded',function(){
   $('oppPagNext').onclick=function(){oppPage++;renderFlowDiagram()};
   $('oppPageSize').onchange=function(){oppPage=0;renderFlowDiagram()};
   if($('scanWindow'))$('scanWindow').onchange=function(){oppPage=0;renderFlowDiagram()};
+  if($('wbPagPrev'))$('wbPagPrev').onclick=function(){wbPage--;renderWhyBlocked()};
+  if($('wbPagNext'))$('wbPagNext').onclick=function(){wbPage++;renderWhyBlocked()};
+  if($('wbPageSize'))$('wbPageSize').onchange=function(){wbPage=0;renderWhyBlocked()};
+  if($('wbFilter'))$('wbFilter').onchange=function(){wbPage=0;renderWhyBlocked()};
 });
 
 // EQUITY CHART
