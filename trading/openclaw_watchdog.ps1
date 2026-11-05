@@ -90,7 +90,7 @@ Check-Task -Name "V14-PM Paper Bot" -TaskName "V14PMPaperBot" `
     -StatusFile "$env:USERPROFILE\.openclaw\workspace\trading\spot\paper\v14_portfolio\status.json" `
     -StaleMinutes 120
 
-# ---------- 5. V14 Live Bot (Aster - REAL MONEY) ----------
-Check-Task -Name "V14 Live Bot (Aster)" -TaskName "V14LiveAster" `
-    -StatusFile "$env:USERPROFILE\.openclaw\workspace\trading\spot\live\v14\status.json" `
+# ---------- 5. V14-PM Live Bot (Aster - REAL MONEY) ----------
+Check-Task -Name "V14-PM Live Bot (Aster)" -TaskName "V14PMLiveAster" `
+    -StatusFile "$env:USERPROFILE\.openclaw\workspace\trading\spot\live\v14pm\status.json" `
     -StaleMinutes 120
