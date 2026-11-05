@@ -1,6 +1,26 @@
 # Lessons Learned
 _Hard-won knowledge from production incidents and development._
 
+## Ops & Recovery
+
+### Unresolved Git Divergence Is a Loaded Gun (2026-11-05)
+- Local `main` had diverged from `origin/main` (local ahead 5, behind 4455). The 4455 remote commits were ALL automated "Data sync" churn (zero code), forked at a common ancestor on Aug 24.
+- While that divergence sat unresolved, the git index held tracked files staged-as-deleted. A **machine reboot** (to clear a separate blockage) triggered a working-tree reconciliation that physically removed **442 git-tracked files** (~75% of repo), sparing untracked `.bak` copies — the classic git fingerprint (only tracked names vanish).
+- Result: all 4 bots + the scanner crashed on `ModuleNotFoundError` at next restart. The `trading/spot/engine/` package and every bot runner were gone.
+- **Not malware, not user deletion, not the dashboard sync.** It was git reconciling the working tree to a corrupt/divergent index.
+- **Recovery that worked:** restore files byte-exact from HEAD blobs (`git cat-file blob <hash> > path` via cmd redirection — PowerShell `Set-Content`/`WriteAllBytes` mangled encoding/newlines). Verify each with `git hash-object` == HEAD blob. Then collapse divergence with `git push --force-with-lease` after confirming the remote-only commits were 100% data-sync (no code to lose). Insurance first: `git tag` + `git bundle create`.
+- **Rule**: Never leave a large git divergence unresolved on a production machine. A reboot or stray `git pull`/checkout can execute the pending deletion. Resolve divergence promptly; keep a tag + bundle before any history rewrite.
+
+### Pushing to a Repo an Auto-Committer Also Pushes To (2026-11-05)
+- GeeGee's `AIT_DashboardSync` (every 10 min) and a "Data sync" committer push to `origin/main` continuously. Any manual push races them → `! [rejected] (fetch first)` or `--force-with-lease` "stale info".
+- Naive `git stash` + `git rebase` got tangled (stash exit 0 but rebase still saw unstaged changes → paused rebase, detached HEAD, file briefly absent on disk mid-rebase). Scary but recoverable: the commit object survives; `git rebase --abort` returns to pre-rebase state with the commit intact.
+- **Rule**: To land a manual commit on this repo, use `git -c rebase.autoStash=true rebase origin/main` then `git push` (loop if it races again). Do NOT hand-stash. Do NOT force-push once the remote is clean — only data-sync commits are behind you, and a plain rebase integrates them safely.
+
+### Daily-Only Tasks Have No Same-Day Retry (2026-11-05)
+- `V14CycleScanner` ran Daily at 5:00 AM with no repeat. Its 5:00 AM run crashed (import fallout); next retry was 24h away, so scanner rankings (which drive bot allocation) sat stale all day.
+- Fix: extended `scripts/bot_watchdog.ps1` (every 5 min) to self-heal the scanner — validates `cycle_scanner.json` for staleness AND structural integrity (valid JSON, `generated_at`, ≥20 trend_scores, ≥20 coins_scanned, non-empty windows), re-runs `V14CycleScanner` and re-validates, alerts only if heal fails.
+- **Rule**: Any once-daily critical task needs either a repeat/retry trigger or watchdog self-heal. Validate decision-critical data for *structure/corruption*, not just existence — a truncated/half-written JSON that "exists" will silently poison downstream decisions.
+
 ## Code & Architecture
 
 ### DB Path Resolution (2026-03-09, 2026-03-10)
@@ -132,7 +152,7 @@ _Hard-won knowledge from production incidents and development._
 
 ### Verify Auditor File Version (2026-07-04)
 - Always confirm the auditor is reading current files: ask for line count + content at a known coordinate.
-- "The quickest single check: open the file and look at line 495" � Fable's diagnostic.
+- "The quickest single check: open the file and look at line 495" � Fable's diagnostic.
 
 ### Duration Statistic Mismatch (2026-07-04)
 - Never compare means and medians in the same table column. The G-SPLIT "17h vs 46h speed" claim was entirely an artifact of comparing mean durations (reference data) against medians (new data).
@@ -141,7 +161,7 @@ _Hard-won knowledge from production incidents and development._
 ### Pre-Registered Decision Rules Work (2026-07-04)
 - G-SPLIT won cleanly under pre-registered rules. E-4 failed cleanly under pre-registered MAE bar.
 - No post-hoc adjustments were needed. Registered predictions scored against outcomes create accountability.
-- Fable's predictions were mostly wrong � statics catch mechanisms, they don't pick winners. Path effects determine outcomes.
+- Fable's predictions were mostly wrong � statics catch mechanisms, they don't pick winners. Path effects determine outcomes.
 
 ### "Verified Shipped" != "Shipped" (2026-07-04)
 - Fable caught three consecutive packages with claimed-but-unverified fixes.
@@ -157,9 +177,9 @@ _Hard-won knowledge from production incidents and development._
 ### MAE Formula: At-the-Time vs At-Close (2026-07-04)
 - Max adverse excursion must be computed as a running max of (avg_entry_now - low) / avg_entry_now per tick.
 - Computing MAE as (final_avg_entry - min_price) / final_avg_entry at sell time understates multi-layer deals because avg_entry falls as layers fill. The worst pain happens BEFORE averaging down, when avg was higher.
-- The bias grows with depth � exactly the dimension MAE exists to measure.
+- The bias grows with depth � exactly the dimension MAE exists to measure.
 
 ### Legacy Schema Backfill (2026-07-04)
 - When adding new fields to persisted deal state, existing open deals won't have those keys after restart.
 - Always use .get() with defaults and handle the backfill case explicitly.
-- "The existing persistence handles it" is true for NEW deals only � test with a deal serialized under the OLD schema.
+- "The existing persistence handles it" is true for NEW deals only � test with a deal serialized under the OLD schema.

@@ -2,6 +2,16 @@
 _Reverse chronological. Key events only._
 
 
+## 2026-11-05
+- **Mass file-deletion incident + full recovery** (root cause: unresolved git divergence):
+  - Morning: all 4 bots + V14CycleScanner down, auto-restarts "failing". Root cause = **442 git-tracked files deleted from disk** (~75% of repo incl. `trading/spot/engine/` package, all bot runners, `exchange_client.py`, `projects/`, `memory/`). Triggered by a reboot reconciling the working tree to a corrupt/divergent git index (local ahead 5, behind 4455). Not malware/user/sync-script — confirmed via reflog, Defender log (clean), timestamps.
+  - **Restore**: all 442 files recovered byte-exact from HEAD blobs (`git cat-file blob <hash>` → cmd redirection; `git hash-object` verified == HEAD). PowerShell `Set-Content -NoNewline` corrupted encoding — avoid.
+  - **Divergence resolved**: remote-only 4455 commits confirmed 100% "Data sync" churn (no code). Insurance: tag `verified-good-20261105-0750` + 67.7MB bundle on Desktop. Then `git push --force-with-lease` → remote matches local code history (ahead 0 / behind 0). Loaded gun defused.
+  - **Watchdog fixes** (`trading/openclaw_watchdog.ps1`, committed `0088d99d87`): live-bot task name `V14LiveAster` → `V14PMLiveAster` (real-money bot had NO auto-restart coverage), and VBS path corrected to `trading\openclaw_watchdog.ps1` (was pointing at non-existent root path → watchdog was a silent no-op).
+  - **Dashboard un-stuck**: restore had overwritten `docs/data/v14-pm-live/` with old Aug snapshot (121 deals/$411.83). Refreshed from live bot source; GitHub Pages now serves current (147 deals).
+  - **Scanner self-heal + integrity** (`scripts/bot_watchdog.ps1`, committed, pushed `9b6977c98b`): every-5-min validation of `cycle_scanner.json` (staleness >90min + corrupt/truncated/empty JSON detection: valid JSON, `generated_at`, ≥20 trend_scores, ≥20 coins_scanned, non-empty windows) → auto re-run `V14CycleScanner` + re-validate → alert only if heal fails. All 5 test scenarios pass (valid/truncated/empty/missing/stale).
+  - Note: GeeGee LLM API key hit a billing/credits error 11:23 — unrelated to git work; zero-LLM watchdogs unaffected.
+
 ## 2026-07-05
 - **Two-tier candle collector deployed** (`e33addcc8`):
   - `COINS` → `ACTIVE_UNIVERSE` (44 active pairs) + `WATCHLIST` (9 removed-but-live coins: APT, JTO, TRUMP, BERA, S, VIRTUAL, GRASS, INIT, MOVE).

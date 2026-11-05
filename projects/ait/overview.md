@@ -45,7 +45,11 @@ _Last updated: 2026-07-05_
 | seed_capital immutable | 2026-05-10 | CLI --capital, never recalculated (Hard Rule #26). |
 | DEX-as-truth for capital | 2026-05-08 | Exchange wallet balance IS capital. |
 
-## Current State (2026-07-05)
+## Current State (2026-11-05)
+- **Resilience / ops (2026-11-05)**: Recovered from mass file-deletion incident (442 git-tracked files wiped by reboot reconciling a divergent git index). Divergence resolved (remote = local code history). Two zero-LLM watchdogs now protect runtime:
+  - `scripts\bot_watchdog.ps1` (every 5 min): self-heals the 4 bots AND the scanner. Scanner check validates `cycle_scanner.json` for staleness (>90min) + structural integrity (valid JSON, `generated_at`, ≥20 trend_scores, ≥20 coins_scanned, non-empty windows) → auto re-run `V14CycleScanner` + re-validate → alert only if heal fails.
+  - `trading\openclaw_watchdog.ps1` (every 5 min): gateway + bot task monitor. Live-bot task name fixed to `V14PMLiveAster`; VBS path corrected.
+  - Insurance: tag `verified-good-20261105-0750` + bundle. See `tacit/lessons-learned.md` (Ops & Recovery) and `log.md` 2026-11-05.
 - **V14PM Live (Aster)**: $442 capital (seed=$300 + $40 deposit), 119 trades, ~86% win rate
   - **Grid: G-SPLIT (48/32/20) deployed**. GridModel v2.0, 3 layers. L4 removed.
     - Decision: Final Grid Decision Test (Fable spec v1.0). G-SPLIT +8.6% PnL over incumbent, best PnL/%DD ($1,053). Rule 1 survived. Fable-verified.
@@ -90,8 +94,8 @@ _Last updated: 2026-07-05_
 | Regime Persistence (RH-1/2/3) | 2026-07-05 | All verified. Arch doc v1.14. Per-coin funding. Event log. |
 
 ## Next Steps
-1. **🔴 Create V14PM Live auto-restart task** (needs admin PowerShell)
-2. **🔴 Disable old V14LiveAster task** (needs admin PowerShell)
+1. **✅ V14PM Live auto-restart** — DONE. `V14PMLiveAster` scheduled task live; watchdog (`openclaw_watchdog.ps1` + `bot_watchdog.ps1`) now covers it with correct task name.
+2. **✅ Old `V14LiveAster` task** — resolved (watchdog no longer references the stale name; corrected to `V14PMLiveAster` 2026-11-05).
 3. **M-1 spec** (reconcile_pools reserve zeroing): Safe now, landmine at $10K. Spec while context fresh.
 4. **Database migration**: Replace CSV with SQLite (proper deal IDs, ACID transactions, no corruption)
 5. **Cloud migration**: Linux server, Hyperliquid mainnet (Phase 1: 6-10 weeks)
